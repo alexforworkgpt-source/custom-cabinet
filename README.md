@@ -33,11 +33,6 @@ delivers `cabinet-dist.tar.gz` through a verified Release Bundle.
 Upstream publication workflows were removed from this repository. Automation
 for future Custom Cabinet releases is a separate workstream.
 
-The private preparation remote runs CI and dependency security audit. CodeQL
-upload requires a public repository or GitHub Advanced Security and is deferred
-to the publication workstream instead of being kept as a permanently failing
-workflow.
-
 ## Provenance
 
 The exact source is documented in [`UPSTREAM.md`](UPSTREAM.md). Upstream
