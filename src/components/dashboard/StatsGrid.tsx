@@ -5,10 +5,11 @@ import { StatCard } from '@/components/stats';
 import { CardIcon, ChevronRightIcon, UsersIcon } from '@/components/icons';
 
 interface StatsGridProps {
-  balanceRubles: number;
+  balanceRubles: number | null;
   referralCount: number;
   earningsRubles: number;
   refLoading: boolean;
+  showReferral?: boolean;
 }
 
 export default function StatsGrid({
@@ -16,6 +17,7 @@ export default function StatsGrid({
   referralCount,
   earningsRubles,
   refLoading,
+  showReferral = true,
 }: StatsGridProps) {
   const { t } = useTranslation();
   const { formatAmount, currencySymbol } = useCurrency();
@@ -23,27 +25,33 @@ export default function StatsGrid({
   const chevron = <ChevronRightIcon className="h-4 w-4 shrink-0 text-dark-500" />;
 
   return (
-    <div className="grid grid-cols-2 gap-2.5">
-      <Link to="/balance" className="block h-full" data-onboarding="balance">
+    <div className={`grid gap-2.5 ${showReferral ? 'grid-cols-2' : 'grid-cols-1'}`}>
+      <Link to="/balance/top-up" className="block h-full" data-onboarding="balance">
         <StatCard
           label={t('dashboard.stats.balance')}
-          value={`${formatAmount(balanceRubles)} ${currencySymbol}`}
+          value={
+            balanceRubles === null
+              ? t('dashboard.dataUnavailable')
+              : `${formatAmount(balanceRubles)} ${currencySymbol}`
+          }
           icon={<CardIcon className="h-5 w-5" />}
           tone="accent"
           trailing={chevron}
         />
       </Link>
-      <Link to="/referral" className="block h-full">
-        <StatCard
-          label={t('dashboard.stats.referrals')}
-          value={`${referralCount}`}
-          subValue={`+${formatAmount(earningsRubles)} ${currencySymbol}`}
-          icon={<UsersIcon className="h-5 w-5" />}
-          tone="neutral"
-          loading={refLoading}
-          trailing={chevron}
-        />
-      </Link>
+      {showReferral && (
+        <Link to="/referral" className="block h-full">
+          <StatCard
+            label={t('dashboard.stats.referrals')}
+            value={`${referralCount}`}
+            subValue={`+${formatAmount(earningsRubles)} ${currencySymbol}`}
+            icon={<UsersIcon className="h-5 w-5" />}
+            tone="neutral"
+            loading={refLoading}
+            trailing={chevron}
+          />
+        </Link>
+      )}
     </div>
   );
 }

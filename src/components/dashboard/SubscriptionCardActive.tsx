@@ -24,7 +24,8 @@ interface SubscriptionCardActiveProps {
   } | null;
   refreshTrafficMutation: UseMutationResult<unknown, unknown, void, unknown>;
   trafficRefreshCooldown: number;
-  connectedDevices: number;
+  connectedDevices: number | null;
+  onManageDevices?: () => void;
 }
 
 export default function SubscriptionCardActive({
@@ -33,6 +34,7 @@ export default function SubscriptionCardActive({
   refreshTrafficMutation,
   trafficRefreshCooldown,
   connectedDevices,
+  onManageDevices,
 }: SubscriptionCardActiveProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -47,7 +49,10 @@ export default function SubscriptionCardActive({
   const haptic = useHaptic();
 
   const isAtDeviceLimit =
-    subscription.device_limit > 0 && connectedDevices >= subscription.device_limit;
+    connectedDevices !== null &&
+    subscription.device_limit > 0 &&
+    connectedDevices >= subscription.device_limit;
+  const isDeviceUsageUnavailable = connectedDevices === null;
 
   const formattedDate = new Date(subscription.end_date).toLocaleDateString(uiLocale());
   const daysLeft = subscription.days_left;
@@ -114,6 +119,11 @@ export default function SubscriptionCardActive({
                 {t('subscription.trialStatus')}
               </span>
             )}
+            {!subscription.is_trial && (
+              <span className="rounded-md border border-success-400/25 bg-success-400/10 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-success-400">
+                {t('subscription.active')}
+              </span>
+            )}
           </div>
 
           {/* Title */}
@@ -165,15 +175,15 @@ export default function SubscriptionCardActive({
         <HoverBorderGradient
           as="button"
           accentColor={zone.mainHex}
-          disabled={isAtDeviceLimit}
+          disabled={isAtDeviceLimit || isDeviceUsageUnavailable}
           onClick={() => {
-            if (isAtDeviceLimit) {
+            if (isAtDeviceLimit || isDeviceUsageUnavailable) {
               haptic.notification('error');
               return;
             }
             navigate(`/connection?sub=${subscription.id}`);
           }}
-          className={`mb-2.5 flex w-full items-center gap-3.5 rounded-[14px] p-3.5 text-left transition-shadow duration-300${isAtDeviceLimit ? 'cursor-not-allowed opacity-50' : ''}`}
+          className={`mb-2.5 flex w-full items-center gap-3.5 rounded-[14px] p-3.5 text-left transition-shadow duration-300${isAtDeviceLimit || isDeviceUsageUnavailable ? 'cursor-not-allowed opacity-50' : ''}`}
           data-onboarding="connect-devices"
           style={{ fontFamily: 'inherit' }}
         >
@@ -205,12 +215,14 @@ export default function SubscriptionCardActive({
               {t('dashboard.connectDevice')}
             </div>
             <div className="mt-0.5 text-[11px] text-dark-50/30">
-              {subscription.device_limit === 0
-                ? t('dashboard.devicesConnectedUnlimited', { used: connectedDevices })
-                : t('dashboard.devicesOfMax', {
-                    used: connectedDevices,
-                    max: subscription.device_limit,
-                  })}
+              {connectedDevices === null
+                ? t('dashboard.deviceUsageUnavailable')
+                : subscription.device_limit === 0
+                  ? t('dashboard.devicesConnectedUnlimited', { used: connectedDevices })
+                  : t('dashboard.devicesOfMax', {
+                      used: connectedDevices,
+                      max: subscription.device_limit,
+                    })}
             </div>
             {isAtDeviceLimit && (
               <div
@@ -220,10 +232,15 @@ export default function SubscriptionCardActive({
                 {t('dashboard.deviceLimitReached')}
               </div>
             )}
+            {isDeviceUsageUnavailable && (
+              <div className="mt-1 text-[10px] font-medium text-error-400">
+                {t('dashboard.deviceUsageUnavailable')}
+              </div>
+            )}
           </div>
 
           {/* Device indicator */}
-          {subscription.device_limit === 0 ? (
+          {connectedDevices === null ? null : subscription.device_limit === 0 ? (
             <div
               className="flex flex-shrink-0 items-center text-lg text-dark-50/40"
               aria-hidden="true"
@@ -264,6 +281,21 @@ export default function SubscriptionCardActive({
           )}
         </HoverBorderGradient>
       )}
+
+      <button
+        type="button"
+        onClick={onManageDevices}
+        className="mb-5 flex min-h-11 w-full items-center justify-between rounded-[14px] border border-dark-700/50 bg-dark-800/50 px-4 py-3 text-left text-sm text-dark-200 transition-colors hover:bg-dark-700/60"
+      >
+        <span className="font-medium">{t('subscription.myDevices')}</span>
+        <span className="text-dark-400">
+          {connectedDevices === null
+            ? t('dashboard.dataUnavailable')
+            : subscription.device_limit === 0
+              ? `${connectedDevices} / ∞`
+              : `${connectedDevices} / ${subscription.device_limit}`}
+        </span>
+      </button>
 
       {/* ─── Stats row: Tariff + Days Left ─── */}
       <div className="mb-5 flex gap-2.5">
@@ -348,12 +380,6 @@ export default function SubscriptionCardActive({
           />
           {trafficRefreshCooldown > 0 ? `${trafficRefreshCooldown}s` : t('common.refresh')}
         </button>
-        <Link
-          to={`/subscriptions/${subscription.id}`}
-          className="text-[11px] font-medium text-dark-50/25 transition-colors hover:text-dark-50/40"
-        >
-          {t('dashboard.viewSubscription')} &rarr;
-        </Link>
       </div>
 
       {/* ─── Sparkline ─── */}

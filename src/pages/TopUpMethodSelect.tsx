@@ -65,28 +65,31 @@ export default function TopUpMethodSelect() {
                 });
 
                 return (
-                  <Card
+                  <button
                     key={method.id}
-                    interactive={method.is_available}
-                    className={!method.is_available ? 'cursor-not-allowed opacity-50' : ''}
-                    onClick={() => method.is_available && handleMethodClick(method.id)}
+                    type="button"
+                    disabled={!method.is_available}
+                    className="h-full w-full rounded-[var(--bento-radius)] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => handleMethodClick(method.id)}
                   >
-                    <div className="flex items-center gap-3">
-                      <PaymentMethodIcon method={methodKey} className="h-8 w-8 flex-shrink-0" />
-                      <div className="font-semibold text-dark-100">
-                        {method.name || translatedName}
+                    <Card interactive={method.is_available} haptic={false} className="h-full">
+                      <div className="flex items-center gap-3">
+                        <PaymentMethodIcon method={methodKey} className="h-8 w-8 flex-shrink-0" />
+                        <div className="font-semibold text-dark-100">
+                          {method.name || translatedName}
+                        </div>
                       </div>
-                    </div>
-                    {(method.description || translatedDesc) && (
-                      <div className="mt-1 text-sm text-dark-500">
-                        {method.description || translatedDesc}
+                      {(method.description || translatedDesc) && (
+                        <div className="mt-1 text-sm text-dark-500">
+                          {method.description || translatedDesc}
+                        </div>
+                      )}
+                      <div className="mt-3 text-xs text-dark-400">
+                        {formatAmount(method.min_amount_kopeks / 100, 0)} –{' '}
+                        {formatAmount(method.max_amount_kopeks / 100, 0)} {currencySymbol}
                       </div>
-                    )}
-                    <div className="mt-3 text-xs text-dark-400">
-                      {formatAmount(method.min_amount_kopeks / 100, 0)} –{' '}
-                      {formatAmount(method.max_amount_kopeks / 100, 0)} {currencySymbol}
-                    </div>
-                  </Card>
+                    </Card>
+                  </button>
                 );
               })}
             </div>

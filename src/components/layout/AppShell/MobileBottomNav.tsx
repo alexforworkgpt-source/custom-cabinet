@@ -6,18 +6,30 @@ import { cn } from '@/lib/utils';
 import { usePlatform } from '@/platform';
 
 // Icons
-import { HomeIcon, SubscriptionIcon, WalletIcon, UsersIcon, ChatIcon, WheelIcon } from './icons';
+import {
+  HomeIcon,
+  SubscriptionIcon,
+  WalletIcon,
+  UsersIcon,
+  ChatIcon,
+  WheelIcon,
+  UserIcon,
+} from './icons';
 
 interface MobileBottomNavProps {
   isKeyboardOpen: boolean;
   referralEnabled?: boolean;
   wheelEnabled?: boolean;
+  legacy?: boolean;
+  supportUnreadCount?: number;
 }
 
 export function MobileBottomNav({
   isKeyboardOpen,
   referralEnabled,
   wheelEnabled,
+  legacy = false,
+  supportUnreadCount = 0,
 }: MobileBottomNavProps) {
   const { t } = useTranslation();
   const location = useLocation();
@@ -26,20 +38,7 @@ export function MobileBottomNav({
   const isActive = (path: string) =>
     path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
 
-  // Core navigation items for bottom bar.
-  //
-  // Support is ALWAYS present — frustrated paying customers must find help
-  // in the primary nav, not in the hamburger drawer. Previously Wheel
-  // (a brand-moment surface) displaced Support (a critical-path surface)
-  // when the wheel feature flag was on; that trade is hostile to the
-  // support-user persona and was flagged by the /impeccable critique.
-  //
-  // Slot priority when both Wheel and Referral are enabled and only
-  // four slots remain after Dashboard / Subscriptions / Balance / Support:
-  //   - Wheel wins (operator opted in as a deliberate brand moment)
-  //   - Referral falls back to the hamburger drawer
-  // When only one of them is enabled, that one fills the slot.
-  const coreItems = [
+  const legacyItems = [
     { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
     { path: '/subscriptions', label: t('nav.subscription'), icon: SubscriptionIcon },
     { path: '/balance', label: t('nav.balance'), icon: WalletIcon },
@@ -50,6 +49,13 @@ export function MobileBottomNav({
         : []),
     { path: '/support', label: t('nav.support'), icon: ChatIcon },
   ];
+  const coreItems = legacy
+    ? legacyItems
+    : [
+        { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
+        { path: '/support', label: t('nav.support'), icon: ChatIcon },
+        { path: '/profile', label: t('nav.profile'), icon: UserIcon },
+      ];
 
   const handleNavClick = () => {
     haptic.impact('light');
@@ -78,6 +84,7 @@ export function MobileBottomNav({
             key={item.path}
             to={item.path}
             onClick={handleNavClick}
+            aria-current={isActive(item.path) ? 'page' : undefined}
             className={cn(
               'relative flex min-w-[56px] flex-1 shrink-0 flex-col items-center justify-center rounded-2xl px-3 py-2.5 transition-all duration-200',
               isActive(item.path) ? 'text-accent-400' : 'text-dark-400 hover:text-dark-200',
@@ -91,7 +98,12 @@ export function MobileBottomNav({
               />
             )}
             <item.icon className="relative z-10 h-5 w-5" />
-            <span className="relative z-10 mt-1 whitespace-nowrap text-2xs">{item.label}</span>
+            {item.path === '/support' && supportUnreadCount > 0 && (
+              <span className="absolute right-[28%] top-1.5 z-20 min-w-4 rounded-full bg-error-500 px-1 text-center text-[10px] font-bold leading-4 text-white">
+                {Math.min(supportUnreadCount, 99)}
+              </span>
+            )}
+            <span className="relative z-10 mt-1 whitespace-nowrap text-xs">{item.label}</span>
           </Link>
         ))}
       </div>

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate, useSearchParams } from 'react-router';
 import DOMPurify from 'dompurify';
 import type {
   AppConfig,
@@ -12,7 +13,8 @@ import { useTheme } from '@/hooks/useTheme';
 import { CardsBlock, TimelineBlock, AccordionBlock, MinimalBlock, BlockButtons } from './blocks';
 import type { BlockRendererProps, RenderBlock } from './blocks';
 import TvQuickConnect from './TvQuickConnect';
-import { BackIcon, BookOpenIcon, ChevronIcon } from '@/components/icons';
+import { BackIcon, BookOpenIcon } from '@/components/icons';
+import { getDirectConnectionBackPath } from '@/utils/userCabinetRouteState';
 
 const platformOrder = ['ios', 'android', 'windows', 'macos', 'linux', 'androidTV', 'appleTV'];
 
@@ -61,12 +63,30 @@ export default function InstallationGuide({
 }: Props) {
   const { t, i18n } = useTranslation();
   const { isLight } = useTheme();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedStep = searchParams.get('step');
+  const step =
+    requestedStep === 'application' || requestedStep === 'add' ? requestedStep : 'platform';
 
   const detectedPlatform = useMemo(() => detectPlatform(), []);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   const [activePlatformKey, setActivePlatformKey] = useState<string | null>(null);
   const [selectedApp, setSelectedApp] = useState<RemnawaveAppClient | null>(null);
+
+  const setFlowStep = useCallback(
+    (nextStep: 'platform' | 'application' | 'add', platform?: string, app?: string) => {
+      const next = new URLSearchParams(searchParams);
+      next.set('step', nextStep);
+      if (platform) next.set('platform', platform);
+      else if (nextStep === 'platform') next.delete('platform');
+      if (app) next.set('app', app);
+      else next.delete('app');
+      setSearchParams(next);
+    },
+    [searchParams, setSearchParams],
+  );
 
   const getLocalizedText = useCallback(
     (text: LocalizedText | undefined): string => {
@@ -113,16 +133,24 @@ export default function InstallationGuide({
   }, [appConfig.platforms, detectedPlatform]);
 
   useEffect(() => {
-    if (selectedApp || !availablePlatforms.length) return;
-    const platform = availablePlatforms[0];
+    if (!availablePlatforms.length) return;
+    const requestedPlatform = searchParams.get('platform');
+    const platform =
+      requestedPlatform && availablePlatforms.includes(requestedPlatform)
+        ? requestedPlatform
+        : availablePlatforms[0];
     const data = appConfig.platforms[platform] as RemnawavePlatformData | undefined;
     if (!data?.apps?.length) return;
-    const app = data.apps.find((a) => a.featured) || data.apps[0];
+    const requestedApp = searchParams.get('app');
+    const app =
+      data.apps.find((item) => item.name === requestedApp) ||
+      data.apps.find((item) => item.featured) ||
+      data.apps[0];
     if (app) {
       setSelectedApp(app);
       setActivePlatformKey(platform);
     }
-  }, [appConfig.platforms, availablePlatforms, selectedApp]);
+  }, [appConfig.platforms, availablePlatforms, searchParams]);
 
   const renderBlockButtons = useCallback(
     (buttons: RemnawaveButtonClient[] | undefined, variant: 'light' | 'subtle') => (
@@ -191,9 +219,6 @@ export default function InstallationGuide({
     [appConfig.platforms, appConfig.platformNames, getLocalizedText],
   );
 
-  // Platform SVG icon for dropdown
-  const currentPlatformSvg = getSvgHtml(currentPlatformData?.svgIconKey);
-
   // Block renderer
   const blockType = appConfig.uiConfig?.installationGuidesBlockType || 'cards';
   const Renderer = RENDERERS[blockType] || CardsBlock;
@@ -215,11 +240,27 @@ export default function InstallationGuide({
 
   return (
     <div className="space-y-6 pb-6">
-      {/* Header + platform dropdown */}
+      <p className="sr-only" aria-live="polite">
+        {t('subscription.connection.step', {
+          current: step === 'platform' ? 1 : step === 'application' ? 2 : 3,
+          total: 3,
+        })}
+      </p>
       <div className="flex items-center gap-3">
-        {!isTelegramWebApp && (
+        {(!isTelegramWebApp || step !== 'platform') && (
           <button
-            onClick={onGoBack}
+            onClick={() => {
+              if (step === 'platform') {
+                onGoBack();
+                return;
+              }
+              if ((window.history.state?.idx ?? 0) > 0) {
+                navigate(-1);
+                return;
+              }
+              const fallback = getDirectConnectionBackPath(`?${searchParams.toString()}`);
+              if (fallback) navigate(fallback, { replace: true });
+            }}
             aria-label={t('common.back', 'Back')}
             className="flex h-10 w-10 items-center justify-center rounded-xl border border-dark-700 bg-dark-800 transition-colors hover:border-dark-600"
           >
@@ -227,9 +268,16 @@ export default function InstallationGuide({
           </button>
         )}
         <h2 className="flex-1 text-lg font-bold text-dark-100">
-          {getBaseTranslation('installationGuideHeader', 'subscription.connection.title')}
+          {step === 'platform'
+            ? t('subscription.connection.selectPlatform')
+            : step === 'application'
+              ? t('subscription.connection.selectApp')
+              : getBaseTranslation(
+                  'installationGuideHeader',
+                  'subscription.connection.addSubscription',
+                )}
         </h2>
-        {appConfig.subscriptionUrl && onOpenQR && (
+        {step === 'add' && appConfig.subscriptionUrl && onOpenQR && (
           <button
             onClick={() => onOpenQR()}
             aria-label={t('subscription.connection.openQr', 'Open QR code')}
@@ -255,60 +303,57 @@ export default function InstallationGuide({
             </svg>
           </button>
         )}
-        {availablePlatforms.length > 1 && (
-          <div className="relative flex items-center">
-            {currentPlatformSvg && (
-              <div
-                className="pointer-events-none absolute left-3 z-10 h-5 w-5 text-dark-400 [&>svg]:h-full [&>svg]:w-full"
-                dangerouslySetInnerHTML={{ __html: currentPlatformSvg }}
-              />
-            )}
-            <select
-              value={currentPlatformKey || ''}
-              onChange={(e) => {
-                const newPlatform = e.target.value;
-                setActivePlatformKey(newPlatform);
-                const data = appConfig.platforms[newPlatform] as RemnawavePlatformData | undefined;
-                if (data?.apps?.length) {
-                  // Keep the user's current app (by name) if it also exists on the
-                  // new platform; only fall back to featured/first otherwise.
-                  const app =
-                    data.apps.find((a) => a.name === selectedApp?.name) ||
-                    data.apps.find((a) => a.featured) ||
-                    data.apps[0];
-                  if (app) setSelectedApp(app);
-                }
-              }}
-              className={`appearance-none rounded-xl border py-2 pr-8 text-sm font-medium outline-none transition-colors ${
-                isLight
-                  ? 'border-dark-700/60 bg-white/80 text-dark-200 shadow-sm hover:border-dark-600'
-                  : 'border-dark-700 bg-dark-800 text-dark-200 hover:border-dark-600'
-              } ${currentPlatformSvg ? 'pl-10' : 'pl-4'}`}
-            >
-              {availablePlatforms.map((p) => (
-                <option key={p} value={p}>
-                  {getPlatformDisplayName(p)}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute right-2.5 text-dark-400">
-              <ChevronIcon className="h-4 w-4" />
-            </div>
-          </div>
-        )}
       </div>
 
+      {step === 'platform' && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {availablePlatforms.map((platform) => {
+            const data = appConfig.platforms[platform] as RemnawavePlatformData | undefined;
+            const icon = getSvgHtml(data?.svgIconKey);
+            return (
+              <button
+                key={platform}
+                type="button"
+                className="flex min-h-14 items-center gap-3 rounded-2xl border border-dark-700/50 bg-dark-800/70 p-4 text-left font-medium text-dark-100 transition-colors hover:border-accent-500/40 hover:bg-dark-700/70"
+                onClick={() => {
+                  setActivePlatformKey(platform);
+                  const app = data?.apps.find((item) => item.featured) || data?.apps[0] || null;
+                  setSelectedApp(app);
+                  setFlowStep('application', platform);
+                }}
+              >
+                {icon && (
+                  <span
+                    className="h-7 w-7 shrink-0 [&>svg]:h-full [&>svg]:w-full"
+                    dangerouslySetInnerHTML={{ __html: icon }}
+                  />
+                )}
+                <span>{getPlatformDisplayName(platform)}</span>
+                {platform === detectedPlatform && (
+                  <span className="ms-auto text-xs text-accent-400">
+                    {t('subscription.connection.featured')}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* App chips */}
-      {currentPlatformApps.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+      {step === 'application' && currentPlatformApps.length > 0 && (
+        <div className="grid gap-2 sm:grid-cols-2">
           {currentPlatformApps.map((app, idx) => {
             const isSelected = selectedApp?.name === app.name;
             const appIconSvg = getSvgHtml(app.svgIconKey);
             return (
               <button
                 key={app.name + idx}
-                onClick={() => setSelectedApp(app)}
-                className={`relative flex min-w-[calc(50%-0.25rem)] items-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-sm font-medium transition-all active:scale-[0.97] ${
+                onClick={() => {
+                  setSelectedApp(app);
+                  setFlowStep('add', currentPlatformKey, app.name);
+                }}
+                className={`relative flex min-h-14 w-full items-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-sm font-medium transition-all active:scale-[0.97] ${
                   isSelected
                     ? isLight
                       ? 'bg-accent-500/15 text-accent-600 ring-1 ring-accent-500/40'
@@ -333,22 +378,24 @@ export default function InstallationGuide({
       )}
 
       {/* Tutorial button */}
-      {appConfig.baseSettings?.isShowTutorialButton && appConfig.baseSettings?.tutorialUrl && (
-        <a
-          href={appConfig.baseSettings.tutorialUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn-secondary w-full justify-center"
-        >
-          <BookOpenIcon className="h-5 w-5" />
-          {getBaseTranslation('tutorial', 'subscription.connection.tutorial')}
-        </a>
-      )}
+      {step === 'add' &&
+        appConfig.baseSettings?.isShowTutorialButton &&
+        appConfig.baseSettings?.tutorialUrl && (
+          <a
+            href={appConfig.baseSettings.tutorialUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary w-full justify-center"
+          >
+            <BookOpenIcon className="h-5 w-5" />
+            {getBaseTranslation('tutorial', 'subscription.connection.tutorial')}
+          </a>
+        )}
 
       {/* Blocks rendered in the panel's active style. For the Happ Android TV
           app the TV connect widget is injected into a step (customNode), so it
           adapts to that style instead of breaking it. */}
-      {selectedApp && (
+      {step === 'add' && selectedApp && (
         <Renderer
           blocks={renderBlocks}
           isMobile={isMobile}

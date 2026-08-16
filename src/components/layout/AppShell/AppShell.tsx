@@ -13,6 +13,7 @@ import { useBranding } from '@/hooks/useBranding';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { themeColorsApi } from '@/api/themeColors';
+import { useSupportUnreadCount } from '@/hooks/useSupportUnreadCount';
 import { isLogoPreloaded } from '@/api/branding';
 import { cn } from '@/lib/utils';
 
@@ -55,6 +56,7 @@ export function AppShell({ children }: AppShellProps) {
   const { mobile: headerHeight } = useHeaderHeight();
   const haptic = useHaptic();
   const { toggleTheme, isDark } = useTheme();
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   // Extracted hooks
   const { appName, logoLetter, hasCustomLogo, logoUrl } = useBranding();
@@ -71,6 +73,7 @@ export function AppShell({ children }: AppShellProps) {
     staleTime: 1000 * 60 * 5,
   });
   const canToggleTheme = enabledThemes?.dark && enabledThemes?.light;
+  const supportUnreadCount = useSupportUnreadCount(!isAdminRoute);
 
   // Only apply fullscreen UI adjustments on mobile Telegram (iOS/Android)
   const isMobileFullscreen = isFullscreen && isMobile;
@@ -114,7 +117,7 @@ export function AppShell({ children }: AppShellProps) {
   }, []);
 
   // Desktop navigation — labels always visible (no hover-reveal gimmick)
-  const desktopNav = [
+  const legacyDesktopNav = [
     { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
     { path: '/subscriptions', label: t('nav.subscription'), icon: SubscriptionIcon },
     { path: '/balance', label: t('nav.balance'), icon: CreditCardIcon },
@@ -124,6 +127,13 @@ export function AppShell({ children }: AppShellProps) {
     { path: '/info', label: t('nav.info'), icon: InfoIcon },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
   ];
+  const desktopNav = isAdminRoute
+    ? legacyDesktopNav
+    : [
+        { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
+        { path: '/support', label: t('nav.support'), icon: ChatIcon },
+        { path: '/profile', label: t('nav.profile'), icon: UserIcon },
+      ];
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -149,6 +159,7 @@ export function AppShell({ children }: AppShellProps) {
         to={path}
         onClick={handleNavClick}
         aria-label={label}
+        aria-current={active ? 'page' : undefined}
         className={cn(
           'relative flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors duration-200',
           active
@@ -234,7 +245,7 @@ export function AppShell({ children }: AppShellProps) {
               колонкой grid (justify-self-center), а не auto-margin'ами. */}
           <nav className="flex items-center gap-0.5 justify-self-center rounded-full border border-dark-800/70 bg-dark-900/50 p-1 shadow-sm backdrop-blur-sm">
             {desktopNav.map((item) => renderNavLink(item.path, item.label, item.icon))}
-            {isAdmin && (
+            {isAdmin && isAdminRoute && (
               <>
                 <div className="mx-1 h-5 w-px shrink-0 bg-dark-700/60" />
                 {renderNavLink('/admin', t('admin.nav.title'), ShieldIcon, true)}
@@ -244,60 +255,69 @@ export function AppShell({ children }: AppShellProps) {
 
           {/* Right side actions — правая колонка grid, прижата к краю, не сжимается */}
           <div className="flex shrink-0 items-center gap-2 justify-self-end">
-            <button
-              onClick={() => {
-                haptic.impact('light');
-                toggleTheme();
-              }}
-              className={cn(
-                'rounded-xl border border-dark-700/50 bg-dark-800/50 p-2 text-dark-400 transition-colors duration-200 hover:bg-dark-700 hover:text-accent-400',
-                !canToggleTheme && 'hidden',
-              )}
-              aria-label={
-                isDark ? t('theme.light') || 'Light mode' : t('theme.dark') || 'Dark mode'
-              }
-              title={isDark ? t('theme.light') || 'Light mode' : t('theme.dark') || 'Dark mode'}
-            >
-              {isDark ? <MoonIcon className="h-5 w-5" /> : <SunIcon className="h-5 w-5" />}
-            </button>
+            {isAdminRoute && (
+              <button
+                onClick={() => {
+                  haptic.impact('light');
+                  toggleTheme();
+                }}
+                className={cn(
+                  'rounded-xl border border-dark-700/50 bg-dark-800/50 p-2 text-dark-400 transition-colors duration-200 hover:bg-dark-700 hover:text-accent-400',
+                  !canToggleTheme && 'hidden',
+                )}
+                aria-label={
+                  isDark ? t('theme.light') || 'Light mode' : t('theme.dark') || 'Dark mode'
+                }
+                title={isDark ? t('theme.light') || 'Light mode' : t('theme.dark') || 'Dark mode'}
+              >
+                {isDark ? <MoonIcon className="h-5 w-5" /> : <SunIcon className="h-5 w-5" />}
+              </button>
+            )}
             <TicketNotificationBell isAdmin={location.pathname.startsWith('/admin')} />
-            <LanguageSwitcher />
-            <button
-              onClick={() => {
-                haptic.impact('light');
-                logout();
-              }}
-              className="rounded-xl border border-dark-700/50 bg-dark-800/50 p-2 text-dark-400 transition-colors duration-200 hover:bg-dark-700 hover:text-accent-400"
-              title={t('nav.logout')}
-            >
-              <LogoutIcon className="h-5 w-5" />
-            </button>
+            {isAdminRoute && <LanguageSwitcher />}
+            {isAdminRoute && (
+              <button
+                onClick={() => {
+                  haptic.impact('light');
+                  logout();
+                }}
+                className="rounded-xl border border-dark-700/50 bg-dark-800/50 p-2 text-dark-400 transition-colors duration-200 hover:bg-dark-700 hover:text-accent-400"
+                title={t('nav.logout')}
+              >
+                <LogoutIcon className="h-5 w-5" />
+              </button>
+            )}
           </div>
         </div>
       </header>
 
       {/* Mobile Header */}
-      <AppHeader
-        mobileMenuOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-        onCommandPaletteOpen={() => {}}
-        headerHeight={headerHeight}
-        isFullscreen={isMobileFullscreen}
-        safeAreaInset={safeAreaInset}
-        contentSafeAreaInset={contentSafeAreaInset}
-        telegramPlatform={platform}
-        wheelEnabled={wheelEnabled}
-        referralEnabled={referralEnabled}
-        hasContests={hasContests}
-        hasPolls={hasPolls}
-        giftEnabled={giftEnabled}
-      />
+      {isAdminRoute && (
+        <AppHeader
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+          onCommandPaletteOpen={() => {}}
+          headerHeight={headerHeight}
+          isFullscreen={isMobileFullscreen}
+          safeAreaInset={safeAreaInset}
+          contentSafeAreaInset={contentSafeAreaInset}
+          telegramPlatform={platform}
+          wheelEnabled={wheelEnabled}
+          referralEnabled={referralEnabled}
+          hasContests={hasContests}
+          hasPolls={hasPolls}
+          giftEnabled={giftEnabled}
+        />
+      )}
 
       {/* Desktop spacer */}
       <div className="hidden h-14 lg:block" />
 
       {/* Mobile spacer */}
-      <div className="lg:hidden" style={{ height: headerHeight }} />
+      <div
+        className="lg:hidden"
+        style={{ height: isAdminRoute ? headerHeight : Math.max(0, headerHeight - 64) }}
+      />
 
       {/* Main content */}
       <main className="mx-auto max-w-6xl px-4 py-6 pb-28 lg:px-6 lg:pb-8">{children}</main>
@@ -307,6 +327,8 @@ export function AppShell({ children }: AppShellProps) {
         isKeyboardOpen={isKeyboardOpen}
         referralEnabled={referralEnabled}
         wheelEnabled={wheelEnabled}
+        legacy={isAdminRoute}
+        supportUnreadCount={supportUnreadCount}
       />
     </div>
   );

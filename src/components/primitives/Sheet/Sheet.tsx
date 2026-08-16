@@ -183,7 +183,7 @@ export const SheetContent = forwardRef<HTMLDivElement, SheetContentProps>(
                   {showCloseButton && (
                     <DialogPrimitive.Close
                       className={cn(
-                        'absolute right-4 top-4 rounded-linear p-1.5',
+                        'absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-linear',
                         'text-dark-400 opacity-70 transition-all',
                         'hover:bg-dark-800/80 hover:opacity-100',
                         'focus:outline-none focus:ring-2 focus:ring-accent-500/50',

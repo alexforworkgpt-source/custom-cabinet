@@ -82,6 +82,7 @@ export default function TopUpAmount() {
   const { openInvoice, openTelegramLink, openLink, platform } = usePlatform();
   const haptic = useHaptic();
   const inputRef = useRef<HTMLInputElement>(null);
+  const submissionLockRef = useRef(false);
 
   const returnTo = searchParams.get('returnTo');
   const initialAmountRubles = searchParams.get('amount')
@@ -98,10 +99,6 @@ export default function TopUpAmount() {
   });
   const method = methods?.find((m) => m.id === methodId);
 
-  const handleNavigateBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
-
   const handleSuccess = useCallback(() => {
     // returnTo arrives via query string — validate as an in-app path before
     // navigate(), otherwise an absolute or encoded URL produces ugly
@@ -110,18 +107,6 @@ export default function TopUpAmount() {
     const safe = getSafeRedirectPath(returnTo);
     navigate(returnTo && safe !== '/' ? safe : '/balance', { replace: true });
   }, [navigate, returnTo]);
-
-  // Keyboard: Escape to go back
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        handleNavigateBack();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleNavigateBack]);
 
   // Auto-redirect when success notification appears (e.g., balance topped up via WebSocket)
   useCloseOnSuccessNotification(handleSuccess);
@@ -181,6 +166,7 @@ export default function TopUpAmount() {
     onSuccess: async (data) => {
       if (!data.invoice_url) {
         setError(t('balance.errors.noPaymentLink'));
+        submissionLockRef.current = false;
         return;
       }
       try {
@@ -192,15 +178,20 @@ export default function TopUpAmount() {
         } else if (status === 'failed') {
           haptic.notification('error');
           setError(t('wheel.starsPaymentFailed'));
+          submissionLockRef.current = false;
+        } else {
+          submissionLockRef.current = false;
         }
       } catch (e) {
         setError(t('balance.errors.generic', { details: String(e) }));
+        submissionLockRef.current = false;
       }
     },
     onError: (err: unknown) => {
       haptic.notification('error');
       const axiosError = err as { response?: { data?: { detail?: string }; status?: number } };
       setError(axiosError?.response?.data?.detail || t('balance.errors.invoiceFailed'));
+      submissionLockRef.current = false;
     },
   });
 
@@ -265,6 +256,8 @@ export default function TopUpAmount() {
         }
 
         setPaymentUrl(redirectUrl);
+      } else {
+        submissionLockRef.current = false;
       }
     },
     onError: (err: unknown) => {
@@ -273,6 +266,7 @@ export default function TopUpAmount() {
       setError(
         detail.includes('not yet implemented') ? t('balance.useBot') : detail || t('common.error'),
       );
+      submissionLockRef.current = false;
     },
   });
 
@@ -311,16 +305,11 @@ export default function TopUpAmount() {
     t(`balance.paymentMethods.${methodKey}.name`, { defaultValue: '' }) || method.name;
 
   const handleSubmit = () => {
+    if (submissionLockRef.current) return;
     setError(null);
     setPaymentUrl(null);
     inputRef.current?.blur();
 
-    if (!checkRateLimit(RATE_LIMIT_KEYS.PAYMENT, 3, 30000)) {
-      setError(
-        t('balance.errors.rateLimit', { seconds: getRateLimitResetTime(RATE_LIMIT_KEYS.PAYMENT) }),
-      );
-      return;
-    }
     if (hasOptions && !selectedOption) {
       setError(t('balance.errors.selectMethod'));
       return;
@@ -362,12 +351,20 @@ export default function TopUpAmount() {
       return;
     }
 
+    if (!checkRateLimit(RATE_LIMIT_KEYS.PAYMENT, 3, 30000)) {
+      setError(
+        t('balance.errors.rateLimit', { seconds: getRateLimitResetTime(RATE_LIMIT_KEYS.PAYMENT) }),
+      );
+      return;
+    }
+
     // Round for exact sources; ceil a hand-typed amount so float noise never lands sub-kopeck
     // under the chosen value.
     const amountKopeks =
       targetCurrency === 'RUB' || usingPrefill || usingQuick
         ? Math.round(canonicalRubles * 100)
         : Math.ceil(canonicalRubles * 100);
+    submissionLockRef.current = true;
     if (isStarsMethod) {
       starsPaymentMutation.mutate(amountKopeks);
     } else {
@@ -386,6 +383,7 @@ export default function TopUpAmount() {
       ? Math.round(convertAmount(rub)).toString()
       : convertAmount(rub).toFixed(currencyDecimals);
   const isPending = topUpMutation.isPending || starsPaymentMutation.isPending;
+  const paymentCreated = Boolean(paymentUrl);
 
   const handleOpenPayment = () => {
     if (!paymentUrl) return;
@@ -463,7 +461,9 @@ export default function TopUpAmount() {
 
       {/* Amount input + Submit button - inline */}
       <motion.div variants={staggerItem} className="space-y-2">
-        <label className="text-sm font-medium text-dark-400">{t('balance.enterAmount')}</label>
+        <label htmlFor="top-up-amount" className="text-sm font-medium text-dark-400">
+          {t('balance.enterAmount')}
+        </label>
         <div className="flex gap-2">
           <div
             className={`relative flex-1 rounded-2xl transition-all duration-200 ${
@@ -473,6 +473,7 @@ export default function TopUpAmount() {
             }`}
           >
             <input
+              id="top-up-amount"
               ref={inputRef}
               type="number"
               inputMode="decimal"
@@ -501,9 +502,9 @@ export default function TopUpAmount() {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={isPending || !amount || parseFloat(amount) <= 0}
+            disabled={isPending || paymentCreated || !amount || parseFloat(amount) <= 0}
             className={`flex h-14 shrink-0 items-center justify-center gap-2 overflow-hidden rounded-2xl px-6 text-base font-bold transition-colors duration-200 ${
-              isPending || !amount || parseFloat(amount) <= 0
+              isPending || paymentCreated || !amount || parseFloat(amount) <= 0
                 ? 'cursor-not-allowed bg-dark-700 text-dark-500'
                 : isStarsMethod
                   ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg shadow-yellow-500/25 hover:from-yellow-400 hover:to-orange-400 active:from-yellow-600 active:to-orange-600'
@@ -565,6 +566,7 @@ export default function TopUpAmount() {
         <motion.div
           variants={staggerItem}
           className="flex items-center gap-2 rounded-xl border border-error-500/20 bg-error-500/10 p-3"
+          role="alert"
         >
           <ExclamationIcon className="h-5 w-5 shrink-0 text-error-400" />
           <span className="text-sm text-error-400">{error}</span>

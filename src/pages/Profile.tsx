@@ -24,12 +24,19 @@ import { Button } from '@/components/primitives/Button';
 import { Switch } from '@/components/primitives/Switch';
 import { staggerContainer, staggerItem } from '@/components/motion/transitions';
 import { CopyIcon, CheckIcon, ShareIcon, ArrowRightIcon, PencilIcon } from '@/components/icons';
+import ProfileHubSections from '@/components/profile/ProfileHubSections';
+import { useTheme } from '@/hooks/useTheme';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 
 export default function Profile() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
+  const isAdmin = useAuthStore((state) => state.isAdmin);
+  const logout = useAuthStore((state) => state.logout);
+  const { toggleTheme, isDark, canToggle: canToggleTheme } = useTheme();
+  const { wheelEnabled, hasContests, hasPolls, giftEnabled } = useFeatureFlags();
   const queryClient = useQueryClient();
 
   const [error, setError] = useState<string | null>(null);
@@ -189,7 +196,7 @@ export default function Profile() {
   }, [verificationResendCooldown]);
 
   // Auto-focus inputs on step change (skip on Telegram — keyboard hides bottom nav)
-  const { platform: profilePlatform, openTelegramLink } = usePlatform();
+  const { platform: profilePlatform, openTelegramLink, haptic } = usePlatform();
   useEffect(() => {
     if (profilePlatform === 'telegram') return;
     const timer = setTimeout(() => {
@@ -282,6 +289,26 @@ export default function Profile() {
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('profile.title')}</h1>
       </motion.div>
 
+      <motion.div variants={staggerItem}>
+        <ProfileHubSections
+          isDark={isDark}
+          canToggleTheme={canToggleTheme}
+          onToggleTheme={() => {
+            haptic.impact('light');
+            toggleTheme();
+          }}
+          giftEnabled={giftEnabled}
+          wheelEnabled={wheelEnabled}
+          hasContests={hasContests}
+          hasPolls={hasPolls}
+          isAdmin={isAdmin}
+          onLogout={() => {
+            haptic.impact('light');
+            logout();
+          }}
+        />
+      </motion.div>
+
       {/* User Info Card */}
       <motion.div variants={staggerItem}>
         <Card>
@@ -289,17 +316,23 @@ export default function Profile() {
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-dark-800/50 py-3">
               <span className="text-dark-400">{t('profile.telegramId')}</span>
-              <span className="font-medium text-dark-100">{user?.telegram_id}</span>
+              <span className="min-w-0 break-all text-right font-medium text-dark-100">
+                {user?.telegram_id}
+              </span>
             </div>
             {user?.username && (
               <div className="flex items-center justify-between border-b border-dark-800/50 py-3">
                 <span className="text-dark-400">{t('profile.username')}</span>
-                <span className="font-medium text-dark-100">@{user.username}</span>
+                <span className="min-w-0 break-all text-right font-medium text-dark-100">
+                  @{user.username}
+                </span>
               </div>
             )}
             <div className="flex items-center justify-between border-b border-dark-800/50 py-3">
               <span className="text-dark-400">{t('profile.name')}</span>
-              <span className="font-medium text-dark-100">{displayName(user)}</span>
+              <span className="min-w-0 break-words text-right font-medium text-dark-100">
+                {displayName(user)}
+              </span>
             </div>
             <div className="flex items-center justify-between py-3">
               <span className="text-dark-400">{t('profile.registeredAt')}</span>
@@ -313,8 +346,8 @@ export default function Profile() {
 
       {/* Connected Accounts Link */}
       <motion.div variants={staggerItem}>
-        <Card interactive onClick={() => navigate('/profile/accounts')}>
-          <div className="flex items-center justify-between">
+        <Card>
+          <Link to="/profile/accounts" className="flex min-h-11 items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-dark-100">
                 {t('profile.accounts.goToAccounts')}
@@ -322,7 +355,7 @@ export default function Profile() {
               <p className="text-sm text-dark-400">{t('profile.accounts.subtitle')}</p>
             </div>
             <ArrowRightIcon className="h-5 w-5 text-dark-400" />
-          </div>
+          </Link>
         </Card>
       </motion.div>
 
@@ -381,7 +414,9 @@ export default function Profile() {
                 <div className="flex items-center justify-between border-b border-dark-800/50 py-3">
                   <span className="text-dark-400">Email</span>
                   <div className="flex items-center gap-3">
-                    <span className="font-medium text-dark-100">{user.email}</span>
+                    <span className="min-w-0 break-all font-medium text-dark-100">
+                      {user.email}
+                    </span>
                     {user.email_verified ? (
                       <span className="badge-success">{t('profile.verified')}</span>
                     ) : isEmailVerificationEnabled ? (
@@ -621,6 +656,8 @@ export default function Profile() {
                     </p>
                   </div>
                   <Switch
+                    aria-label={t('profile.notifications.subscriptionExpiry')}
+                    disabled={updateNotificationsMutation.isPending}
                     checked={notificationSettings.subscription_expiry_enabled}
                     onCheckedChange={(checked) =>
                       handleNotificationToggle('subscription_expiry_enabled', checked)
@@ -661,6 +698,8 @@ export default function Profile() {
                     </p>
                   </div>
                   <Switch
+                    aria-label={t('profile.notifications.trafficWarning')}
+                    disabled={updateNotificationsMutation.isPending}
                     checked={notificationSettings.traffic_warning_enabled}
                     onCheckedChange={(checked) =>
                       handleNotificationToggle('traffic_warning_enabled', checked)
@@ -701,6 +740,8 @@ export default function Profile() {
                     </p>
                   </div>
                   <Switch
+                    aria-label={t('profile.notifications.balanceLow')}
+                    disabled={updateNotificationsMutation.isPending}
                     checked={notificationSettings.balance_low_enabled}
                     onCheckedChange={(checked) =>
                       handleNotificationToggle('balance_low_enabled', checked)
@@ -732,6 +773,8 @@ export default function Profile() {
                   <p className="text-sm text-dark-400">{t('profile.notifications.newsDesc')}</p>
                 </div>
                 <Switch
+                  aria-label={t('profile.notifications.news')}
+                  disabled={updateNotificationsMutation.isPending}
                   checked={notificationSettings.news_enabled}
                   onCheckedChange={(checked) => handleNotificationToggle('news_enabled', checked)}
                 />
@@ -748,6 +791,8 @@ export default function Profile() {
                   </p>
                 </div>
                 <Switch
+                  aria-label={t('profile.notifications.promoOffers')}
+                  disabled={updateNotificationsMutation.isPending}
                   checked={notificationSettings.promo_offers_enabled}
                   onCheckedChange={(checked) =>
                     handleNotificationToggle('promo_offers_enabled', checked)

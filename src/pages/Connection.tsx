@@ -1,5 +1,5 @@
-import { useEffect, useCallback, useMemo, useRef } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { useCallback, useMemo, useRef } from 'react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { openLink as sdkOpenLink } from '@telegram-apps/sdk-react';
@@ -11,14 +11,19 @@ import { resolveTemplate, hasTemplates } from '../utils/templateEngine';
 import { openAppScheme } from '../utils/openAppScheme';
 import { isHappCryptolinkMode, resolveConnectionUrlForUi } from '../utils/connectionLink';
 import { useAuthStore } from '../store/auth';
+import { getCabinetClosePath } from '../utils/userCabinetRouteState';
 import type { AppConfig, RemnawavePlatformData } from '../types';
 import InstallationGuide from '../components/connection/InstallationGuide';
 
 export default function Connection() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const subId = searchParams.get('sub') ? Number(searchParams.get('sub')) : undefined;
+  const rawSubId = searchParams.get('sub');
+  const parsedSubId = rawSubId ? Number(rawSubId) : undefined;
+  const subId =
+    parsedSubId && Number.isSafeInteger(parsedSubId) && parsedSubId > 0 ? parsedSubId : undefined;
   const user = useAuthStore((state) => state.user);
   const isAdmin = useAuthStore((state) => state.isAdmin);
   const { isTelegramWebApp } = useTelegramSDK();
@@ -67,8 +72,12 @@ export default function Connection() {
   );
 
   const handleGoBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
+    if ((window.history.state?.idx ?? 0) > 0) {
+      navigate(-1);
+    } else {
+      navigate(getCabinetClosePath(subId), { replace: true });
+    }
+  }, [navigate, subId]);
 
   const handleOpenQR = useCallback(() => {
     if (!qrConnectionUrl) return;
@@ -78,6 +87,7 @@ export default function Connection() {
         url: qrConnectionUrl,
         hideLink: connectionLink?.hide_link ?? appConfig?.hideLink ?? false,
         subscriptionId: subId,
+        returnPath: `${location.pathname}${location.search}`,
       },
     });
   }, [
@@ -87,18 +97,9 @@ export default function Connection() {
     appConfig?.hideLink,
     isTelegramWebApp,
     subId,
+    location.pathname,
+    location.search,
   ]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        handleGoBack();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleGoBack]);
 
   const resolveUrl = useCallback(
     (url: string): string => {

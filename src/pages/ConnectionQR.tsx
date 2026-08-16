@@ -9,12 +9,20 @@ interface ConnectionQRState {
   url: string;
   hideLink: boolean;
   subscriptionId?: number;
+  returnPath?: string;
 }
 
 function isValidState(state: unknown): state is ConnectionQRState {
   if (!state || typeof state !== 'object') return false;
   const s = state as Record<string, unknown>;
-  return typeof s.url === 'string' && s.url.length > 0 && typeof s.hideLink === 'boolean';
+  return (
+    typeof s.url === 'string' &&
+    s.url.length > 0 &&
+    typeof s.hideLink === 'boolean' &&
+    (s.returnPath === undefined ||
+      (typeof s.returnPath === 'string' &&
+        (s.returnPath === '/connection' || s.returnPath.startsWith('/connection?'))))
+  );
 }
 
 export default function ConnectionQR() {
@@ -26,7 +34,8 @@ export default function ConnectionQR() {
   const state = location.state as unknown;
   const validState = isValidState(state) ? state : null;
   const subId = validState?.subscriptionId;
-  const connectionPath = subId ? `/connection?sub=${subId}` : '/connection';
+  const connectionPath =
+    validState?.returnPath || (subId ? `/connection?sub=${subId}` : '/connection');
 
   useEffect(() => {
     if (!validState) {
@@ -46,7 +55,7 @@ export default function ConnectionQR() {
       </div>
 
       <div className="flex flex-col items-center">
-        <div className="flex w-full max-w-sm flex-col items-center px-6">
+        <div className="flex w-full max-w-sm flex-col items-center px-2 sm:px-6">
           {appName && (
             <p className="mb-3 text-sm font-medium uppercase tracking-wider text-dark-400">
               {appName}
@@ -57,13 +66,13 @@ export default function ConnectionQR() {
             {t('subscription.connection.qrScanHint')}
           </p>
 
-          <div className="rounded-3xl bg-white p-6">
+          <div className="w-full max-w-[312px] rounded-3xl bg-white p-4 sm:p-6">
             <QRCodeSVG
               value={validState.url}
               size={280}
               level="M"
               includeMargin={false}
-              className="h-[280px] w-[280px] sm:h-[360px] sm:w-[360px]"
+              className="h-auto w-full max-w-[280px]"
             />
           </div>
 

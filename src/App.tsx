@@ -50,10 +50,7 @@ import OAuthCallback from './pages/OAuthCallback';
 import Dashboard from './pages/Dashboard';
 
 // User pages - lazy load
-const Subscriptions = lazyWithRetry(() => import('./pages/Subscriptions'));
-const Subscription = lazyWithRetry(() => import('./pages/Subscription'));
 const SubscriptionPurchase = lazyWithRetry(() => import('./pages/SubscriptionPurchase'));
-const Balance = lazyWithRetry(() => import('./pages/Balance'));
 const SavedCards = lazyWithRetry(() => import('./pages/SavedCards'));
 const Referral = lazyWithRetry(() => import('./pages/Referral'));
 const Support = lazyWithRetry(() => import('./pages/Support'));
@@ -64,15 +61,12 @@ const Info = lazyWithRetry(() => import('./pages/Info'));
 const Wheel = lazyWithRetry(() => import('./pages/Wheel'));
 const GiftSubscription = lazyWithRetry(() => import('./pages/GiftSubscription'));
 const GiftResult = lazyWithRetry(() => import('./pages/GiftResult'));
-const Connection = lazyWithRetry(() => import('./pages/Connection'));
 const ConnectionQR = lazyWithRetry(() => import('./pages/ConnectionQR'));
 const QuickPurchase = lazyWithRetry(() => import('./pages/QuickPurchase'));
 const PurchaseSuccess = lazyWithRetry(() => import('./pages/PurchaseSuccess'));
 const GiftClaim = lazyWithRetry(() => import('./pages/GiftClaim'));
 const RenewSubscription = lazyWithRetry(() => import('./pages/RenewSubscription'));
 const AutoLogin = lazyWithRetry(() => import('./pages/AutoLogin'));
-const TopUpMethodSelect = lazyWithRetry(() => import('./pages/TopUpMethodSelect'));
-const TopUpAmount = lazyWithRetry(() => import('./pages/TopUpAmount'));
 const TopUpResult = lazyWithRetry(() => import('./pages/TopUpResult'));
 const ConnectedAccounts = lazyWithRetry(() => import('./pages/ConnectedAccounts'));
 const LinkTelegramCallback = lazyWithRetry(() => import('./pages/LinkTelegramCallback'));
@@ -342,7 +336,7 @@ function App() {
           element={
             <ProtectedRoute>
               <LazyPage>
-                <Subscriptions />
+                <Dashboard />
               </LazyPage>
             </ProtectedRoute>
           }
@@ -352,7 +346,7 @@ function App() {
           element={
             <ProtectedRoute>
               <LazyPage>
-                <Subscription />
+                <Dashboard />
               </LazyPage>
             </ProtectedRoute>
           }
@@ -392,7 +386,7 @@ function App() {
           element={
             <ProtectedRoute>
               <LazyPage>
-                <Balance />
+                <Dashboard />
               </LazyPage>
             </ProtectedRoute>
           }
@@ -412,7 +406,7 @@ function App() {
           element={
             <ProtectedRoute>
               <LazyPage>
-                <TopUpMethodSelect />
+                <Dashboard />
               </LazyPage>
             </ProtectedRoute>
           }
@@ -444,7 +438,7 @@ function App() {
           element={
             <ProtectedRoute>
               <LazyPage>
-                <TopUpAmount />
+                <Dashboard />
               </LazyPage>
             </ProtectedRoute>
           }
@@ -594,7 +588,7 @@ function App() {
           element={
             <ProtectedRoute>
               <LazyPage>
-                <Connection />
+                <Dashboard />
               </LazyPage>
             </ProtectedRoute>
           }

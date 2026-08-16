@@ -269,6 +269,12 @@
     "welcome": "Welcome, {{name}}!",
     "welcomeNoName": "Welcome!",
     "yourSubscription": "Your Subscription",
+    "unifiedOverlayDescription": "Return to the dashboard without losing the selected subscription",
+    "subscriptionLoadError": "Subscription data could not be loaded. Please try again.",
+    "balanceLoadError": "Balance could not be loaded. Please retry before making a payment or renewal decision.",
+    "devicesLoadError": "Device usage could not be loaded. Please try again.",
+    "dataUnavailable": "Unavailable",
+    "deviceUsageUnavailable": "Device usage is unavailable",
     "quickActions": "Quick Actions",
     "viewSubscription": "Manage Subscription",
     "topUpBalance": "Top Up Balance",
@@ -482,6 +488,7 @@
     },
     "connection": {
       "title": "Connect VPN",
+      "step": "Step {{current}} of {{total}}",
       "selectDevice": "Select your device",
       "selectApp": "Select app",
       "installApp": "1. Install the app",
@@ -4909,6 +4916,16 @@
   "profile": {
     "title": "Profile",
     "accountInfo": "Account Information",
+    "hub": {
+      "preferences": "Preferences",
+      "preferencesDescription": "Cabinet language and appearance",
+      "language": "Language",
+      "theme": "Theme",
+      "information": "Information",
+      "informationDescription": "Documents and useful resources",
+      "more": "More features",
+      "moreDescription": "Available service features"
+    },
     "telegramId": "Telegram ID",
     "username": "Username",
     "name": "Name",

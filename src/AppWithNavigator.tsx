@@ -7,7 +7,6 @@ import {
   offBackButtonClick,
   retrieveLaunchParams,
 } from '@telegram-apps/sdk-react';
-import { useQuery } from '@tanstack/react-query';
 import Twemoji from 'react-twemoji';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -18,8 +17,8 @@ import { ToastProvider } from './components/Toast';
 import { TooltipProvider } from './components/primitives/Tooltip';
 import { isInTelegramWebApp, closeTelegramApp } from './hooks/useTelegramSDK';
 import { getFallbackParentPath } from './utils/navigation';
-import { subscriptionApi } from './api/subscription';
 import { useBlockingStore } from './store/blocking';
+import { getDirectCabinetBackPath, getUserCabinetRouteState } from './utils/userCabinetRouteState';
 
 const TWEMOJI_OPTIONS = { className: 'twemoji', folder: 'svg', ext: '.svg' } as const;
 
@@ -28,14 +27,7 @@ const TWEMOJI_OPTIONS = { className: 'twemoji', folder: 'svg', ext: '.svg' } as 
  * Shows back button on non-root routes, hides on root.
  */
 /** Pages reachable from bottom nav — treat as top-level (no back button). */
-const BOTTOM_NAV_PATHS = ['/', '/subscriptions', '/balance', '/referral', '/support', '/wheel'];
-
-/** Matches /subscriptions/:numericId. When the user has a single tariff and at
- * most one subscription, the /subscriptions list auto-redirects straight back
- * here (Subscriptions.tsx), so this page is effectively top-level: we hide the
- * back button and let Telegram surface its native Close (X). Multi-tariff users
- * (or anyone with >1 subscription) keep a real Back to their meaningful list. */
-const SUBSCRIPTION_DETAIL_RE = /^\/subscriptions\/\d+\/?$/;
+const BOTTOM_NAV_PATHS = ['/', '/support', '/profile'];
 
 function TelegramBackButton() {
   const location = useLocation();
@@ -45,6 +37,8 @@ function TelegramBackButton() {
   navigateRef.current = navigate;
   const pathnameRef = useRef(location.pathname);
   pathnameRef.current = location.pathname;
+  const searchRef = useRef(location.search);
+  searchRef.current = location.search;
 
   // A full-screen blocking overlay (maintenance / channel-sub / blacklist /
   // account-deleted / backend-unavailable) takes over the native back button:
@@ -69,34 +63,6 @@ function TelegramBackButton() {
     // REPLACE: depth unchanged (replaces the current entry, adds no history)
   }, [location.key, navType]);
 
-  // Share the subscriptions-list query with the page-level components.
-  // React Query dedupes by key so this does not cause an extra fetch when
-  // Subscriptions/Subscription/Dashboard pages mount.
-  const { data: subData } = useQuery({
-    queryKey: ['subscriptions-list'],
-    queryFn: () => subscriptionApi.getSubscriptions(),
-    staleTime: 30_000,
-    // Don't fetch outside Telegram — the cabinet still loads on the web.
-    enabled: isInTelegramWebApp(),
-  });
-  const isMultiTariff = subData?.multi_tariff_enabled ?? false;
-  const subsCount = subData?.subscriptions?.length ?? 0;
-  // The /subscriptions list silently redirects straight back to the open detail
-  // page when there is a single tariff and at most one subscription
-  // (Subscriptions.tsx). In that mode the detail page IS the top-level screen —
-  // there is no meaningful "back" target. Inverse of the handler's `listIsSafe`.
-  // Defaults to true on a cold cache (isMultiTariff=false, subsCount=0): hiding
-  // Back is fail-closed — far better than briefly arming the looping Back.
-  const listRedirectsToDetail = !isMultiTariff && subsCount <= 1;
-
-  // Refs so the stable back handler (memoised with []) reads fresh values
-  // without re-subscribing — re-subscription lets a component's local handler
-  // overwrite ours via Telegram's singleton onBackButtonClick (issue #436).
-  const isMultiTariffRef = useRef(isMultiTariff);
-  isMultiTariffRef.current = isMultiTariff;
-  const subsCountRef = useRef(subsCount);
-  subsCountRef.current = subsCount;
-
   useEffect(() => {
     // On a blocking overlay, keep exactly one visible Back button (its click
     // exits the app — see handler). Skip the route logic so it can't flip
@@ -107,21 +73,18 @@ function TelegramBackButton() {
       } catch {}
       return;
     }
-    const isTopLevel = location.pathname === '' || BOTTOM_NAV_PATHS.includes(location.pathname);
-    // Depth-independent on purpose: whether the user deep-linked in or navigated
-    // here in-app, a single-tariff detail whose list just bounces back has no
-    // real "back" target. Showing Back here is exactly what looped through the
-    // redirecting /subscriptions list (#436); hiding it always surfaces Close.
-    const isRedirectingSubscriptionDetail =
-      listRedirectsToDetail && SUBSCRIPTION_DETAIL_RE.test(location.pathname);
+    const hasOverlay =
+      getUserCabinetRouteState(location.pathname, location.search).overlay !== null;
+    const isTopLevel =
+      !hasOverlay && (location.pathname === '' || BOTTOM_NAV_PATHS.includes(location.pathname));
     try {
-      if (isTopLevel || isRedirectingSubscriptionDetail) {
+      if (isTopLevel) {
         hideBackButton();
       } else {
         showBackButton();
       }
     } catch {}
-  }, [location, listRedirectsToDetail, blockingType]);
+  }, [location, blockingType]);
 
   // Stable handler — ref prevents re-subscription on every render
   const handler = useCallback(() => {
@@ -139,23 +102,12 @@ function TelegramBackButton() {
       navigateRef.current(-1);
       return;
     }
-    // /subscriptions/:id is special: the /subscriptions list auto-redirects
-    // straight back to a detail page when single-tariff with exactly one
-    // subscription (Subscriptions.tsx), so falling back there loops silently and
-    // the back button looks dead (issue #436). Land on the list ONLY when it is
-    // PROVABLY safe (multi-tariff, or more than one subscription — neither of
-    // which auto-redirects); otherwise escape to root.
-    //
-    // Fail-closed on purpose: `subsCount <= 1` is treated as not-safe, which
-    // also covers the stale default 0 before the shared subscriptions query
-    // resolves — so a fast tap on a cold cache can never route into the
-    // redirecting list and re-open the loop.
-    const pathname = pathnameRef.current;
-    const listIsSafe = isMultiTariffRef.current || subsCountRef.current > 1;
-    const fallback =
-      SUBSCRIPTION_DETAIL_RE.test(pathname) && !listIsSafe
-        ? '/'
-        : getFallbackParentPath(pathnameRef.current);
+    const directBackPath = getDirectCabinetBackPath(pathnameRef.current, searchRef.current);
+    if (directBackPath) {
+      navigateRef.current(directBackPath, { replace: true });
+      return;
+    }
+    const fallback = getFallbackParentPath(pathnameRef.current);
     navigateRef.current(fallback, { replace: true });
   }, []);
 

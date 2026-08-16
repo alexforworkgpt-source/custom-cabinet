@@ -9,8 +9,8 @@ import { BoltIcon, SparklesIcon } from '@/components/icons';
 
 interface TrialOfferCardProps {
   trialInfo: TrialInfo;
-  balanceKopeks: number;
-  balanceRubles: number;
+  balanceKopeks: number | null;
+  balanceRubles: number | null;
   activateTrialMutation: UseMutationResult<unknown, unknown, void, unknown>;
   trialError: string | null;
 }
@@ -27,7 +27,7 @@ export default function TrialOfferCard({
   const { isDark } = useTheme();
   const g = getGlassColors(isDark);
   const isFree = !trialInfo.requires_payment;
-  const canAfford = balanceKopeks >= trialInfo.price_kopeks;
+  const canAfford = balanceKopeks !== null && balanceKopeks >= trialInfo.price_kopeks;
 
   return (
     <div
@@ -188,7 +188,9 @@ export default function TrialOfferCard({
             <span
               className={`font-display text-sm font-semibold ${canAfford ? 'text-success-400' : 'text-warning-400'}`}
             >
-              {formatAmount(balanceRubles)} {currencySymbol}
+              {balanceRubles === null
+                ? t('dashboard.dataUnavailable')
+                : `${formatAmount(balanceRubles)} ${currencySymbol}`}
             </span>
           </div>
           {!canAfford && (
@@ -208,7 +210,15 @@ export default function TrialOfferCard({
 
       {/* CTA Button */}
       {!isFree && trialInfo.price_kopeks > 0 ? (
-        canAfford ? (
+        balanceKopeks === null ? (
+          <button
+            type="button"
+            disabled
+            className="w-full cursor-not-allowed rounded-[14px] bg-dark-700 py-4 text-base font-bold text-dark-400"
+          >
+            {t('dashboard.dataUnavailable')}
+          </button>
+        ) : canAfford ? (
           <button
             onClick={() => !activateTrialMutation.isPending && activateTrialMutation.mutate()}
             disabled={activateTrialMutation.isPending}

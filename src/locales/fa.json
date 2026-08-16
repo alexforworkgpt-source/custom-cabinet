@@ -254,6 +254,12 @@
     "welcome": "خوش آمدید، {{name}}!",
     "welcomeNoName": "خوش آمدید!",
     "yourSubscription": "اشتراک شما",
+    "unifiedOverlayDescription": "بازگشت به صفحه اصلی بدون از دست دادن اشتراک انتخاب‌شده",
+    "subscriptionLoadError": "اطلاعات اشتراک بارگیری نشد. دوباره تلاش کنید.",
+    "balanceLoadError": "موجودی بارگیری نشد. پیش از پرداخت یا تمدید دوباره تلاش کنید.",
+    "devicesLoadError": "اطلاعات دستگاه‌ها بارگیری نشد. دوباره تلاش کنید.",
+    "dataUnavailable": "در دسترس نیست",
+    "deviceUsageUnavailable": "اطلاعات دستگاه‌ها در دسترس نیست",
     "quickActions": "دسترسی سریع",
     "viewSubscription": "مدیریت اشتراک",
     "topUpBalance": "شارژ موجودی",
@@ -407,6 +413,7 @@
     },
     "connection": {
       "title": "اتصال VPN",
+      "step": "مرحله {{current}} از {{total}}",
       "selectDevice": "دستگاه خود را انتخاب کنید",
       "selectApp": "برنامه را انتخاب کنید",
       "installApp": "۱. نصب برنامه",
@@ -4346,6 +4353,16 @@
   "profile": {
     "title": "پروفایل",
     "accountInfo": "اطلاعات حساب",
+    "hub": {
+      "preferences": "تنظیمات",
+      "preferencesDescription": "زبان و ظاهر کابینت",
+      "language": "زبان",
+      "theme": "پوسته",
+      "information": "اطلاعات",
+      "informationDescription": "اسناد و منابع کاربردی",
+      "more": "امکانات بیشتر",
+      "moreDescription": "قابلیت‌های در دسترس سرویس"
+    },
     "telegramId": "شناسه تلگرام",
     "username": "نام کاربری",
     "name": "نام",

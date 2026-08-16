@@ -15,15 +15,15 @@ import { ClockIcon, ExclamationIcon, PlusIcon, SubscriptionIcon } from '@/compon
 
 interface SubscriptionCardExpiredProps {
   subscription: Subscription;
-  balanceKopeks?: number;
-  balanceRubles?: number;
+  balanceKopeks?: number | null;
+  balanceRubles?: number | null;
   className?: string;
 }
 
 export default function SubscriptionCardExpired({
   subscription,
-  balanceKopeks = 0,
-  balanceRubles = 0,
+  balanceKopeks = null,
+  balanceRubles = null,
   className,
 }: SubscriptionCardExpiredProps) {
   const { t } = useTranslation();
@@ -49,7 +49,9 @@ export default function SubscriptionCardExpired({
 
   // For daily subs, check if balance covers daily price; otherwise 100 kopeks minimum
   const dailyPrice = subscription.daily_price_kopeks ?? 0;
-  const hasBalance = isDaily ? balanceKopeks >= dailyPrice && dailyPrice > 0 : balanceKopeks >= 100;
+  const hasBalance =
+    balanceKopeks !== null &&
+    (isDaily ? balanceKopeks >= dailyPrice && dailyPrice > 0 : balanceKopeks >= 100);
 
   const handleQuickRenew = async () => {
     setIsRenewing(true);
@@ -224,7 +226,9 @@ export default function SubscriptionCardExpired({
           <span
             className={`text-sm font-semibold ${hasBalance ? 'text-success-400' : 'text-dark-50/30'}`}
           >
-            {formatAmount(balanceRubles)} {currencySymbol}
+            {balanceRubles === null
+              ? t('dashboard.dataUnavailable')
+              : `${formatAmount(balanceRubles)} ${currencySymbol}`}
           </span>
         </div>
       </div>
@@ -258,7 +262,15 @@ export default function SubscriptionCardExpired({
             {/* Quick Renew or Top Up button (hidden for expired trials) */}
             {!subscription.is_trial && (
               <>
-                {hasBalance ? (
+                {balanceKopeks === null ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="flex flex-1 cursor-not-allowed items-center justify-center rounded-[14px] bg-dark-700 py-3.5 text-[15px] font-semibold text-dark-400"
+                  >
+                    {t('dashboard.dataUnavailable')}
+                  </button>
+                ) : hasBalance ? (
                   <button
                     type="button"
                     onClick={handleQuickRenew}

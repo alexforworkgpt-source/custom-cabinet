@@ -254,6 +254,12 @@
     "welcome": "欢迎，{{name}}！",
     "welcomeNoName": "欢迎！",
     "yourSubscription": "您的订阅",
+    "unifiedOverlayDescription": "返回主页时保留当前选择的订阅",
+    "subscriptionLoadError": "无法加载订阅数据，请重试。",
+    "balanceLoadError": "无法加载余额。请在付款或续订前重试。",
+    "devicesLoadError": "无法加载设备使用情况，请重试。",
+    "dataUnavailable": "不可用",
+    "deviceUsageUnavailable": "设备使用情况不可用",
     "quickActions": "快捷操作",
     "viewSubscription": "管理订阅",
     "topUpBalance": "充值余额",
@@ -407,6 +413,7 @@
     },
     "connection": {
       "title": "连接VPN",
+      "step": "第 {{current}} 步，共 {{total}} 步",
       "selectDevice": "选择您的设备",
       "selectApp": "选择应用",
       "installApp": "1. 安装应用",
@@ -4345,6 +4352,16 @@
   "profile": {
     "title": "个人资料",
     "accountInfo": "账户信息",
+    "hub": {
+      "preferences": "偏好设置",
+      "preferencesDescription": "管理语言和界面外观",
+      "language": "语言",
+      "theme": "主题",
+      "information": "信息",
+      "informationDescription": "文档和实用资料",
+      "more": "更多功能",
+      "moreDescription": "可用的服务功能"
+    },
     "telegramId": "Telegram ID",
     "username": "用户名",
     "name": "姓名",

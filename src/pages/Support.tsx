@@ -17,6 +17,7 @@ import { ChatIcon, CloseIcon, ImageIcon, PlusIcon, SendIcon } from '@/components
 import { usePlatform } from '@/platform';
 import { linkifyText } from '../utils/linkify';
 import { resolveSupportContact } from '../utils/supportContact';
+import { useSearchParams } from 'react-router';
 
 const log = logger.createLogger('Support');
 
@@ -37,6 +38,10 @@ export default function Support() {
   const isAdmin = useAuthStore((state) => state.isAdmin);
   const queryClient = useQueryClient();
   const { openTelegramLink, openLink } = usePlatform();
+  const [searchParams] = useSearchParams();
+  const requestedTicketId = Number(searchParams.get('ticket'));
+  const deepLinkedTicketId =
+    Number.isSafeInteger(requestedTicketId) && requestedTicketId > 0 ? requestedTicketId : null;
 
   const openSupportContact = useCallback(
     (config: SupportConfig) => {
@@ -62,6 +67,7 @@ export default function Support() {
   const [replyAttachments, setReplyAttachments] = useState<MediaAttachment[]>([]);
   const createFileInputRef = useRef<HTMLInputElement>(null);
   const replyFileInputRef = useRef<HTMLInputElement>(null);
+  const appliedDeepLinkRef = useRef<number | null>(null);
 
   const blobUrlsRef = useRef<Set<string>>(new Set());
 
@@ -99,6 +105,23 @@ export default function Support() {
     queryFn: () => ticketsApi.getTickets({ per_page: 20 }),
     enabled: supportConfig?.tickets_enabled === true,
   });
+
+  const { data: deepLinkedTicket } = useQuery({
+    queryKey: ['ticket', deepLinkedTicketId],
+    queryFn: () => ticketsApi.getTicket(deepLinkedTicketId as number),
+    enabled: deepLinkedTicketId !== null,
+  });
+
+  useEffect(() => {
+    if (deepLinkedTicketId === null) {
+      appliedDeepLinkRef.current = null;
+      return;
+    }
+    if (deepLinkedTicket && appliedDeepLinkRef.current !== deepLinkedTicketId) {
+      appliedDeepLinkRef.current = deepLinkedTicketId;
+      setSelectedTicket(deepLinkedTicket);
+    }
+  }, [deepLinkedTicket, deepLinkedTicketId]);
 
   const { data: ticketDetail, isLoading: detailLoading } = useQuery({
     queryKey: ['ticket', selectedTicket?.id],

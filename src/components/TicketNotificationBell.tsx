@@ -71,7 +71,7 @@ export default function TicketNotificationBell({ isAdmin = false }: TicketNotifi
         onClick: () => {
           navigate(
             isAdmin
-              ? `/admin/tickets?ticket=${message.ticket_id}`
+              ? `/admin/tickets/${message.ticket_id}`
               : `/support?ticket=${message.ticket_id}`,
           );
         },
@@ -181,7 +181,7 @@ export default function TicketNotificationBell({ isAdmin = false }: TicketNotifi
     setIsOpen(false);
     navigate(
       isAdmin
-        ? `/admin/tickets?ticket=${notification.ticket_id}`
+        ? `/admin/tickets/${notification.ticket_id}`
         : `/support?ticket=${notification.ticket_id}`,
     );
   };
