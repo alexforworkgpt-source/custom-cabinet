@@ -29,9 +29,9 @@ describe('getUserCabinetRouteState', () => {
     expect(getUserCabinetRouteState('/balance', '')).toEqual({ overlay: 'balance' });
   });
 
-  it('opens subscription management for a detail route', () => {
+  it('keeps subscription detail compatibility routes on the Dashboard', () => {
     expect(getUserCabinetRouteState('/subscriptions/7', '')).toEqual({
-      overlay: 'subscription',
+      overlay: null,
       subscriptionId: 7,
     });
   });
@@ -46,11 +46,15 @@ describe('getUserCabinetRouteState', () => {
 
 describe('getDirectConnectionBackPath', () => {
   it('restores the previous wizard step after a direct reload', () => {
+    expect(getDirectConnectionBackPath('?sub=7&step=success')).toBe('/connection?sub=7&step=add');
+    expect(getDirectConnectionBackPath('?sub=7&step=success&platform=android&app=Happ')).toBe(
+      '/connection?sub=7&step=add&platform=android&app=Happ',
+    );
     expect(getDirectConnectionBackPath('?sub=7&step=add&platform=android&app=Happ')).toBe(
-      '/connection?sub=7&step=application&platform=android',
+      '/connection?sub=7&step=application&platform=android&app=Happ',
     );
     expect(getDirectConnectionBackPath('?sub=7&step=application&platform=android')).toBe(
-      '/connection?sub=7&step=platform',
+      '/connection?sub=7&step=platform&platform=android',
     );
   });
 });
@@ -69,8 +73,8 @@ describe('getDirectCabinetBackPath', () => {
 
   it('moves through direct connection steps before closing the overlay', () => {
     expect(
-      getDirectCabinetBackPath('/connection', '?sub=7&step=add&platform=android&app=Happ'),
-    ).toBe('/connection?sub=7&step=application&platform=android');
+      getDirectCabinetBackPath('/connection', '?sub=7&step=success&platform=android&app=Happ'),
+    ).toBe('/connection?sub=7&step=add&platform=android&app=Happ');
     expect(getDirectCabinetBackPath('/connection', '?sub=7&step=platform')).toBe('/?sub=7');
   });
 });

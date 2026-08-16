@@ -79,6 +79,10 @@ export default function Connection() {
     }
   }, [navigate, subId]);
 
+  const handleFinish = useCallback(() => {
+    navigate(getCabinetClosePath(subId), { replace: true });
+  }, [navigate, subId]);
+
   const handleOpenQR = useCallback(() => {
     if (!qrConnectionUrl) return;
     navigate('/connection/qr', {
@@ -232,6 +236,7 @@ export default function Connection() {
       onOpenDeepLink={openDeepLink}
       isTelegramWebApp={isTelegramWebApp}
       onGoBack={handleGoBack}
+      onFinish={handleFinish}
       onOpenQR={handleOpenQR}
       username={user?.username ?? undefined}
     />

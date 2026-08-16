@@ -1,7 +1,6 @@
 import { uiLocale } from '@/utils/uiLocale';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { Link } from 'react-router';
 import type { UseMutationResult } from '@tanstack/react-query';
 import TrafficProgressBar from './TrafficProgressBar';
 import Sparkline from './Sparkline';
@@ -299,11 +298,10 @@ export default function SubscriptionCardActive({
 
       {/* ─── Stats row: Tariff + Days Left ─── */}
       <div className="mb-5 flex gap-2.5">
-        {/* Tariff badge — clickable. Neutral chrome: the tariff name has
+        {/* Tariff badge. Neutral chrome: the tariff name has
             no traffic-zone semantics, so tinting it by the traffic zone
             (DESIGN.md Status-Hue Lockout) was wrong. */}
-        <Link
-          to={`/subscriptions/${subscription.id}`}
+        <div
           className="flex-1 rounded-[14px] p-3.5 transition-colors"
           style={{
             background: g.innerBg,
@@ -322,7 +320,7 @@ export default function SubscriptionCardActive({
           <div className="mt-0.5 font-mono text-[10px] text-dark-50/30">
             {t('dashboard.validUntil', { date: formattedDate })}
           </div>
-        </Link>
+        </div>
 
         {/* Days remaining */}
         <div

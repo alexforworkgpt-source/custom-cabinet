@@ -25,18 +25,10 @@ import TicketNotificationBell from '@/components/TicketNotificationBell';
 // Icons
 import {
   HomeIcon,
-  SubscriptionIcon,
-  WalletIcon,
-  UsersIcon,
   ChatIcon,
   UserIcon,
   LogoutIcon,
-  GamepadIcon,
-  ClipboardIcon,
-  InfoIcon,
   CogIcon,
-  WheelIcon,
-  GiftIcon,
   MenuIcon,
   CloseIcon,
   SunIcon,
@@ -58,11 +50,6 @@ interface AppHeaderProps {
   safeAreaInset: { top: number; bottom: number; left: number; right: number };
   contentSafeAreaInset: { top: number; bottom: number; left: number; right: number };
   telegramPlatform?: TelegramPlatform;
-  wheelEnabled?: boolean;
-  referralEnabled?: boolean;
-  hasContests?: boolean;
-  hasPolls?: boolean;
-  giftEnabled?: boolean;
 }
 
 export function AppHeader({
@@ -74,11 +61,6 @@ export function AppHeader({
   safeAreaInset,
   contentSafeAreaInset,
   telegramPlatform,
-  wheelEnabled,
-  referralEnabled,
-  hasContests,
-  hasPolls,
-  giftEnabled,
 }: AppHeaderProps) {
   const { t } = useTranslation();
   const location = useLocation();
@@ -161,15 +143,8 @@ export function AppHeader({
 
   const navItems = [
     { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
-    { path: '/subscriptions', label: t('nav.subscription'), icon: SubscriptionIcon },
-    { path: '/balance', label: t('nav.balance'), icon: WalletIcon },
-    ...(referralEnabled ? [{ path: '/referral', label: t('nav.referral'), icon: UsersIcon }] : []),
     { path: '/support', label: t('nav.support'), icon: ChatIcon },
-    ...(hasContests ? [{ path: '/contests', label: t('nav.contests'), icon: GamepadIcon }] : []),
-    ...(hasPolls ? [{ path: '/polls', label: t('nav.polls'), icon: ClipboardIcon }] : []),
-    ...(wheelEnabled ? [{ path: '/wheel', label: t('nav.wheel'), icon: WheelIcon }] : []),
-    ...(giftEnabled ? [{ path: '/gift', label: t('nav.gift'), icon: GiftIcon }] : []),
-    { path: '/info', label: t('nav.info'), icon: InfoIcon },
+    { path: '/profile', label: t('nav.profile'), icon: UserIcon },
   ];
 
   return (
@@ -270,12 +245,16 @@ export function AppHeader({
                 </button>
               )}
 
-              <div onClick={() => setMobileMenuOpen(false)}>
-                <TicketNotificationBell isAdmin={isAdminActive()} />
-              </div>
-              <div onClick={() => setMobileMenuOpen(false)}>
-                <LanguageSwitcher />
-              </div>
+              {!mobileMenuOpen && (
+                <>
+                  <div className="hidden sm:block" onClick={() => setMobileMenuOpen(false)}>
+                    <TicketNotificationBell isAdmin={isAdminActive()} />
+                  </div>
+                  <div className="hidden sm:block" onClick={() => setMobileMenuOpen(false)}>
+                    <LanguageSwitcher />
+                  </div>
+                </>
+              )}
 
               {/* Mobile menu button */}
               <button
@@ -352,6 +331,10 @@ export function AppHeader({
                     </div>
                   </div>
                 </div>
+                <div className="flex items-center gap-2 sm:hidden">
+                  <TicketNotificationBell isAdmin={isAdminActive()} />
+                  <LanguageSwitcher />
+                </div>
               </div>
 
               {/* Nav items */}
@@ -391,15 +374,6 @@ export function AppHeader({
                 )}
 
                 <div className="divider my-3" />
-
-                <Link
-                  to="/profile"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={isActive('/profile') ? 'nav-item-active' : 'nav-item'}
-                >
-                  <UserIcon className="h-5 w-5" />
-                  {t('nav.profile')}
-                </Link>
 
                 <button
                   onClick={() => {

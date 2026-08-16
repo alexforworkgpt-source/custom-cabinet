@@ -93,7 +93,7 @@ export function TrafficTopupSheet({
       className={`rounded-xl border p-5 ${isDark ? 'border-dark-700/50 bg-dark-800/50' : 'border-champagne-300/60 bg-champagne-200/40'}`}
     >
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-medium text-dark-100">
+        <h3 className="font-medium text-dark-100 outline-none" tabIndex={-1} autoFocus>
           {t('subscription.additionalOptions.buyTrafficTitle')}
         </h3>
         <button

@@ -57,3 +57,151 @@ test('/balance preserves details without starting a new top-up', async ({ page }
   await expect(page.getByRole('heading', { name: 'Select Payment Method' })).toHaveCount(0);
   expect([...unexpectedApiRequests]).toEqual([]);
 });
+
+test('keeps subscription compatibility routes on the unified Dashboard', async ({ page }) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/subscription': {
+        has_subscription: true,
+        subscription: {
+          id: 7,
+          status: 'active',
+          is_active: true,
+          is_expired: false,
+          is_limited: false,
+          is_trial: false,
+          tariff_name: 'Unified plan',
+          end_date: '2026-10-15T00:00:00Z',
+          days_left: 60,
+          traffic_used_gb: 10,
+          traffic_used_percent: 10,
+          traffic_limit_gb: 100,
+          device_limit: 3,
+          subscription_url: 'https://example.test/subscription',
+        },
+      },
+      '/api/cabinet/subscriptions': {
+        subscriptions: [
+          {
+            id: 7,
+            status: 'active',
+            is_active: true,
+            is_expired: false,
+            is_limited: false,
+            is_trial: false,
+            tariff_name: 'Unified plan',
+            end_date: '2026-10-15T00:00:00Z',
+            days_left: 60,
+            traffic_used_gb: 10,
+            traffic_used_percent: 10,
+            traffic_limit_gb: 100,
+            device_limit: 3,
+            subscription_url: 'https://example.test/subscription',
+          },
+        ],
+        multi_tariff_enabled: false,
+      },
+      '/api/cabinet/subscription/devices': { devices: [], total: 0, device_limit: 3 },
+      '/api/cabinet/subscription/refresh-traffic': {
+        traffic_used_gb: 10,
+        traffic_used_percent: 10,
+        is_unlimited: false,
+      },
+    },
+  });
+
+  await page.goto('/subscriptions/7');
+  await expect(page.getByRole('heading', { name: 'Traffic Usage' })).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByText('Unified plan')).toBeVisible();
+  await expect(page.getByText('Unified plan').locator('..')).not.toHaveAttribute('href');
+  await expect(page.getByRole('link', { name: 'Dashboard', exact: true })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('canonicalizes an unknown subscription compatibility route', async ({ page }) => {
+  await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/subscriptions': {
+        subscriptions: [
+          {
+            id: 7,
+            status: 'active',
+            is_active: true,
+            is_expired: false,
+            is_limited: false,
+            is_trial: false,
+            tariff_name: 'Unified plan',
+            end_date: '2026-10-15T00:00:00Z',
+            days_left: 60,
+            traffic_used_gb: 10,
+            traffic_used_percent: 10,
+            traffic_limit_gb: 100,
+            device_limit: 3,
+            subscription_url: 'https://example.test/subscription',
+          },
+        ],
+        multi_tariff_enabled: false,
+      },
+    },
+  });
+
+  await page.goto('/subscriptions/999');
+  await expect(page).toHaveURL('/?sub=7');
+});
+
+test('does not restore legacy user navigation on admin routes', async ({ page }) => {
+  await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/auth/me/is-admin': { is_admin: true },
+      '/api/cabinet/admin/apps/remnawave/status': { enabled: false, config_uuid: null },
+      '/api/cabinet/admin/apps/remnawave/configs': [],
+    },
+  });
+
+  await page.goto('/admin/apps');
+  const isMobile = (page.viewportSize()?.width ?? 1280) < 1024;
+  if (isMobile) {
+    const bottomNavigation = page.locator('nav:visible').last();
+    await expect(bottomNavigation.getByRole('link')).toHaveCount(3);
+    await page.getByRole('button', { name: 'Open menu' }).click();
+  }
+  const navigation = isMobile
+    ? page.locator('.mobile-menu-content nav')
+    : page.locator('header nav');
+
+  await expect(page.getByRole('link', { name: 'Balance', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /^Subscriptions?$/ })).toHaveCount(0);
+  await expect(navigation.getByRole('link', { name: 'Dashboard', exact: true })).toBeVisible();
+  await expect(navigation.getByRole('link', { name: 'Support', exact: true })).toBeVisible();
+  await expect(navigation.getByRole('link', { name: 'Profile', exact: true })).toBeVisible();
+});
+
+test('uses black and white base themes with the persistent grid', async ({ page }) => {
+  await prepareAuthenticatedPage(page);
+  await page.goto('/');
+  await page.evaluate(() => localStorage.setItem('cabinet-theme', 'dark'));
+  await page.reload();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+
+  const darkTheme = await page.evaluate(() => ({
+    background: getComputedStyle(document.body).backgroundColor,
+    grid: getComputedStyle(document.body, '::before').backgroundImage,
+  }));
+  expect(darkTheme.background).toBe('rgb(0, 0, 0)');
+  expect(darkTheme.grid).toContain('linear-gradient');
+
+  await page.evaluate(() => localStorage.setItem('cabinet-theme', 'light'));
+  await page.reload();
+  await expect(page.locator('html')).toHaveClass(/light/);
+
+  const lightTheme = await page.evaluate(() => ({
+    background: getComputedStyle(document.body).backgroundColor,
+    grid: getComputedStyle(document.body, '::before').backgroundImage,
+  }));
+  expect(lightTheme.background).toBe('rgb(255, 255, 255)');
+  expect(lightTheme.grid).toContain('linear-gradient');
+});

@@ -1,10 +1,4 @@
-export type UserCabinetOverlay =
-  | 'subscription'
-  | 'devices'
-  | 'connection'
-  | 'balance'
-  | 'topup'
-  | null;
+export type UserCabinetOverlay = 'devices' | 'connection' | 'balance' | 'topup' | null;
 
 export interface UserCabinetRouteState {
   overlay: UserCabinetOverlay;
@@ -45,7 +39,7 @@ export function getUserCabinetRouteState(pathname: string, search: string): User
   const subscriptionMatch = SUBSCRIPTION_PATH.exec(pathname);
   if (subscriptionMatch) {
     return {
-      overlay: 'subscription',
+      overlay: null,
       subscriptionId: positiveInteger(subscriptionMatch[1]),
     };
   }
@@ -63,12 +57,12 @@ export function getCabinetClosePath(subscriptionId?: number): string {
 export function getDirectConnectionBackPath(search: string): string | null {
   const params = new URLSearchParams(search);
   const step = params.get('step');
-  if (step === 'add') {
+  if (step === 'success') {
+    params.set('step', 'add');
+  } else if (step === 'add') {
     params.set('step', 'application');
-    params.delete('app');
   } else if (step === 'application') {
     params.set('step', 'platform');
-    params.delete('platform');
     params.delete('app');
   } else {
     return null;

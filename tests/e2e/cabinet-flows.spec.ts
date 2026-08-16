@@ -78,12 +78,63 @@ const connectionResponses = {
             deepLink: 'testapp://import/{subscriptionUrl}',
             blocks: [
               {
+                title: { en: 'Install Test App' },
+                description: { en: 'Download and install Test App first.' },
+                buttons: [
+                  {
+                    text: { en: 'Download Test App' },
+                    type: 'external',
+                    url: 'https://example.test/download',
+                  },
+                ],
+              },
+              {
                 title: { en: 'Add subscription' },
                 description: { en: 'Import the subscription into Test App.' },
                 buttons: [
                   {
                     text: { en: 'Add to Test App' },
                     type: 'subscriptionLink',
+                  },
+                ],
+              },
+              {
+                title: { en: 'Connection ready' },
+                description: { en: 'Turn on the VPN in Test App.' },
+              },
+            ],
+          },
+          {
+            name: 'Alternative App',
+            deepLink: 'alternative://import/{subscriptionUrl}',
+            blocks: [
+              {
+                title: { en: 'Install Alternative App' },
+                description: { en: 'Install the alternative app.' },
+                buttons: [
+                  {
+                    text: { en: 'Download Alternative App' },
+                    type: 'external',
+                    url: 'https://example.test/alternative',
+                  },
+                  {
+                    text: { en: 'Quick import Alternative' },
+                    type: 'subscriptionLink',
+                  },
+                ],
+              },
+              {
+                title: { en: 'Add subscription' },
+                description: { en: 'Import into Alternative App.' },
+                buttons: [
+                  {
+                    text: { en: 'Add to Alternative App' },
+                    type: 'subscriptionLink',
+                  },
+                  {
+                    text: { en: 'Alternative mirror' },
+                    type: 'external',
+                    url: 'https://example.test/alternative-mirror',
                   },
                 ],
               },
@@ -234,6 +285,44 @@ test.describe('unified dashboard states', () => {
   });
 });
 
+test('opens traffic top-up from the unified Dashboard @desktop-flow', async ({ page }) => {
+  const limitedSubscription = {
+    ...activeSubscription,
+    status: 'limited',
+    is_limited: true,
+    traffic_used_gb: 100,
+    traffic_used_percent: 100,
+  };
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      ...activeResponses,
+      '/api/cabinet/subscription': {
+        has_subscription: true,
+        subscription: limitedSubscription,
+      },
+      '/api/cabinet/subscription/purchase-options': {
+        sales_mode: 'tariffs',
+        tariffs: [],
+        current_tariff_id: 10,
+        balance_kopeks: 100_000,
+        balance_label: '1,000 RUB',
+      },
+      '/api/cabinet/subscription/traffic-packages': [
+        { gb: 50, price_kopeks: 10_000, price_rubles: 100, is_unlimited: false },
+      ],
+    },
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Buy Traffic' }).click();
+  await expect(page.getByRole('heading', { name: 'Buy more traffic' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /50 GB/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByRole('button', { name: 'Buy Traffic' })).toBeFocused();
+  await expect(page).toHaveURL('/');
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
 test('manages Devices in an overlay and returns to the same dashboard context @critical-flow', async ({
   page,
 }) => {
@@ -271,39 +360,95 @@ test('manages Devices in an overlay and returns to the same dashboard context @c
 
 test('runs the Connection wizard with Back, reload fallback, and legacy entry @critical-flow', async ({
   page,
-}) => {
+}, testInfo) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
     responses: { ...activeResponses, ...connectionResponses },
   });
 
   await page.goto('/connection?sub=1');
   const dialog = page.getByRole('dialog');
-  await expect(dialog.getByRole('heading', { name: 'Select platform' })).toBeVisible();
-  await dialog.getByRole('button', { name: 'Windows' }).click();
+  const detectedPlatform = testInfo.project.name === 'mobile-320' ? 'Android' : 'Windows';
+  const otherPlatform = detectedPlatform === 'Android' ? 'Windows' : 'Android';
+  await expect(dialog.getByRole('heading', { name: `Set up ${detectedPlatform}` })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: otherPlatform, exact: true })).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Choose another device' }).click();
+  await expect(dialog.getByRole('button', { name: otherPlatform, exact: true })).toBeVisible();
+  if (detectedPlatform === 'Android') {
+    await dialog.getByRole('button', { name: 'Windows', exact: true }).click();
+    await expect(dialog.getByRole('heading', { name: 'Set up Windows' })).toBeVisible();
+  }
+  await dialog.getByRole('button', { name: 'Continue with Windows' }).click();
   await expect(page).toHaveURL(/step=application/);
-  await expect(dialog.getByRole('heading', { name: 'Select app' })).toBeVisible();
-  await dialog.getByRole('button', { name: 'Test App' }).click();
+  await expect(dialog.getByRole('heading', { name: 'Install Test App', level: 2 })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Install Test App', level: 2 })).toBeFocused();
+  await expect(dialog.getByRole('link', { name: 'Download Test App' })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Add to Test App' })).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'App is installed' }).click();
   await expect(page).toHaveURL(/step=add/);
-  await expect(
-    dialog.getByRole('heading', { name: '2. Add subscription', exact: true }),
-  ).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Add subscription', level: 2 })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Add subscription', level: 2 })).toBeFocused();
   await expect(dialog.getByRole('button', { name: 'Add to Test App' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Subscription added' }).click();
+  await expect(page).toHaveURL(/step=success/);
+  await expect(
+    dialog.getByRole('heading', { name: 'Subscription added successfully' }),
+  ).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Connection ready' })).toBeVisible();
 
   await page.reload();
   await expect(
-    page.getByRole('dialog').getByRole('heading', {
-      name: '2. Add subscription',
-      exact: true,
-    }),
+    page.getByRole('dialog').getByRole('heading', { name: 'Subscription added successfully' }),
   ).toBeVisible();
-  await page.getByRole('dialog').getByRole('button', { name: 'Back' }).click();
-  await expect(page.getByRole('dialog').getByRole('heading', { name: 'Select app' })).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: 'Back' }).click();
   await expect(
-    page.getByRole('dialog').getByRole('heading', { name: 'Select platform' }),
+    page.getByRole('dialog').getByRole('heading', { name: 'Add subscription', level: 2 }),
   ).toBeVisible();
-  await page.keyboard.press('Escape');
+  await page.getByRole('dialog').getByRole('button', { name: 'Back' }).click();
+  await expect(
+    page.getByRole('dialog').getByRole('heading', { name: 'Install Test App', level: 2 }),
+  ).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Back' }).click();
+  await expect(
+    page.getByRole('dialog').getByRole('heading', { name: 'Set up Windows' }),
+  ).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Continue with Windows' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'App is installed' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Subscription added' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Finish' }).click();
   await expect(page).toHaveURL('/?sub=1');
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('preserves an alternative app when moving back through Connection @critical-flow', async ({
+  page,
+}) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: { ...activeResponses, ...connectionResponses },
+  });
+
+  await page.goto('/connection?sub=1&step=application&platform=windows');
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Choose another app' }).click();
+  await dialog.getByRole('button', { name: 'Alternative App' }).click();
+  await expect(
+    dialog.getByRole('heading', { name: 'Install Alternative App', level: 2 }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole('heading', { name: 'Install Alternative App', level: 2 }),
+  ).toBeFocused();
+  await expect(dialog.getByRole('link', { name: 'Alternative mirror' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'App is installed' }).click();
+  await expect(dialog.getByRole('button', { name: 'Add to Alternative App' })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Quick import Alternative' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Back' }).click();
+  await expect(
+    dialog.getByRole('heading', { name: 'Install Alternative App', level: 2 }),
+  ).toBeVisible();
+
+  await page.goto('/connection?sub=1&step=success&platform=windows&app=Unknown');
+  await expect(
+    page.getByRole('dialog').getByRole('heading', { name: 'Set up Windows' }),
+  ).toBeVisible();
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
@@ -322,12 +467,12 @@ test('keeps the Telegram Connection Back model inside the overlay @telegram-flow
 
   await page.goto(`/connection?${launchParams.toString()}`);
   const dialog = page.getByRole('dialog');
-  await expect(dialog.getByRole('heading', { name: 'Select platform' })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Set up Android' })).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Back' })).toHaveCount(0);
-  await dialog.getByRole('button', { name: 'Windows' }).click();
+  await dialog.getByRole('button', { name: 'Continue with Android' }).click();
   await expect(dialog.getByRole('button', { name: 'Back' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Back' }).click();
-  await expect(dialog.getByRole('heading', { name: 'Select platform' })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Set up Android' })).toBeVisible();
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
@@ -365,8 +510,8 @@ test('runs top-up method, amount, validation, cancellation, handoff, and result 
   await expect(dialog.getByRole('heading', { name: 'Select payment method' })).toBeVisible();
   await dialog.getByRole('button', { name: /Test Card/ }).click();
   await expect(page).toHaveURL('/balance/top-up/test-card');
-  await page.keyboard.press('Escape');
-  await expect(page).toHaveURL('/');
+  await page.goto('/');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(
     apiRequests.filter((request) => request === 'POST /api/cabinet/balance/topup'),
   ).toHaveLength(0);

@@ -6,56 +6,28 @@ import { cn } from '@/lib/utils';
 import { usePlatform } from '@/platform';
 
 // Icons
-import {
-  HomeIcon,
-  SubscriptionIcon,
-  WalletIcon,
-  UsersIcon,
-  ChatIcon,
-  WheelIcon,
-  UserIcon,
-} from './icons';
+import { HomeIcon, ChatIcon, UserIcon } from './icons';
 
 interface MobileBottomNavProps {
   isKeyboardOpen: boolean;
-  referralEnabled?: boolean;
-  wheelEnabled?: boolean;
-  legacy?: boolean;
   supportUnreadCount?: number;
 }
 
-export function MobileBottomNav({
-  isKeyboardOpen,
-  referralEnabled,
-  wheelEnabled,
-  legacy = false,
-  supportUnreadCount = 0,
-}: MobileBottomNavProps) {
+export function MobileBottomNav({ isKeyboardOpen, supportUnreadCount = 0 }: MobileBottomNavProps) {
   const { t } = useTranslation();
   const location = useLocation();
   const { haptic } = usePlatform();
 
   const isActive = (path: string) =>
-    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
+    path === '/'
+      ? location.pathname === '/' || location.pathname.startsWith('/subscriptions')
+      : location.pathname.startsWith(path);
 
-  const legacyItems = [
+  const coreItems = [
     { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
-    { path: '/subscriptions', label: t('nav.subscription'), icon: SubscriptionIcon },
-    { path: '/balance', label: t('nav.balance'), icon: WalletIcon },
-    ...(wheelEnabled
-      ? [{ path: '/wheel', label: t('nav.wheel'), icon: WheelIcon }]
-      : referralEnabled
-        ? [{ path: '/referral', label: t('nav.referral'), icon: UsersIcon }]
-        : []),
     { path: '/support', label: t('nav.support'), icon: ChatIcon },
+    { path: '/profile', label: t('nav.profile'), icon: UserIcon },
   ];
-  const coreItems = legacy
-    ? legacyItems
-    : [
-        { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
-        { path: '/support', label: t('nav.support'), icon: ChatIcon },
-        { path: '/profile', label: t('nav.profile'), icon: UserIcon },
-      ];
 
   const handleNavClick = () => {
     haptic.impact('light');

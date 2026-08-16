@@ -1,22 +1,27 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import DOMPurify from 'dompurify';
 import type {
   AppConfig,
   LocalizedText,
   RemnawaveAppClient,
   RemnawavePlatformData,
+  RemnawaveBlockClient,
   RemnawaveButtonClient,
 } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
 import { CardsBlock, TimelineBlock, AccordionBlock, MinimalBlock, BlockButtons } from './blocks';
 import type { BlockRendererProps, RenderBlock } from './blocks';
 import TvQuickConnect from './TvQuickConnect';
-import { BackIcon, BookOpenIcon } from '@/components/icons';
+import { PlatformStep } from './PlatformStep';
+import { ApplicationStep } from './ApplicationStep';
+import { BackIcon, BookOpenIcon, CheckIcon } from '@/components/icons';
 import { getDirectConnectionBackPath } from '@/utils/userCabinetRouteState';
 
 const platformOrder = ['ios', 'android', 'windows', 'macos', 'linux', 'androidTV', 'appleTV'];
+type ConnectionStep = 'platform' | 'application' | 'add' | 'success';
 
 function detectPlatform(): string | null {
   if (typeof window === 'undefined' || !navigator?.userAgent) return null;
@@ -27,6 +32,32 @@ function detectPlatform(): string | null {
   if (/windows/.test(ua)) return 'windows';
   if (/linux/.test(ua)) return 'linux';
   return null;
+}
+
+function partitionBlocks(blocks: RemnawaveBlockClient[]) {
+  const isInstallButton = (button: RemnawaveButtonClient) =>
+    !button.type || button.type === 'external';
+  const isSubscriptionButton = (button: RemnawaveButtonClient) =>
+    button.type === 'subscriptionLink' || button.type === 'copyButton';
+
+  if (blocks.length === 0) return { install: [], subscription: [], completion: [] };
+
+  const setupBlocks = blocks.slice(0, 2);
+  const blocksForStep = (
+    includeButton: (button: RemnawaveButtonClient) => boolean,
+    textOnlyIndex: number,
+  ) =>
+    setupBlocks.flatMap((block, index) => {
+      if (!block.buttons) return index === textOnlyIndex ? [block] : [];
+      const buttons = block.buttons.filter(includeButton);
+      return buttons.length > 0 ? [{ ...block, buttons }] : [];
+    });
+
+  return {
+    install: blocksForStep(isInstallButton, 0),
+    subscription: blocksForStep(isSubscriptionButton, 1),
+    completion: blocks.slice(2),
+  };
 }
 
 const RENDERERS: Record<string, React.ComponentType<BlockRendererProps>> = {
@@ -49,6 +80,7 @@ interface Props {
   onOpenDeepLink: (url: string) => void;
   isTelegramWebApp: boolean;
   onGoBack: () => void;
+  onFinish: () => void;
   onOpenQR?: () => void;
   username?: string;
 }
@@ -58,41 +90,72 @@ export default function InstallationGuide({
   onOpenDeepLink,
   isTelegramWebApp,
   onGoBack,
+  onFinish,
   onOpenQR,
   username,
 }: Props) {
   const { t, i18n } = useTranslation();
   const { isLight } = useTheme();
   const navigate = useNavigate();
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+  const previousStepRef = useRef<ConnectionStep | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedStep = searchParams.get('step');
+  const requestedPlatform = searchParams.get('platform');
+  const requestedApp = searchParams.get('app');
+  const requestedPlatformData = requestedPlatform
+    ? appConfig.platforms[requestedPlatform]
+    : undefined;
+  const hasValidSuccessTarget = Boolean(
+    requestedPlatformData?.apps.some((app) => app.name === requestedApp),
+  );
   const step =
-    requestedStep === 'application' || requestedStep === 'add' ? requestedStep : 'platform';
+    requestedStep === 'success' && !hasValidSuccessTarget
+      ? 'platform'
+      : requestedStep === 'application' || requestedStep === 'add' || requestedStep === 'success'
+        ? requestedStep
+        : 'platform';
 
   const detectedPlatform = useMemo(() => detectPlatform(), []);
+  const reducedMotion = useReducedMotion();
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   const [activePlatformKey, setActivePlatformKey] = useState<string | null>(null);
   const [selectedApp, setSelectedApp] = useState<RemnawaveAppClient | null>(null);
+  const [showOtherApps, setShowOtherApps] = useState(false);
 
   const setFlowStep = useCallback(
-    (nextStep: 'platform' | 'application' | 'add', platform?: string, app?: string) => {
+    (nextStep: ConnectionStep, platform?: string, app?: string, replace = false) => {
       const next = new URLSearchParams(searchParams);
       next.set('step', nextStep);
       if (platform) next.set('platform', platform);
       else if (nextStep === 'platform') next.delete('platform');
       if (app) next.set('app', app);
       else next.delete('app');
-      setSearchParams(next);
+      setSearchParams(next, { replace });
     },
     [searchParams, setSearchParams],
   );
+
+  useEffect(() => {
+    if (requestedStep !== 'success' || hasValidSuccessTarget) return;
+    const validPlatform = requestedPlatformData?.apps.length
+      ? (requestedPlatform ?? undefined)
+      : undefined;
+    setFlowStep('platform', validPlatform, undefined, true);
+  }, [
+    hasValidSuccessTarget,
+    requestedPlatform,
+    requestedPlatformData?.apps.length,
+    requestedStep,
+    setFlowStep,
+  ]);
 
   const getLocalizedText = useCallback(
     (text: LocalizedText | undefined): string => {
       if (!text) return '';
       const lang = i18n.language || 'en';
-      return text[lang] || text['en'] || text['ru'] || Object.values(text)[0] || '';
+      return text[lang] || text.en || text.ru || Object.values(text)[0] || '';
     },
     [i18n.language],
   );
@@ -124,7 +187,7 @@ export default function InstallationGuide({
     if (!appConfig.platforms) return [];
     const available = platformOrder.filter((key) => {
       const data = appConfig.platforms[key] as RemnawavePlatformData | undefined;
-      return data && data.apps && data.apps.length > 0;
+      return Boolean(data?.apps?.length);
     });
     if (detectedPlatform && available.includes(detectedPlatform)) {
       return [detectedPlatform, ...available.filter((p) => p !== detectedPlatform)];
@@ -151,6 +214,13 @@ export default function InstallationGuide({
       setActivePlatformKey(platform);
     }
   }, [appConfig.platforms, availablePlatforms, searchParams]);
+
+  useEffect(() => {
+    if (previousStepRef.current && previousStepRef.current !== step) {
+      stepHeadingRef.current?.focus({ preventScroll: true });
+    }
+    previousStepRef.current = step;
+  }, [step]);
 
   const renderBlockButtons = useCallback(
     (buttons: RemnawaveButtonClient[] | undefined, variant: 'light' | 'subtle') => (
@@ -193,6 +263,12 @@ export default function InstallationGuide({
     ? (appConfig.platforms[currentPlatformKey] as RemnawavePlatformData | undefined)
     : undefined;
   const currentPlatformApps = currentPlatformData?.apps || [];
+  const flowBlocks = selectedApp
+    ? partitionBlocks(selectedApp.blocks)
+    : { install: [], subscription: [], completion: [] };
+  const installBlocks = flowBlocks.install;
+  const subscriptionBlocks = flowBlocks.subscription;
+  const completionBlocks = flowBlocks.completion;
 
   // Platform display name
   const getPlatformDisplayName = useCallback(
@@ -229,53 +305,90 @@ export default function InstallationGuide({
   const showTvConnect = Boolean(
     selectedApp && isTvLayout && isHappApp(selectedApp) && appConfig.subscriptionUrl,
   );
-  let renderBlocks: RenderBlock[] = selectedApp?.blocks ?? [];
+  let renderBlocks: RenderBlock[] = subscriptionBlocks;
   if (selectedApp && showTvConnect && appConfig.subscriptionUrl) {
-    // install → add-subscription → connect: attach to the add step (index 1);
-    // fall back to the last block for shorter configs.
-    const idx = selectedApp.blocks.length >= 3 ? 1 : Math.max(0, selectedApp.blocks.length - 1);
     const widget = <TvQuickConnect subscriptionUrl={appConfig.subscriptionUrl} isLight={isLight} />;
-    renderBlocks = selectedApp.blocks.map((b, i) => (i === idx ? { ...b, customNode: widget } : b));
+    renderBlocks = renderBlocks.length
+      ? renderBlocks.map((block, index) => (index === 0 ? { ...block, customNode: widget } : block))
+      : [{ title: {}, description: {}, customNode: widget }];
   }
 
+  const activePlatformName = currentPlatformKey ? getPlatformDisplayName(currentPlatformKey) : '';
+  const transition = reducedMotion
+    ? { duration: 0 }
+    : { duration: 0.24, ease: [0.22, 1, 0.36, 1] as const };
+  const stepIndex = (['platform', 'application', 'add', 'success'] as ConnectionStep[]).indexOf(
+    step,
+  );
+
+  const renderConfiguredBlocks = (blocks: RenderBlock[]) => (
+    <Renderer
+      blocks={blocks}
+      isMobile={isMobile}
+      isLight={isLight}
+      getLocalizedText={getLocalizedText}
+      getSvgHtml={getSvgHtml}
+      renderBlockButtons={renderBlockButtons}
+    />
+  );
+
+  const selectPlatform = (platform: string) => {
+    const data = appConfig.platforms[platform] as RemnawavePlatformData | undefined;
+    setActivePlatformKey(platform);
+    setSelectedApp(data?.apps.find((item) => item.featured) || data?.apps[0] || null);
+    setFlowStep('platform', platform, undefined, true);
+    requestAnimationFrame(() => stepHeadingRef.current?.focus({ preventScroll: true }));
+  };
+
+  const goBack = () => {
+    if (step === 'platform') {
+      onGoBack();
+      return;
+    }
+    if ((window.history.state?.idx ?? 0) > 0) {
+      navigate(-1);
+      return;
+    }
+    const fallback = getDirectConnectionBackPath(`?${searchParams.toString()}`);
+    if (fallback) navigate(fallback, { replace: true });
+  };
+
+  const stepTitle =
+    step === 'platform'
+      ? t('subscription.connection.setupPlatform', {
+          defaultValue: 'Set up {{platform}}',
+          platform: activePlatformName,
+        })
+      : step === 'application'
+        ? t('subscription.connection.installAppTitle', {
+            defaultValue: 'Install {{app}}',
+            app: selectedApp?.name || '',
+          })
+        : step === 'add'
+          ? t('subscription.connection.addSubscription', 'Add subscription')
+          : t('subscription.connection.successTitle', 'Subscription added successfully');
+
   return (
-    <div className="space-y-6 pb-6">
+    <div className="space-y-5 pb-6">
       <p className="sr-only" aria-live="polite">
-        {t('subscription.connection.step', {
-          current: step === 'platform' ? 1 : step === 'application' ? 2 : 3,
-          total: 3,
-        })}
+        {t('subscription.connection.step', { current: stepIndex + 1, total: 4 })}
       </p>
       <div className="flex items-center gap-3">
         {(!isTelegramWebApp || step !== 'platform') && (
           <button
-            onClick={() => {
-              if (step === 'platform') {
-                onGoBack();
-                return;
-              }
-              if ((window.history.state?.idx ?? 0) > 0) {
-                navigate(-1);
-                return;
-              }
-              const fallback = getDirectConnectionBackPath(`?${searchParams.toString()}`);
-              if (fallback) navigate(fallback, { replace: true });
-            }}
+            onClick={goBack}
             aria-label={t('common.back', 'Back')}
             className="flex h-10 w-10 items-center justify-center rounded-xl border border-dark-700 bg-dark-800 transition-colors hover:border-dark-600"
           >
             <BackIcon className="h-6 w-6" />
           </button>
         )}
-        <h2 className="flex-1 text-lg font-bold text-dark-100">
-          {step === 'platform'
-            ? t('subscription.connection.selectPlatform')
-            : step === 'application'
-              ? t('subscription.connection.selectApp')
-              : getBaseTranslation(
-                  'installationGuideHeader',
-                  'subscription.connection.addSubscription',
-                )}
+        <h2
+          ref={stepHeadingRef}
+          tabIndex={-1}
+          className="flex-1 text-lg font-bold text-dark-100 outline-none"
+        >
+          {stepTitle}
         </h2>
         {step === 'add' && appConfig.subscriptionUrl && onOpenQR && (
           <button
@@ -305,106 +418,119 @@ export default function InstallationGuide({
         )}
       </div>
 
-      {step === 'platform' && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {availablePlatforms.map((platform) => {
-            const data = appConfig.platforms[platform] as RemnawavePlatformData | undefined;
-            const icon = getSvgHtml(data?.svgIconKey);
-            return (
+      <div className="grid grid-cols-4 gap-2" aria-hidden="true">
+        {Array.from({ length: 4 }, (_, index) => (
+          <div
+            key={index}
+            className={`h-1 rounded-full transition-colors duration-300 ${index <= stepIndex ? 'bg-accent-500' : 'bg-dark-700'}`}
+          />
+        ))}
+      </div>
+
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={step}
+          data-connection-step={step}
+          initial={reducedMotion ? false : { opacity: 0, x: 18 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={reducedMotion ? undefined : { opacity: 0, x: -12 }}
+          transition={transition}
+        >
+          {step === 'platform' && currentPlatformKey && (
+            <PlatformStep
+              appConfig={appConfig}
+              availablePlatforms={availablePlatforms}
+              currentPlatformKey={currentPlatformKey}
+              activePlatformName={activePlatformName}
+              isAutoDetected={currentPlatformKey === detectedPlatform}
+              getPlatformDisplayName={getPlatformDisplayName}
+              getSvgHtml={getSvgHtml}
+              onSelect={selectPlatform}
+              onContinue={() => setFlowStep('application', currentPlatformKey)}
+            />
+          )}
+
+          {step === 'application' && selectedApp && (
+            <ApplicationStep
+              selectedApp={selectedApp}
+              availableApps={currentPlatformApps}
+              installBlocks={installBlocks}
+              showOtherApps={showOtherApps}
+              onToggleOtherApps={() => setShowOtherApps((visible) => !visible)}
+              onSelectApp={(app) => {
+                setSelectedApp(app);
+                setShowOtherApps(false);
+                setFlowStep('application', currentPlatformKey, app.name, true);
+                requestAnimationFrame(() => stepHeadingRef.current?.focus({ preventScroll: true }));
+              }}
+              onContinue={() => setFlowStep('add', currentPlatformKey, selectedApp.name)}
+              renderBlocks={renderConfiguredBlocks}
+            />
+          )}
+
+          {step === 'add' && selectedApp && (
+            <div className="space-y-4">
+              <p className="text-sm text-dark-400">
+                {t('subscription.connection.addDescription', {
+                  defaultValue: 'Open {{app}} and add your subscription.',
+                  app: selectedApp.name,
+                })}
+              </p>
+              {appConfig.baseSettings?.isShowTutorialButton &&
+                appConfig.baseSettings.tutorialUrl && (
+                  <a
+                    href={appConfig.baseSettings.tutorialUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-secondary w-full justify-center"
+                  >
+                    <BookOpenIcon className="h-5 w-5" />
+                    {getBaseTranslation('tutorial', 'subscription.connection.tutorial')}
+                  </a>
+                )}
+              {renderConfiguredBlocks(renderBlocks)}
               <button
-                key={platform}
                 type="button"
-                className="flex min-h-14 items-center gap-3 rounded-2xl border border-dark-700/50 bg-dark-800/70 p-4 text-left font-medium text-dark-100 transition-colors hover:border-accent-500/40 hover:bg-dark-700/70"
-                onClick={() => {
-                  setActivePlatformKey(platform);
-                  const app = data?.apps.find((item) => item.featured) || data?.apps[0] || null;
-                  setSelectedApp(app);
-                  setFlowStep('application', platform);
-                }}
+                className="btn-primary w-full justify-center"
+                onClick={() => setFlowStep('success', currentPlatformKey, selectedApp.name)}
               >
-                {icon && (
-                  <span
-                    className="h-7 w-7 shrink-0 [&>svg]:h-full [&>svg]:w-full"
-                    dangerouslySetInnerHTML={{ __html: icon }}
-                  />
-                )}
-                <span>{getPlatformDisplayName(platform)}</span>
-                {platform === detectedPlatform && (
-                  <span className="ms-auto text-xs text-accent-400">
-                    {t('subscription.connection.featured')}
-                  </span>
-                )}
+                {t('subscription.connection.subscriptionAdded', 'Subscription added')}
               </button>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          )}
 
-      {/* App chips */}
-      {step === 'application' && currentPlatformApps.length > 0 && (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {currentPlatformApps.map((app, idx) => {
-            const isSelected = selectedApp?.name === app.name;
-            const appIconSvg = getSvgHtml(app.svgIconKey);
-            return (
+          {step === 'success' && selectedApp && (
+            <div className="flex min-h-72 flex-col items-center justify-center text-center">
+              <motion.div
+                initial={reducedMotion ? false : { opacity: 0, scale: 0.72 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={transition}
+                className="flex h-20 w-20 items-center justify-center rounded-full border border-success-400/40 bg-success-400/10 text-success-400"
+              >
+                <CheckIcon className="h-10 w-10" />
+              </motion.div>
+              <p className="mt-5 max-w-sm text-sm leading-relaxed text-dark-400">
+                {t('subscription.connection.successDescription', {
+                  defaultValue: '{{app}} is ready to use.',
+                  app: selectedApp.name,
+                })}
+              </p>
+              {completionBlocks.length > 0 && (
+                <div className="mt-5 w-full text-start">
+                  {renderConfiguredBlocks(completionBlocks)}
+                </div>
+              )}
               <button
-                key={app.name + idx}
-                onClick={() => {
-                  setSelectedApp(app);
-                  setFlowStep('add', currentPlatformKey, app.name);
-                }}
-                className={`relative flex min-h-14 w-full items-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-sm font-medium transition-all active:scale-[0.97] ${
-                  isSelected
-                    ? isLight
-                      ? 'bg-accent-500/15 text-accent-600 ring-1 ring-accent-500/40'
-                      : 'bg-accent-500/15 text-accent-400 ring-1 ring-accent-500/40'
-                    : isLight
-                      ? 'border border-dark-700/60 bg-white/80 text-dark-200 shadow-sm hover:border-dark-600/50 hover:bg-white'
-                      : 'border border-dark-700/50 bg-dark-800/80 text-dark-200 hover:border-dark-600/50 hover:bg-dark-700/80'
-                }`}
+                type="button"
+                className="btn-primary mt-7 w-full justify-center sm:w-auto sm:px-10"
+                onClick={onFinish}
               >
-                {app.featured && <span className="h-2 w-2 shrink-0 rounded-full bg-warning-400" />}
-                <span className="relative z-10 truncate">{app.name}</span>
-                {appIconSvg && (
-                  <div
-                    className="ml-auto h-7 w-7 shrink-0 opacity-30 [&>svg]:h-full [&>svg]:w-full"
-                    dangerouslySetInnerHTML={{ __html: appIconSvg }}
-                  />
-                )}
+                {t('subscription.connection.finish', 'Finish')}
               </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Tutorial button */}
-      {step === 'add' &&
-        appConfig.baseSettings?.isShowTutorialButton &&
-        appConfig.baseSettings?.tutorialUrl && (
-          <a
-            href={appConfig.baseSettings.tutorialUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-secondary w-full justify-center"
-          >
-            <BookOpenIcon className="h-5 w-5" />
-            {getBaseTranslation('tutorial', 'subscription.connection.tutorial')}
-          </a>
-        )}
-
-      {/* Blocks rendered in the panel's active style. For the Happ Android TV
-          app the TV connect widget is injected into a step (customNode), so it
-          adapts to that style instead of breaking it. */}
-      {step === 'add' && selectedApp && (
-        <Renderer
-          blocks={renderBlocks}
-          isMobile={isMobile}
-          isLight={isLight}
-          getLocalizedText={getLocalizedText}
-          getSvgHtml={getSvgHtml}
-          renderBlockButtons={renderBlockButtons}
-        />
-      )}
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

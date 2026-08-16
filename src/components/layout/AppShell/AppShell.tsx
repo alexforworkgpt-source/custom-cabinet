@@ -10,7 +10,6 @@ import { useTelegramSDK } from '@/hooks/useTelegramSDK';
 import { useHeaderHeight } from '@/hooks/useHeaderHeight';
 import { useTheme } from '@/hooks/useTheme';
 import { useBranding } from '@/hooks/useBranding';
-import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { themeColorsApi } from '@/api/themeColors';
 import { useSupportUnreadCount } from '@/hooks/useSupportUnreadCount';
@@ -24,15 +23,10 @@ import { PromptDialogHost } from '@/components/PromptDialogHost';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import TicketNotificationBell from '@/components/TicketNotificationBell';
 import {
-  SubscriptionIcon,
-  GiftIcon,
   HomeIcon,
-  CreditCardIcon,
   ChatIcon,
   UserIcon,
-  UsersIcon,
   ShieldIcon,
-  InfoIcon,
   LogoutIcon,
   SunIcon,
   MoonIcon,
@@ -60,7 +54,6 @@ export function AppShell({ children }: AppShellProps) {
 
   // Extracted hooks
   const { appName, logoLetter, hasCustomLogo, logoUrl } = useBranding();
-  const { referralEnabled, wheelEnabled, hasContests, hasPolls, giftEnabled } = useFeatureFlags();
   useScrollRestoration();
   // Анимированный фон рендерит BackgroundHost в App (не перемонтируется при
   // смене роута) — здесь только регистрируем, что на этом роуте он нужен.
@@ -80,6 +73,16 @@ export function AppShell({ children }: AppShellProps) {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const [isDesktopViewport, setIsDesktopViewport] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)');
+    const handleChange = (event: MediaQueryListEvent) => setIsDesktopViewport(event.matches);
+    media.addEventListener('change', handleChange);
+    return () => media.removeEventListener('change', handleChange);
+  }, []);
 
   // Reset keyboard state on route change — prevents bottom nav staying hidden after navigation
   useEffect(() => {
@@ -117,26 +120,16 @@ export function AppShell({ children }: AppShellProps) {
   }, []);
 
   // Desktop navigation — labels always visible (no hover-reveal gimmick)
-  const legacyDesktopNav = [
+  const desktopNav = [
     { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
-    { path: '/subscriptions', label: t('nav.subscription'), icon: SubscriptionIcon },
-    { path: '/balance', label: t('nav.balance'), icon: CreditCardIcon },
-    ...(referralEnabled ? [{ path: '/referral', label: t('nav.referral'), icon: UsersIcon }] : []),
-    ...(giftEnabled ? [{ path: '/gift', label: t('nav.gift'), icon: GiftIcon }] : []),
     { path: '/support', label: t('nav.support'), icon: ChatIcon },
-    { path: '/info', label: t('nav.info'), icon: InfoIcon },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
   ];
-  const desktopNav = isAdminRoute
-    ? legacyDesktopNav
-    : [
-        { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
-        { path: '/support', label: t('nav.support'), icon: ChatIcon },
-        { path: '/profile', label: t('nav.profile'), icon: UserIcon },
-      ];
 
   const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '/';
+    if (path === '/') {
+      return location.pathname === '/' || location.pathname.startsWith('/subscriptions');
+    }
     return location.pathname.startsWith(path);
   };
 
@@ -273,7 +266,9 @@ export function AppShell({ children }: AppShellProps) {
                 {isDark ? <MoonIcon className="h-5 w-5" /> : <SunIcon className="h-5 w-5" />}
               </button>
             )}
-            <TicketNotificationBell isAdmin={location.pathname.startsWith('/admin')} />
+            {isDesktopViewport && (
+              <TicketNotificationBell isAdmin={location.pathname.startsWith('/admin')} />
+            )}
             {isAdminRoute && <LanguageSwitcher />}
             {isAdminRoute && (
               <button
@@ -292,7 +287,7 @@ export function AppShell({ children }: AppShellProps) {
       </header>
 
       {/* Mobile Header */}
-      {isAdminRoute && (
+      {isAdminRoute && !isDesktopViewport && (
         <AppHeader
           mobileMenuOpen={mobileMenuOpen}
           setMobileMenuOpen={setMobileMenuOpen}
@@ -302,11 +297,6 @@ export function AppShell({ children }: AppShellProps) {
           safeAreaInset={safeAreaInset}
           contentSafeAreaInset={contentSafeAreaInset}
           telegramPlatform={platform}
-          wheelEnabled={wheelEnabled}
-          referralEnabled={referralEnabled}
-          hasContests={hasContests}
-          hasPolls={hasPolls}
-          giftEnabled={giftEnabled}
         />
       )}
 
@@ -323,13 +313,7 @@ export function AppShell({ children }: AppShellProps) {
       <main className="mx-auto max-w-6xl px-4 py-6 pb-28 lg:px-6 lg:pb-8">{children}</main>
 
       {/* Mobile Bottom Navigation */}
-      <MobileBottomNav
-        isKeyboardOpen={isKeyboardOpen}
-        referralEnabled={referralEnabled}
-        wheelEnabled={wheelEnabled}
-        legacy={isAdminRoute}
-        supportUnreadCount={supportUnreadCount}
-      />
+      <MobileBottomNav isKeyboardOpen={isKeyboardOpen} supportUnreadCount={supportUnreadCount} />
     </div>
   );
 }

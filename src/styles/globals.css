@@ -132,31 +132,31 @@
 
     /* Theme colors - RGB format for opacity support */
     /* Dark palette (RGB values) */
-    --color-dark-50: 248, 250, 252;
-    --color-dark-100: 241, 245, 249;
-    --color-dark-200: 226, 232, 240;
-    --color-dark-300: 203, 213, 225;
-    --color-dark-400: 148, 163, 184;
-    --color-dark-500: 100, 116, 139;
-    --color-dark-600: 71, 85, 105;
-    --color-dark-700: 51, 65, 85;
-    --color-dark-800: 30, 41, 59;
-    --color-dark-850: 23, 32, 51;
-    --color-dark-900: 15, 23, 42;
-    --color-dark-950: 10, 15, 26;
+    --color-dark-50: 250, 250, 250;
+    --color-dark-100: 245, 245, 245;
+    --color-dark-200: 229, 229, 229;
+    --color-dark-300: 212, 212, 212;
+    --color-dark-400: 163, 163, 163;
+    --color-dark-500: 115, 115, 115;
+    --color-dark-600: 82, 82, 82;
+    --color-dark-700: 64, 64, 64;
+    --color-dark-800: 38, 38, 38;
+    --color-dark-850: 29, 29, 29;
+    --color-dark-900: 23, 23, 23;
+    --color-dark-950: 0, 0, 0;
 
-    /* Champagne palette (RGB values) */
+    /* Light neutral palette (legacy champagne token names are kept for compatibility) */
     --color-champagne-50: 255, 253, 249;
-    --color-champagne-100: 254, 249, 240;
-    --color-champagne-200: 247, 231, 206;
-    --color-champagne-300: 232, 212, 181;
-    --color-champagne-400: 212, 188, 150;
-    --color-champagne-500: 191, 164, 119;
-    --color-champagne-600: 160, 139, 94;
-    --color-champagne-700: 125, 107, 72;
-    --color-champagne-800: 92, 79, 53;
-    --color-champagne-900: 61, 52, 36;
-    --color-champagne-950: 31, 26, 18;
+    --color-champagne-100: 250, 250, 250;
+    --color-champagne-200: 255, 255, 255;
+    --color-champagne-300: 229, 229, 229;
+    --color-champagne-400: 163, 163, 163;
+    --color-champagne-500: 115, 115, 115;
+    --color-champagne-600: 82, 82, 82;
+    --color-champagne-700: 64, 64, 64;
+    --color-champagne-800: 38, 38, 38;
+    --color-champagne-900: 23, 23, 23;
+    --color-champagne-950: 10, 10, 10;
 
     /* Accent palette (RGB values) - dynamically set by ThemeColorsProvider */
     --color-accent-50: 239, 246, 255;
@@ -218,15 +218,15 @@
     --color-critical-500: 255, 59, 92; /* #FF3B5C — expired */
 
     /* Theme semantic colors (hex for direct use) */
-    --color-dark-bg: #0a0f1a;
-    --color-dark-surface: #0f172a;
-    --color-dark-text: #f1f5f9;
-    --color-dark-text-secondary: #94a3b8;
+    --color-dark-bg: #000000;
+    --color-dark-surface: #0a0a0a;
+    --color-dark-text: #fafafa;
+    --color-dark-text-secondary: #a3a3a3;
 
-    --color-light-bg: #f7e7ce;
-    --color-light-surface: #fef9f0;
-    --color-light-text: #1f1a12;
-    --color-light-text-secondary: #7d6b48;
+    --color-light-bg: #ffffff;
+    --color-light-surface: #fafafa;
+    --color-light-text: #0a0a0a;
+    --color-light-text-secondary: #525252;
   }
 
   html {
@@ -304,24 +304,29 @@
     position: relative;
   }
 
-  /* Global Noise Texture — no mix-blend-mode to avoid fullscreen GPU compositing */
+  /* Persistent grid keeps both base themes structured without animated GPU work. */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    background-size: 200px 200px;
-    background-repeat: repeat;
-    opacity: 0.03;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(
+      circle at 50% 12%,
+      black 0%,
+      rgba(0, 0, 0, 0.75) 55%,
+      transparent 100%
+    );
   }
 
-  /* Disable noise on mobile to save GPU */
-  @media (max-width: 1023px) {
-    body::before {
-      display: none;
-    }
+  .light body::before {
+    background-image:
+      linear-gradient(rgba(10, 10, 10, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(10, 10, 10, 0.07) 1px, transparent 1px);
   }
 
   /* Main content — containment removed to avoid GPU layer conflicts
@@ -330,7 +335,7 @@
     contain: content;
   }
 
-  /* Light theme - Champagne */
+  /* Light theme */
   .light body {
     @apply bg-champagne-200 font-sans text-champagne-900 antialiased;
     overscroll-behavior-y: contain;

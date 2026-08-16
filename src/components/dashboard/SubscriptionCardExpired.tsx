@@ -1,5 +1,5 @@
 import { uiLocale } from '@/utils/uiLocale';
-import { useState } from 'react';
+import { useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -17,6 +17,9 @@ interface SubscriptionCardExpiredProps {
   subscription: Subscription;
   balanceKopeks?: number | null;
   balanceRubles?: number | null;
+  isTrafficTopupOpen: boolean;
+  trafficTopupTriggerRef: RefObject<HTMLButtonElement | null>;
+  onBuyTraffic: () => void;
   className?: string;
 }
 
@@ -24,6 +27,9 @@ export default function SubscriptionCardExpired({
   subscription,
   balanceKopeks = null,
   balanceRubles = null,
+  isTrafficTopupOpen,
+  trafficTopupTriggerRef,
+  onBuyTraffic,
   className,
 }: SubscriptionCardExpiredProps) {
   const { t } = useTranslation();
@@ -246,8 +252,12 @@ export default function SubscriptionCardExpired({
       {/* Action buttons */}
       <div className="flex gap-2.5">
         {isLimited ? (
-          <Link
-            to={`/subscriptions/${subscription.id}`}
+          <button
+            type="button"
+            ref={trafficTopupTriggerRef}
+            onClick={onBuyTraffic}
+            aria-expanded={isTrafficTopupOpen}
+            aria-controls="traffic-topup-panel"
             className="flex flex-1 items-center justify-center gap-2 rounded-[14px] py-3.5 text-[15px] font-semibold tracking-tight text-white transition-all duration-300"
             style={{
               background: accent.gradient,
@@ -256,7 +266,7 @@ export default function SubscriptionCardExpired({
           >
             <PlusIcon className="h-4 w-4" />
             {t('subscription.buyTraffic')}
-          </Link>
+          </button>
         ) : (
           <>
             {/* Quick Renew or Top Up button (hidden for expired trials) */}

@@ -24,9 +24,10 @@ import { ChevronRightIcon, StarIcon } from '@/components/icons';
 import { ResponsiveOverlay } from '@/components/primitives/ResponsiveOverlay';
 import { getCabinetClosePath, getUserCabinetRouteState } from '@/utils/userCabinetRouteState';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
+import { useTheme } from '@/hooks/useTheme';
 import { isFailedStatus, isPaidStatus } from '@/utils/paymentStatus';
+import { TrafficTopupSheet } from '@/components/subscription/sheets/TrafficTopupSheet';
 
-const Subscription = lazy(() => import('./Subscription'));
 const Connection = lazy(() => import('./Connection'));
 const TopUpMethodSelect = lazy(() => import('./TopUpMethodSelect'));
 const TopUpAmount = lazy(() => import('./TopUpAmount'));
@@ -47,6 +48,10 @@ export default function Dashboard() {
   const blockingType = useBlockingStore((state) => state.blockingType);
   const [trialError, setTrialError] = useState<string | null>(null);
   const { referralEnabled } = useFeatureFlags();
+  const { isDark } = useTheme();
+  const [showTrafficTopup, setShowTrafficTopup] = useState(false);
+  const [selectedTrafficPackage, setSelectedTrafficPackage] = useState<number | null>(null);
+  const trafficTopupTriggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (location.pathname !== '/balance') return;
@@ -97,6 +102,13 @@ export default function Dashboard() {
       ? requestedSubscriptionId
       : subscriptions[0]?.id) ?? undefined;
 
+  useEffect(() => {
+    if (!routeSubscriptionId || !multiSubData) return;
+    const routeId = Number(routeSubscriptionId);
+    if (Number.isSafeInteger(routeId) && subscriptions.some((item) => item.id === routeId)) return;
+    navigate(getCabinetClosePath(subscriptions[0]?.id), { replace: true });
+  }, [multiSubData, navigate, routeSubscriptionId, subscriptions]);
+
   const {
     data: subscriptionResponse,
     isLoading: subLoading,
@@ -113,6 +125,13 @@ export default function Dashboard() {
   });
 
   const subscription = subscriptionResponse?.subscription ?? null;
+
+  const { data: purchaseOptions } = useQuery({
+    queryKey: ['purchase-options', selectedSubscriptionId],
+    queryFn: () => subscriptionApi.getPurchaseOptions(selectedSubscriptionId),
+    enabled: Boolean(subscription?.is_limited && showTrafficTopup),
+    staleTime: 0,
+  });
 
   const { data: trialInfo, isLoading: trialLoading } = useQuery({
     queryKey: ['trial-info'],
@@ -322,9 +341,12 @@ export default function Dashboard() {
   const closeOverlay = () => {
     navigate(getCabinetClosePath(overlaySubscriptionId), { replace: true });
   };
+  const closeTrafficTopup = () => {
+    setShowTrafficTopup(false);
+    requestAnimationFrame(() => trafficTopupTriggerRef.current?.focus({ preventScroll: true }));
+  };
 
   const overlayContent = (() => {
-    if (routeState.overlay === 'subscription') return <Subscription />;
     if (routeState.overlay === 'devices' && overlaySubscriptionId) {
       return <DevicesPanel subscriptionId={overlaySubscriptionId} />;
     }
@@ -395,7 +417,11 @@ export default function Dashboard() {
           <select
             className="input w-full"
             value={selectedSubscriptionId}
-            onChange={(event) => navigate(`/?sub=${event.target.value}`)}
+            onChange={(event) => {
+              setShowTrafficTopup(false);
+              setSelectedTrafficPackage(null);
+              navigate(`/?sub=${event.target.value}`);
+            }}
           >
             {subscriptions.map((item) => (
               <option key={item.id} value={item.id}>
@@ -470,6 +496,12 @@ export default function Dashboard() {
           subscription={subscription}
           balanceKopeks={balanceError ? null : (balanceData?.balance_kopeks ?? null)}
           balanceRubles={balanceError ? null : (balanceData?.balance_rubles ?? null)}
+          isTrafficTopupOpen={showTrafficTopup}
+          trafficTopupTriggerRef={trafficTopupTriggerRef}
+          onBuyTraffic={() => {
+            setSelectedTrafficPackage(null);
+            setShowTrafficTopup(true);
+          }}
         />
       ) : subscription ? (
         <SubscriptionCardActive
@@ -501,6 +533,22 @@ export default function Dashboard() {
             </span>
           </button>
         )}
+
+      {subscription?.is_limited && showTrafficTopup && (
+        <div id="traffic-topup-panel" role="region" aria-live="polite">
+          <TrafficTopupSheet
+            open
+            onOpen={() => setShowTrafficTopup(true)}
+            onClose={closeTrafficTopup}
+            subscription={subscription}
+            subscriptionId={subscription.id}
+            selectedTrafficPackage={selectedTrafficPackage}
+            onSelectedTrafficPackageChange={setSelectedTrafficPackage}
+            purchaseOptions={purchaseOptions}
+            isDark={isDark}
+          />
+        </div>
+      )}
 
       {subscriptions.length > 0 && (
         <Link
