@@ -5,8 +5,8 @@ test('shows the simplified desktop or mobile user navigation', async ({ page }) 
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page);
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Welcome, Browser Test!' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /View plans and subscribe/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Browser Test!' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Choose tariff' })).toBeVisible();
 
   if ((page.viewportSize()?.width ?? 1280) < 1024) {
     await expect(page.locator('header:visible')).toHaveCount(0);

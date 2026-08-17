@@ -43,16 +43,16 @@ const baseClasses = `
   bento-card
   rounded-[var(--bento-radius)]
   p-[var(--bento-padding)]
-  bg-dark-900/70
-  border border-dark-700/40
+  bg-dark-900/95
+  border border-dark-700/65
   duration-300 ease-smooth
   transition-[border-color,background-color,box-shadow,transform]
 `;
 
 const hoverClasses = `
   cursor-pointer
-  hover:bg-dark-800/60
-  hover:border-dark-600/50
+  hover:bg-dark-800/85
+  hover:border-dark-600/80
   hover:shadow-lg
   hover:scale-[1.01]
   active:scale-[0.99]

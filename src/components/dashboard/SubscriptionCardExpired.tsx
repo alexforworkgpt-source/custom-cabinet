@@ -21,6 +21,8 @@ interface SubscriptionCardExpiredProps {
   trafficTopupTriggerRef: RefObject<HTMLButtonElement | null>;
   onBuyTraffic: () => void;
   onManageSubscription: () => void;
+  managementOpen: boolean;
+  purchaseLabel: string;
   className?: string;
 }
 
@@ -32,6 +34,8 @@ export default function SubscriptionCardExpired({
   trafficTopupTriggerRef,
   onBuyTraffic,
   onManageSubscription,
+  managementOpen,
+  purchaseLabel,
   className,
 }: SubscriptionCardExpiredProps) {
   const { t } = useTranslation();
@@ -136,7 +140,7 @@ export default function SubscriptionCardExpired({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-3xl ${className ?? ''}`}
+      className={`relative overflow-hidden rounded-3xl px-5 py-5 sm:px-6 ${className ?? ''}`}
       style={{
         background: g.cardBg,
         border: isDark
@@ -145,7 +149,6 @@ export default function SubscriptionCardExpired({
         boxShadow: isDark
           ? g.shadow
           : `0 2px 16px rgba(${accent.r},${accent.g},${accent.b},0.1), 0 0 0 1px rgba(${accent.r},${accent.g},${accent.b},0.06)`,
-        padding: '28px 28px 24px',
       }}
     >
       {/* Glow */}
@@ -165,7 +168,7 @@ export default function SubscriptionCardExpired({
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          opacity: isDark ? 0.02 : 0.04,
+          opacity: isDark ? 0.01 : 0.02,
           backgroundImage: isDark
             ? `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`
@@ -177,7 +180,7 @@ export default function SubscriptionCardExpired({
       />
 
       {/* Header */}
-      <div className="mb-5 flex items-center gap-3">
+      <div className="mb-4 flex items-center gap-3">
         <div
           className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]"
           style={{
@@ -212,11 +215,11 @@ export default function SubscriptionCardExpired({
 
       {/* Expired date + Balance row */}
       <div
-        className="mb-5 flex items-center justify-between rounded-[14px]"
+        className="mb-4 flex items-center justify-between rounded-[14px]"
         style={{
           background: `rgba(${accent.r},${accent.g},${accent.b},0.04)`,
           border: `1px solid rgba(${accent.r},${accent.g},${accent.b},0.08)`,
-          padding: '14px 18px',
+          padding: '12px 14px',
         }}
       >
         <div className="flex items-center">
@@ -273,84 +276,72 @@ export default function SubscriptionCardExpired({
             <PlusIcon className="h-4 w-4" />
             {t('subscription.buyTraffic')}
           </button>
-        ) : (
-          <>
-            {/* Quick Renew or Top Up button (hidden for expired trials) */}
-            {!subscription.is_trial && (
-              <>
-                {balanceKopeks === null ? (
-                  <button
-                    type="button"
-                    disabled
-                    className="flex flex-1 cursor-not-allowed items-center justify-center rounded-[14px] bg-dark-700 py-3.5 text-[15px] font-semibold text-dark-400"
-                  >
-                    {t('dashboard.dataUnavailable')}
-                  </button>
-                ) : hasBalance ? (
-                  <button
-                    type="button"
-                    onClick={handleQuickRenew}
-                    disabled={isRenewing}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-[14px] py-3.5 text-[15px] font-semibold tracking-tight text-white transition-all duration-300 disabled:opacity-50"
-                    style={{
-                      background: accent.gradient,
-                      boxShadow: `0 4px 20px rgba(${accent.r},${accent.g},${accent.b},0.2)`,
-                    }}
-                  >
-                    {isRenewing ? (
-                      <span
-                        className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <SubscriptionIcon className="h-4 w-4" />
-                    )}
-                    {isRenewing
-                      ? t('common.loading')
-                      : isDisabledDaily
-                        ? t('dashboard.suspended.resume')
-                        : t('dashboard.expired.quickRenew')}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleTopUp}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-[14px] py-3.5 text-[15px] font-semibold tracking-tight text-white transition-all duration-300"
-                    style={{
-                      background: accent.gradient,
-                      boxShadow: `0 4px 20px rgba(${accent.r},${accent.g},${accent.b},0.2)`,
-                    }}
-                  >
-                    <PlusIcon className="h-4 w-4" />
-                    {t('dashboard.expired.topUp')}
-                  </button>
-                )}
-              </>
-            )}
-
-            {/* Tariffs (go to purchase page) — full-width for trials */}
-            <Link
-              to="/subscription/purchase"
-              className={`flex items-center justify-center rounded-[14px] px-5 py-3.5 text-[15px] font-semibold tracking-tight transition-colors duration-200 ${
-                subscription.is_trial ? 'flex-1 text-white' : 'text-dark-50/50'
-              }`}
-              style={
-                subscription.is_trial
-                  ? {
-                      background: accent.gradient,
-                      boxShadow: `0 4px 20px rgba(${accent.r},${accent.g},${accent.b},0.2)`,
-                    }
-                  : {
-                      background: g.innerBg,
-                      border: `1px solid ${g.innerBorder}`,
-                    }
-              }
+        ) : !subscription.is_trial ? (
+          balanceKopeks === null ? (
+            <button
+              type="button"
+              disabled
+              className="flex flex-1 cursor-not-allowed items-center justify-center rounded-[14px] bg-dark-700 py-3.5 text-[15px] font-semibold text-dark-400"
             >
-              {t('dashboard.expired.tariffs')}
-            </Link>
-          </>
-        )}
+              {t('dashboard.dataUnavailable')}
+            </button>
+          ) : hasBalance ? (
+            <button
+              type="button"
+              onClick={handleQuickRenew}
+              disabled={isRenewing}
+              className="flex flex-1 items-center justify-center gap-2 rounded-[14px] py-3.5 text-[15px] font-semibold tracking-tight text-white transition-all duration-300 disabled:opacity-50"
+              style={{
+                background: accent.gradient,
+                boxShadow: `0 4px 20px rgba(${accent.r},${accent.g},${accent.b},0.2)`,
+              }}
+            >
+              {isRenewing ? (
+                <span
+                  className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                  aria-hidden="true"
+                />
+              ) : (
+                <SubscriptionIcon className="h-4 w-4" />
+              )}
+              {isRenewing
+                ? t('common.loading')
+                : isDisabledDaily
+                  ? t('dashboard.suspended.resume')
+                  : t('dashboard.expired.quickRenew')}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleTopUp}
+              className="flex flex-1 items-center justify-center gap-2 rounded-[14px] py-3.5 text-[15px] font-semibold tracking-tight text-white transition-all duration-300"
+              style={{
+                background: accent.gradient,
+                boxShadow: `0 4px 20px rgba(${accent.r},${accent.g},${accent.b},0.2)`,
+              }}
+            >
+              <PlusIcon className="h-4 w-4" />
+              {t('dashboard.expired.topUp')}
+            </button>
+          )
+        ) : null}
       </div>
+      <Link
+        to="/subscription/purchase"
+        className="mt-3 flex min-h-11 w-full items-center justify-center rounded-[14px] px-4 py-3 text-center text-sm font-semibold tracking-tight text-dark-50/70 transition-colors duration-200 hover:text-dark-50"
+        style={{ background: g.innerBg, border: `1px solid ${g.innerBorder}` }}
+      >
+        {purchaseLabel}
+      </Link>
+      <button
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded={managementOpen}
+        onClick={onManageSubscription}
+        className="mt-2 flex min-h-11 w-full items-center justify-center rounded-[14px] border border-dark-700/60 bg-dark-900/80 px-4 py-3 text-center text-sm font-semibold text-dark-200 transition-colors hover:border-dark-600/80 hover:bg-dark-800/80"
+      >
+        {t('dashboard.manageSubscription')}
+      </button>
     </div>
   );
 }

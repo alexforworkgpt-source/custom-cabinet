@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/auth';
-import { displayName } from '../utils/displayName';
 import { useBlockingStore } from '../store/blocking';
 import { subscriptionApi } from '../api/subscription';
 import { referralApi } from '../api/referral';
@@ -17,17 +16,15 @@ import SubscriptionCardExpired from '../components/dashboard/SubscriptionCardExp
 import TrialOfferCard from '../components/dashboard/TrialOfferCard';
 import StatsGrid from '../components/dashboard/StatsGrid';
 import { giftApi } from '../api/gift';
-import { promoApi } from '../api/promo';
 import PendingGiftCard from '../components/dashboard/PendingGiftCard';
 import { API } from '../config/constants';
-import { ChevronRightIcon, StarIcon } from '@/components/icons';
+import { ChevronRightIcon } from '@/components/icons';
 import { ResponsiveOverlay } from '@/components/primitives/ResponsiveOverlay';
 import { getCabinetClosePath, getUserCabinetRouteState } from '@/utils/userCabinetRouteState';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { useTheme } from '@/hooks/useTheme';
 import { isFailedStatus, isPaidStatus } from '@/utils/paymentStatus';
 import { TrafficTopupSheet } from '@/components/subscription/sheets/TrafficTopupSheet';
-import { Button } from '@/components/primitives/Button';
 import { copyToClipboard } from '@/utils/clipboard';
 import { resolveConnectionUrlForUi } from '@/utils/connectionLink';
 
@@ -45,7 +42,6 @@ export default function Dashboard() {
   const { subscriptionId: routeSubscriptionId } = useParams<{ subscriptionId: string }>();
   const [searchParams] = useSearchParams();
   const routeState = getUserCabinetRouteState(location.pathname, location.search);
-  const user = useAuthStore((state) => state.user);
   const refreshUser = useAuthStore((state) => state.refreshUser);
   const queryClient = useQueryClient();
   const { isCompleted: isOnboardingCompleted, complete: completeOnboarding } = useOnboarding();
@@ -205,13 +201,6 @@ export default function Dashboard() {
     retry: false,
   });
 
-  const { data: promoGroupData } = useQuery({
-    queryKey: ['promo-group-discounts'],
-    queryFn: promoApi.getGroupDiscounts,
-    staleTime: 60_000,
-    retry: false,
-  });
-
   const activateTrialMutation = useMutation({
     mutationFn: () => subscriptionApi.activateTrial(),
     onSuccess: () => {
@@ -317,12 +306,6 @@ export default function Dashboard() {
     ? multiSubData !== undefined && (multiSubData.subscriptions?.length ?? 0) === 0
     : subscriptionResponse?.has_subscription === false && !subLoading;
 
-  // Есть ли НАСТОЯЩАЯ (платная, не триал) живая подписка — от этого зависит CTA:
-  // «+ Купить ещё» только при наличии платной; иначе явная «Посмотреть тарифы».
-  const hasActivePaid = subscriptions.some(
-    (s) => !s.is_trial && (s.status === 'active' || s.status === 'limited'),
-  );
-
   // Show onboarding for new users after data loads
   useEffect(() => {
     if (!isOnboardingCompleted && !subLoading && !refLoading && !blockingType) {
@@ -339,12 +322,6 @@ export default function Dashboard() {
       description: string;
       placement: Placement;
     }> = [
-      {
-        target: 'welcome',
-        title: t('onboarding.steps.welcome.title'),
-        description: t('onboarding.steps.welcome.description'),
-        placement: 'bottom',
-      },
       {
         target: 'balance',
         title: t('onboarding.steps.balance.title'),
@@ -370,7 +347,6 @@ export default function Dashboard() {
     setShowOnboarding(false);
   };
 
-  const userName = displayName(user);
   const overlaySubscriptionId = routeState.subscriptionId ?? subscription?.id;
   const closeOverlay = () => {
     navigate(getCabinetClosePath(overlaySubscriptionId), { replace: true });
@@ -442,29 +418,6 @@ export default function Dashboard() {
         if (target && event.currentTarget.contains(target)) overlayTriggerRef.current = target;
       }}
     >
-      {/* Header */}
-      <div data-onboarding="welcome">
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
-          {userName ? t('dashboard.welcome', { name: userName }) : t('dashboard.welcomeNoName')}
-        </h1>
-        <div className="mt-1 flex flex-wrap items-center gap-2">
-          <p className="text-dark-400">{t('dashboard.yourSubscription')}</p>
-          {promoGroupData?.group_name && (
-            <span
-              className="inline-flex max-w-[160px] items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-              style={{
-                background: 'rgba(var(--color-accent-400), 0.1)',
-                border: '1px solid rgba(var(--color-accent-400), 0.2)',
-                color: 'rgb(var(--color-accent-400))',
-              }}
-            >
-              <StarIcon filled className="h-2.5 w-2.5 shrink-0" />
-              <span className="truncate">{promoGroupData.group_name}</span>
-            </span>
-          )}
-        </div>
-      </div>
-
       {/* Pending Gift Activations */}
       {pendingGifts && pendingGifts.length > 0 && <PendingGiftCard gifts={pendingGifts} />}
 
@@ -562,6 +515,8 @@ export default function Dashboard() {
             setShowTrafficTopup(true);
           }}
           onManageSubscription={() => navigate(`/subscriptions/${subscription.id}`)}
+          managementOpen={managementOpen}
+          purchaseLabel={t('subscriptions.chooseTariff')}
         />
       ) : subscription ? (
         <SubscriptionCardActive
@@ -578,41 +533,11 @@ export default function Dashboard() {
             setSubscriptionLinkCopied(true);
             setTimeout(() => setSubscriptionLinkCopied(false), 2000);
           }}
+          onManageSubscription={() => navigate(`/subscriptions/${subscription.id}`)}
+          managementOpen={managementOpen}
+          purchaseLabel={t('subscriptions.chooseTariff')}
         />
       ) : null}
-
-      {subscription && (
-        <div className="grid grid-cols-2 gap-2.5">
-          <Button
-            type="button"
-            variant="secondary"
-            fullWidth
-            aria-haspopup="dialog"
-            aria-expanded={managementOpen}
-            onClick={() => navigate(`/subscriptions/${subscription.id}`)}
-            className="h-auto min-h-11 justify-center rounded-2xl bg-dark-900/70 px-3 py-3 text-center text-xs font-semibold hover:bg-dark-800/80 sm:text-sm"
-          >
-            {t('dashboard.manageSubscription')}
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            fullWidth
-            aria-haspopup="dialog"
-            onClick={() => navigate(`/?sub=${subscription.id}&overlay=devices`)}
-            className="h-auto min-h-11 justify-between rounded-2xl bg-dark-900/70 px-3 py-3 text-left text-xs font-semibold hover:bg-dark-800/80 sm:text-sm"
-          >
-            <span>{t('subscription.myDevices')}</span>
-            <span className="shrink-0 font-normal text-dark-400">
-              {devicesError
-                ? t('dashboard.dataUnavailable')
-                : subscription.device_limit === 0
-                  ? `${devicesData?.total ?? 0} / ∞`
-                  : `${devicesData?.total ?? 0} / ${subscription.device_limit}`}
-            </span>
-          </Button>
-        </div>
-      )}
 
       {subscription?.is_limited && showTrafficTopup && (
         <div id="traffic-topup-panel" role="region" aria-live="polite">
@@ -628,16 +553,6 @@ export default function Dashboard() {
             isDark={isDark}
           />
         </div>
-      )}
-
-      {subscriptions.length > 0 && (
-        <Link
-          to="/subscription/purchase"
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent-500/10 p-3 text-sm font-medium text-accent-400 transition-colors hover:bg-accent-500/20"
-        >
-          <span aria-hidden="true">+</span>
-          {hasActivePaid ? t('subscriptions.buyAnother') : t('subscriptions.browsePlans')}
-        </Link>
       )}
 
       {/* Нет подписок: показываем триал (если доступен) и ВСЕГДА одну явную
@@ -660,7 +575,7 @@ export default function Dashboard() {
             to="/subscription/purchase"
             className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent-500 p-3.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-600"
           >
-            <span className="text-base">+</span> {t('subscriptions.browsePlans')}
+            {t('subscriptions.chooseTariff')}
           </Link>
         </div>
       )}
@@ -675,6 +590,15 @@ export default function Dashboard() {
         earningsRubles={referralInfo?.available_balance_rubles || 0}
         refLoading={refLoading}
         showReferral={referralEnabled}
+        devices={
+          subscription
+            ? {
+                used: devicesError ? null : (devicesData?.total ?? 0),
+                limit: subscription.device_limit,
+                onOpen: () => navigate(`/?sub=${subscription.id}&overlay=devices`),
+              }
+            : undefined
+        }
       />
 
       {/* Fortune Wheel Banner */}

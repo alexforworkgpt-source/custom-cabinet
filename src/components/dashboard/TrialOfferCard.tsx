@@ -66,7 +66,7 @@ export default function TrialOfferCard({
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          opacity: isDark ? 0.025 : 0.04,
+          opacity: isDark ? 0.0125 : 0.02,
           backgroundImage: isDark
             ? `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`

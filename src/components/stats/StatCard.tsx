@@ -50,7 +50,7 @@ export function StatCard({
   const trendStyle = delta ? (TREND_STYLES[delta.trend] ?? TREND_STYLES.stable) : null;
 
   return (
-    <div className="h-full rounded-xl bg-dark-800/30 p-3 transition-colors hover:bg-dark-800/50">
+    <div className="h-full rounded-xl border border-dark-700/60 bg-dark-900/90 p-3 shadow-[0_10px_24px_-22px_rgba(0,0,0,0.9)] transition-colors hover:border-dark-600/80 hover:bg-dark-800/85">
       <div className="flex items-center justify-between gap-2">
         <span className="line-clamp-2 text-xs leading-tight text-dark-500 sm:text-sm">{label}</span>
         {trailing}

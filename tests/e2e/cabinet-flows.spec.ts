@@ -175,6 +175,18 @@ const activeResponses = {
   '/api/cabinet/subscription/refresh-traffic': trafficResponse,
 };
 
+const enabledReferralTerms = {
+  is_enabled: true,
+  commission_percent: 10,
+  minimum_topup_kopeks: 0,
+  minimum_topup_rubles: 0,
+  first_topup_bonus_kopeks: 0,
+  first_topup_bonus_rubles: 0,
+  inviter_bonus_kopeks: 0,
+  inviter_bonus_rubles: 0,
+  max_commission_payments: 0,
+};
+
 test.describe('unified dashboard states', () => {
   const scenarios = [
     {
@@ -285,6 +297,57 @@ test.describe('unified dashboard states', () => {
   });
 });
 
+test('keeps the compact Dashboard responsive in dark and light themes', async ({ page }) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    featureFlags: { referralEnabled: true },
+    responses: {
+      ...activeResponses,
+      '/api/cabinet/referral/terms': enabledReferralTerms,
+    },
+  });
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('cabinet-theme')) localStorage.setItem('cabinet-theme', 'dark');
+  });
+
+  const expectCompactLayout = async () => {
+    const summary = page.getByRole('region', { name: 'Traffic Usage' });
+    const purchaseLink = summary.getByRole('link', { name: 'Choose tariff' });
+    const balanceCard = page.getByRole('link', { name: /Balance/ });
+    const referralCard = page.getByRole('link', { name: /Referrals/ });
+    const devicesCard = page.getByRole('button', { name: /My Devices/ });
+    const [summaryBox, purchaseBox, balanceBox, referralBox, devicesBox] = await Promise.all([
+      summary.boundingBox(),
+      purchaseLink.boundingBox(),
+      balanceCard.boundingBox(),
+      referralCard.boundingBox(),
+      devicesCard.boundingBox(),
+    ]);
+
+    if (!summaryBox || !purchaseBox || !balanceBox || !referralBox || !devicesBox) {
+      throw new Error('Compact Dashboard elements must have visible bounding boxes');
+    }
+    expect(summaryBox.height).toBeLessThanOrEqual(500);
+    expect(purchaseBox.y).toBeGreaterThan(summaryBox.y + summaryBox.height / 2);
+    expect(referralBox.x).toBeGreaterThan(balanceBox.x);
+    expect(devicesBox.x).toBeGreaterThan(referralBox.x);
+    expect(Math.abs(devicesBox.y - balanceBox.y)).toBeLessThan(2);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      await page.evaluate(() => window.innerWidth),
+    );
+  };
+
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await expect(page.getByRole('heading', { name: /Welcome/ })).toHaveCount(0);
+  await expectCompactLayout();
+
+  await page.evaluate(() => localStorage.setItem('cabinet-theme', 'light'));
+  await page.reload();
+  await expect(page.locator('html')).toHaveClass(/light/);
+  await expectCompactLayout();
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
 test('opens traffic top-up from the unified Dashboard @desktop-flow', async ({ page }) => {
   const limitedSubscription = {
     ...activeSubscription,
@@ -325,9 +388,11 @@ test('opens traffic top-up from the unified Dashboard @desktop-flow', async ({ p
 
 test('opens complete subscription management on the Dashboard @desktop-flow', async ({ page }) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    featureFlags: { referralEnabled: true },
     responses: {
       ...activeResponses,
       ...connectionResponses,
+      '/api/cabinet/referral/terms': enabledReferralTerms,
       '/api/cabinet/subscription/purchase-options': {
         sales_mode: 'classic',
         periods: [],
@@ -341,18 +406,29 @@ test('opens complete subscription management on the Dashboard @desktop-flow', as
 
   await page.goto('/?sub=1');
 
-  const managementTrigger = page.getByRole('button', { name: 'Manage subscription' });
+  const summary = page.getByRole('region', { name: 'Traffic Usage' });
+  const tariffTrigger = summary.getByRole('link', { name: 'Choose tariff' });
+  const managementTrigger = summary.getByRole('button', { name: 'Manage subscription' });
   const devicesTrigger = page.getByRole('button', { name: /My Devices/ });
   await expect(managementTrigger).toHaveAttribute('aria-expanded', 'false');
   await expect(page.getByText(activeSubscription.subscription_url, { exact: true })).toBeVisible();
   await expect(page.getByText(activeSubscription.tariff_name, { exact: true })).toHaveCount(1);
-  const [managementBox, devicesBox] = await Promise.all([
+  const balanceCard = page.getByRole('link', { name: /Balance/ });
+  const referralCard = page.getByRole('link', { name: /Referrals/ });
+  const [tariffBox, managementBox, balanceBox, referralBox, devicesBox] = await Promise.all([
+    tariffTrigger.boundingBox(),
     managementTrigger.boundingBox(),
+    balanceCard.boundingBox(),
+    referralCard.boundingBox(),
     devicesTrigger.boundingBox(),
   ]);
-  expect(managementBox).not.toBeNull();
-  expect(devicesBox).not.toBeNull();
-  expect(devicesBox!.x).toBeGreaterThan(managementBox!.x);
+  if (!tariffBox || !managementBox || !balanceBox || !referralBox || !devicesBox) {
+    throw new Error('Dashboard action elements must have visible bounding boxes');
+  }
+  expect(managementBox.y).toBeGreaterThan(tariffBox.y + tariffBox.height);
+  expect(referralBox.x).toBeGreaterThan(balanceBox.x);
+  expect(devicesBox.x).toBeGreaterThan(referralBox.x);
+  expect(Math.abs(devicesBox.y - balanceBox.y)).toBeLessThan(2);
   const dashboardActions = await page.locator('main button, main a, main code').allTextContents();
   expect(dashboardActions.findIndex((text) => text.includes('Connect Device'))).toBeLessThan(
     dashboardActions.findIndex((text) => text.includes(activeSubscription.subscription_url)),
@@ -363,9 +439,10 @@ test('opens complete subscription management on the Dashboard @desktop-flow', as
   expect(dashboardActions.findIndex((text) => text.includes('Manage subscription'))).toBeLessThan(
     dashboardActions.findIndex((text) => text.includes('My Devices')),
   );
-  expect(dashboardActions.findIndex((text) => text.includes('Manage subscription'))).toBeLessThan(
-    dashboardActions.findIndex((text) => text.includes('Buy another')),
+  expect(dashboardActions.findIndex((text) => text.includes('Choose tariff'))).toBeLessThan(
+    dashboardActions.findIndex((text) => text.includes('Manage subscription')),
   );
+  await expect(page.getByRole('link', { name: 'Choose tariff' })).toHaveCount(1);
 
   await managementTrigger.click();
   await expect(page).toHaveURL('/subscriptions/1');
@@ -403,11 +480,29 @@ test('manages Devices in an overlay and returns to the same dashboard context @c
   page,
 }) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
-    responses: activeResponses,
+    featureFlags: { referralEnabled: true },
+    responses: {
+      ...activeResponses,
+      '/api/cabinet/referral/terms': enabledReferralTerms,
+    },
   });
 
   await page.goto('/?sub=1');
   const devicesButton = page.getByRole('button', { name: /My Devices/ });
+  const [balanceBox, referralBox, devicesBox] = await Promise.all([
+    page.getByRole('link', { name: /Balance/ }).boundingBox(),
+    page.getByRole('link', { name: /Referrals/ }).boundingBox(),
+    devicesButton.boundingBox(),
+  ]);
+  if (!balanceBox || !referralBox || !devicesBox) {
+    throw new Error('Dashboard stat cards must have visible bounding boxes');
+  }
+  expect(referralBox.x).toBeGreaterThan(balanceBox.x);
+  expect(devicesBox.x).toBeGreaterThan(referralBox.x);
+  expect(Math.abs(devicesBox.y - balanceBox.y)).toBeLessThan(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    await page.evaluate(() => window.innerWidth),
+  );
   await devicesButton.focus();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL('/?sub=1&overlay=devices');
@@ -422,8 +517,27 @@ test('manages Devices in an overlay and returns to the same dashboard context @c
   await expect(dialog.getByText('1 / 3')).toBeVisible();
   await expect(dialog.getByText('Home laptop')).toBeVisible();
   const renameButton = dialog.getByRole('button', { name: 'Rename' });
+  const deleteButton = dialog.getByRole('button', { name: 'Delete device' });
+  const deviceRow = dialog.getByText('Home laptop', { exact: true }).locator('xpath=ancestor::li');
+  const [rowBox, renameBox, deleteBox] = await Promise.all([
+    deviceRow.boundingBox(),
+    renameButton.boundingBox(),
+    deleteButton.boundingBox(),
+  ]);
+  if (!rowBox || !renameBox || !deleteBox) {
+    throw new Error('Device row and icon actions must have visible bounding boxes');
+  }
+  expect(renameBox.x).toBeGreaterThan(rowBox.x + rowBox.width / 2);
+  expect(deleteBox.x).toBeGreaterThan(renameBox.x);
+  expect(Math.abs(deleteBox.y - renameBox.y)).toBeLessThan(2);
+  expect(await renameButton.textContent()).toBe('');
+  expect(await deleteButton.textContent()).toBe('');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    await page.evaluate(() => window.innerWidth),
+  );
   await renameButton.click();
   await dialog.getByRole('textbox', { name: 'Rename' }).fill('Temporary name');
+  await expect(dialog.getByRole('button', { name: 'Save' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Cancel' }).click();
 
   await page.keyboard.press('Escape');

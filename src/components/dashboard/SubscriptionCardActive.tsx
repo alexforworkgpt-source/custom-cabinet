@@ -1,6 +1,6 @@
 import { uiLocale } from '@/utils/uiLocale';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import type { UseMutationResult } from '@tanstack/react-query';
 import TrafficProgressBar from './TrafficProgressBar';
 import Sparkline from './Sparkline';
@@ -27,6 +27,9 @@ interface SubscriptionCardActiveProps {
   connectionUrl?: string | null;
   connectionUrlCopied?: boolean;
   onCopyConnectionUrl?: () => void;
+  onManageSubscription: () => void;
+  managementOpen: boolean;
+  purchaseLabel: string;
 }
 
 export default function SubscriptionCardActive({
@@ -38,6 +41,9 @@ export default function SubscriptionCardActive({
   connectionUrl,
   connectionUrlCopied = false,
   onCopyConnectionUrl,
+  onManageSubscription,
+  managementOpen,
+  purchaseLabel,
 }: SubscriptionCardActiveProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -64,8 +70,9 @@ export default function SubscriptionCardActive({
   const dailyUsage: number[] = [];
 
   return (
-    <div
-      className="relative overflow-hidden rounded-3xl lg:backdrop-blur-xl"
+    <section
+      aria-labelledby="subscription-traffic-title"
+      className="relative overflow-hidden rounded-3xl px-5 py-5 sm:px-6 lg:backdrop-blur-xl"
       style={{
         background: g.cardBg,
         border: subscription.is_trial
@@ -73,7 +80,6 @@ export default function SubscriptionCardActive({
           : isDark
             ? `1px solid ${g.cardBorder}`
             : `1px solid rgba(${zone.mainVarRaw}, 0.14)`,
-        padding: '28px 28px 24px',
         boxShadow: isDark
           ? g.shadow
           : `0 2px 16px rgba(${zone.mainVarRaw}, 0.07), 0 0 0 1px rgba(${zone.mainVarRaw}, 0.03)`,
@@ -84,7 +90,7 @@ export default function SubscriptionCardActive({
           carried no information and ate visual attention. */}
 
       {/* ─── Header ─── */}
-      <div className="mb-7 flex items-start justify-between">
+      <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           {/* Zone indicator */}
           <div className="mb-1 flex items-center gap-2">
@@ -130,46 +136,68 @@ export default function SubscriptionCardActive({
           </div>
 
           {/* Title */}
-          <h2 className="text-lg font-bold tracking-tight text-dark-50">
+          <h2
+            id="subscription-traffic-title"
+            className="text-lg font-bold tracking-tight text-dark-50"
+          >
             {t('dashboard.trafficUsageTitle')}
           </h2>
         </div>
 
         {/* Big percentage / infinity */}
-        <div className="text-right">
-          {isUnlimited ? (
-            <>
-              <div
-                className="font-display text-[28px] font-extrabold leading-none tracking-tight"
-                style={{ color: zone.mainVar }}
-              >
-                &#8734;
-              </div>
-              <div className="mt-1 font-mono text-[11px] text-dark-50/30">
-                {formatTraffic(usedGb)} {t('dashboard.usedSuffix')}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="font-display text-[38px] font-extrabold leading-none tracking-tight text-dark-50">
-                {animatedPercent.toFixed(0)}
-                <span className="ml-px text-lg font-medium text-dark-50/35">%</span>
-              </div>
-              <div className="mt-0.5 font-mono text-[11px] text-dark-50/30">
-                {formatTraffic(usedGb)} / {formatTraffic(subscription.traffic_limit_gb)}
-              </div>
-            </>
-          )}
+        <div className="flex shrink-0 items-center gap-1.5 text-right">
+          <button
+            type="button"
+            onClick={() => refreshTrafficMutation.mutate()}
+            disabled={refreshTrafficMutation.isPending || trafficRefreshCooldown > 0}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-dark-50/35 transition-colors hover:bg-dark-50/[0.05] hover:text-dark-50/50 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label={
+              trafficRefreshCooldown > 0
+                ? `${t('common.refresh')}: ${trafficRefreshCooldown}s`
+                : t('common.refresh')
+            }
+            title={t('common.refresh')}
+          >
+            <RefreshIcon
+              className={`h-4 w-4 ${refreshTrafficMutation.isPending ? 'animate-spin' : ''}`}
+            />
+          </button>
+          <div>
+            {isUnlimited ? (
+              <>
+                <div
+                  className="font-display text-2xl font-extrabold leading-none tracking-tight"
+                  style={{ color: zone.mainVar }}
+                >
+                  &#8734;
+                </div>
+                <div className="mt-1 font-mono text-[11px] text-dark-50/30">
+                  {formatTraffic(usedGb)} {t('dashboard.usedSuffix')}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="font-display text-[32px] font-extrabold leading-none tracking-tight text-dark-50">
+                  {animatedPercent.toFixed(0)}
+                  <span className="ml-px text-lg font-medium text-dark-50/35">%</span>
+                </div>
+                <div className="mt-0.5 font-mono text-[11px] text-dark-50/30">
+                  {formatTraffic(usedGb)} / {formatTraffic(subscription.traffic_limit_gb)}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
       {/* ─── Progress Bar ─── */}
-      <div className="mb-6">
+      <div className="mb-4">
         <TrafficProgressBar
           usedGb={usedGb}
           limitGb={subscription.traffic_limit_gb}
           percent={usedPercent}
           isUnlimited={isUnlimited}
+          compact
         />
       </div>
 
@@ -186,7 +214,7 @@ export default function SubscriptionCardActive({
             }
             navigate(`/connection?sub=${subscription.id}`);
           }}
-          className={`${connectionUrl ? 'mb-2.5' : 'mb-5'} flex w-full items-center gap-3.5 rounded-[14px] p-3.5 text-left transition-shadow duration-300${isAtDeviceLimit || isDeviceUsageUnavailable ? ' cursor-not-allowed opacity-50' : ''}`}
+          className={`${connectionUrl ? 'mb-2' : 'mb-4'} flex w-full items-center gap-3 rounded-[14px] p-3 text-left transition-shadow duration-300${isAtDeviceLimit || isDeviceUsageUnavailable ? ' cursor-not-allowed opacity-50' : ''}`}
           data-onboarding="connect-devices"
           style={{ fontFamily: 'inherit' }}
         >
@@ -286,7 +314,7 @@ export default function SubscriptionCardActive({
       )}
 
       {connectionUrl && (
-        <div className="mb-5 flex gap-2">
+        <div className="mb-4 flex gap-2">
           <code
             className="flex min-h-11 min-w-0 flex-1 items-center rounded-[10px] px-3 py-2 font-mono text-[11px] text-dark-50/30"
             style={{
@@ -319,12 +347,12 @@ export default function SubscriptionCardActive({
       )}
 
       {/* ─── Stats row: Tariff + Days Left ─── */}
-      <div className="mb-5 flex gap-2.5">
+      <div className="mb-3 flex gap-2.5">
         {/* Tariff badge. Neutral chrome: the tariff name has
             no traffic-zone semantics, so tinting it by the traffic zone
             (DESIGN.md Status-Hue Lockout) was wrong. */}
         <div
-          className="flex-1 rounded-[14px] p-3.5 transition-colors"
+          className="flex-1 rounded-[14px] p-3 transition-colors"
           style={{
             background: g.innerBg,
             border: `1px solid ${g.innerBorder}`,
@@ -346,7 +374,7 @@ export default function SubscriptionCardActive({
 
         {/* Days remaining */}
         <div
-          className="flex-1 rounded-[14px] p-3.5 transition-colors duration-300"
+          className="flex-1 rounded-[14px] p-3 transition-colors duration-300"
           style={{
             background: g.innerBg,
             border:
@@ -387,20 +415,21 @@ export default function SubscriptionCardActive({
         </div>
       </div>
 
-      {/* ─── Traffic Refresh ─── */}
-      <div className="mb-5 flex items-center justify-between px-0.5">
-        <button
-          onClick={() => refreshTrafficMutation.mutate()}
-          disabled={refreshTrafficMutation.isPending || trafficRefreshCooldown > 0}
-          className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium text-dark-50/35 transition-colors hover:bg-dark-50/[0.05] hover:text-dark-50/50 disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label={t('common.refresh')}
-        >
-          <RefreshIcon
-            className={`h-3 w-3 ${refreshTrafficMutation.isPending ? 'animate-spin' : ''}`}
-          />
-          {trafficRefreshCooldown > 0 ? `${trafficRefreshCooldown}s` : t('common.refresh')}
-        </button>
-      </div>
+      <Link
+        to="/subscription/purchase"
+        className="flex min-h-11 w-full items-center justify-center rounded-[14px] bg-accent-500/10 px-4 py-3 text-center text-sm font-semibold text-accent-400 transition-colors hover:bg-accent-500/20"
+      >
+        {purchaseLabel}
+      </Link>
+      <button
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded={managementOpen}
+        onClick={onManageSubscription}
+        className="mt-2 flex min-h-11 w-full items-center justify-center rounded-[14px] border border-dark-700/60 bg-dark-900/80 px-4 py-3 text-center text-sm font-semibold text-dark-200 transition-colors hover:border-dark-600/80 hover:bg-dark-800/80"
+      >
+        {t('dashboard.manageSubscription')}
+      </button>
 
       {/* ─── Sparkline ─── */}
       {dailyUsage.length >= 2 && (
@@ -419,6 +448,6 @@ export default function SubscriptionCardActive({
           <Sparkline data={dailyUsage} width={440} height={44} color={zone.mainVar} />
         </div>
       )}
-    </div>
+    </section>
   );
 }
