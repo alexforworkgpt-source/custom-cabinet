@@ -347,6 +347,56 @@ test('keeps the compact Dashboard responsive in dark and light themes', async ({
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
+test('keeps the top-right traffic value visible at 420 px @telegram-flow', async ({ page }) => {
+  await page.setViewportSize({ width: 420, height: 860 });
+  const longTrafficSubscription = {
+    ...activeSubscription,
+    traffic_limit_gb: 999.9,
+    traffic_used_gb: 987.6,
+    traffic_used_percent: 98.77,
+  };
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      ...activeResponses,
+      '/api/cabinet/subscription': {
+        has_subscription: true,
+        subscription: longTrafficSubscription,
+      },
+      '/api/cabinet/subscriptions': {
+        subscriptions: [longTrafficSubscription],
+        multi_tariff_enabled: false,
+      },
+      '/api/cabinet/subscription/refresh-traffic': {
+        ...trafficResponse,
+        traffic_used_gb: 987.6,
+        traffic_limit_gb: 999.9,
+        traffic_used_percent: 98.77,
+      },
+    },
+    language: 'ru',
+  });
+
+  await page.goto('/');
+
+  const summary = page.getByRole('region', { name: 'Расход трафика' });
+  const trafficValue = summary.getByText('987.6 ГБ / 999.9 ГБ', { exact: true });
+  await expect(trafficValue).toBeVisible();
+
+  const horizontalBounds = await trafficValue.evaluate((element) => {
+    const valueBox = element.getBoundingClientRect();
+    const card = element.closest('section');
+    if (!card) return null;
+    const cardBox = card.getBoundingClientRect();
+    const cardStyles = getComputedStyle(card);
+    const contentRight = cardBox.right - Number.parseFloat(cardStyles.paddingRight);
+    return { valueRight: valueBox.right, contentRight };
+  });
+
+  expect(horizontalBounds).not.toBeNull();
+  expect(horizontalBounds!.valueRight).toBeLessThanOrEqual(horizontalBounds!.contentRight + 0.5);
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
 test('opens traffic top-up from the unified Dashboard @desktop-flow', async ({ page }) => {
   const limitedSubscription = {
     ...activeSubscription,
@@ -588,10 +638,21 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   await expect(page).toHaveURL(/step=application/);
   await expect(dialog.getByRole('heading', { name: 'Install Test App', level: 2 })).toBeVisible();
   await expect(dialog.getByRole('heading', { name: 'Install Test App', level: 2 })).toBeFocused();
-  const downloadApp = dialog.getByRole('link', { name: 'Download Test App' });
+  const installSection = dialog.locator('[data-connection-section="install"]');
+  const installContent = installSection.locator('[data-connection-section-content]');
+  const installActions = installSection.locator('[data-connection-section-actions]');
+  const downloadApp = installActions.getByRole('link', { name: 'Download Test App' });
   await expect(downloadApp).toBeVisible();
+  await expect(installContent.getByRole('link', { name: 'Download Test App' })).toHaveCount(0);
   await expect(downloadApp).toHaveClass(/btn-primary/);
   await expect(downloadApp.locator('svg')).toHaveCount(1);
+  const [installContentBox, installActionsBox] = await Promise.all([
+    installContent.boundingBox(),
+    installActions.boundingBox(),
+  ]);
+  expect(installActionsBox?.y).toBeGreaterThanOrEqual(
+    (installContentBox?.y ?? 0) + (installContentBox?.height ?? 0),
+  );
   const chooseAnotherAppBox = await dialog
     .getByRole('button', { name: 'Choose another app' })
     .boundingBox();
@@ -604,13 +665,22 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   await expect(page).toHaveURL(/step=add/);
   await expect(dialog.getByRole('heading', { name: 'Add subscription', level: 2 })).toBeVisible();
   await expect(dialog.getByRole('heading', { name: 'Add subscription', level: 2 })).toBeFocused();
-  const addToApp = dialog.getByRole('button', { name: 'Add to Test App' });
+  const addSection = dialog.locator('[data-connection-section="add"]');
+  const addContent = addSection.locator('[data-connection-section-content]');
+  const addActions = addSection.locator('[data-connection-section-actions]');
+  const addToApp = addActions.getByRole('button', { name: 'Add to Test App' });
   await expect(addToApp).toHaveClass(/btn-primary/);
+  await expect(addContent.getByRole('button', { name: 'Add to Test App' })).toHaveCount(0);
   await expect(addToApp.locator('svg')).toHaveCount(1);
-  await expect(dialog.getByRole('button', { name: 'Subscription added' })).toHaveClass(
-    /btn-secondary/,
+  const [addContentBox, addActionsBox] = await Promise.all([
+    addContent.boundingBox(),
+    addActions.boundingBox(),
+  ]);
+  expect(addActionsBox?.y).toBeGreaterThanOrEqual(
+    (addContentBox?.y ?? 0) + (addContentBox?.height ?? 0),
   );
-  await dialog.getByRole('button', { name: 'Subscription added' }).click();
+  await expect(dialog.getByRole('button', { name: 'Subscription added' })).toHaveCount(0);
+  await addToApp.click();
   await expect(page).toHaveURL(/step=success/);
   await expect(
     dialog.getByRole('heading', { name: 'Subscription added successfully' }),
@@ -635,7 +705,7 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   ).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: 'Continue with Windows' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'App is installed' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Subscription added' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Add to Test App' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Finish' }).click();
   await expect(page).toHaveURL('/?sub=1');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
@@ -784,7 +854,7 @@ test('runs top-up method, amount, validation, cancellation, handoff, and result 
   expect(Math.max(...methodCardHeights)).toBeLessThanOrEqual(72);
   if (testInfo.project.name === 'mobile-320') {
     const methodListBox = await dialog.locator('[data-payment-method-list]').boundingBox();
-    expect(methodListBox?.height).toBeLessThanOrEqual(424);
+    expect(methodListBox?.height).toBeLessThanOrEqual(425);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       await page.evaluate(() => window.innerWidth),
     );

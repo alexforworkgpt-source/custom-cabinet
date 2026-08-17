@@ -158,6 +158,7 @@ interface PrepareAuthenticatedPageOptions {
   responseStatuses?: Record<string, number>;
   featureFlags?: Partial<BrowserFeatureFlags>;
   user?: typeof browserTestUser;
+  language?: string;
 }
 
 export async function prepareAuthenticatedPage(
@@ -178,11 +179,11 @@ export async function prepareAuthenticatedPage(
   };
 
   await page.addInitScript(
-    ({ accessToken, flags, user }) => {
+    ({ accessToken, flags, user, language }) => {
       sessionStorage.setItem('access_token', accessToken);
       localStorage.setItem('refresh_token', 'browser-test-refresh-token');
       localStorage.setItem('cabinet-auth', JSON.stringify({ state: { user }, version: 0 }));
-      localStorage.setItem('cabinet_language', 'en');
+      localStorage.setItem('cabinet_language', language);
       localStorage.setItem('onboarding_completed', 'true');
       localStorage.setItem('cabinet-feature-flags', JSON.stringify(flags));
     },
@@ -191,6 +192,7 @@ export async function prepareAuthenticatedPage(
         'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxIiwiZXhwIjo0MTAyNDQ0ODAwfQ.browser-test',
       flags: featureFlags,
       user: persistedUser,
+      language: options.language ?? 'en',
     },
   );
 

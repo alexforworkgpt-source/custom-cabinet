@@ -223,7 +223,11 @@ export default function InstallationGuide({
   }, [step]);
 
   const renderBlockButtons = useCallback(
-    (buttons: RemnawaveButtonClient[] | undefined, variant: 'light' | 'subtle') => (
+    (
+      buttons: RemnawaveButtonClient[] | undefined,
+      variant: 'light' | 'subtle',
+      onSubscriptionOpen?: () => void,
+    ) => (
       <BlockButtons
         buttons={buttons}
         variant={variant}
@@ -236,6 +240,7 @@ export default function InstallationGuide({
         getBaseTranslation={getBaseTranslation}
         getSvgHtml={getSvgHtml}
         onOpenDeepLink={onOpenDeepLink}
+        onSubscriptionOpen={onSubscriptionOpen}
       />
     ),
     [
@@ -322,16 +327,41 @@ export default function InstallationGuide({
     step,
   );
 
-  const renderConfiguredBlocks = (blocks: RenderBlock[]) => (
-    <Renderer
-      blocks={blocks}
-      isMobile={isMobile}
-      isLight={isLight}
-      getLocalizedText={getLocalizedText}
-      getSvgHtml={getSvgHtml}
-      renderBlockButtons={renderBlockButtons}
-    />
-  );
+  const renderConfiguredBlocks = (
+    blocks: RenderBlock[],
+    options?: {
+      section?: 'install' | 'add';
+      onSubscriptionOpen?: () => void;
+    },
+  ) => {
+    const buttons = options ? blocks.flatMap((block) => block.buttons ?? []) : [];
+    const renderedBlocks = options
+      ? blocks.map((block) => ({ ...block, buttons: undefined }))
+      : blocks;
+    const content = (
+      <Renderer
+        blocks={renderedBlocks}
+        isMobile={isMobile}
+        isLight={isLight}
+        getLocalizedText={getLocalizedText}
+        getSvgHtml={getSvgHtml}
+        renderBlockButtons={renderBlockButtons}
+      />
+    );
+
+    if (!options) return content;
+
+    return (
+      <div data-connection-section={options.section}>
+        <div data-connection-section-content>{content}</div>
+        {buttons.length > 0 && (
+          <div data-connection-section-actions>
+            {renderBlockButtons(buttons, 'light', options.onSubscriptionOpen)}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const selectPlatform = (platform: string) => {
     const data = appConfig.platforms[platform] as RemnawavePlatformData | undefined;
@@ -466,7 +496,11 @@ export default function InstallationGuide({
                 requestAnimationFrame(() => stepHeadingRef.current?.focus({ preventScroll: true }));
               }}
               onContinue={() => setFlowStep('add', currentPlatformKey, selectedApp.name)}
-              renderBlocks={renderConfiguredBlocks}
+              renderBlocks={(blocks) =>
+                renderConfiguredBlocks(blocks, {
+                  section: 'install',
+                })
+              }
             />
           )}
 
@@ -490,14 +524,11 @@ export default function InstallationGuide({
                     {getBaseTranslation('tutorial', 'subscription.connection.tutorial')}
                   </a>
                 )}
-              {renderConfiguredBlocks(renderBlocks)}
-              <button
-                type="button"
-                className="btn-secondary w-full justify-center"
-                onClick={() => setFlowStep('success', currentPlatformKey, selectedApp.name)}
-              >
-                {t('subscription.connection.subscriptionAdded', 'Subscription added')}
-              </button>
+              {renderConfiguredBlocks(renderBlocks, {
+                section: 'add',
+                onSubscriptionOpen: () =>
+                  setFlowStep('success', currentPlatformKey, selectedApp.name),
+              })}
             </div>
           )}
 

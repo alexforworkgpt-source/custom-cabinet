@@ -35,6 +35,7 @@ interface BlockButtonsProps {
   getBaseTranslation: (key: string, i18nKey: string) => string;
   getSvgHtml: (key: string | undefined) => string;
   onOpenDeepLink: (url: string) => void;
+  onSubscriptionOpen?: () => void;
 }
 
 export function BlockButtons({
@@ -49,6 +50,7 @@ export function BlockButtons({
   getBaseTranslation,
   getSvgHtml,
   onOpenDeepLink,
+  onSubscriptionOpen,
 }: BlockButtonsProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
@@ -88,7 +90,14 @@ export function BlockButtons({
           const url = resolved ? collapseDoubledCryptPrefix(resolved) : resolved;
           if (!url || hasTemplates(url) || !isValidDeepLink(url)) return null;
           return (
-            <button key={idx} onClick={() => onOpenDeepLink(url)} className={baseClass}>
+            <button
+              key={idx}
+              onClick={() => {
+                onSubscriptionOpen?.();
+                onOpenDeepLink(url);
+              }}
+              className={baseClass}
+            >
               {btnIcon || <SubscriptionIcon />}
               {btnText || getBaseTranslation('openApp', 'subscription.connection.openLink')}
             </button>

@@ -89,7 +89,7 @@ export default function SubscriptionCardActive({
 
       {/* ─── Header ─── */}
       <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0 flex-1">
           {/* Zone indicator */}
           <div className="mb-1 flex items-center gap-2">
             <div
