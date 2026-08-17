@@ -9,6 +9,7 @@ export type UserCabinetOverlay =
 export interface UserCabinetRouteState {
   overlay: UserCabinetOverlay;
   subscriptionId?: number;
+  closePath?: string;
 }
 
 const SUBSCRIPTION_PATH = /^\/subscriptions\/(\d+)\/?$/;
@@ -44,9 +45,17 @@ export function getUserCabinetRouteState(pathname: string, search: string): User
 
   const subscriptionMatch = SUBSCRIPTION_PATH.exec(pathname);
   if (subscriptionMatch) {
+    const subscriptionId = positiveInteger(subscriptionMatch[1]);
+    if (params.get('overlay') === 'devices' && subscriptionId) {
+      return {
+        overlay: 'devices',
+        subscriptionId,
+        closePath: `/subscriptions/${subscriptionId}`,
+      };
+    }
     return {
       overlay: 'subscription',
-      subscriptionId: positiveInteger(subscriptionMatch[1]),
+      subscriptionId,
     };
   }
 
@@ -84,5 +93,7 @@ export function getDirectCabinetBackPath(pathname: string, search: string): stri
   }
 
   const routeState = getUserCabinetRouteState(pathname, search);
-  return routeState.overlay ? getCabinetClosePath(routeState.subscriptionId) : null;
+  return routeState.overlay
+    ? (routeState.closePath ?? getCabinetClosePath(routeState.subscriptionId))
+    : null;
 }

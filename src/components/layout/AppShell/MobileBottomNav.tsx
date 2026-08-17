@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { usePlatform } from '@/platform';
 
 // Icons
-import { HomeIcon, ChatIcon, UserIcon } from './icons';
+import { HomeIcon, TariffsIcon, ChatIcon, UserIcon } from './icons';
 
 interface MobileBottomNavProps {
   isKeyboardOpen: boolean;
@@ -25,6 +25,7 @@ export function MobileBottomNav({ isKeyboardOpen, supportUnreadCount = 0 }: Mobi
 
   const coreItems = [
     { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
+    { path: '/subscription/purchase', label: t('nav.tariffs'), icon: TariffsIcon },
     { path: '/support', label: t('nav.support'), icon: ChatIcon },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
   ];

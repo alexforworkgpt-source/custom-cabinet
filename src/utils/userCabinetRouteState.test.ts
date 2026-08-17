@@ -42,6 +42,14 @@ describe('getUserCabinetRouteState', () => {
       subscriptionId: 7,
     });
   });
+
+  it('opens devices from subscription management and preserves its parent route', () => {
+    expect(getUserCabinetRouteState('/subscriptions/7', '?overlay=devices')).toEqual({
+      overlay: 'devices',
+      subscriptionId: 7,
+      closePath: '/subscriptions/7',
+    });
+  });
 });
 
 describe('getDirectConnectionBackPath', () => {
@@ -69,6 +77,12 @@ describe('getCabinetClosePath', () => {
 describe('getDirectCabinetBackPath', () => {
   it('closes a directly opened devices overlay while preserving its subscription', () => {
     expect(getDirectCabinetBackPath('/', '?sub=7&overlay=devices')).toBe('/?sub=7');
+  });
+
+  it('returns nested devices to subscription management', () => {
+    expect(getDirectCabinetBackPath('/subscriptions/7', '?overlay=devices')).toBe(
+      '/subscriptions/7',
+    );
   });
 
   it('closes directly opened subscription management', () => {

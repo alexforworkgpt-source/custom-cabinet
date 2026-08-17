@@ -39,6 +39,7 @@ import {
   PiDiceFive,
   PiStop,
   PiSun,
+  PiTag,
   PiTrash,
   PiUploadSimple,
   PiUser,
@@ -182,6 +183,10 @@ export const PaletteIcon = ({ className }: IconProps) => (
 // Features & Content
 export const SubscriptionIcon = ({ className }: IconProps) => (
   <PiSparkle className={cn('h-5 w-5', className)} />
+);
+
+export const TariffsIcon = ({ className }: IconProps) => (
+  <PiTag className={cn('h-5 w-5', className)} />
 );
 
 export const WalletIcon = ({ className }: IconProps) => (

@@ -2,7 +2,7 @@ import { uiLocale } from '@/utils/uiLocale';
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useNavigate, useParams } from 'react-router';
+import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import { subscriptionApi } from '../api/subscription';
 import { WebBackButton } from '../components/WebBackButton';
 import { useDestructiveConfirm } from '../platform/hooks/useNativeDialog';
@@ -23,6 +23,7 @@ import {
   DevicesIcon,
   DownloadIcon,
   TrashIcon,
+  ChevronRightIcon,
 } from '../components/icons';
 import { useHaptic, usePlatform } from '../platform';
 import { getErrorMessage, getInsufficientBalanceError } from '../utils/subscriptionHelpers';
@@ -632,6 +633,32 @@ export default function Subscription({
 
       {/* Purchase / Renewal CTA */}
       <PurchaseCTAButton subscription={subscription} isMultiTariff={isMultiTariff} />
+
+      {embedded && subscription && (
+        <Link
+          to={`/subscriptions/${subscription.id}?overlay=devices`}
+          state={{ cabinetOverlayParent: true }}
+          onClick={() => haptic.impact('light')}
+          className="flex min-h-16 w-full items-center gap-3 rounded-2xl border border-dark-700/60 bg-dark-900/70 p-4 text-left transition-colors hover:border-dark-600/80 hover:bg-dark-800/70"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-500/10 text-accent-400">
+            <DevicesIcon className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-dark-100">
+              {t('subscription.myDevices')}
+            </span>
+            <span className="mt-0.5 block text-xs text-dark-400">
+              {devicesData
+                ? t('subscription.additionalOptions.connectedDevices', {
+                    count: devicesData.total,
+                  })
+                : t('dashboard.dataUnavailable')}
+            </span>
+          </span>
+          <ChevronRightIcon className="h-5 w-5 shrink-0 text-dark-500 rtl:rotate-180" />
+        </Link>
+      )}
 
       {/* Current Subscription */}
       {subscription && (!embedded || hasEmbeddedSubscriptionSettings) ? (

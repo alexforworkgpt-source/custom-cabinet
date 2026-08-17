@@ -134,9 +134,7 @@ export default function SubscriptionPurchase() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <WebBackButton
-          to={subscriptionId ? `/subscriptions/${subscriptionId}` : '/subscriptions'}
-        />
+        {subscriptionId && <WebBackButton to={`/subscriptions/${subscriptionId}`} />}
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
           {isMultiTariff && !subscriptionId
             ? t('subscription.newTariff', 'Новый тариф')

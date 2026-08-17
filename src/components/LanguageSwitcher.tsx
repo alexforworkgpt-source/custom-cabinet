@@ -3,9 +3,14 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { infoApi } from '@/api/info';
 import { ChevronDownIcon } from '@/components/icons';
+import { cn } from '@/lib/utils';
 
-export default function LanguageSwitcher() {
-  const { i18n } = useTranslation();
+interface LanguageSwitcherProps {
+  variant?: 'default' | 'profile';
+}
+
+export default function LanguageSwitcher({ variant = 'default' }: LanguageSwitcherProps) {
+  const { i18n, t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -44,15 +49,21 @@ export default function LanguageSwitcher() {
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div data-language-switcher className="relative" ref={dropdownRef}>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-sm transition-all ${
+        className={cn(
+          'flex items-center gap-1.5 rounded-xl border text-sm transition-all',
+          variant === 'profile' ? 'h-11 min-w-24 justify-center px-3' : 'px-2.5 py-2',
           isOpen
             ? 'border-dark-600 bg-dark-700'
-            : 'border-dark-700/50 bg-dark-800/50 hover:border-dark-600 hover:bg-dark-700'
-        }`}
-        aria-label="Change language"
+            : variant === 'profile'
+              ? 'border-dark-700/70 bg-dark-900/80 hover:border-dark-600 hover:bg-dark-800'
+              : 'border-dark-700/50 bg-dark-800/50 hover:border-dark-600 hover:bg-dark-700',
+        )}
+        aria-label={t('profile.hub.changeLanguage')}
+        aria-expanded={isOpen}
       >
         <span>{currentLang.flag}</span>
         <span className="font-medium text-dark-200">{currentLang.code.toUpperCase()}</span>
@@ -62,7 +73,10 @@ export default function LanguageSwitcher() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-40 animate-fade-in rounded-xl border border-dark-700/50 bg-dark-800 py-1 shadow-lg">
+        <div
+          data-language-menu
+          className="absolute end-0 z-50 mt-2 w-40 animate-fade-in rounded-xl border border-dark-700/50 bg-dark-800 py-1 shadow-lg"
+        >
           {availableLanguages.map((lang) => (
             <button
               key={lang.code}

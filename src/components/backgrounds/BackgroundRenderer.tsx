@@ -80,7 +80,7 @@ function RenderBackground({ config }: { config: AnimationConfig }) {
 
 export function BackgroundRenderer() {
   const { data: config } = useQuery({
-    queryKey: ['animation-config'],
+    queryKey: ['animation-config-runtime'],
     queryFn: async () => {
       const raw = await brandingApi.getAnimationConfig();
       const result = validateConfig(raw) ?? DEFAULT_ANIMATION_CONFIG;

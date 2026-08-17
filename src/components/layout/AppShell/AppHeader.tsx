@@ -34,6 +34,7 @@ import {
   SunIcon,
   MoonIcon,
   SearchIcon,
+  TariffsIcon,
 } from './icons';
 
 const FALLBACK_NAME = import.meta.env.VITE_APP_NAME || 'Cabinet';
@@ -143,6 +144,7 @@ export function AppHeader({
 
   const navItems = [
     { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
+    { path: '/subscription/purchase', label: t('nav.tariffs'), icon: TariffsIcon },
     { path: '/support', label: t('nav.support'), icon: ChatIcon },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
   ];

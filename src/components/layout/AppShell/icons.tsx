@@ -2,6 +2,7 @@
 export {
   HomeIcon,
   SubscriptionIcon,
+  TariffsIcon,
   WalletIcon,
   UsersIcon,
   ChatIcon,

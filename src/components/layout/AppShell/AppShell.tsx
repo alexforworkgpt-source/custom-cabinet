@@ -30,6 +30,7 @@ import {
   LogoutIcon,
   SunIcon,
   MoonIcon,
+  TariffsIcon,
 } from '@/components/icons';
 
 import { MobileBottomNav } from './MobileBottomNav';
@@ -117,6 +118,7 @@ export function AppShell({ children }: AppShellProps) {
   // Desktop navigation — labels always visible (no hover-reveal gimmick)
   const desktopNav = [
     { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
+    { path: '/subscription/purchase', label: t('nav.tariffs'), icon: TariffsIcon },
     { path: '/support', label: t('nav.support'), icon: ChatIcon },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
   ];

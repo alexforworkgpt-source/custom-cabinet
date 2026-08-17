@@ -27,7 +27,7 @@ const TWEMOJI_OPTIONS = { className: 'twemoji', folder: 'svg', ext: '.svg' } as 
  * Shows back button on non-root routes, hides on root.
  */
 /** Pages reachable from bottom nav — treat as top-level (no back button). */
-const BOTTOM_NAV_PATHS = ['/', '/support', '/profile'];
+const BOTTOM_NAV_PATHS = ['/', '/subscription/purchase', '/support', '/profile'];
 
 function TelegramBackButton() {
   const location = useLocation();
@@ -75,8 +75,13 @@ function TelegramBackButton() {
     }
     const hasOverlay =
       getUserCabinetRouteState(location.pathname, location.search).overlay !== null;
+    const isSubscriptionSpecificTariffFlow =
+      location.pathname === '/subscription/purchase' &&
+      new URLSearchParams(location.search).has('subscriptionId');
     const isTopLevel =
-      !hasOverlay && (location.pathname === '' || BOTTOM_NAV_PATHS.includes(location.pathname));
+      !hasOverlay &&
+      !isSubscriptionSpecificTariffFlow &&
+      (location.pathname === '' || BOTTOM_NAV_PATHS.includes(location.pathname));
     try {
       if (isTopLevel) {
         hideBackButton();

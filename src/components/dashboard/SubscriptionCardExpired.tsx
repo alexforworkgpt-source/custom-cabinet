@@ -1,7 +1,7 @@
 import { uiLocale } from '@/utils/uiLocale';
 import { useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate, useLocation } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import type { Subscription } from '../../types';
@@ -22,7 +22,6 @@ interface SubscriptionCardExpiredProps {
   onBuyTraffic: () => void;
   onManageSubscription: () => void;
   managementOpen: boolean;
-  purchaseLabel: string;
   className?: string;
 }
 
@@ -35,7 +34,6 @@ export default function SubscriptionCardExpired({
   onBuyTraffic,
   onManageSubscription,
   managementOpen,
-  purchaseLabel,
   className,
 }: SubscriptionCardExpiredProps) {
   const { t } = useTranslation();
@@ -326,19 +324,12 @@ export default function SubscriptionCardExpired({
           )
         ) : null}
       </div>
-      <Link
-        to="/subscription/purchase"
-        className="mt-3 flex min-h-11 w-full items-center justify-center rounded-[14px] px-4 py-3 text-center text-sm font-semibold tracking-tight text-dark-50/70 transition-colors duration-200 hover:text-dark-50"
-        style={{ background: g.innerBg, border: `1px solid ${g.innerBorder}` }}
-      >
-        {purchaseLabel}
-      </Link>
       <button
         type="button"
         aria-haspopup="dialog"
         aria-expanded={managementOpen}
         onClick={onManageSubscription}
-        className="mt-2 flex min-h-11 w-full items-center justify-center rounded-[14px] border border-dark-700/60 bg-dark-900/80 px-4 py-3 text-center text-sm font-semibold text-dark-200 transition-colors hover:border-dark-600/80 hover:bg-dark-800/80"
+        className="mt-3 flex min-h-11 w-full items-center justify-center rounded-[14px] border border-dark-700/60 bg-dark-900/80 px-4 py-3 text-center text-sm font-semibold text-dark-200 transition-colors hover:border-dark-600/80 hover:bg-dark-800/80"
       >
         {t('dashboard.manageSubscription')}
       </button>

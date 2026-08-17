@@ -1,7 +1,6 @@
 import apiClient from './client';
 import { isEndpointMissingError } from '../utils/api-error';
 import type { AnimationConfig } from '@/components/ui/backgrounds/types';
-import { DEFAULT_ANIMATION_CONFIG } from '@/components/ui/backgrounds/types';
 
 export type { AnimationConfig };
 
@@ -236,12 +235,8 @@ export const brandingApi = {
 
   // Get animation config (public, no auth required)
   getAnimationConfig: async (): Promise<AnimationConfig> => {
-    try {
-      const response = await apiClient.get<AnimationConfig>('/cabinet/branding/animation-config');
-      return response.data;
-    } catch {
-      return DEFAULT_ANIMATION_CONFIG;
-    }
+    const response = await apiClient.get<AnimationConfig>('/cabinet/branding/animation-config');
+    return response.data;
   },
 
   // Update animation config (admin only, partial update)

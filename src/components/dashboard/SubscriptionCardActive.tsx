@@ -1,6 +1,6 @@
 import { uiLocale } from '@/utils/uiLocale';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import type { UseMutationResult } from '@tanstack/react-query';
 import TrafficProgressBar from './TrafficProgressBar';
 import Sparkline from './Sparkline';
@@ -29,7 +29,6 @@ interface SubscriptionCardActiveProps {
   onCopyConnectionUrl?: () => void;
   onManageSubscription: () => void;
   managementOpen: boolean;
-  purchaseLabel: string;
 }
 
 export default function SubscriptionCardActive({
@@ -43,7 +42,6 @@ export default function SubscriptionCardActive({
   onCopyConnectionUrl,
   onManageSubscription,
   managementOpen,
-  purchaseLabel,
 }: SubscriptionCardActiveProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -415,18 +413,12 @@ export default function SubscriptionCardActive({
         </div>
       </div>
 
-      <Link
-        to="/subscription/purchase"
-        className="flex min-h-11 w-full items-center justify-center rounded-[14px] bg-accent-500/10 px-4 py-3 text-center text-sm font-semibold text-accent-400 transition-colors hover:bg-accent-500/20"
-      >
-        {purchaseLabel}
-      </Link>
       <button
         type="button"
         aria-haspopup="dialog"
         aria-expanded={managementOpen}
         onClick={onManageSubscription}
-        className="mt-2 flex min-h-11 w-full items-center justify-center rounded-[14px] border border-dark-700/60 bg-dark-900/80 px-4 py-3 text-center text-sm font-semibold text-dark-200 transition-colors hover:border-dark-600/80 hover:bg-dark-800/80"
+        className="flex min-h-11 w-full items-center justify-center rounded-[14px] border border-dark-700/60 bg-dark-900/80 px-4 py-3 text-center text-sm font-semibold text-dark-200 transition-colors hover:border-dark-600/80 hover:bg-dark-800/80"
       >
         {t('dashboard.manageSubscription')}
       </button>

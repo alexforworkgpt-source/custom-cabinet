@@ -21,12 +21,14 @@ function SettingField({
   onChange: (val: unknown) => void;
   t: (key: string) => string;
 }) {
+  const label = t(def.label);
+
   if (def.type === 'number') {
     const numVal = (value as number) ?? (def.default as number);
     const displayVal = numVal < 0.01 ? numVal.toExponential(1) : String(numVal);
     return (
       <div className="flex items-center justify-between gap-4">
-        <label className="text-sm text-dark-300">{t(def.label)}</label>
+        <label className="text-sm text-dark-300">{label}</label>
         <div className="flex items-center gap-2">
           <input
             type="range"
@@ -34,6 +36,7 @@ function SettingField({
             max={def.max}
             step={def.step}
             value={numVal}
+            aria-label={label}
             onChange={(e) => onChange(parseFloat(e.target.value))}
             className="w-24 accent-accent-500"
           />
@@ -48,11 +51,12 @@ function SettingField({
     const hexForInput = /^#[0-9a-fA-F]{3,8}$/.test(colorVal) ? colorVal : '#818cf8';
     return (
       <div className="flex items-center justify-between gap-4">
-        <label className="text-sm text-dark-300">{t(def.label)}</label>
+        <label className="text-sm text-dark-300">{label}</label>
         <div className="flex items-center gap-2">
           <input
             type="color"
             value={hexForInput}
+            aria-label={label}
             onChange={(e) => onChange(e.target.value)}
             className="h-7 w-10 cursor-pointer rounded border border-dark-600 bg-transparent"
           />
@@ -66,8 +70,8 @@ function SettingField({
     const boolVal = (value as boolean) ?? (def.default as boolean);
     return (
       <div className="flex items-center justify-between gap-4">
-        <label className="text-sm text-dark-300">{t(def.label)}</label>
-        <Toggle checked={boolVal} onChange={() => onChange(!boolVal)} />
+        <label className="text-sm text-dark-300">{label}</label>
+        <Toggle aria-label={label} checked={boolVal} onChange={() => onChange(!boolVal)} />
       </div>
     );
   }
@@ -76,9 +80,10 @@ function SettingField({
     const selectVal = (value as string) ?? (def.default as string);
     return (
       <div className="flex items-center justify-between gap-4">
-        <label className="text-sm text-dark-300">{t(def.label)}</label>
+        <label className="text-sm text-dark-300">{label}</label>
         <select
           value={selectVal}
+          aria-label={label}
           onChange={(e) => onChange(e.target.value)}
           className="rounded-lg border border-dark-600 bg-dark-700 px-3 py-1.5 text-sm text-dark-200 focus:border-accent-500 focus:outline-none"
         >
@@ -146,6 +151,7 @@ export function BackgroundConfigEditor({ value: config, onChange }: BackgroundCo
           <p className="text-sm text-dark-400">{t('admin.backgrounds.description')}</p>
         </div>
         <Toggle
+          aria-label={t('admin.backgrounds.title')}
           checked={config.enabled}
           onChange={() => updateConfig({ enabled: !config.enabled })}
         />
@@ -176,6 +182,7 @@ export function BackgroundConfigEditor({ value: config, onChange }: BackgroundCo
             {/* None option */}
             <button
               onClick={() => handleTypeChange('none')}
+              aria-pressed={config.type === 'none'}
               className={cn(
                 'mb-3 w-full rounded-xl border p-3 text-left transition-colors',
                 config.type === 'none'
@@ -201,6 +208,7 @@ export function BackgroundConfigEditor({ value: config, onChange }: BackgroundCo
                       <button
                         key={def.type}
                         onClick={() => handleTypeChange(def.type)}
+                        aria-pressed={config.type === def.type}
                         className={cn(
                           'rounded-xl border p-3 text-left transition-colors',
                           config.type === def.type
@@ -254,6 +262,7 @@ export function BackgroundConfigEditor({ value: config, onChange }: BackgroundCo
                     max={1}
                     step={0.05}
                     value={config.opacity}
+                    aria-label={t('admin.backgrounds.globalOpacity')}
                     onChange={(e) => updateConfig({ opacity: parseFloat(e.target.value) })}
                     className="w-24 accent-accent-500"
                   />
@@ -272,6 +281,7 @@ export function BackgroundConfigEditor({ value: config, onChange }: BackgroundCo
                     max={20}
                     step={1}
                     value={config.blur}
+                    aria-label={t('admin.backgrounds.globalBlur')}
                     onChange={(e) => updateConfig({ blur: Number(e.target.value) })}
                     className="w-24 accent-accent-500"
                   />
@@ -291,6 +301,7 @@ export function BackgroundConfigEditor({ value: config, onChange }: BackgroundCo
                   </p>
                 </div>
                 <Toggle
+                  aria-label={t('admin.backgrounds.reducedOnMobile')}
                   checked={config.reducedOnMobile}
                   onChange={() => updateConfig({ reducedOnMobile: !config.reducedOnMobile })}
                 />

@@ -1,9 +1,8 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/data-display/Card';
-import { Button } from '@/components/primitives/Button';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { ArrowRightIcon, ShieldIcon } from '@/components/icons';
+import { ArrowRightIcon, MoonIcon, ShieldIcon, SunIcon } from '@/components/icons';
 
 interface ProfileHubSectionsProps {
   isDark: boolean;
@@ -42,24 +41,37 @@ export default function ProfileHubSections({
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Card>
+      <Card className="z-20 overflow-visible">
         <h2 className="mb-1 text-lg font-semibold text-dark-100">{t('profile.hub.preferences')}</h2>
-        <p className="mb-4 text-sm text-dark-400">{t('profile.hub.preferencesDescription')}</p>
-        <div className="flex min-h-11 items-center justify-between gap-4 border-b border-dark-800/50 py-2">
-          <span className="text-sm font-medium text-dark-200">{t('profile.hub.language')}</span>
-          <LanguageSwitcher />
+        <p className="text-sm text-dark-400">{t('profile.hub.preferencesDescription')}</p>
+        <div
+          role="group"
+          aria-label={t('profile.hub.preferences')}
+          className="mt-5 divide-y divide-dark-800/70 rounded-2xl border border-dark-700/60 bg-dark-950/45 px-3 shadow-inner shadow-black/10"
+        >
+          {canToggleTheme && (
+            <div className="flex min-h-16 items-center justify-between gap-4 py-2">
+              <span className="text-sm font-medium text-dark-200">
+                {t('profile.hub.chooseTheme')}
+              </span>
+              <button
+                type="button"
+                onClick={onToggleTheme}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-dark-700/70 bg-dark-900/80 text-dark-300 transition-colors hover:border-dark-600 hover:bg-dark-800 hover:text-dark-100"
+                aria-label={`${t('profile.hub.chooseTheme')}: ${isDark ? t('theme.dark') : t('theme.light')}`}
+                title={`${t('profile.hub.theme')}: ${isDark ? t('theme.dark') : t('theme.light')}`}
+              >
+                {isDark ? <MoonIcon className="h-5 w-5" /> : <SunIcon className="h-5 w-5" />}
+              </button>
+            </div>
+          )}
+          <div className="flex min-h-16 items-center justify-between gap-4 py-2">
+            <span className="text-sm font-medium text-dark-200">
+              {t('profile.hub.changeLanguage')}
+            </span>
+            <LanguageSwitcher variant="profile" />
+          </div>
         </div>
-        {canToggleTheme && (
-          <Button
-            fullWidth
-            variant="ghost"
-            className="mt-2 justify-between"
-            onClick={onToggleTheme}
-          >
-            <span>{t('profile.hub.theme')}</span>
-            <span className="text-dark-400">{isDark ? t('theme.dark') : t('theme.light')}</span>
-          </Button>
-        )}
       </Card>
 
       <Card>

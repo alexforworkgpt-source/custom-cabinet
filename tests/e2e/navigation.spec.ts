@@ -12,10 +12,13 @@ test('shows the simplified desktop or mobile user navigation', async ({ page }) 
     await expect(page.locator('header:visible')).toHaveCount(0);
 
     const bottomNavigation = page.locator('nav:visible');
-    await expect(bottomNavigation.getByRole('link')).toHaveCount(3);
+    await expect(bottomNavigation.getByRole('link')).toHaveCount(4);
     await expect(
       bottomNavigation.getByRole('link', { name: 'Dashboard', exact: true }),
     ).toBeVisible();
+    const tariffsLink = bottomNavigation.getByRole('link', { name: 'Tariffs', exact: true });
+    await expect(tariffsLink).toBeVisible();
+    await expect(tariffsLink).toHaveAttribute('href', '/subscription/purchase');
     await expect(
       bottomNavigation.getByRole('link', { name: 'Support', exact: true }),
     ).toBeVisible();
@@ -28,6 +31,9 @@ test('shows the simplified desktop or mobile user navigation', async ({ page }) 
     await expect(
       desktopNavigation.getByRole('link', { name: 'Dashboard', exact: true }),
     ).toBeVisible();
+    const tariffsLink = desktopNavigation.getByRole('link', { name: 'Tariffs', exact: true });
+    await expect(tariffsLink).toBeVisible();
+    await expect(tariffsLink).toHaveAttribute('href', '/subscription/purchase');
     await expect(
       desktopNavigation.getByRole('link', { name: 'Support', exact: true }),
     ).toBeVisible();
@@ -131,6 +137,7 @@ test('keeps subscription compatibility routes on the unified Dashboard', async (
     managementDialog.getByRole('heading', { name: 'Manage subscription' }),
   ).toBeVisible();
   await expect(managementDialog.getByRole('heading', { name: 'Additional Options' })).toBeVisible();
+  await expect(managementDialog.getByRole('link', { name: /My Devices/ })).toBeVisible();
   expect(
     await managementDialog.evaluate((dialog) => {
       const dialogRect = dialog.getBoundingClientRect();
@@ -202,7 +209,7 @@ test('does not restore legacy user navigation on admin routes', async ({ page })
   const isMobile = (page.viewportSize()?.width ?? 1280) < 1024;
   if (isMobile) {
     const bottomNavigation = page.locator('nav:visible').last();
-    await expect(bottomNavigation.getByRole('link')).toHaveCount(3);
+    await expect(bottomNavigation.getByRole('link')).toHaveCount(4);
     await page.getByRole('button', { name: 'Open menu' }).click();
   }
   const navigation = isMobile
@@ -212,6 +219,7 @@ test('does not restore legacy user navigation on admin routes', async ({ page })
   await expect(page.getByRole('link', { name: 'Balance', exact: true })).toHaveCount(0);
   await expect(page.getByRole('link', { name: /^Subscriptions?$/ })).toHaveCount(0);
   await expect(navigation.getByRole('link', { name: 'Dashboard', exact: true })).toBeVisible();
+  await expect(navigation.getByRole('link', { name: 'Tariffs', exact: true })).toBeVisible();
   await expect(navigation.getByRole('link', { name: 'Support', exact: true })).toBeVisible();
   await expect(navigation.getByRole('link', { name: 'Profile', exact: true })).toBeVisible();
 });

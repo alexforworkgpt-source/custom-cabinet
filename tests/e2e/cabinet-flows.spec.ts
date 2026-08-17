@@ -311,26 +311,25 @@ test('keeps the compact Dashboard responsive in dark and light themes', async ({
 
   const expectCompactLayout = async () => {
     const summary = page.getByRole('region', { name: 'Traffic Usage' });
-    const purchaseLink = summary.getByRole('link', { name: 'Choose tariff' });
+    const managementButton = summary.getByRole('button', { name: 'Manage subscription' });
     const balanceCard = page.getByRole('link', { name: /Balance/ });
     const referralCard = page.getByRole('link', { name: /Referrals/ });
-    const devicesCard = page.getByRole('button', { name: /My Devices/ });
-    const [summaryBox, purchaseBox, balanceBox, referralBox, devicesBox] = await Promise.all([
+    const [summaryBox, managementBox, balanceBox, referralBox] = await Promise.all([
       summary.boundingBox(),
-      purchaseLink.boundingBox(),
+      managementButton.boundingBox(),
       balanceCard.boundingBox(),
       referralCard.boundingBox(),
-      devicesCard.boundingBox(),
     ]);
 
-    if (!summaryBox || !purchaseBox || !balanceBox || !referralBox || !devicesBox) {
+    if (!summaryBox || !managementBox || !balanceBox || !referralBox) {
       throw new Error('Compact Dashboard elements must have visible bounding boxes');
     }
     expect(summaryBox.height).toBeLessThanOrEqual(500);
-    expect(purchaseBox.y).toBeGreaterThan(summaryBox.y + summaryBox.height / 2);
+    expect(managementBox.y).toBeGreaterThan(summaryBox.y + summaryBox.height / 2);
     expect(referralBox.x).toBeGreaterThan(balanceBox.x);
-    expect(devicesBox.x).toBeGreaterThan(referralBox.x);
-    expect(Math.abs(devicesBox.y - balanceBox.y)).toBeLessThan(2);
+    expect(Math.abs(referralBox.y - balanceBox.y)).toBeLessThan(2);
+    await expect(summary.getByRole('link', { name: 'Choose tariff' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /My Devices/ })).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       await page.evaluate(() => window.innerWidth),
     );
@@ -407,42 +406,28 @@ test('opens complete subscription management on the Dashboard @desktop-flow', as
   await page.goto('/?sub=1');
 
   const summary = page.getByRole('region', { name: 'Traffic Usage' });
-  const tariffTrigger = summary.getByRole('link', { name: 'Choose tariff' });
   const managementTrigger = summary.getByRole('button', { name: 'Manage subscription' });
-  const devicesTrigger = page.getByRole('button', { name: /My Devices/ });
   await expect(managementTrigger).toHaveAttribute('aria-expanded', 'false');
   await expect(page.getByText(activeSubscription.subscription_url, { exact: true })).toBeVisible();
   await expect(page.getByText(activeSubscription.tariff_name, { exact: true })).toHaveCount(1);
   const balanceCard = page.getByRole('link', { name: /Balance/ });
   const referralCard = page.getByRole('link', { name: /Referrals/ });
-  const [tariffBox, managementBox, balanceBox, referralBox, devicesBox] = await Promise.all([
-    tariffTrigger.boundingBox(),
+  const [managementBox, balanceBox, referralBox] = await Promise.all([
     managementTrigger.boundingBox(),
     balanceCard.boundingBox(),
     referralCard.boundingBox(),
-    devicesTrigger.boundingBox(),
   ]);
-  if (!tariffBox || !managementBox || !balanceBox || !referralBox || !devicesBox) {
+  if (!managementBox || !balanceBox || !referralBox) {
     throw new Error('Dashboard action elements must have visible bounding boxes');
   }
-  expect(managementBox.y).toBeGreaterThan(tariffBox.y + tariffBox.height);
   expect(referralBox.x).toBeGreaterThan(balanceBox.x);
-  expect(devicesBox.x).toBeGreaterThan(referralBox.x);
-  expect(Math.abs(devicesBox.y - balanceBox.y)).toBeLessThan(2);
+  expect(Math.abs(referralBox.y - balanceBox.y)).toBeLessThan(2);
   const dashboardActions = await page.locator('main button, main a, main code').allTextContents();
   expect(dashboardActions.findIndex((text) => text.includes('Connect Device'))).toBeLessThan(
     dashboardActions.findIndex((text) => text.includes(activeSubscription.subscription_url)),
   );
-  expect(
-    dashboardActions.findIndex((text) => text.includes(activeSubscription.subscription_url)),
-  ).toBeLessThan(dashboardActions.findIndex((text) => text.includes('My Devices')));
-  expect(dashboardActions.findIndex((text) => text.includes('Manage subscription'))).toBeLessThan(
-    dashboardActions.findIndex((text) => text.includes('My Devices')),
-  );
-  expect(dashboardActions.findIndex((text) => text.includes('Choose tariff'))).toBeLessThan(
-    dashboardActions.findIndex((text) => text.includes('Manage subscription')),
-  );
-  await expect(page.getByRole('link', { name: 'Choose tariff' })).toHaveCount(1);
+  await expect(summary.getByRole('link', { name: 'Choose tariff' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /My Devices/ })).toHaveCount(0);
 
   await managementTrigger.click();
   await expect(page).toHaveURL('/subscriptions/1');
@@ -454,8 +439,10 @@ test('opens complete subscription management on the Dashboard @desktop-flow', as
   await expect(managementDialog.getByRole('heading', { name: 'Traffic Usage' })).toHaveCount(0);
   const renewalLink = managementDialog.getByRole('link', { name: /Extend Subscription/ });
   const autoRenewSwitch = managementDialog.getByRole('switch', { name: 'Auto-renew' });
+  const devicesLink = managementDialog.getByRole('link', { name: /My Devices/ });
   await expect(renewalLink).toBeVisible();
   await expect(autoRenewSwitch).toBeVisible();
+  await expect(devicesLink).toContainText('Connected devices: 1');
   const [renewalBox, autoRenewBox] = await Promise.all([
     renewalLink.boundingBox(),
     autoRenewSwitch.boundingBox(),
@@ -476,7 +463,7 @@ test('opens complete subscription management on the Dashboard @desktop-flow', as
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('manages Devices in an overlay and returns to the same dashboard context @critical-flow', async ({
+test('manages Devices from subscription management and returns to it @critical-flow', async ({
   page,
 }) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
@@ -484,28 +471,35 @@ test('manages Devices in an overlay and returns to the same dashboard context @c
     responses: {
       ...activeResponses,
       '/api/cabinet/referral/terms': enabledReferralTerms,
+      '/api/cabinet/subscription/purchase-options': {
+        sales_mode: 'classic',
+        periods: [],
+        balance_kopeks: 100_000,
+        balance_label: '1,000 RUB',
+      },
+      '/api/cabinet/subscription/platega-recurrent': { status: 'none' },
+      '/api/cabinet/subscription/lava-recurrent': { status: 'none' },
     },
   });
 
-  await page.goto('/?sub=1');
-  const devicesButton = page.getByRole('button', { name: /My Devices/ });
-  const [balanceBox, referralBox, devicesBox] = await Promise.all([
-    page.getByRole('link', { name: /Balance/ }).boundingBox(),
-    page.getByRole('link', { name: /Referrals/ }).boundingBox(),
-    devicesButton.boundingBox(),
-  ]);
-  if (!balanceBox || !referralBox || !devicesBox) {
-    throw new Error('Dashboard stat cards must have visible bounding boxes');
-  }
-  expect(referralBox.x).toBeGreaterThan(balanceBox.x);
-  expect(devicesBox.x).toBeGreaterThan(referralBox.x);
-  expect(Math.abs(devicesBox.y - balanceBox.y)).toBeLessThan(2);
+  await page.goto('/subscriptions/1');
+  const managementDialog = page.getByRole('dialog');
+  const devicesLink = managementDialog.getByRole('link', { name: /My Devices/ });
+  await expect(devicesLink).toContainText('Connected devices: 1');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     await page.evaluate(() => window.innerWidth),
   );
-  await devicesButton.focus();
+  await devicesLink.focus();
   await page.keyboard.press('Enter');
-  await expect(page).toHaveURL('/?sub=1&overlay=devices');
+  await expect(page).toHaveURL('/subscriptions/1?overlay=devices');
+
+  await page.goBack();
+  await expect(page).toHaveURL('/subscriptions/1');
+  await expect(
+    managementDialog.getByRole('heading', { name: 'Manage subscription' }),
+  ).toBeVisible();
+  await managementDialog.getByRole('link', { name: /My Devices/ }).click();
+  await expect(page).toHaveURL('/subscriptions/1?overlay=devices');
 
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('heading', { name: 'My Devices' })).toBeVisible();
@@ -541,10 +535,16 @@ test('manages Devices in an overlay and returns to the same dashboard context @c
   await dialog.getByRole('button', { name: 'Cancel' }).click();
 
   await page.keyboard.press('Escape');
-  await expect(dialog).toBeHidden();
-  await expect(page).toHaveURL('/?sub=1');
-  await expect(page.getByRole('heading', { name: 'Traffic Usage' })).toBeVisible();
-  await expect(devicesButton).toBeFocused();
+  await expect(page).toHaveURL('/subscriptions/1');
+  await expect(
+    managementDialog.getByRole('heading', { name: 'Manage subscription' }),
+  ).toBeVisible();
+  await expect(managementDialog.getByRole('link', { name: /My Devices/ })).toBeVisible();
+  expect(
+    await page.evaluate(() =>
+      document.querySelector('[role="dialog"]')?.contains(document.activeElement),
+    ),
+  ).toBe(true);
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
@@ -755,14 +755,14 @@ test('groups secondary functions in Profile and gates admin/features by capabili
   await expect(page.getByRole('link', { name: 'Fortune Wheel', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Contests', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Polls', exact: true })).toBeVisible();
-  const themeButton = page.getByRole('button', { name: /Theme/ });
+  const themeButton = page.getByRole('button', { name: /Choose theme/ });
   await themeButton.click();
-  await expect(themeButton).toContainText('Dark Theme');
+  await expect(themeButton).toHaveAccessibleName(/Dark Theme/);
 
-  await page.getByRole('button', { name: 'Change language' }).click();
+  await page.getByRole('button', { name: 'Choose language' }).click();
   await page.getByRole('button', { name: 'Русский' }).click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
-  await page.getByRole('button', { name: 'Change language' }).click();
+  await page.getByRole('button', { name: 'Выбрать язык' }).click();
   await page.getByRole('button', { name: 'English' }).click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 
@@ -772,6 +772,111 @@ test('groups secondary functions in Profile and gates admin/features by capabili
   expect([...unexpectedApiRequests]).toEqual([]);
   await logoutButton.click();
   await expect(page).toHaveURL('/login');
+});
+
+test('keeps Profile appearance controls compact @critical-flow', async ({ page }) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/info/languages': {
+        languages: [
+          { code: 'en', name: 'English', flag: 'EN' },
+          { code: 'ru', name: 'Русский', flag: 'RU' },
+          { code: 'fa', name: 'فارسی', flag: 'FA' },
+          { code: 'zh', name: '中文', flag: 'ZH' },
+        ],
+        default: 'en',
+      },
+    },
+  });
+
+  await page.goto('/profile');
+  const preferences = page.getByRole('group', { name: 'Preferences' });
+  const themeButton = preferences.getByRole('button', { name: /Choose theme/ });
+  const languageButton = preferences.getByRole('button', { name: 'Choose language' });
+  await expect(preferences.getByText('Choose theme', { exact: true })).toBeVisible();
+  await expect(preferences.getByText('Choose language', { exact: true })).toBeVisible();
+  await expect(languageButton).toContainText('EN');
+  const [preferencesBox, themeBox, languageBox] = await Promise.all([
+    preferences.boundingBox(),
+    themeButton.boundingBox(),
+    languageButton.boundingBox(),
+  ]);
+
+  if (!preferencesBox || !themeBox || !languageBox) {
+    throw new Error('Profile appearance controls must have visible bounding boxes');
+  }
+  expect(themeBox.width).toBeCloseTo(44, 3);
+  expect(themeBox.height).toBeCloseTo(44, 3);
+  expect(languageBox.height).toBeCloseTo(44, 3);
+  expect(languageBox.y).toBeGreaterThan(themeBox.y + themeBox.height);
+  expect(themeBox.x).toBeGreaterThan(preferencesBox.x + preferencesBox.width / 2);
+  expect(languageBox.x).toBeGreaterThan(preferencesBox.x + preferencesBox.width / 2);
+  expect(preferencesBox.width).toBeLessThanOrEqual(await page.evaluate(() => window.innerWidth));
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    await page.evaluate(() => window.innerWidth),
+  );
+  expect(
+    await languageButton.evaluate((button) => {
+      let ancestor = button.parentElement;
+      while (ancestor && ancestor !== document.body) {
+        const style = getComputedStyle(ancestor);
+        if (
+          style.overflowX === 'hidden' ||
+          style.overflowX === 'clip' ||
+          style.overflowY === 'hidden' ||
+          style.overflowY === 'clip'
+        ) {
+          return ancestor.className;
+        }
+        ancestor = ancestor.parentElement;
+      }
+      return null;
+    }),
+  ).toBeNull();
+
+  await languageButton.click();
+  await page.getByRole('button', { name: 'فارسی' }).click();
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  const rtlLanguageButton = page.locator('[data-language-switcher] > button');
+  await rtlLanguageButton.click();
+  const rtlMenuBox = await page.locator('[data-language-menu]').boundingBox();
+  if (!rtlMenuBox) throw new Error('RTL language menu must have a visible bounding box');
+  expect(rtlMenuBox.x).toBeGreaterThanOrEqual(0);
+  expect(rtlMenuBox.x + rtlMenuBox.width).toBeLessThanOrEqual(
+    await page.evaluate(() => window.innerWidth),
+  );
+  await page.getByRole('button', { name: '中文' }).click();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'zh');
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('does not edit animated background defaults when its config fails to load @desktop-flow', async ({
+  page,
+}) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/auth/me/is-admin': { is_admin: true },
+      '/api/cabinet/auth/me/permissions': {
+        permissions: ['settings:read'],
+        roles: [],
+        role_level: 100,
+      },
+      '/api/cabinet/admin/settings': [],
+      '/api/cabinet/admin/tickets/notifications/unread-count': { unread_count: 0 },
+      '/api/cabinet/branding/bot-start-video': { has_video: false, file_id: null },
+      '/api/cabinet/branding/footer-enabled': true,
+    },
+    responseStatuses: {
+      '/api/cabinet/branding/animation-config': 500,
+    },
+  });
+
+  await page.goto('/admin/settings');
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Failed to load animated background settings' }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save', exact: true })).toHaveCount(0);
+  expect([...unexpectedApiRequests]).toEqual([]);
 });
 
 test('shows critical data errors instead of zero values @desktop-flow', async ({ page }) => {
@@ -787,7 +892,7 @@ test('shows critical data errors instead of zero values @desktop-flow', async ({
   await expect(page.getByText('Balance could not be loaded.')).toBeVisible();
   await expect(page.getByText('Device usage could not be loaded.')).toBeVisible();
   await expect(page.getByText('Unavailable', { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: /My Devices/ })).not.toContainText('0 / 3');
+  await expect(page.getByRole('button', { name: /My Devices/ })).toHaveCount(0);
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 

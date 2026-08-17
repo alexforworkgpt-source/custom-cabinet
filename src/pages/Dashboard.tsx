@@ -349,7 +349,11 @@ export default function Dashboard() {
 
   const overlaySubscriptionId = routeState.subscriptionId ?? subscription?.id;
   const closeOverlay = () => {
-    navigate(getCabinetClosePath(overlaySubscriptionId), { replace: true });
+    if (location.state?.cabinetOverlayParent) {
+      navigate(-1);
+      return;
+    }
+    navigate(routeState.closePath ?? getCabinetClosePath(overlaySubscriptionId), { replace: true });
   };
   const closeTrafficTopup = () => {
     setShowTrafficTopup(false);
@@ -514,9 +518,12 @@ export default function Dashboard() {
             setSelectedTrafficPackage(null);
             setShowTrafficTopup(true);
           }}
-          onManageSubscription={() => navigate(`/subscriptions/${subscription.id}`)}
+          onManageSubscription={() =>
+            navigate(`/subscriptions/${subscription.id}`, {
+              state: { cabinetOverlayParent: true },
+            })
+          }
           managementOpen={managementOpen}
-          purchaseLabel={t('subscriptions.chooseTariff')}
         />
       ) : subscription ? (
         <SubscriptionCardActive
@@ -533,9 +540,12 @@ export default function Dashboard() {
             setSubscriptionLinkCopied(true);
             setTimeout(() => setSubscriptionLinkCopied(false), 2000);
           }}
-          onManageSubscription={() => navigate(`/subscriptions/${subscription.id}`)}
+          onManageSubscription={() =>
+            navigate(`/subscriptions/${subscription.id}`, {
+              state: { cabinetOverlayParent: true },
+            })
+          }
           managementOpen={managementOpen}
-          purchaseLabel={t('subscriptions.chooseTariff')}
         />
       ) : null}
 
@@ -590,15 +600,6 @@ export default function Dashboard() {
         earningsRubles={referralInfo?.available_balance_rubles || 0}
         refLoading={refLoading}
         showReferral={referralEnabled}
-        devices={
-          subscription
-            ? {
-                used: devicesError ? null : (devicesData?.total ?? 0),
-                limit: subscription.device_limit,
-                onOpen: () => navigate(`/?sub=${subscription.id}&overlay=devices`),
-              }
-            : undefined
-        }
       />
 
       {/* Fortune Wheel Banner */}

@@ -5,6 +5,7 @@ import { brandingApi, setCachedBranding } from '../../api/branding';
 import { setCachedFullscreenEnabled } from '../../hooks/useTelegramSDK';
 import { UploadIcon, TrashIcon, PencilIcon, CheckIcon, CloseIcon } from './icons';
 import { Toggle } from './Toggle';
+import { BackgroundEditor } from './BackgroundEditor';
 
 interface BrandingTabProps {
   accentColor?: string;
@@ -289,6 +290,11 @@ export function BrandingTab({ accentColor = '#3b82f6' }: BrandingTabProps) {
             {t('admin.settings.botStartVideoError')}
           </div>
         )}
+      </div>
+
+      {/* Animated Background Editor */}
+      <div className="rounded-2xl border border-dark-700/50 bg-dark-800/50 p-6">
+        <BackgroundEditor />
       </div>
 
       {/* Fullscreen & Email toggles */}
