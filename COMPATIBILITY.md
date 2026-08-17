@@ -8,10 +8,10 @@ identifiers, not public branding.
 
 | Component | Version or reference | Exact source |
 | --- | --- | --- |
-| Custom Cabinet | `1.65.0` | Repository commit to be pinned by the Release Bundle |
+| Custom Cabinet | `1.65.0`; Release Bundle `v2026.08.9` | `0f9794d48e43e428b6f3d4634b84d82fda0eb0ba` |
 | Upstream Cabinet baseline | `v1.65.0` | `b866bebeeb6032db4baa3869a4917316fe8e0453` |
 | Upstream Cabinet source | Repository | <https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git> |
-| Upstream Bot | Not recorded in this repository yet | Must be supplied and verified before the next compatible Release Bundle |
+| Upstream Bot | `v4.0.0` | `f553d1896dcd347fd74012f6394fd2277161bdd1` |
 | Node.js development baseline | 20+ | Declared in `README.md` |
 
 The current upstream source identity is also recorded in
@@ -20,8 +20,13 @@ resolve the provenance mismatch before synchronization or release.
 
 ## Release Bundle Record
 
-No verified Release Bundle compatibility row is recorded here yet. Add one only
-after the complete applicable gate has passed.
+The following row passed the Release Bundle contract, deterministic artifact
+gate and full disposable Ubuntu lifecycle. Product live sign-off remains
+`BLOCKED` as recorded in the linked report.
+
+| Release Bundle | Installer commit | Upstream Bot tag/SHA | Custom Cabinet tag/commit | Upstream Cabinet baseline SHA | Runtime images | Verification date | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `v2026.08.9` | `a5af6c72069a98b42e97cfb17ebcf1d59443324f` | `v4.0.0` / `f553d1896dcd347fd74012f6394fd2277161bdd1` | `0f9794d48e43e428b6f3d4634b84d82fda0eb0ba` | `b866bebeeb6032db4baa3869a4917316fe8e0453` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-08-17 | Published and deployed to disposable integration VPS; full product live sign-off is `BLOCKED`; see `LIVE_CHECK_REPORT_2026.08.9.md` |
 
 Use this format for every released combination:
 
