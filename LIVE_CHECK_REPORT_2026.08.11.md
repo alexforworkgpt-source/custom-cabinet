@@ -25,8 +25,11 @@ Release URL: <https://github.com/alexforworkgpt-source/installer/releases/tag/v2
 
 | Item | Value |
 | --- | --- |
-| Staging URL | Not deployed |
+| Integration URL | `https://web.demolanding.click` |
+| Environment type | Disposable integration VPS; not recorded as production |
+| Postflight verification time | `2026-08-17T22:13:47Z` |
 | Browser automation | Playwright Chromium projects at 320, 375, 768, 1024 and 1280 px |
+| Deployed browser smoke | Playwright Chromium `151.0.7922.34` |
 | Telegram clients | Not available |
 | Enabled themes | Dark and light covered by existing local fixtures |
 | Checked locales | English and Russian in changed critical flows |
@@ -52,6 +55,24 @@ Release URL: <https://github.com/alexforworkgpt-source/installer/releases/tag/v2
 | Deterministic artifact | PASS | Workflow built Cabinet twice and compared the results |
 | Public asset verification | PASS | Six assets downloaded without a token; checksums, manifest, provenance and archive identity verified |
 
+## Deployment
+
+| Item | Result |
+| --- | --- |
+| Baseline | Release `2026.08.10`; exact Bot, Cabinet and artifact identities; health and Installer doctor PASS |
+| Update method | Protected Update from immutable `v2026.08.11/release.json` |
+| Protected Update outcome | `committed` |
+| Installed Release Bundle | `2026.08.11` |
+| Installed Cabinet SHA | `e2bd33df4602537c92eb02475673f3bad66afec2` |
+| Installed Cabinet artifact | `6603a92028d22485a3f0a7a7b15887a9f5560a1ae127c666f26ea3d6e69e8dac` |
+| Installed Bot SHA | `f553d1896dcd347fd74012f6394fd2277161bdd1` |
+| Runtime-change receipt | `outcome=committed` |
+| Installer doctor | PASS after update and in a separate postflight SSH session |
+| Unified health | PASS, HTTP `200` |
+| Branding API | PASS, HTTP `200` |
+| Root and direct `/balance` route | PASS, HTTP `200`; guest redirected to `/login` |
+| Clean guest Chromium smoke | PASS; visible Login, no console errors, failed same-origin requests or unexpected 4xx/5xx responses |
+
 ## Functional Results
 
 | Area | Result | Checked scenarios | Limitations |
@@ -60,6 +81,7 @@ Release URL: <https://github.com/alexforworkgpt-source/installer/releases/tag/v2
 | Subscription/purchase | PASS locally | Classic Tariffs entry at 320 and 1280 px, period selection, preview and mocked purchase | No authenticated staging account |
 | Balance/payments | PASS locally | Six-method layout, amount validation, cancellation, handoff and result return | No sandbox or real provider mutation |
 | Other Cabinet flows | PASS locally | Full existing Playwright suite | Live WebSocket and authenticated integration matrix not checked |
+| Runtime smoke | PASS | Exact Bundle identities, health, doctor, root, direct protected route, branding and guest Login | Authenticated integration state matrix not checked |
 
 ## Release Publication
 
@@ -72,7 +94,7 @@ Release URL: <https://github.com/alexforworkgpt-source/installer/releases/tag/v2
 
 ## Residual Risks
 
-- Authenticated staging and production smoke were not run.
+- Authenticated integration state matrix and production smoke were not run.
 - Real Telegram Android, iOS and Desktop clients were unavailable.
 - No real payment or destructive action was initiated.
 - Existing Biome warnings and the stale `caniuse-lite` warning remain unchanged.
@@ -84,9 +106,10 @@ Result: `BLOCKED`
 Reason:
 
 ```text
-The exact source, automated gates, Release workflow and public assets passed.
-Authenticated staging, real Telegram and sandbox-provider evidence is not
-available, so local fixture coverage is not promoted to a staging PASS.
+The exact source, automated gates, Release workflow, public assets, Protected
+Update and deployed guest smoke passed. Authenticated integration, real Telegram
+and sandbox-provider evidence is not available, so the overall result remains
+BLOCKED.
 ```
 
 ## Production Smoke
@@ -100,7 +123,7 @@ No production deployment or production mutation was initiated.
 Rollback required: `No`<br>
 Rollback Release Bundle: `v2026.08.10`<br>
 Rollback result: `NOT NEEDED`<br>
-Post-rollback health/Login: `not applicable`
+Post-rollback health/Login: `not applicable`; post-update health/Login `PASS`
 
 ## Final Sign-off
 
