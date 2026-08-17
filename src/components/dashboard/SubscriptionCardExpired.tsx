@@ -20,6 +20,7 @@ interface SubscriptionCardExpiredProps {
   isTrafficTopupOpen: boolean;
   trafficTopupTriggerRef: RefObject<HTMLButtonElement | null>;
   onBuyTraffic: () => void;
+  onManageSubscription: () => void;
   className?: string;
 }
 
@@ -30,6 +31,7 @@ export default function SubscriptionCardExpired({
   isTrafficTopupOpen,
   trafficTopupTriggerRef,
   onBuyTraffic,
+  onManageSubscription,
   className,
 }: SubscriptionCardExpiredProps) {
   const { t } = useTranslation();
@@ -60,6 +62,12 @@ export default function SubscriptionCardExpired({
     (isDaily ? balanceKopeks >= dailyPrice && dailyPrice > 0 : balanceKopeks >= 100);
 
   const handleQuickRenew = async () => {
+    if (!isDaily) {
+      haptic.buttonPressHeavy();
+      onManageSubscription();
+      return;
+    }
+
     setIsRenewing(true);
     setRenewError(null);
     haptic.buttonPressHeavy();
@@ -74,8 +82,6 @@ export default function SubscriptionCardExpired({
         // (user_id, tariff_id) re-lookup that races with concurrent
         // panel webhooks (would surface as "Тариф уже активен" + refund).
         await subscriptionApi.purchaseTariff(subscription.tariff_id, 1, undefined, subscription.id);
-      } else {
-        await subscriptionApi.renewSubscription(30, subscription.id);
       }
       haptic.success();
       queryClient.invalidateQueries({
@@ -107,7 +113,7 @@ export default function SubscriptionCardExpired({
   const handleTopUp = () => {
     haptic.buttonPress();
     const params = new URLSearchParams();
-    params.set('returnTo', location.pathname);
+    params.set('returnTo', `${location.pathname}${location.search}`);
     navigate(`/balance/top-up?${params.toString()}`);
   };
 

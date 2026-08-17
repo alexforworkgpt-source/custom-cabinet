@@ -344,6 +344,8 @@
       "earnings": "Earnings"
     },
     "manageAll": "Manage all",
+    "manageSubscription": "Manage subscription",
+    "subscriptionLink": "Subscription link",
     "showAll": "Show all",
     "subscriptions": "Subscriptions"
   },

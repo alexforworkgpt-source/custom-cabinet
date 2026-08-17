@@ -10,7 +10,7 @@ import { useTrafficZone } from '../../hooks/useTrafficZone';
 import { formatTraffic } from '../../utils/formatTraffic';
 import { getGlassColors } from '../../utils/glassTheme';
 import { HoverBorderGradient } from '../ui/hover-border-gradient';
-import { CalendarIcon, RefreshIcon } from '@/components/icons';
+import { CalendarIcon, CheckIcon, CopyIcon, RefreshIcon } from '@/components/icons';
 import { useHaptic } from '../../platform';
 import type { Subscription } from '../../types';
 
@@ -24,7 +24,9 @@ interface SubscriptionCardActiveProps {
   refreshTrafficMutation: UseMutationResult<unknown, unknown, void, unknown>;
   trafficRefreshCooldown: number;
   connectedDevices: number | null;
-  onManageDevices?: () => void;
+  connectionUrl?: string | null;
+  connectionUrlCopied?: boolean;
+  onCopyConnectionUrl?: () => void;
 }
 
 export default function SubscriptionCardActive({
@@ -33,7 +35,9 @@ export default function SubscriptionCardActive({
   refreshTrafficMutation,
   trafficRefreshCooldown,
   connectedDevices,
-  onManageDevices,
+  connectionUrl,
+  connectionUrlCopied = false,
+  onCopyConnectionUrl,
 }: SubscriptionCardActiveProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -182,7 +186,7 @@ export default function SubscriptionCardActive({
             }
             navigate(`/connection?sub=${subscription.id}`);
           }}
-          className={`mb-2.5 flex w-full items-center gap-3.5 rounded-[14px] p-3.5 text-left transition-shadow duration-300${isAtDeviceLimit || isDeviceUsageUnavailable ? 'cursor-not-allowed opacity-50' : ''}`}
+          className={`${connectionUrl ? 'mb-2.5' : 'mb-5'} flex w-full items-center gap-3.5 rounded-[14px] p-3.5 text-left transition-shadow duration-300${isAtDeviceLimit || isDeviceUsageUnavailable ? ' cursor-not-allowed opacity-50' : ''}`}
           data-onboarding="connect-devices"
           style={{ fontFamily: 'inherit' }}
         >
@@ -281,20 +285,38 @@ export default function SubscriptionCardActive({
         </HoverBorderGradient>
       )}
 
-      <button
-        type="button"
-        onClick={onManageDevices}
-        className="mb-5 flex min-h-11 w-full items-center justify-between rounded-[14px] border border-dark-700/50 bg-dark-800/50 px-4 py-3 text-left text-sm text-dark-200 transition-colors hover:bg-dark-700/60"
-      >
-        <span className="font-medium">{t('subscription.myDevices')}</span>
-        <span className="text-dark-400">
-          {connectedDevices === null
-            ? t('dashboard.dataUnavailable')
-            : subscription.device_limit === 0
-              ? `${connectedDevices} / ∞`
-              : `${connectedDevices} / ${subscription.device_limit}`}
-        </span>
-      </button>
+      {connectionUrl && (
+        <div className="mb-5 flex gap-2">
+          <code
+            className="flex min-h-11 min-w-0 flex-1 items-center rounded-[10px] px-3 py-2 font-mono text-[11px] text-dark-50/30"
+            style={{
+              background: g.codeBg,
+              border: `1px solid ${g.codeBorder}`,
+            }}
+            title={connectionUrl}
+          >
+            <span className="block min-w-0 truncate whitespace-nowrap">{connectionUrl}</span>
+          </code>
+          <button
+            type="button"
+            onClick={onCopyConnectionUrl}
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-[10px] px-3 transition-colors duration-300"
+            style={{
+              background: connectionUrlCopied
+                ? 'rgba(var(--color-accent-400), 0.12)'
+                : g.innerBorder,
+              border: connectionUrlCopied
+                ? '1px solid rgba(var(--color-accent-400), 0.2)'
+                : `1px solid ${g.trackBg}`,
+              color: connectionUrlCopied ? 'rgb(var(--color-accent-400))' : g.textMuted,
+            }}
+            aria-label={t('subscription.copyLink')}
+            title={t('subscription.copyLink')}
+          >
+            {connectionUrlCopied ? <CheckIcon /> : <CopyIcon />}
+          </button>
+        </div>
+      )}
 
       {/* ─── Stats row: Tariff + Days Left ─── */}
       <div className="mb-5 flex gap-2.5">

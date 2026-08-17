@@ -27,12 +27,16 @@ import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { useTheme } from '@/hooks/useTheme';
 import { isFailedStatus, isPaidStatus } from '@/utils/paymentStatus';
 import { TrafficTopupSheet } from '@/components/subscription/sheets/TrafficTopupSheet';
+import { Button } from '@/components/primitives/Button';
+import { copyToClipboard } from '@/utils/clipboard';
+import { resolveConnectionUrlForUi } from '@/utils/connectionLink';
 
 const Connection = lazy(() => import('./Connection'));
 const TopUpMethodSelect = lazy(() => import('./TopUpMethodSelect'));
 const TopUpAmount = lazy(() => import('./TopUpAmount'));
 const Balance = lazy(() => import('./Balance'));
 const DevicesPanel = lazy(() => import('@/components/dashboard/DevicesPanel'));
+const SubscriptionManagement = lazy(() => import('./Subscription'));
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -40,6 +44,7 @@ export default function Dashboard() {
   const location = useLocation();
   const { subscriptionId: routeSubscriptionId } = useParams<{ subscriptionId: string }>();
   const [searchParams] = useSearchParams();
+  const routeState = getUserCabinetRouteState(location.pathname, location.search);
   const user = useAuthStore((state) => state.user);
   const refreshUser = useAuthStore((state) => state.refreshUser);
   const queryClient = useQueryClient();
@@ -52,6 +57,7 @@ export default function Dashboard() {
   const [showTrafficTopup, setShowTrafficTopup] = useState(false);
   const [selectedTrafficPackage, setSelectedTrafficPackage] = useState<number | null>(null);
   const trafficTopupTriggerRef = useRef<HTMLButtonElement>(null);
+  const [subscriptionLinkCopied, setSubscriptionLinkCopied] = useState(false);
 
   useEffect(() => {
     if (location.pathname !== '/balance') return;
@@ -125,6 +131,35 @@ export default function Dashboard() {
   });
 
   const subscription = subscriptionResponse?.subscription ?? null;
+  const managementOpen = routeState.overlay === 'subscription';
+
+  const { data: connectionLink, isLoading: isConnectionLinkLoading } = useQuery({
+    queryKey: ['connection-link', selectedSubscriptionId],
+    queryFn: () => subscriptionApi.getConnectionLink(selectedSubscriptionId),
+    enabled: Boolean(subscription),
+    retry: false,
+    staleTime: 0,
+  });
+  const displayedConnectionUrl = useMemo(
+    () =>
+      resolveConnectionUrlForUi({
+        mode: connectionLink?.connect_mode,
+        happSchemeLink: connectionLink?.happ_scheme_link,
+        displayLink: connectionLink?.display_link,
+        subscriptionUrl: connectionLink?.subscription_url,
+        happCryptLink: connectionLink?.happ_cryptolink,
+        happCryptoLink: connectionLink?.happ_crypto_link,
+        happLink: connectionLink?.happ_link,
+        fallbackUrl: isConnectionLinkLoading ? null : (subscription?.subscription_url ?? null),
+      }),
+    [connectionLink, isConnectionLinkLoading, subscription?.subscription_url],
+  );
+  const shouldHideConnectionLink =
+    subscription?.hide_subscription_link || connectionLink?.hide_link;
+
+  useEffect(() => {
+    setSubscriptionLinkCopied(false);
+  }, [subscription?.id]);
 
   const { data: purchaseOptions } = useQuery({
     queryKey: ['purchase-options', selectedSubscriptionId],
@@ -226,7 +261,7 @@ export default function Dashboard() {
       } else {
         setTrafficRefreshCooldown(30);
       }
-      queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
     },
     onError: (error: {
       response?: { status?: number; headers?: { get?: (key: string) => string } };
@@ -336,7 +371,6 @@ export default function Dashboard() {
   };
 
   const userName = displayName(user);
-  const routeState = getUserCabinetRouteState(location.pathname, location.search);
   const overlaySubscriptionId = routeState.subscriptionId ?? subscription?.id;
   const closeOverlay = () => {
     navigate(getCabinetClosePath(overlaySubscriptionId), { replace: true });
@@ -347,6 +381,29 @@ export default function Dashboard() {
   };
 
   const overlayContent = (() => {
+    if (routeState.overlay === 'subscription' && overlaySubscriptionId) {
+      if (subscriptionError) {
+        return (
+          <div className="rounded-2xl border border-error-500/30 bg-error-500/10 p-5" role="alert">
+            <p className="text-sm text-error-400">{t('dashboard.subscriptionLoadError')}</p>
+            <button
+              type="button"
+              className="mt-3 min-h-11 rounded-xl bg-dark-800 px-4 text-sm font-medium text-dark-100"
+              onClick={() => void refetchSubscription()}
+            >
+              {t('common.retry')}
+            </button>
+          </div>
+        );
+      }
+      return (
+        <SubscriptionManagement
+          key={overlaySubscriptionId}
+          embedded
+          selectedSubscriptionId={overlaySubscriptionId}
+        />
+      );
+    }
     if (routeState.overlay === 'devices' && overlaySubscriptionId) {
       return <DevicesPanel subscriptionId={overlaySubscriptionId} />;
     }
@@ -363,15 +420,17 @@ export default function Dashboard() {
   })();
 
   const overlayTitle =
-    routeState.overlay === 'connection'
-      ? t('subscription.connection.title')
-      : routeState.overlay === 'topup'
-        ? t('balance.topUp')
-        : routeState.overlay === 'balance'
-          ? t('balance.title')
-          : routeState.overlay === 'devices'
-            ? t('subscription.myDevices')
-            : t('subscription.title');
+    routeState.overlay === 'subscription'
+      ? t('dashboard.manageSubscription')
+      : routeState.overlay === 'connection'
+        ? t('subscription.connection.title')
+        : routeState.overlay === 'topup'
+          ? t('balance.topUp')
+          : routeState.overlay === 'balance'
+            ? t('balance.title')
+            : routeState.overlay === 'devices'
+              ? t('subscription.myDevices')
+              : t('subscription.title');
 
   return (
     <div
@@ -502,6 +561,7 @@ export default function Dashboard() {
             setSelectedTrafficPackage(null);
             setShowTrafficTopup(true);
           }}
+          onManageSubscription={() => navigate(`/subscriptions/${subscription.id}`)}
         />
       ) : subscription ? (
         <SubscriptionCardActive
@@ -510,29 +570,49 @@ export default function Dashboard() {
           refreshTrafficMutation={refreshTrafficMutation}
           trafficRefreshCooldown={trafficRefreshCooldown}
           connectedDevices={devicesError ? null : (devicesData?.total ?? null)}
-          onManageDevices={() => navigate(`/?sub=${subscription.id}&overlay=devices`)}
+          connectionUrl={shouldHideConnectionLink ? null : displayedConnectionUrl}
+          connectionUrlCopied={subscriptionLinkCopied}
+          onCopyConnectionUrl={() => {
+            if (!displayedConnectionUrl) return;
+            void copyToClipboard(displayedConnectionUrl);
+            setSubscriptionLinkCopied(true);
+            setTimeout(() => setSubscriptionLinkCopied(false), 2000);
+          }}
         />
       ) : null}
 
-      {subscription &&
-        (subscription.is_expired ||
-          subscription.status === 'disabled' ||
-          subscription.is_limited) && (
-          <button
+      {subscription && (
+        <div className="grid grid-cols-2 gap-2.5">
+          <Button
             type="button"
-            onClick={() => navigate(`/?sub=${subscription.id}&overlay=devices`)}
-            className="flex min-h-11 w-full items-center justify-between rounded-2xl border border-dark-700/50 bg-dark-800/50 px-4 py-3 text-left text-sm text-dark-200 transition-colors hover:bg-dark-700/60"
+            variant="secondary"
+            fullWidth
+            aria-haspopup="dialog"
+            aria-expanded={managementOpen}
+            onClick={() => navigate(`/subscriptions/${subscription.id}`)}
+            className="h-auto min-h-11 justify-center rounded-2xl bg-dark-900/70 px-3 py-3 text-center text-xs font-semibold hover:bg-dark-800/80 sm:text-sm"
           >
-            <span className="font-medium">{t('subscription.myDevices')}</span>
-            <span className="text-dark-400">
+            {t('dashboard.manageSubscription')}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            fullWidth
+            aria-haspopup="dialog"
+            onClick={() => navigate(`/?sub=${subscription.id}&overlay=devices`)}
+            className="h-auto min-h-11 justify-between rounded-2xl bg-dark-900/70 px-3 py-3 text-left text-xs font-semibold hover:bg-dark-800/80 sm:text-sm"
+          >
+            <span>{t('subscription.myDevices')}</span>
+            <span className="shrink-0 font-normal text-dark-400">
               {devicesError
                 ? t('dashboard.dataUnavailable')
                 : subscription.device_limit === 0
                   ? `${devicesData?.total ?? 0} / ∞`
                   : `${devicesData?.total ?? 0} / ${subscription.device_limit}`}
             </span>
-          </button>
-        )}
+          </Button>
+        </div>
+      )}
 
       {subscription?.is_limited && showTrafficTopup && (
         <div id="traffic-topup-panel" role="region" aria-live="polite">

@@ -14,7 +14,6 @@ interface ProfileHubSectionsProps {
   hasContests?: boolean;
   hasPolls?: boolean;
   isAdmin: boolean;
-  onLogout: () => void;
 }
 
 function HubLink({ to, children }: { to: string; children: React.ReactNode }) {
@@ -38,7 +37,6 @@ export default function ProfileHubSections({
   hasContests,
   hasPolls,
   isAdmin,
-  onLogout,
 }: ProfileHubSectionsProps) {
   const { t } = useTranslation();
 
@@ -88,24 +86,16 @@ export default function ProfileHubSections({
         </Card>
       )}
 
-      <Card>
-        {isAdmin && (
+      {isAdmin && (
+        <Card>
           <HubLink to="/admin">
             <span className="flex items-center gap-2">
               <ShieldIcon className="h-4 w-4 text-warning-400" />
               {t('admin.nav.title')}
             </span>
           </HubLink>
-        )}
-        <Button
-          fullWidth
-          variant="destructive"
-          className={isAdmin ? 'mt-3' : undefined}
-          onClick={onLogout}
-        >
-          {t('nav.logout')}
-        </Button>
-      </Card>
+        </Card>
+      )}
     </div>
   );
 }

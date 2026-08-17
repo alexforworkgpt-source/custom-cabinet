@@ -107,14 +107,50 @@ test('keeps subscription compatibility routes on the unified Dashboard', async (
         traffic_used_percent: 10,
         is_unlimited: false,
       },
+      '/api/cabinet/subscription/connection-link': {
+        subscription_url: 'https://example.test/subscription',
+        display_link: 'https://example.test/subscription',
+        connect_mode: 'plain',
+        hide_link: false,
+      },
+      '/api/cabinet/subscription/purchase-options': {
+        sales_mode: 'classic',
+        periods: [],
+        balance_kopeks: 100_000,
+        balance_label: '1,000 RUB',
+      },
+      '/api/cabinet/subscription/platega-recurrent': { status: 'none' },
+      '/api/cabinet/subscription/lava-recurrent': { status: 'none' },
     },
   });
 
   await page.goto('/subscriptions/7');
+  const managementDialog = page.getByRole('dialog');
+  await expect(managementDialog).toBeVisible();
+  await expect(
+    managementDialog.getByRole('heading', { name: 'Manage subscription' }),
+  ).toBeVisible();
+  await expect(managementDialog.getByRole('heading', { name: 'Additional Options' })).toBeVisible();
+  expect(
+    await managementDialog.evaluate((dialog) => {
+      const dialogRect = dialog.getBoundingClientRect();
+      return {
+        horizontalOverflow:
+          document.documentElement.scrollWidth > document.documentElement.clientWidth,
+        dialogWithinViewport:
+          dialogRect.left >= 0 && dialogRect.right <= document.documentElement.clientWidth,
+      };
+    }),
+  ).toEqual({ horizontalOverflow: false, dialogWithinViewport: true });
+
+  await page.keyboard.press('Escape');
+  await expect(managementDialog).toBeHidden();
+  await expect(page).toHaveURL('/?sub=7');
   await expect(page.getByRole('heading', { name: 'Traffic Usage' })).toBeVisible();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.getByText('Unified plan')).toBeVisible();
-  await expect(page.getByText('Unified plan').locator('..')).not.toHaveAttribute('href');
+  await expect(page.getByRole('heading', { name: 'Traffic Usage' })).toHaveCount(1);
+  const compactPlanName = page.getByText('Unified plan', { exact: true }).last();
+  await expect(compactPlanName).toBeVisible();
+  await expect(compactPlanName.locator('..')).not.toHaveAttribute('href');
   await expect(page.getByRole('link', { name: 'Dashboard', exact: true })).toHaveAttribute(
     'aria-current',
     'page',
@@ -181,7 +217,18 @@ test('does not restore legacy user navigation on admin routes', async ({ page })
 });
 
 test('uses black and white base themes with the persistent grid', async ({ page }) => {
-  await prepareAuthenticatedPage(page);
+  await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/branding/animation-config': {
+        enabled: true,
+        type: 'aurora',
+        settings: {},
+        opacity: 1,
+        blur: 0,
+        reducedOnMobile: false,
+      },
+    },
+  });
   await page.goto('/');
   await page.evaluate(() => localStorage.setItem('cabinet-theme', 'dark'));
   await page.reload();
@@ -190,9 +237,18 @@ test('uses black and white base themes with the persistent grid', async ({ page 
   const darkTheme = await page.evaluate(() => ({
     background: getComputedStyle(document.body).backgroundColor,
     grid: getComputedStyle(document.body, '::before').backgroundImage,
+    gridSize: getComputedStyle(document.body, '::before').backgroundSize,
+    gridFilter: getComputedStyle(document.body, '::before').filter,
+    gridAnimation: getComputedStyle(document.body, '::before').animationName,
+    animatedBackgrounds: document.querySelectorAll('body > .pointer-events-none.fixed.inset-0')
+      .length,
   }));
   expect(darkTheme.background).toBe('rgb(0, 0, 0)');
   expect(darkTheme.grid).toContain('linear-gradient');
+  expect(darkTheme.gridSize).toBe('48px 48px, 48px 48px');
+  expect(darkTheme.gridFilter).toBe('blur(0.5px)');
+  expect(darkTheme.gridAnimation).toBe('none');
+  expect(darkTheme.animatedBackgrounds).toBe(0);
 
   await page.evaluate(() => localStorage.setItem('cabinet-theme', 'light'));
   await page.reload();
@@ -201,7 +257,16 @@ test('uses black and white base themes with the persistent grid', async ({ page 
   const lightTheme = await page.evaluate(() => ({
     background: getComputedStyle(document.body).backgroundColor,
     grid: getComputedStyle(document.body, '::before').backgroundImage,
+    gridSize: getComputedStyle(document.body, '::before').backgroundSize,
+    gridFilter: getComputedStyle(document.body, '::before').filter,
+    gridAnimation: getComputedStyle(document.body, '::before').animationName,
+    animatedBackgrounds: document.querySelectorAll('body > .pointer-events-none.fixed.inset-0')
+      .length,
   }));
   expect(lightTheme.background).toBe('rgb(255, 255, 255)');
   expect(lightTheme.grid).toContain('linear-gradient');
+  expect(lightTheme.gridSize).toBe('48px 48px, 48px 48px');
+  expect(lightTheme.gridFilter).toBe('blur(0.5px)');
+  expect(lightTheme.gridAnimation).toBe('none');
+  expect(lightTheme.animatedBackgrounds).toBe(0);
 });

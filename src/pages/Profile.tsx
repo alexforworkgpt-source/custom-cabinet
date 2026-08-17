@@ -302,10 +302,6 @@ export default function Profile() {
           hasContests={hasContests}
           hasPolls={hasPolls}
           isAdmin={isAdmin}
-          onLogout={() => {
-            haptic.impact('light');
-            logout();
-          }}
         />
       </motion.div>
 
@@ -804,6 +800,19 @@ export default function Profile() {
             <p className="text-dark-400">{t('profile.notifications.unavailable')}</p>
           )}
         </Card>
+      </motion.div>
+
+      <motion.div variants={staggerItem} className="pt-2">
+        <Button
+          fullWidth
+          variant="destructive"
+          onClick={() => {
+            haptic.impact('light');
+            logout();
+          }}
+        >
+          {t('nav.logout')}
+        </Button>
       </motion.div>
     </motion.div>
   );

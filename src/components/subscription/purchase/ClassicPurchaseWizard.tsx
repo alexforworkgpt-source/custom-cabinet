@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -69,6 +69,7 @@ export function ClassicPurchaseWizard({
   const [selectedServers, setSelectedServers] = useState<string[]>([]);
   const [selectedDevices, setSelectedDevices] = useState<number>(1);
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
+  const purchaseInFlightRef = useRef(false);
 
   // Global success-notification handler — resets back to the closed,
   // period-step state. Mirrors the parent's old handleCloseAllModals
@@ -151,13 +152,22 @@ export function ClassicPurchaseWizard({
   const purchaseMutation = useMutation({
     mutationFn: () => subscriptionApi.submitPurchase(currentSelection, subscriptionId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
       queryClient.invalidateQueries({ queryKey: ['purchase-options', subscriptionId] });
       queryClient.invalidateQueries({ queryKey: ['balance'] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
       navigate('/subscriptions', { replace: true });
     },
+    onSettled: () => {
+      purchaseInFlightRef.current = false;
+    },
   });
+
+  const submitPurchase = () => {
+    if (purchaseInFlightRef.current) return;
+    purchaseInFlightRef.current = true;
+    purchaseMutation.mutate();
+  };
 
   const toggleServer = (uuid: string) => {
     if (selectedServers.includes(uuid)) {
@@ -574,7 +584,7 @@ export function ClassicPurchaseWizard({
               </button>
             ) : (
               <button
-                onClick={() => purchaseMutation.mutate()}
+                onClick={submitPurchase}
                 disabled={purchaseMutation.isPending || previewLoading || !preview?.can_purchase}
                 className="btn-primary flex-1"
               >

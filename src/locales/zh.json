@@ -294,6 +294,8 @@
       "resume": "恢复"
     },
     "manageAll": "全部管理",
+    "manageSubscription": "管理订阅",
+    "subscriptionLink": "订阅链接",
     "showAll": "全部显示",
     "subscriptions": "订阅",
     "connectDevice": "连接设备",

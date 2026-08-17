@@ -34,7 +34,6 @@ import {
 
 import { MobileBottomNav } from './MobileBottomNav';
 import { AppHeader } from './AppHeader';
-import { useBackgroundConsumer } from '@/components/backgrounds/BackgroundHost';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -55,10 +54,6 @@ export function AppShell({ children }: AppShellProps) {
   // Extracted hooks
   const { appName, logoLetter, hasCustomLogo, logoUrl } = useBranding();
   useScrollRestoration();
-  // Анимированный фон рендерит BackgroundHost в App (не перемонтируется при
-  // смене роута) — здесь только регистрируем, что на этом роуте он нужен.
-  useBackgroundConsumer();
-
   // Theme toggle visibility
   const { data: enabledThemes } = useQuery({
     queryKey: ['enabled-themes'],

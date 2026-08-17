@@ -1,5 +1,5 @@
 import { uiLocale } from '@/utils/uiLocale';
-import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, useParams } from 'react-router';
@@ -11,15 +11,12 @@ import { HoverBorderGradient } from '../components/ui/hover-border-gradient';
 import { useTrafficZone } from '../hooks/useTrafficZone';
 import { formatTraffic } from '../utils/formatTraffic';
 import { getGlassColors } from '../utils/glassTheme';
-import { copyToClipboard } from '../utils/clipboard';
 import { useTheme } from '../hooks/useTheme';
 import InsufficientBalancePrompt from '../components/InsufficientBalancePrompt';
 import { useCurrency } from '../hooks/useCurrency';
 import { useCloseOnSuccessNotification } from '../store/successNotification';
 import PurchaseCTAButton from '../components/subscription/PurchaseCTAButton';
 import {
-  CopyIcon,
-  CheckIcon,
   PauseIcon,
   CalendarIcon,
   RefreshIcon,
@@ -28,7 +25,6 @@ import {
   TrashIcon,
 } from '../components/icons';
 import { useHaptic, usePlatform } from '../platform';
-import { resolveConnectionUrlForUi } from '../utils/connectionLink';
 import { getErrorMessage, getInsufficientBalanceError } from '../utils/subscriptionHelpers';
 import { openPaymentUrl } from '../utils/openPaymentUrl';
 import { useToast } from '../components/Toast';
@@ -137,7 +133,7 @@ const CountdownTimer = memo(function CountdownTimer({
           {t('subscription.expired')}
         </div>
       ) : (
-        <div className="flex items-baseline justify-between">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
           <div className="flex items-baseline gap-1 font-mono tabular-nums">
             {countdown.days > 0 && (
               <>
@@ -192,19 +188,27 @@ const CountdownTimer = memo(function CountdownTimer({
   );
 });
 
-export default function Subscription() {
+interface SubscriptionProps {
+  embedded?: boolean;
+  selectedSubscriptionId?: number;
+}
+
+export default function Subscription({
+  embedded = false,
+  selectedSubscriptionId,
+}: SubscriptionProps = {}) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { formatAmount, currencySymbol } = useCurrency();
   const navigate = useNavigate();
   const { subscriptionId: subIdParam } = useParams<{ subscriptionId?: string }>();
-  const subscriptionId = subIdParam ? parseInt(subIdParam, 10) : undefined;
+  const subscriptionId =
+    selectedSubscriptionId ?? (subIdParam ? parseInt(subIdParam, 10) : undefined);
   const { isDark } = useTheme();
   const g = getGlassColors(isDark);
   const haptic = useHaptic();
   const { openLink, platform } = usePlatform();
   const { showToast } = useToast();
-  const [copied, setCopied] = useState(false);
   const [showDeleteSheet, setShowDeleteSheet] = useState(false);
   const destructiveConfirm = useDestructiveConfirm();
 
@@ -250,41 +254,8 @@ export default function Subscription() {
     staleTime: 0,
     refetchOnMount: 'always',
   });
-  const { data: connectionLink, isLoading: isConnectionLinkLoading } = useQuery({
-    queryKey: ['connection-link', subscriptionId],
-    queryFn: () => subscriptionApi.getConnectionLink(subscriptionId),
-    retry: false,
-    staleTime: 0,
-  });
-
   // Extract subscription from response (null if no subscription)
   const subscription = subscriptionResponse?.subscription ?? null;
-  const displayedConnectionUrl = useMemo(
-    () =>
-      resolveConnectionUrlForUi({
-        mode: connectionLink?.connect_mode,
-        happSchemeLink: connectionLink?.happ_scheme_link,
-        displayLink: connectionLink?.display_link,
-        subscriptionUrl: connectionLink?.subscription_url,
-        happCryptLink: connectionLink?.happ_cryptolink,
-        happCryptoLink: connectionLink?.happ_crypto_link,
-        happLink: connectionLink?.happ_link,
-        fallbackUrl: isConnectionLinkLoading ? null : (subscription?.subscription_url ?? null),
-      }),
-    [
-      connectionLink?.connect_mode,
-      connectionLink?.display_link,
-      connectionLink?.happ_cryptolink,
-      connectionLink?.happ_crypto_link,
-      connectionLink?.happ_link,
-      connectionLink?.happ_scheme_link,
-      connectionLink?.subscription_url,
-      isConnectionLinkLoading,
-      subscription?.subscription_url,
-    ],
-  );
-  const shouldHideConnectionLink =
-    subscription?.hide_subscription_link || connectionLink?.hide_link;
 
   // Traffic zone (theme-aware) — called unconditionally at top level
   const usedPercent = trafficData?.traffic_used_percent ?? subscription?.traffic_used_percent ?? 0;
@@ -294,6 +265,7 @@ export default function Subscription() {
   const { data: purchaseOptions } = useQuery({
     queryKey: ['purchase-options', subscriptionId],
     queryFn: () => subscriptionApi.getPurchaseOptions(subscriptionId),
+    enabled: Boolean(subscription),
     staleTime: 0,
     refetchOnMount: 'always',
   });
@@ -328,7 +300,7 @@ export default function Subscription() {
       }
       queryClient.invalidateQueries({ queryKey: ['sbp-recurring', subscriptionId] });
       // Backend flips autopay_enabled off when SBP auto-pay is enabled.
-      queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
     },
     onError: (error: unknown) => {
       const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data
@@ -346,7 +318,7 @@ export default function Subscription() {
     mutationFn: () => subscriptionApi.cancelSbpRecurring(subscriptionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sbp-recurring', subscriptionId] });
-      queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
       showToast({
         type: 'success',
         title: t('subscription.sbpRecurring.cancelled'),
@@ -400,7 +372,7 @@ export default function Subscription() {
       }
       queryClient.invalidateQueries({ queryKey: ['lava-recurring', subscriptionId] });
       // Бэкенд снимает autopay_enabled при включении рекуррента провайдера.
-      queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
     },
     onError: (error: unknown) => {
       const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data
@@ -418,7 +390,7 @@ export default function Subscription() {
     mutationFn: () => subscriptionApi.cancelLavaRecurring(subscriptionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lava-recurring', subscriptionId] });
-      queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
       showToast({
         type: 'success',
         title: t('subscription.lavaRecurring.cancelled'),
@@ -451,7 +423,7 @@ export default function Subscription() {
     mutationFn: (enabled: boolean) =>
       subscriptionApi.updateAutopay(enabled, undefined, subscriptionId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
       // Enabling balance-autopay cancels SBP auto-pay server-side — refresh so
       // the SBP block doesn't keep showing a now-stale 'active'/'pending' state.
@@ -470,7 +442,7 @@ export default function Subscription() {
   const pauseMutation = useMutation({
     mutationFn: () => subscriptionApi.togglePause(subscriptionId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
       queryClient.invalidateQueries({ queryKey: ['balance'] });
     },
@@ -509,7 +481,7 @@ export default function Subscription() {
       } else {
         setTrafficRefreshCooldown(30);
       }
-      queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
     },
     onError: (error: {
       response?: { status?: number; headers?: { get?: (key: string) => string } };
@@ -573,6 +545,7 @@ export default function Subscription() {
 
   // Auto-refresh traffic on mount (with 30s caching)
   useEffect(() => {
+    if (embedded) return;
     if (!subscription) return;
     if (hasAutoRefreshed.current) return;
     hasAutoRefreshed.current = true;
@@ -591,15 +564,7 @@ export default function Subscription() {
     }
 
     refreshTrafficMutation.mutate();
-  }, [subscription, refreshTrafficMutation, subscriptionId]);
-
-  const copyUrl = () => {
-    if (displayedConnectionUrl) {
-      void copyToClipboard(displayedConnectionUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
+  }, [embedded, subscription, refreshTrafficMutation, subscriptionId]);
 
   const handleRevoke = async () => {
     const confirmed = await destructiveConfirm(
@@ -610,6 +575,14 @@ export default function Subscription() {
     if (!confirmed) return;
     revokeMutation.mutate();
   };
+
+  const hasEmbeddedSubscriptionSettings = Boolean(
+    subscription &&
+      ((subscription.traffic_purchases?.length ?? 0) > 0 ||
+        (!subscription.is_trial && !subscription.is_daily) ||
+        (!subscription.is_trial && sbpUiStateValue !== 'hidden') ||
+        (!subscription.is_trial && lavaUiStateValue !== 'hidden')),
+  );
 
   // In multi-tariff mode without a specific subscription ID, redirect to list
   if (isMultiTariff && !subscriptionId && !isLoading) {
@@ -646,18 +619,22 @@ export default function Subscription() {
 
   return (
     <div className="space-y-6">
-      {/* Page title */}
-      <div className="flex items-center gap-3">
-        <WebBackButton to={isMultiTariff ? '/subscriptions' : '/'} />
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
-          {isMultiTariff && subscription?.tariff_name
-            ? subscription.tariff_name
-            : t('subscription.title')}
-        </h1>
-      </div>
+      {!embedded && (
+        <div className="flex items-center gap-3">
+          <WebBackButton to={isMultiTariff ? '/subscriptions' : '/'} />
+          <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
+            {isMultiTariff && subscription?.tariff_name
+              ? subscription.tariff_name
+              : t('subscription.title')}
+          </h1>
+        </div>
+      )}
+
+      {/* Purchase / Renewal CTA */}
+      <PurchaseCTAButton subscription={subscription} isMultiTariff={isMultiTariff} />
 
       {/* Current Subscription */}
-      {subscription ? (
+      {subscription && (!embedded || hasEmbeddedSubscriptionSettings) ? (
         (() => {
           const usedGb = trafficData?.traffic_used_gb ?? subscription.traffic_used_gb;
           const isUnlimited =
@@ -691,68 +668,70 @@ export default function Subscription() {
                   header badge. */}
 
               {/* ─── Header ─── */}
-              <div className="mb-6 flex items-start justify-between">
-                <div>
-                  {/* Zone indicator */}
-                  <div className="mb-1 flex items-center gap-2">
-                    <div
-                      className="h-2 w-2 rounded-full"
-                      style={{
-                        background: zone.mainHex,
-                        boxShadow: `0 0 8px ${zone.mainHex}80`,
-                        transition: 'all 0.6s ease',
-                      }}
-                      aria-hidden="true"
-                    />
-                    <span
-                      className="font-mono text-[11px] font-semibold uppercase tracking-widest"
-                      style={{ color: zone.mainHex, transition: 'color 0.6s ease' }}
-                    >
-                      {isUnlimited ? t('dashboard.unlimited') : t(zone.labelKey)}
-                    </span>
+              {!embedded && (
+                <div className="mb-6 flex items-start justify-between">
+                  <div>
+                    {/* Zone indicator */}
+                    <div className="mb-1 flex items-center gap-2">
+                      <div
+                        className="h-2 w-2 rounded-full"
+                        style={{
+                          background: zone.mainHex,
+                          boxShadow: `0 0 8px ${zone.mainHex}80`,
+                          transition: 'all 0.6s ease',
+                        }}
+                        aria-hidden="true"
+                      />
+                      <span
+                        className="font-mono text-[11px] font-semibold uppercase tracking-widest"
+                        style={{ color: zone.mainHex, transition: 'color 0.6s ease' }}
+                      >
+                        {isUnlimited ? t('dashboard.unlimited') : t(zone.labelKey)}
+                      </span>
+                    </div>
+
+                    {/* Plan name */}
+                    <h2 className="text-lg font-bold tracking-tight text-dark-50">
+                      {subscription.tariff_name || t('subscription.currentPlan')}
+                    </h2>
                   </div>
 
-                  {/* Plan name */}
-                  <h2 className="text-lg font-bold tracking-tight text-dark-50">
-                    {subscription.tariff_name || t('subscription.currentPlan')}
-                  </h2>
+                  {/* Status badge */}
+                  <span
+                    className="max-w-[55%] shrink-0 rounded-full px-3 py-1 text-center font-mono text-[10px] font-semibold uppercase tracking-wider"
+                    style={{
+                      background: subscription.is_active
+                        ? `${zone.mainHex}15`
+                        : subscription.is_limited
+                          ? 'rgba(255,184,0,0.12)'
+                          : 'rgba(255,59,92,0.12)',
+                      border: subscription.is_active
+                        ? `1px solid ${zone.mainHex}30`
+                        : subscription.is_limited
+                          ? '1px solid rgba(255,184,0,0.25)'
+                          : '1px solid rgba(255,59,92,0.25)',
+                      color: subscription.is_active
+                        ? zone.mainHex
+                        : subscription.is_limited
+                          ? 'rgb(var(--color-urgent-400))'
+                          : 'rgb(var(--color-critical-500))',
+                    }}
+                  >
+                    {subscription.is_active
+                      ? subscription.is_trial
+                        ? t('subscription.trialStatus')
+                        : t('subscription.active')
+                      : subscription.is_limited
+                        ? t('subscription.trafficLimited')
+                        : subscription.status === 'disabled'
+                          ? t('subscription.pause.suspended')
+                          : t('subscription.expired')}
+                  </span>
                 </div>
-
-                {/* Status badge */}
-                <span
-                  className="max-w-[55%] shrink-0 rounded-full px-3 py-1 text-center font-mono text-[10px] font-semibold uppercase tracking-wider"
-                  style={{
-                    background: subscription.is_active
-                      ? `${zone.mainHex}15`
-                      : subscription.is_limited
-                        ? 'rgba(255,184,0,0.12)'
-                        : 'rgba(255,59,92,0.12)',
-                    border: subscription.is_active
-                      ? `1px solid ${zone.mainHex}30`
-                      : subscription.is_limited
-                        ? '1px solid rgba(255,184,0,0.25)'
-                        : '1px solid rgba(255,59,92,0.25)',
-                    color: subscription.is_active
-                      ? zone.mainHex
-                      : subscription.is_limited
-                        ? 'rgb(var(--color-urgent-400))'
-                        : 'rgb(var(--color-critical-500))',
-                  }}
-                >
-                  {subscription.is_active
-                    ? subscription.is_trial
-                      ? t('subscription.trialStatus')
-                      : t('subscription.active')
-                    : subscription.is_limited
-                      ? t('subscription.trafficLimited')
-                      : subscription.status === 'disabled'
-                        ? t('subscription.pause.suspended')
-                        : t('subscription.expired')}
-                </span>
-              </div>
+              )}
 
               {/* ─── Traffic Limited Banner ─── */}
-              {subscription.is_limited && (
+              {!embedded && subscription.is_limited && (
                 <div
                   className="mb-6 rounded-[14px] p-4"
                   style={{
@@ -798,7 +777,7 @@ export default function Subscription() {
               )}
 
               {/* ─── Trial Info Banner ─── */}
-              {subscription.is_trial && subscription.is_active && (
+              {!embedded && subscription.is_trial && subscription.is_active && (
                 <div
                   className="mb-6 rounded-[14px] p-4"
                   style={{
@@ -879,49 +858,51 @@ export default function Subscription() {
               )}
 
               {/* ─── Traffic Progress ─── */}
-              <div className="mb-6">
-                <div className="mb-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-medium uppercase tracking-wider text-dark-50/40">
-                    {t('subscription.traffic')}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[11px] text-dark-50/30">
-                      {isUnlimited
-                        ? formatTraffic(usedGb)
-                        : `${formatTraffic(usedGb)} / ${formatTraffic(subscription.traffic_limit_gb)}`}
+              {!embedded && (
+                <div className="mb-6">
+                  <div className="mb-2.5 flex items-center justify-between">
+                    <span className="text-[11px] font-medium uppercase tracking-wider text-dark-50/40">
+                      {t('subscription.traffic')}
                     </span>
-                    <button
-                      onClick={() => refreshTrafficMutation.mutate()}
-                      disabled={refreshTrafficMutation.isPending || trafficRefreshCooldown > 0}
-                      className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-dark-50/30 transition-colors hover:bg-dark-50/[0.05] hover:text-dark-50/50 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <RefreshIcon
-                        className="h-3 w-3"
-                        spinning={refreshTrafficMutation.isPending}
-                      />
-                      {trafficRefreshCooldown > 0
-                        ? `${trafficRefreshCooldown}s`
-                        : t('common.refresh')}
-                    </button>
-                  </div>
-                </div>
-                {subscription.traffic_reset_mode &&
-                  subscription.traffic_reset_mode !== 'NO_RESET' && (
-                    <div className="mb-2 text-[10px] text-dark-50/25">
-                      {t(`subscription.trafficReset.${subscription.traffic_reset_mode}`)}
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[11px] text-dark-50/30">
+                        {isUnlimited
+                          ? formatTraffic(usedGb)
+                          : `${formatTraffic(usedGb)} / ${formatTraffic(subscription.traffic_limit_gb)}`}
+                      </span>
+                      <button
+                        onClick={() => refreshTrafficMutation.mutate()}
+                        disabled={refreshTrafficMutation.isPending || trafficRefreshCooldown > 0}
+                        className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-dark-50/30 transition-colors hover:bg-dark-50/[0.05] hover:text-dark-50/50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <RefreshIcon
+                          className="h-3 w-3"
+                          spinning={refreshTrafficMutation.isPending}
+                        />
+                        {trafficRefreshCooldown > 0
+                          ? `${trafficRefreshCooldown}s`
+                          : t('common.refresh')}
+                      </button>
                     </div>
-                  )}
-                <TrafficProgressBar
-                  usedGb={usedGb}
-                  limitGb={subscription.traffic_limit_gb}
-                  percent={usedPercent}
-                  isUnlimited={isUnlimited}
-                  compact
-                />
-              </div>
+                  </div>
+                  {subscription.traffic_reset_mode &&
+                    subscription.traffic_reset_mode !== 'NO_RESET' && (
+                      <div className="mb-2 text-[10px] text-dark-50/25">
+                        {t(`subscription.trafficReset.${subscription.traffic_reset_mode}`)}
+                      </div>
+                    )}
+                  <TrafficProgressBar
+                    usedGb={usedGb}
+                    limitGb={subscription.traffic_limit_gb}
+                    percent={usedPercent}
+                    isUnlimited={isUnlimited}
+                    compact
+                  />
+                </div>
+              )}
 
               {/* ─── Connect Device Button ─── */}
-              {subscription.subscription_url && (
+              {!embedded && subscription.subscription_url && (
                 <HoverBorderGradient
                   as="button"
                   accentColor={zone.mainHex}
@@ -1009,45 +990,16 @@ export default function Subscription() {
                 </HoverBorderGradient>
               )}
 
-              {/* ─── Subscription URL ─── */}
-              {displayedConnectionUrl && !shouldHideConnectionLink && (
-                <div className="mb-5 flex gap-2">
-                  <code
-                    className="block min-w-0 flex-1 truncate whitespace-nowrap rounded-[10px] px-3 py-2 font-mono text-[11px] text-dark-50/30"
-                    style={{
-                      background: g.codeBg,
-                      border: `1px solid ${g.codeBorder}`,
-                    }}
-                    title={displayedConnectionUrl}
-                  >
-                    {displayedConnectionUrl}
-                  </code>
-                  <button
-                    onClick={copyUrl}
-                    className="flex h-auto items-center rounded-[10px] px-3 transition-colors duration-300"
-                    style={{
-                      background: copied ? 'rgba(var(--color-accent-400), 0.12)' : g.innerBorder,
-                      border: copied
-                        ? '1px solid rgba(var(--color-accent-400), 0.2)'
-                        : `1px solid ${g.trackBg}`,
-                      color: copied ? 'rgb(var(--color-accent-400))' : g.textMuted,
-                    }}
-                    aria-label={t('subscription.copyLink')}
-                    title={t('subscription.copyLink')}
-                  >
-                    {copied ? <CheckIcon /> : <CopyIcon />}
-                  </button>
+              {/* ─── Countdown ─── */}
+              {!embedded && (
+                <div className="mb-5">
+                  <CountdownTimer
+                    endDate={subscription.end_date}
+                    isActive={subscription.is_active || subscription.is_limited}
+                    glassColors={g}
+                  />
                 </div>
               )}
-
-              {/* ─── Countdown ─── */}
-              <div className="mb-5">
-                <CountdownTimer
-                  endDate={subscription.end_date}
-                  isActive={subscription.is_active || subscription.is_limited}
-                  glassColors={g}
-                />
-              </div>
 
               {/* ─── Purchased Traffic Packages ─── */}
               {subscription.traffic_purchases && subscription.traffic_purchases.length > 0 && (
@@ -1409,7 +1361,7 @@ export default function Subscription() {
             </div>
           );
         })()
-      ) : (
+      ) : !subscription && !embedded ? (
         <div
           className="relative overflow-hidden rounded-3xl py-12 text-center"
           style={{
@@ -1426,7 +1378,7 @@ export default function Subscription() {
           </div>
           <div className="text-sm text-dark-50/30">{t('subscription.noSubscription')}</div>
         </div>
-      )}
+      ) : null}
 
       {/* Daily Subscription Pause */}
       {subscription && subscription.is_daily && !subscription.is_trial && (
@@ -1597,9 +1549,6 @@ export default function Subscription() {
           )}
         </div>
       )}
-
-      {/* Purchase / Renewal CTA */}
-      <PurchaseCTAButton subscription={subscription} isMultiTariff={isMultiTariff} />
 
       {/* Delete expired subscription */}
       {isMultiTariff &&

@@ -32,8 +32,8 @@ export interface AnimationConfig {
 }
 
 export const DEFAULT_ANIMATION_CONFIG: AnimationConfig = {
-  enabled: true,
-  type: 'aurora',
+  enabled: false,
+  type: 'none',
   settings: {},
   opacity: 1.0,
   blur: 0,

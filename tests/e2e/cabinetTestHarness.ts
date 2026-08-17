@@ -121,6 +121,15 @@ export const baseApiResponses: Record<string, unknown> = {
     max_commission_payments: 0,
   },
   '/api/cabinet/subscription': { has_subscription: false, subscription: null },
+  '/api/cabinet/subscription/connection-link': {
+    subscription_url: null,
+    display_link: null,
+    happ_redirect_link: null,
+    happ_scheme_link: null,
+    connect_mode: 'plain',
+    hide_link: false,
+    instructions: { steps: [] },
+  },
   '/api/cabinet/subscription/trial': {
     is_available: false,
     duration_days: 0,

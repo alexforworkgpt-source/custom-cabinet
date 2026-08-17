@@ -347,6 +347,8 @@
       "earnings": "Заработок"
     },
     "manageAll": "Управлять всеми",
+    "manageSubscription": "Управление подпиской",
+    "subscriptionLink": "Ссылка на подписку",
     "showAll": "Показать все",
     "subscriptions": "Подписки"
   },

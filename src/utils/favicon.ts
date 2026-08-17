@@ -27,7 +27,7 @@ export function letterFaviconDataUri(letter: string): string {
   const ch = (letter || 'V').trim().charAt(0).toUpperCase() || 'V';
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">` +
-    `<rect width="64" height="64" rx="14" fill="#0a0f1a"/>` +
+    `<rect width="64" height="64" rx="14" fill="#000000"/>` +
     `<text x="50%" y="50%" font-family="Manrope,Arial,sans-serif" font-size="38" ` +
     `font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="central">${ch}</text>` +
     `</svg>`;

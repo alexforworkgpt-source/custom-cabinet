@@ -37,3 +37,22 @@ for future Custom Cabinet releases is a separate workstream.
 
 The exact source is documented in [`UPSTREAM.md`](UPSTREAM.md). Upstream
 copyright and AGPL terms remain unchanged in [`LICENSE`](LICENSE).
+
+## Maintenance
+
+- [`UPSTREAM_SYNC.md`](UPSTREAM_SYNC.md) defines the required Upstream Cabinet
+  integration process.
+- [`UPSTREAM_SYNC_REPORT_TEMPLATE.md`](UPSTREAM_SYNC_REPORT_TEMPLATE.md) is the
+  required analysis and completion record for each synchronization.
+- [`CUSTOMIZATION_MAP.md`](CUSTOMIZATION_MAP.md) records upstream-owned,
+  custom-owned and hybrid areas.
+- [`COMPATIBILITY.md`](COMPATIBILITY.md) records verified version combinations.
+- [`REDESIGN_RULES.md`](REDESIGN_RULES.md) defines the Custom Cabinet redesign
+  contract.
+- [`INTERFACE_MAP.md`](INTERFACE_MAP.md) maps the current routes, navigation,
+  interface states and access rules.
+- [`DESIGN_UX_UI_AUDIT.md`](DESIGN_UX_UI_AUDIT.md) contains the current detailed
+  UI/UX audit.
+- [`LIVE_CHECK.md`](LIVE_CHECK.md) defines staging and production verification.
+- [`LIVE_CHECK_REPORT_TEMPLATE.md`](LIVE_CHECK_REPORT_TEMPLATE.md) records each
+  live check result and release decision.

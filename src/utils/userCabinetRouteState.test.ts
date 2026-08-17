@@ -29,9 +29,9 @@ describe('getUserCabinetRouteState', () => {
     expect(getUserCabinetRouteState('/balance', '')).toEqual({ overlay: 'balance' });
   });
 
-  it('keeps subscription detail compatibility routes on the Dashboard', () => {
+  it('opens subscription management from its compatibility route', () => {
     expect(getUserCabinetRouteState('/subscriptions/7', '')).toEqual({
-      overlay: null,
+      overlay: 'subscription',
       subscriptionId: 7,
     });
   });
@@ -69,6 +69,10 @@ describe('getCabinetClosePath', () => {
 describe('getDirectCabinetBackPath', () => {
   it('closes a directly opened devices overlay while preserving its subscription', () => {
     expect(getDirectCabinetBackPath('/', '?sub=7&overlay=devices')).toBe('/?sub=7');
+  });
+
+  it('closes directly opened subscription management', () => {
+    expect(getDirectCabinetBackPath('/subscriptions/7', '')).toBe('/?sub=7');
   });
 
   it('moves through direct connection steps before closing the overlay', () => {

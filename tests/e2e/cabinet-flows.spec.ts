@@ -323,6 +323,82 @@ test('opens traffic top-up from the unified Dashboard @desktop-flow', async ({ p
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
+test('opens complete subscription management on the Dashboard @desktop-flow', async ({ page }) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      ...activeResponses,
+      ...connectionResponses,
+      '/api/cabinet/subscription/purchase-options': {
+        sales_mode: 'classic',
+        periods: [],
+        balance_kopeks: 100_000,
+        balance_label: '1,000 RUB',
+      },
+      '/api/cabinet/subscription/platega-recurrent': { status: 'none' },
+      '/api/cabinet/subscription/lava-recurrent': { status: 'none' },
+    },
+  });
+
+  await page.goto('/?sub=1');
+
+  const managementTrigger = page.getByRole('button', { name: 'Manage subscription' });
+  const devicesTrigger = page.getByRole('button', { name: /My Devices/ });
+  await expect(managementTrigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByText(activeSubscription.subscription_url, { exact: true })).toBeVisible();
+  await expect(page.getByText(activeSubscription.tariff_name, { exact: true })).toHaveCount(1);
+  const [managementBox, devicesBox] = await Promise.all([
+    managementTrigger.boundingBox(),
+    devicesTrigger.boundingBox(),
+  ]);
+  expect(managementBox).not.toBeNull();
+  expect(devicesBox).not.toBeNull();
+  expect(devicesBox!.x).toBeGreaterThan(managementBox!.x);
+  const dashboardActions = await page.locator('main button, main a, main code').allTextContents();
+  expect(dashboardActions.findIndex((text) => text.includes('Connect Device'))).toBeLessThan(
+    dashboardActions.findIndex((text) => text.includes(activeSubscription.subscription_url)),
+  );
+  expect(
+    dashboardActions.findIndex((text) => text.includes(activeSubscription.subscription_url)),
+  ).toBeLessThan(dashboardActions.findIndex((text) => text.includes('My Devices')));
+  expect(dashboardActions.findIndex((text) => text.includes('Manage subscription'))).toBeLessThan(
+    dashboardActions.findIndex((text) => text.includes('My Devices')),
+  );
+  expect(dashboardActions.findIndex((text) => text.includes('Manage subscription'))).toBeLessThan(
+    dashboardActions.findIndex((text) => text.includes('Buy another')),
+  );
+
+  await managementTrigger.click();
+  await expect(page).toHaveURL('/subscriptions/1');
+  const managementDialog = page.getByRole('dialog');
+  await expect(managementDialog).toBeVisible();
+  await expect(
+    managementDialog.getByText(activeSubscription.subscription_url, { exact: true }),
+  ).toHaveCount(0);
+  await expect(managementDialog.getByRole('heading', { name: 'Traffic Usage' })).toHaveCount(0);
+  const renewalLink = managementDialog.getByRole('link', { name: /Extend Subscription/ });
+  const autoRenewSwitch = managementDialog.getByRole('switch', { name: 'Auto-renew' });
+  await expect(renewalLink).toBeVisible();
+  await expect(autoRenewSwitch).toBeVisible();
+  const [renewalBox, autoRenewBox] = await Promise.all([
+    renewalLink.boundingBox(),
+    autoRenewSwitch.boundingBox(),
+  ]);
+  expect(renewalBox).not.toBeNull();
+  expect(autoRenewBox).not.toBeNull();
+  expect(renewalBox!.y).toBeLessThan(autoRenewBox!.y);
+  await expect(managementDialog.getByRole('heading', { name: 'Additional Options' })).toBeVisible();
+  await expect(
+    managementDialog.getByRole('button', { name: 'Reissue Subscription' }),
+  ).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(managementDialog).toBeHidden();
+  await expect(page).toHaveURL('/?sub=1');
+  await expect(managementTrigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(managementTrigger).toBeFocused();
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
 test('manages Devices in an overlay and returns to the same dashboard context @critical-flow', async ({
   page,
 }) => {
@@ -578,6 +654,7 @@ test('groups secondary functions in Profile and gates admin/features by capabili
 
   const logoutButton = page.getByRole('button', { name: 'Logout' });
   await expect(logoutButton).toBeVisible();
+  await expect(page.locator('main button').last()).toHaveAccessibleName('Logout');
   expect([...unexpectedApiRequests]).toEqual([]);
   await logoutButton.click();
   await expect(page).toHaveURL('/login');
@@ -600,9 +677,29 @@ test('shows critical data errors instead of zero values @desktop-flow', async ({
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('renews an expired subscription once through the observable flow @desktop-flow', async ({
-  page,
-}) => {
+test('shows a load failure on an expanded subscription route @desktop-flow', async ({ page }) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: activeResponses,
+    responseStatuses: {
+      '/api/cabinet/subscription': 500,
+    },
+  });
+
+  await page.goto('/subscriptions/1');
+  await expect(page).toHaveURL('/subscriptions/1');
+  const managementDialog = page.getByRole('dialog');
+  await expect(managementDialog).toBeVisible();
+  await expect(
+    managementDialog.getByText('Subscription data could not be loaded. Please try again.'),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Manage subscription' })).toHaveCount(0);
+  await expect(
+    managementDialog.getByRole('heading', { name: 'Subscription not found' }),
+  ).toHaveCount(0);
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('selects a period before renewing an expired subscription @desktop-flow', async ({ page }) => {
   const expiredSubscription = {
     ...activeSubscription,
     status: 'expired',
@@ -614,26 +711,110 @@ test('renews an expired subscription once through the observable flow @desktop-f
     responses: {
       ...activeResponses,
       '/api/cabinet/balance': { balance_kopeks: 100_000, balance_rubles: 1000 },
+      '/api/cabinet/subscription/purchase-options': {
+        sales_mode: 'classic',
+        currency: 'RUB',
+        balance_kopeks: 100_000,
+        balance_label: '1,000 RUB',
+        subscription_id: expiredSubscription.id,
+        periods: [
+          {
+            id: '30-days',
+            period_days: 30,
+            months: 1,
+            label: '30 days',
+            price_kopeks: 30_000,
+            price_label: '300 RUB',
+            per_month_price_kopeks: 30_000,
+            per_month_price_label: '300 RUB',
+            is_available: true,
+            traffic: { selectable: false, mode: 'fixed', options: [], current: 100 },
+            servers: { options: [], min: 0, max: 0, default: [], selected: [] },
+            devices: {
+              min: 1,
+              max: 1,
+              default: 1,
+              current: 1,
+              price_per_device_kopeks: 0,
+              price_per_device_label: '0 RUB',
+            },
+          },
+        ],
+        traffic: { selectable: false, mode: 'fixed', options: [], current: 100 },
+        servers: { options: [], min: 0, max: 0, default: [], selected: [] },
+        devices: {
+          min: 1,
+          max: 1,
+          default: 1,
+          current: 1,
+          price_per_device_kopeks: 0,
+          price_per_device_label: '0 RUB',
+        },
+        selection: {
+          period_id: '30-days',
+          period_days: 30,
+          traffic_value: 100,
+          servers: [],
+          devices: 1,
+        },
+      },
+      '/api/cabinet/subscription/purchase-preview': {
+        total_price_kopeks: 30_000,
+        total_price_label: '300 RUB',
+        per_month_price_kopeks: 30_000,
+        per_month_price_label: '300 RUB',
+        breakdown: [{ label: '30 days', value: '300 RUB' }],
+        balance_kopeks: 100_000,
+        balance_label: '1,000 RUB',
+        missing_amount_kopeks: 0,
+        can_purchase: true,
+      },
+      '/api/cabinet/subscription/purchase': {
+        success: true,
+        message: 'Subscription renewed',
+        subscription: { ...expiredSubscription, status: 'active', is_active: true },
+        was_trial_conversion: false,
+      },
+      '/api/cabinet/subscription/connection-link': {
+        subscription_url: expiredSubscription.subscription_url,
+        display_link: expiredSubscription.subscription_url,
+        connect_mode: 'plain',
+        hide_link: false,
+      },
+      '/api/cabinet/subscription/platega-recurrent': { status: 'none' },
+      '/api/cabinet/subscription/lava-recurrent': { status: 'none' },
       '/api/cabinet/subscription': {
         has_subscription: true,
         subscription: expiredSubscription,
-      },
-      '/api/cabinet/subscription/renew': {
-        message: 'Renewed in browser test',
-        new_end_date: '2026-10-15T00:00:00Z',
-        amount_paid_kopeks: 30_000,
       },
     },
   });
 
   await page.goto('/');
   await page.getByRole('button', { name: 'Quick Renew' }).click();
-  await expect
-    .poll(
-      () =>
-        apiRequests.filter((request) => request === 'POST /api/cabinet/subscription/renew').length,
-    )
-    .toBe(1);
+  await expect(page).toHaveURL(new RegExp(`/subscriptions/${expiredSubscription.id}$`));
+  const managementDialog = page.getByRole('dialog');
+  await expect(managementDialog).toBeVisible();
+  await managementDialog.getByRole('link', { name: /Get Subscription/ }).click();
+  await page.getByRole('button', { name: 'Extend Subscription', exact: true }).click();
+  const periodButton = page.getByRole('button', { name: /30 days.*3[.,]00/ });
+  await expect(periodButton).toBeVisible();
+  expect(
+    apiRequests.filter((request) => request === 'POST /api/cabinet/subscription/renew'),
+  ).toEqual([]);
+  expect(
+    apiRequests.filter((request) => request === 'POST /api/cabinet/subscription/purchase'),
+  ).toEqual([]);
+
+  await periodButton.click();
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  const purchaseButton = page.getByRole('button', { name: 'Purchase', exact: true });
+  await expect(purchaseButton).toBeEnabled();
+  await purchaseButton.dblclick();
+  await expect(page).toHaveURL('/subscriptions');
+  expect(
+    apiRequests.filter((request) => request === 'POST /api/cabinet/subscription/purchase'),
+  ).toHaveLength(1);
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 

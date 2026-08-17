@@ -21,10 +21,6 @@ import type {
   LandingPaymentMethod,
   PurchaseRequest,
 } from '../api/landings';
-import {
-  BackgroundRenderer,
-  StaticBackgroundRenderer,
-} from '../components/backgrounds/BackgroundRenderer';
 import { CheckCircleIcon, CheckIcon, DevicesIcon, DownloadIcon } from '@/components/icons';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { cn } from '../lib/utils';
@@ -1120,15 +1116,6 @@ export default function QuickPurchase() {
 
   return (
     <div className="min-h-dvh overflow-x-hidden">
-      {/* Background: the landing's own per-landing theme when configured, else
-          fall back to the cabinet's global animated theme (instead of a bare
-          dark canvas). Both render via a portal behind the content, so the
-          wrapper stays transparent over the body's #0a0f1a. */}
-      {config.background_config ? (
-        <StaticBackgroundRenderer config={config.background_config} />
-      ) : (
-        <BackgroundRenderer />
-      )}
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Language switcher */}
         <div className="mb-4 flex justify-end">
