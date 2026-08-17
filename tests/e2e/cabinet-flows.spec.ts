@@ -559,9 +559,26 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   const dialog = page.getByRole('dialog');
   const detectedPlatform = testInfo.project.name === 'mobile-320' ? 'Android' : 'Windows';
   const otherPlatform = detectedPlatform === 'Android' ? 'Windows' : 'Android';
+  const overlayHeading = dialog.getByRole('heading', { name: 'Connect VPN' });
   await expect(dialog.getByRole('heading', { name: `Set up ${detectedPlatform}` })).toBeVisible();
+  await expect(dialog.locator('[data-selected-platform] svg')).toHaveCount(2);
+  if (testInfo.project.name === 'mobile-320') {
+    await expect(overlayHeading).toHaveCSS('text-align', 'center');
+    await expect(
+      dialog.getByText('Return to the dashboard without losing the selected subscription'),
+    ).toHaveCSS('text-align', 'center');
+  }
   await expect(dialog.getByRole('button', { name: otherPlatform, exact: true })).toHaveCount(0);
-  await dialog.getByRole('button', { name: 'Choose another device' }).click();
+  const chooseAnotherDevice = dialog.getByRole('button', { name: 'Choose another device' });
+  const continueWithPlatform = dialog.getByRole('button', {
+    name: `Continue with ${detectedPlatform}`,
+  });
+  const [chooseAnotherDeviceBox, continueWithPlatformBox] = await Promise.all([
+    chooseAnotherDevice.boundingBox(),
+    continueWithPlatform.boundingBox(),
+  ]);
+  expect(chooseAnotherDeviceBox?.y).toBeLessThan(continueWithPlatformBox?.y ?? 0);
+  await chooseAnotherDevice.click();
   await expect(dialog.getByRole('button', { name: otherPlatform, exact: true })).toBeVisible();
   if (detectedPlatform === 'Android') {
     await dialog.getByRole('button', { name: 'Windows', exact: true }).click();
@@ -571,13 +588,28 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   await expect(page).toHaveURL(/step=application/);
   await expect(dialog.getByRole('heading', { name: 'Install Test App', level: 2 })).toBeVisible();
   await expect(dialog.getByRole('heading', { name: 'Install Test App', level: 2 })).toBeFocused();
-  await expect(dialog.getByRole('link', { name: 'Download Test App' })).toBeVisible();
+  const downloadApp = dialog.getByRole('link', { name: 'Download Test App' });
+  await expect(downloadApp).toBeVisible();
+  await expect(downloadApp).toHaveClass(/btn-primary/);
+  await expect(downloadApp.locator('svg')).toHaveCount(1);
+  const chooseAnotherAppBox = await dialog
+    .getByRole('button', { name: 'Choose another app' })
+    .boundingBox();
+  const downloadAppBox = await downloadApp.boundingBox();
+  expect(chooseAnotherAppBox?.y).toBeLessThan(downloadAppBox?.y ?? 0);
   await expect(dialog.getByRole('button', { name: 'Add to Test App' })).toHaveCount(0);
-  await dialog.getByRole('button', { name: 'App is installed' }).click();
+  const appInstalled = dialog.getByRole('button', { name: 'App is installed' });
+  await expect(appInstalled).toHaveClass(/btn-secondary/);
+  await appInstalled.click();
   await expect(page).toHaveURL(/step=add/);
   await expect(dialog.getByRole('heading', { name: 'Add subscription', level: 2 })).toBeVisible();
   await expect(dialog.getByRole('heading', { name: 'Add subscription', level: 2 })).toBeFocused();
-  await expect(dialog.getByRole('button', { name: 'Add to Test App' })).toBeVisible();
+  const addToApp = dialog.getByRole('button', { name: 'Add to Test App' });
+  await expect(addToApp).toHaveClass(/btn-primary/);
+  await expect(addToApp.locator('svg')).toHaveCount(1);
+  await expect(dialog.getByRole('button', { name: 'Subscription added' })).toHaveClass(
+    /btn-secondary/,
+  );
   await dialog.getByRole('button', { name: 'Subscription added' }).click();
   await expect(page).toHaveURL(/step=success/);
   await expect(
@@ -606,6 +638,33 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   await page.getByRole('dialog').getByRole('button', { name: 'Subscription added' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Finish' }).click();
   await expect(page).toHaveURL('/?sub=1');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    await page.evaluate(() => window.innerWidth),
+  );
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('centers the Russian Connection header at 320 px @critical-flow', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-320');
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: { ...activeResponses, ...connectionResponses },
+  });
+  await page.addInitScript(() => localStorage.setItem('cabinet_language', 'ru'));
+
+  await page.goto('/connection?sub=1');
+  const dialog = page.getByRole('dialog');
+  const title = dialog.getByRole('heading', { name: 'Подключить VPN' });
+  const description = dialog.getByText('Вы вернетесь на Главную без потери выбранной подписки');
+
+  await expect(title).toHaveCSS('text-align', 'center');
+  await expect(description).toHaveCSS('text-align', 'center');
+  await expect(dialog.getByText('Определенное устройство')).toBeVisible();
+  await expect(dialog.locator('[data-selected-platform] svg')).toHaveCount(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    await page.evaluate(() => window.innerWidth),
+  );
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
@@ -668,7 +727,23 @@ test('keeps the Telegram Connection Back model inside the overlay @telegram-flow
 
 test('runs top-up method, amount, validation, cancellation, handoff, and result return @critical-flow', async ({
   page,
-}) => {
+}, testInfo) => {
+  const additionalPaymentMethods = [
+    ['yookassa', 'Bank card'],
+    ['freekassa_sbp', 'Fast payments'],
+    ['cryptobot', 'Crypto Bot'],
+    ['heleket', 'Cryptocurrency'],
+    ['telegram_stars', 'Telegram Stars'],
+  ].map(([id, name]) => ({
+    id,
+    name,
+    description: `${name} provider`,
+    min_amount_kopeks: 10_000,
+    max_amount_kopeks: 100_000,
+    is_available: true,
+    quick_amounts: [10_000, 30_000, 50_000],
+    open_url_direct: false,
+  }));
   const { apiRequests, unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
     responses: {
       '/api/cabinet/balance/payment-methods': [
@@ -682,6 +757,7 @@ test('runs top-up method, amount, validation, cancellation, handoff, and result 
           quick_amounts: [10_000, 30_000, 50_000],
           open_url_direct: false,
         },
+        ...additionalPaymentMethods,
       ],
       '/api/cabinet/balance/topup': {
         payment_id: '42',
@@ -698,6 +774,21 @@ test('runs top-up method, amount, validation, cancellation, handoff, and result 
   await page.getByText('Balance', { exact: true }).click();
   let dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('heading', { name: 'Select payment method' })).toBeVisible();
+  const methodCards = dialog.locator('[data-payment-method-card]');
+  await expect(methodCards).toHaveCount(6);
+  await expect(dialog.getByText('1 – 10 $', { exact: true })).toHaveCount(0);
+  const methodCardHeights = await methodCards.evaluateAll((cards) =>
+    cards.map((card) => card.getBoundingClientRect().height),
+  );
+  expect(Math.min(...methodCardHeights)).toBeGreaterThanOrEqual(44);
+  expect(Math.max(...methodCardHeights)).toBeLessThanOrEqual(72);
+  if (testInfo.project.name === 'mobile-320') {
+    const methodListBox = await dialog.locator('[data-payment-method-list]').boundingBox();
+    expect(methodListBox?.height).toBeLessThanOrEqual(424);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      await page.evaluate(() => window.innerWidth),
+    );
+  }
   await dialog.getByRole('button', { name: /Test Card/ }).click();
   await expect(page).toHaveURL('/balance/top-up/test-card');
   await page.goto('/');
@@ -918,7 +1009,9 @@ test('shows a load failure on an expanded subscription route @desktop-flow', asy
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('selects a period before renewing an expired subscription @desktop-flow', async ({ page }) => {
+test('opens the classic period constructor from Tariffs before renewing @critical-flow', async ({
+  page,
+}) => {
   const expiredSubscription = {
     ...activeSubscription,
     status: 'expired',
@@ -1010,14 +1103,18 @@ test('selects a period before renewing an expired subscription @desktop-flow', a
   });
 
   await page.goto('/');
-  await page.getByRole('button', { name: 'Quick Renew' }).click();
-  await expect(page).toHaveURL(new RegExp(`/subscriptions/${expiredSubscription.id}$`));
-  const managementDialog = page.getByRole('dialog');
-  await expect(managementDialog).toBeVisible();
-  await managementDialog.getByRole('link', { name: /Get Subscription/ }).click();
-  await page.getByRole('button', { name: 'Extend Subscription', exact: true }).click();
+  const navigation =
+    (page.viewportSize()?.width ?? 1280) < 1024
+      ? page.locator('nav:visible')
+      : page.locator('header:visible nav');
+  const tariffsLink = navigation.getByRole('link', { name: 'Tariffs', exact: true });
+  await tariffsLink.click();
+  await expect(page).toHaveURL('/subscription/purchase');
   const periodButton = page.getByRole('button', { name: /30 days.*3[.,]00/ });
   await expect(periodButton).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Extend Subscription', exact: true })).toHaveCount(
+    0,
+  );
   expect(
     apiRequests.filter((request) => request === 'POST /api/cabinet/subscription/renew'),
   ).toEqual([]);

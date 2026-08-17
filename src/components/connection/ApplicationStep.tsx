@@ -75,7 +75,7 @@ export function ApplicationStep({
           })}
         </div>
       )}
-      <button type="button" className="btn-primary w-full justify-center" onClick={onContinue}>
+      <button type="button" className="btn-secondary w-full justify-center" onClick={onContinue}>
         {t('subscription.connection.appInstalled', 'App is installed')}
       </button>
     </div>

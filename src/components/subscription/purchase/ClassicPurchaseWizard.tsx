@@ -68,7 +68,7 @@ export function ClassicPurchaseWizard({
   const [selectedTraffic, setSelectedTraffic] = useState<number | null>(null);
   const [selectedServers, setSelectedServers] = useState<string[]>([]);
   const [selectedDevices, setSelectedDevices] = useState<number>(1);
-  const [showPurchaseForm, setShowPurchaseForm] = useState(false);
+  const [showPurchaseForm, setShowPurchaseForm] = useState(true);
   const purchaseInFlightRef = useRef(false);
 
   // Global success-notification handler — resets back to the closed,

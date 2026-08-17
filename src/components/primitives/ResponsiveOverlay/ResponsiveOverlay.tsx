@@ -9,6 +9,7 @@ interface ResponsiveOverlayProps {
   description: string;
   children: ReactNode;
   restoreFocusTo?: HTMLElement | null;
+  centerMobileHeader?: boolean;
 }
 
 function useDesktopOverlay() {
@@ -33,6 +34,7 @@ export function ResponsiveOverlay({
   description,
   children,
   restoreFocusTo,
+  centerMobileHeader = false,
 }: ResponsiveOverlayProps) {
   const desktop = useDesktopOverlay();
   const restoreFocusRef = useRef<HTMLElement | null>(null);
@@ -70,7 +72,7 @@ export function ResponsiveOverlay({
         showCloseButton
         enableDragToClose={false}
       >
-        <SheetHeader className="pr-10">
+        <SheetHeader className={centerMobileHeader ? 'px-10 text-center sm:text-center' : 'pr-10'}>
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>{description}</SheetDescription>
         </SheetHeader>

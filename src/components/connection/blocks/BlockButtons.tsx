@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckIcon, CopyIcon } from '@/components/icons';
+import { CheckIcon, CopyIcon, DownloadIcon, SubscriptionIcon } from '@/components/icons';
 import type { RemnawaveButtonClient, LocalizedText } from '@/types';
 import { copyToClipboard } from '@/utils/clipboard';
 import { collapseDoubledCryptPrefix, hasTemplates, resolveTemplate } from '@/utils/templateEngine';
@@ -64,7 +64,7 @@ export function BlockButtons({
   const baseClass = blockButtonClass(variant, isLight);
 
   return (
-    <div className="mt-3 flex flex-wrap gap-2">
+    <div className="mt-4 grid gap-2 sm:flex sm:flex-wrap">
       {buttons.map((btn, idx) => {
         const btnText = getLocalizedText(btn.text);
         const btnSvg = getSvgHtml(btn.svgIconKey);
@@ -88,12 +88,8 @@ export function BlockButtons({
           const url = resolved ? collapseDoubledCryptPrefix(resolved) : resolved;
           if (!url || hasTemplates(url) || !isValidDeepLink(url)) return null;
           return (
-            <button
-              key={idx}
-              onClick={() => onOpenDeepLink(url)}
-              className={`flex items-center gap-2 ${baseClass}`}
-            >
-              {btnIcon}
+            <button key={idx} onClick={() => onOpenDeepLink(url)} className={baseClass}>
+              {btnIcon || <SubscriptionIcon />}
               {btnText || getBaseTranslation('openApp', 'subscription.connection.openLink')}
             </button>
           );
@@ -104,15 +100,7 @@ export function BlockButtons({
           const url = btn.resolvedUrl || subscriptionUrl;
           if (!url) return null;
           return (
-            <button
-              key={idx}
-              onClick={() => handleCopy(url)}
-              className={`flex items-center gap-2 ${
-                copied
-                  ? `rounded-xl border border-success-500 bg-success-500/10 px-4 py-2 text-sm font-medium ${isLight ? 'text-success-600' : 'text-success-400'}`
-                  : baseClass
-              }`}
-            >
+            <button key={idx} onClick={() => handleCopy(url)} className={baseClass}>
               {copied ? <CheckIcon /> : btnIcon || <CopyIcon />}
               {copied
                 ? t('subscription.connection.copied')
@@ -125,14 +113,8 @@ export function BlockButtons({
         const href = btn.link || btn.url || '';
         if (!isValidExternalUrl(href)) return null;
         return (
-          <a
-            key={idx}
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`inline-flex items-center gap-2 ${baseClass}`}
-          >
-            {btnIcon}
+          <a key={idx} href={href} target="_blank" rel="noopener noreferrer" className={baseClass}>
+            {btnIcon || <DownloadIcon />}
             {btnText}
           </a>
         );

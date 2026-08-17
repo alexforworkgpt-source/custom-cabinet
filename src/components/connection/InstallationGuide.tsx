@@ -314,6 +314,7 @@ export default function InstallationGuide({
   }
 
   const activePlatformName = currentPlatformKey ? getPlatformDisplayName(currentPlatformKey) : '';
+  const activePlatformIcon = getSvgHtml(currentPlatformData?.svgIconKey);
   const transition = reducedMotion
     ? { duration: 0 }
     : { duration: 0.24, ease: [0.22, 1, 0.36, 1] as const };
@@ -378,7 +379,7 @@ export default function InstallationGuide({
           <button
             onClick={goBack}
             aria-label={t('common.back', 'Back')}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-dark-700 bg-dark-800 transition-colors hover:border-dark-600"
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-dark-700 bg-dark-800 transition-colors hover:border-dark-600"
           >
             <BackIcon className="h-6 w-6" />
           </button>
@@ -394,7 +395,7 @@ export default function InstallationGuide({
           <button
             onClick={() => onOpenQR()}
             aria-label={t('subscription.connection.openQr', 'Open QR code')}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-dark-700 bg-dark-800 text-dark-200 transition-colors hover:border-dark-600"
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-dark-700 bg-dark-800 text-dark-200 transition-colors hover:border-dark-600"
           >
             <svg
               className="h-5 w-5"
@@ -442,6 +443,7 @@ export default function InstallationGuide({
               availablePlatforms={availablePlatforms}
               currentPlatformKey={currentPlatformKey}
               activePlatformName={activePlatformName}
+              activePlatformIcon={activePlatformIcon}
               isAutoDetected={currentPlatformKey === detectedPlatform}
               getPlatformDisplayName={getPlatformDisplayName}
               getSvgHtml={getSvgHtml}
@@ -491,7 +493,7 @@ export default function InstallationGuide({
               {renderConfiguredBlocks(renderBlocks)}
               <button
                 type="button"
-                className="btn-primary w-full justify-center"
+                className="btn-secondary w-full justify-center"
                 onClick={() => setFlowStep('success', currentPlatformKey, selectedApp.name)}
               >
                 {t('subscription.connection.subscriptionAdded', 'Subscription added')}

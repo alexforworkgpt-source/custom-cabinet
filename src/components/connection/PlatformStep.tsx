@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import type { AppConfig, RemnawavePlatformData } from '@/types';
-import { CheckIcon } from '@/components/icons';
+import { CheckIcon, DevicesIcon } from '@/components/icons';
 
 interface PlatformStepProps {
   appConfig: AppConfig;
   availablePlatforms: string[];
   currentPlatformKey: string;
   activePlatformName: string;
+  activePlatformIcon: string;
   isAutoDetected: boolean;
   getPlatformDisplayName: (platform: string) => string;
   getSvgHtml: (key: string | undefined) => string;
@@ -21,6 +22,7 @@ export function PlatformStep({
   availablePlatforms,
   currentPlatformKey,
   activePlatformName,
+  activePlatformIcon,
   isAutoDetected,
   getPlatformDisplayName,
   getSvgHtml,
@@ -47,7 +49,24 @@ export function PlatformStep({
               'Continue with the selected device or choose another one.',
             )}
       </p>
-      <div className="flex items-center gap-3 rounded-2xl border border-accent-500/50 bg-accent-500/10 p-4">
+      <div
+        data-selected-platform
+        className="flex items-center gap-3 rounded-2xl border border-accent-500/50 bg-accent-500/10 p-4"
+      >
+        <span
+          aria-hidden="true"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-500/10 text-accent-400 [&>svg]:h-6 [&>svg]:w-6"
+        >
+          {activePlatformIcon ? (
+            <span
+              className="h-6 w-6 [&>svg]:h-full [&>svg]:w-full"
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: The parent sanitizes configured SVG with DOMPurify.
+              dangerouslySetInnerHTML={{ __html: activePlatformIcon }}
+            />
+          ) : (
+            <DevicesIcon className="h-6 w-6" />
+          )}
+        </span>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-400">
             {isAutoDetected
@@ -58,12 +77,6 @@ export function PlatformStep({
         </div>
         <CheckIcon className="h-6 w-6 shrink-0 text-accent-400" />
       </div>
-      <button type="button" className="btn-primary w-full justify-center" onClick={onContinue}>
-        {t('subscription.connection.continueWithPlatform', {
-          defaultValue: 'Continue with {{platform}}',
-          platform: activePlatformName,
-        })}
-      </button>
       {availablePlatforms.length > 1 && (
         <div className="space-y-3">
           <button
@@ -116,6 +129,12 @@ export function PlatformStep({
           </AnimatePresence>
         </div>
       )}
+      <button type="button" className="btn-primary w-full justify-center" onClick={onContinue}>
+        {t('subscription.connection.continueWithPlatform', {
+          defaultValue: 'Continue with {{platform}}',
+          platform: activePlatformName,
+        })}
+      </button>
     </div>
   );
 }

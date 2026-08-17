@@ -638,6 +638,7 @@ export default function Dashboard() {
         title={overlayTitle}
         description={t('dashboard.unifiedOverlayDescription')}
         restoreFocusTo={overlayTriggerRef.current}
+        centerMobileHeader={routeState.overlay === 'connection'}
       >
         <Suspense
           fallback={
