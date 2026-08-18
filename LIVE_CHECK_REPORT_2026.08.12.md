@@ -28,7 +28,10 @@ Workflow URL: <https://github.com/alexforworkgpt-source/installer/actions/runs/3
 | Item | Value |
 | --- | --- |
 | Local browser automation | Playwright Chromium projects at 320, 375, 768, 1024 and 1280 px; focused Telegram-style viewport at 420 px |
-| Integration/staging | Not deployed for this Release |
+| Integration URL | `https://web.demolanding.click` |
+| Environment type | Disposable integration VPS; not recorded as production |
+| Postflight verification time | `2026-08-18T00:06:43Z` |
+| Deployed browser smoke | Playwright Chromium `151.0.7922.34` |
 | Telegram clients | Not available |
 | Enabled themes | Dark and light covered by existing local fixtures |
 | Checked locales | English and Russian in changed critical flows |
@@ -66,6 +69,25 @@ Workflow URL: <https://github.com/alexforworkgpt-source/installer/actions/runs/3
 | Connection | PASS locally | Install/add actions outside content, direct success, Back, reload fallback and legacy entry | Real app schemes and Telegram clients not checked |
 | Subscription/purchase | PASS locally | Existing tariff, management and top-up browser tests | No sandbox provider mutation |
 | Other Cabinet flows | PASS locally | Full existing Playwright suite | Known findings in `LIVE_CHECK_REPORT_2026-08-18_LC_REAUDIT.md` remain open |
+| Runtime smoke | PASS | Exact Bundle identities, health, doctor, root, direct protected route, branding and guest Login | Authenticated integration state matrix not checked |
+
+## Deployment
+
+| Item | Result |
+| --- | --- |
+| Baseline | Release `2026.08.11`; exact Bot, Cabinet and artifact identities; health and Installer doctor PASS |
+| Update method | Protected Update from immutable `v2026.08.12/release.json` |
+| Protected Update outcome | `committed` |
+| Installed Release Bundle | `2026.08.12` |
+| Installed Cabinet SHA | `618e79823a06334d8ab8676cfa477d2b44f12c4e` |
+| Installed Cabinet artifact | `b1aa75bc16b352df42de0c13d01a7135cd05fb96041a832a3030c7d41fd4accf` |
+| Installed Bot SHA | `f553d1896dcd347fd74012f6394fd2277161bdd1` |
+| Runtime-change receipt | `outcome=committed` |
+| Installer doctor | PASS after update and in a separate postflight SSH session |
+| Unified health | PASS, HTTP `200` |
+| Branding API | PASS, HTTP `200` |
+| Root and direct `/balance` route | PASS, HTTP `200`; guest redirected to `/login` |
+| Clean guest Chromium smoke | PASS; visible Login, no console errors, failed same-origin requests or unexpected `4xx/5xx` responses |
 
 ## Release Publication
 
@@ -96,29 +118,32 @@ Result: `BLOCKED`
 Reason:
 
 ```text
-The exact source, automated gates, Release workflow and public assets passed.
-Authenticated integration, real Telegram and sandbox-provider evidence is not
-available, so the overall live-check result remains BLOCKED.
+The exact source, automated gates, Release workflow, public assets, Protected
+Update and deployed guest smoke passed. Authenticated integration, real Telegram
+and sandbox-provider evidence is not available, so the overall result remains
+BLOCKED.
 ```
 
 ## Production Smoke
 
 Status: `NOT STARTED`
 
-No staging or production deployment was initiated.
+The disposable integration VPS was updated. Production was not deployed or
+modified.
 
 ## Rollback
 
 Rollback required: `No`<br>
 Rollback Release Bundle: `v2026.08.11`<br>
 Rollback result: `NOT NEEDED`<br>
-Post-rollback health/Login: `not applicable`
+Post-rollback health/Login: `not applicable`; post-update health/Login `PASS`
 
 ## Final Sign-off
 
 - [x] Exact source versions recorded.
 - [x] Automated gate passed.
 - [x] Public Release assets independently verified.
+- [x] Disposable integration update and guest smoke passed.
 - [ ] Required authenticated staging flows completed.
 - [ ] Real Telegram checks completed.
 - [x] Rollback source recorded.
