@@ -88,12 +88,12 @@ export default function SubscriptionCardActive({
           carried no information and ate visual attention. */}
 
       {/* ─── Header ─── */}
-      <div className="mb-4 flex items-start justify-between gap-3">
+      <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
         <div className="min-w-0 flex-1">
           {/* Zone indicator */}
-          <div className="mb-1 flex items-center gap-2">
+          <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
             <div
-              className="h-2 w-2 rounded-full"
+              className="h-2 w-2 shrink-0 rounded-full"
               style={{
                 background: zone.mainVar,
                 transition: 'background 0.6s ease',
@@ -107,7 +107,7 @@ export default function SubscriptionCardActive({
               {isUnlimited ? t('dashboard.unlimited') : t(zone.labelKey)}
             </span>
             {subscription.is_trial && (
-              <span className="inline-flex items-center gap-1 rounded-md border border-accent-400/25 bg-accent-400/10 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-accent-400">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-accent-400/25 bg-accent-400/10 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-accent-400">
                 <svg
                   width="10"
                   height="10"
@@ -127,7 +127,7 @@ export default function SubscriptionCardActive({
               </span>
             )}
             {!subscription.is_trial && (
-              <span className="rounded-md border border-success-400/25 bg-success-400/10 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-success-400">
+              <span className="shrink-0 rounded-md border border-success-400/25 bg-success-400/10 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-success-400">
                 {t('subscription.active')}
               </span>
             )}
@@ -143,47 +143,46 @@ export default function SubscriptionCardActive({
         </div>
 
         {/* Big percentage / infinity */}
-        <div className="flex shrink-0 items-center gap-1.5 text-right">
-          <button
-            type="button"
-            onClick={() => refreshTrafficMutation.mutate()}
-            disabled={refreshTrafficMutation.isPending || trafficRefreshCooldown > 0}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-dark-50/35 transition-colors hover:bg-dark-50/[0.05] hover:text-dark-50/50 disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label={
-              trafficRefreshCooldown > 0
-                ? `${t('common.refresh')}: ${trafficRefreshCooldown}s`
-                : t('common.refresh')
-            }
-            title={t('common.refresh')}
-          >
-            <RefreshIcon
-              className={`h-4 w-4 ${refreshTrafficMutation.isPending ? 'animate-spin' : ''}`}
-            />
-          </button>
-          <div>
+        <div className="shrink-0 text-right">
+          <div className="flex items-center justify-end gap-1.5">
+            <button
+              type="button"
+              onClick={() => refreshTrafficMutation.mutate()}
+              disabled={refreshTrafficMutation.isPending || trafficRefreshCooldown > 0}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-dark-50/35 transition-colors hover:bg-dark-50/[0.05] hover:text-dark-50/50 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label={
+                trafficRefreshCooldown > 0
+                  ? `${t('common.refresh')}: ${trafficRefreshCooldown}s`
+                  : t('common.refresh')
+              }
+              title={t('common.refresh')}
+              data-traffic-refresh
+            >
+              <RefreshIcon
+                className={`h-4 w-4 ${refreshTrafficMutation.isPending ? 'animate-spin' : ''}`}
+              />
+            </button>
             {isUnlimited ? (
-              <>
-                <div
-                  className="font-display text-2xl font-extrabold leading-none tracking-tight"
-                  style={{ color: zone.mainVar }}
-                >
-                  &#8734;
-                </div>
-                <div className="mt-1 font-mono text-[11px] text-dark-50/30">
-                  {formatTraffic(usedGb)} {t('dashboard.usedSuffix')}
-                </div>
-              </>
+              <div
+                className="font-display text-2xl font-extrabold leading-none tracking-tight"
+                style={{ color: zone.mainVar }}
+              >
+                &#8734;
+              </div>
             ) : (
-              <>
-                <div className="font-display text-[32px] font-extrabold leading-none tracking-tight text-dark-50">
-                  {animatedPercent.toFixed(0)}
-                  <span className="ml-px text-lg font-medium text-dark-50/35">%</span>
-                </div>
-                <div className="mt-0.5 font-mono text-[11px] text-dark-50/30">
-                  {formatTraffic(usedGb)} / {formatTraffic(subscription.traffic_limit_gb)}
-                </div>
-              </>
+              <div
+                className="font-display text-[32px] font-extrabold leading-none tracking-tight text-dark-50"
+                data-traffic-percentage
+              >
+                {animatedPercent.toFixed(0)}
+                <span className="ml-px text-lg font-medium text-dark-50/35">%</span>
+              </div>
             )}
+          </div>
+          <div className="mt-0.5 font-mono text-[11px] text-dark-50/30">
+            {isUnlimited
+              ? `${formatTraffic(usedGb)} ${t('dashboard.usedSuffix')}`
+              : `${formatTraffic(usedGb)} / ${formatTraffic(subscription.traffic_limit_gb)}`}
           </div>
         </div>
       </div>
@@ -203,7 +202,6 @@ export default function SubscriptionCardActive({
       {subscription.subscription_url && (
         <HoverBorderGradient
           as="button"
-          accentColor={zone.mainHex}
           disabled={isAtDeviceLimit || isDeviceUsageUnavailable}
           onClick={() => {
             if (isAtDeviceLimit || isDeviceUsageUnavailable) {
@@ -212,21 +210,18 @@ export default function SubscriptionCardActive({
             }
             navigate(`/connection?sub=${subscription.id}`);
           }}
-          className={`${connectionUrl ? 'mb-2' : 'mb-4'} flex w-full items-center gap-3 rounded-[14px] p-3 text-left transition-shadow duration-300${isAtDeviceLimit || isDeviceUsageUnavailable ? ' cursor-not-allowed opacity-50' : ''}`}
+          className={`${connectionUrl ? 'mb-2' : 'mb-4'} connect-device-gradient-button flex w-full items-center gap-3 rounded-[14px] p-3 text-left transition-shadow duration-300${isAtDeviceLimit || isDeviceUsageUnavailable ? ' cursor-not-allowed opacity-50' : ''}`}
           data-onboarding="connect-devices"
           style={{ fontFamily: 'inherit' }}
         >
           {/* Monitor icon */}
-          <div
-            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] transition-colors duration-500"
-            style={{ background: `rgba(${zone.mainVarRaw}, 0.07)` }}
-          >
+          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] bg-on-accent/15 text-on-accent transition-colors duration-500">
             <svg
               width="16"
               height="16"
               viewBox="0 0 24 24"
               fill="none"
-              stroke={zone.mainVar}
+              stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -240,10 +235,10 @@ export default function SubscriptionCardActive({
 
           {/* Text */}
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-semibold tracking-tight text-dark-50">
+            <div className="text-sm font-semibold tracking-tight text-on-accent">
               {t('dashboard.connectDevice')}
             </div>
-            <div className="mt-0.5 text-[11px] text-dark-50/30">
+            <div className="mt-0.5 text-[11px] text-on-accent/65">
               {connectedDevices === null
                 ? t('dashboard.deviceUsageUnavailable')
                 : subscription.device_limit === 0
@@ -271,7 +266,7 @@ export default function SubscriptionCardActive({
           {/* Device indicator */}
           {connectedDevices === null ? null : subscription.device_limit === 0 ? (
             <div
-              className="flex flex-shrink-0 items-center text-lg text-dark-50/40"
+              className="flex flex-shrink-0 items-center text-lg text-on-accent/60"
               aria-hidden="true"
             >
               ∞
@@ -283,9 +278,12 @@ export default function SubscriptionCardActive({
                   key={i}
                   className="h-[7px] w-[7px] rounded-full transition-all duration-300"
                   style={{
-                    background: i < connectedDevices ? zone.mainVar : g.textGhost,
+                    background:
+                      i < connectedDevices
+                        ? 'rgb(var(--color-on-accent))'
+                        : 'rgba(var(--color-on-accent), 0.25)',
                     boxShadow:
-                      i < connectedDevices ? `0 0 6px rgba(${zone.mainVarRaw}, 0.31)` : 'none',
+                      i < connectedDevices ? '0 0 6px rgba(var(--color-on-accent), 0.35)' : 'none',
                   }}
                 />
               ))}
@@ -294,14 +292,14 @@ export default function SubscriptionCardActive({
             <div className="flex w-16 flex-shrink-0 items-center" aria-hidden="true">
               <div
                 className="h-[6px] w-full overflow-hidden rounded-full"
-                style={{ background: g.textGhost }}
+                style={{ background: 'rgba(var(--color-on-accent), 0.25)' }}
               >
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
                     width: `${Math.round((connectedDevices / subscription.device_limit) * 100)}%`,
-                    background: zone.mainVar,
-                    boxShadow: `0 0 8px rgba(${zone.mainVarRaw}, 0.25)`,
+                    background: 'rgb(var(--color-on-accent))',
+                    boxShadow: '0 0 8px rgba(var(--color-on-accent), 0.3)',
                     minWidth: connectedDevices > 0 ? '4px' : '0px',
                   }}
                 />
@@ -326,7 +324,7 @@ export default function SubscriptionCardActive({
           <button
             type="button"
             onClick={onCopyConnectionUrl}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-[10px] px-3 transition-colors duration-300"
+            className="group flex min-h-11 min-w-11 items-center justify-center rounded-[10px] px-3 transition-colors duration-300"
             style={{
               background: connectionUrlCopied
                 ? 'rgba(var(--color-accent-400), 0.12)'
@@ -339,7 +337,11 @@ export default function SubscriptionCardActive({
             aria-label={t('subscription.copyLink')}
             title={t('subscription.copyLink')}
           >
-            {connectionUrlCopied ? <CheckIcon /> : <CopyIcon />}
+            {connectionUrlCopied ? (
+              <CheckIcon />
+            ) : (
+              <CopyIcon className="transition-colors duration-200 group-hover:text-accent-400" />
+            )}
           </button>
         </div>
       )}
@@ -418,7 +420,7 @@ export default function SubscriptionCardActive({
         aria-haspopup="dialog"
         aria-expanded={managementOpen}
         onClick={onManageSubscription}
-        className="flex min-h-11 w-full items-center justify-center rounded-[14px] border border-dark-700/60 bg-dark-900/80 px-4 py-3 text-center text-sm font-semibold text-dark-200 transition-colors hover:border-dark-600/80 hover:bg-dark-800/80"
+        className="flex min-h-11 w-full items-center justify-center rounded-[14px] border border-accent-500/20 bg-accent-500/[0.06] px-4 py-3 text-center text-sm font-semibold text-dark-200 transition-colors hover:border-accent-500/35 hover:bg-accent-500/10"
       >
         {t('dashboard.manageSubscription')}
       </button>

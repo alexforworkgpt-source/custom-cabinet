@@ -245,40 +245,37 @@ export function AppShell({ children }: AppShellProps) {
 
           {/* Right side actions — правая колонка grid, прижата к краю, не сжимается */}
           <div className="flex shrink-0 items-center gap-2 justify-self-end">
-            {isAdminRoute && (
-              <button
-                onClick={() => {
-                  haptic.impact('light');
-                  toggleTheme();
-                }}
-                className={cn(
-                  'rounded-xl border border-dark-700/50 bg-dark-800/50 p-2 text-dark-400 transition-colors duration-200 hover:bg-dark-700 hover:text-accent-400',
-                  !canToggleTheme && 'hidden',
-                )}
-                aria-label={
-                  isDark ? t('theme.light') || 'Light mode' : t('theme.dark') || 'Dark mode'
-                }
-                title={isDark ? t('theme.light') || 'Light mode' : t('theme.dark') || 'Dark mode'}
-              >
-                {isDark ? <MoonIcon className="h-5 w-5" /> : <SunIcon className="h-5 w-5" />}
-              </button>
-            )}
+            <button
+              onClick={() => {
+                haptic.impact('light');
+                toggleTheme();
+              }}
+              className={cn(
+                'rounded-xl border border-dark-700/50 bg-dark-800/50 p-2 text-dark-400 transition-colors duration-200 hover:bg-dark-700 hover:text-accent-400',
+                !canToggleTheme && 'hidden',
+              )}
+              aria-label={
+                isDark ? t('theme.light') || 'Light mode' : t('theme.dark') || 'Dark mode'
+              }
+              title={isDark ? t('theme.light') || 'Light mode' : t('theme.dark') || 'Dark mode'}
+            >
+              {isDark ? <MoonIcon className="h-5 w-5" /> : <SunIcon className="h-5 w-5" />}
+            </button>
             {isDesktopViewport && (
               <TicketNotificationBell isAdmin={location.pathname.startsWith('/admin')} />
             )}
-            {isAdminRoute && <LanguageSwitcher />}
-            {isAdminRoute && (
-              <button
-                onClick={() => {
-                  haptic.impact('light');
-                  logout();
-                }}
-                className="rounded-xl border border-dark-700/50 bg-dark-800/50 p-2 text-dark-400 transition-colors duration-200 hover:bg-dark-700 hover:text-accent-400"
-                title={t('nav.logout')}
-              >
-                <LogoutIcon className="h-5 w-5" />
-              </button>
-            )}
+            <LanguageSwitcher />
+            <button
+              onClick={() => {
+                haptic.impact('light');
+                logout();
+              }}
+              className="rounded-xl border border-dark-700/50 bg-dark-800/50 p-2 text-dark-400 transition-colors duration-200 hover:bg-dark-700 hover:text-accent-400"
+              aria-label={t('nav.logout')}
+              title={t('nav.logout')}
+            >
+              <LogoutIcon className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </header>
@@ -307,7 +304,9 @@ export function AppShell({ children }: AppShellProps) {
       />
 
       {/* Main content */}
-      <main className="mx-auto max-w-6xl px-4 py-6 pb-28 lg:px-6 lg:pb-8">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-6 pb-[calc(9.5rem+var(--safe-area-inset-bottom))] lg:px-6 lg:pb-8">
+        {children}
+      </main>
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav isKeyboardOpen={isKeyboardOpen} supportUnreadCount={supportUnreadCount} />

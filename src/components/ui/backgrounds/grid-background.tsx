@@ -15,7 +15,7 @@ export default function GridBackground({ settings }: Props) {
       <div
         className="absolute inset-0"
         style={{
-          opacity: 0.5,
+          opacity: 0.3,
           backgroundImage: `radial-gradient(circle, ${gridColor} ${dotSize}px, transparent ${dotSize}px)`,
           backgroundSize: `${gridSize}px ${gridSize}px`,
         }}
@@ -27,7 +27,7 @@ export default function GridBackground({ settings }: Props) {
     <div
       className="absolute inset-0"
       style={{
-        opacity: 0.5,
+        opacity: 0.3,
         backgroundImage: `linear-gradient(${gridColor} 1px, transparent 1px), linear-gradient(to right, ${gridColor} 1px, transparent 1px)`,
         backgroundSize: `${gridSize}px ${gridSize}px`,
       }}

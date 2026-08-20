@@ -57,6 +57,16 @@
   --_bg: var(--border-inner-bg, rgb(var(--color-champagne-100)));
 }
 
+.connect-device-gradient-button {
+  --border-inner-bg: rgb(var(--color-accent-500));
+  --_accent: rgba(var(--color-on-accent), 0.8);
+}
+
+.connect-device-gradient-button:hover,
+.connect-device-gradient-button:active {
+  --border-inner-bg: rgb(var(--color-accent-600));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hover-border-gradient {
     animation-play-state: paused;
@@ -302,32 +312,6 @@
     /* iOS smooth scrolling */
     -webkit-overflow-scrolling: touch;
     position: relative;
-  }
-
-  /* Persistent grid keeps both base themes structured without animated GPU work. */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
-    background-size: 48px 48px;
-    filter: blur(0.5px);
-    mask-image: radial-gradient(
-      circle at 50% 12%,
-      black 0%,
-      rgba(0, 0, 0, 0.75) 55%,
-      transparent 100%
-    );
-  }
-
-  .light body::before {
-    background-image:
-      linear-gradient(rgba(10, 10, 10, 0.07) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(10, 10, 10, 0.07) 1px, transparent 1px);
   }
 
   /* Main content — containment removed to avoid GPU layer conflicts
@@ -806,7 +790,7 @@ img.twemoji {
   }
 
   .light .btn-primary {
-    @apply bg-champagne-700 text-white shadow-lg shadow-champagne-500/20 hover:bg-champagne-600 hover:shadow-xl hover:shadow-champagne-500/30 focus-visible:ring-champagne-500 active:bg-champagne-800;
+    @apply bg-accent-500 text-on-accent shadow-lg shadow-accent-500/25 hover:bg-accent-600 hover:shadow-xl hover:shadow-accent-500/30 focus-visible:ring-accent-500 active:bg-accent-700;
   }
 
   .light .btn-secondary {

@@ -412,6 +412,19 @@ export default function Dashboard() {
               ? t('subscription.myDevices')
               : t('subscription.title');
 
+  const overlayDescription =
+    routeState.overlay === 'subscription'
+      ? t('dashboard.overlayDescriptions.subscription')
+      : routeState.overlay === 'connection'
+        ? t('dashboard.overlayDescriptions.connection')
+        : routeState.overlay === 'devices'
+          ? t('dashboard.overlayDescriptions.devices')
+          : routeState.overlay === 'balance'
+            ? t('dashboard.overlayDescriptions.balance')
+            : routeState.overlay === 'topup'
+              ? t('dashboard.overlayDescriptions.topup')
+              : '';
+
   return (
     <div
       className="space-y-6"
@@ -636,9 +649,15 @@ export default function Dashboard() {
           if (!open) closeOverlay();
         }}
         title={overlayTitle}
-        description={t('dashboard.unifiedOverlayDescription')}
+        description={overlayDescription}
         restoreFocusTo={overlayTriggerRef.current}
-        centerMobileHeader={routeState.overlay === 'connection'}
+        centerHeader={
+          routeState.overlay === 'subscription' ||
+          routeState.overlay === 'connection' ||
+          routeState.overlay === 'devices' ||
+          routeState.overlay === 'balance' ||
+          routeState.overlay === 'topup'
+        }
       >
         <Suspense
           fallback={

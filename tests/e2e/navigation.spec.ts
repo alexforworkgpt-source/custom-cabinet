@@ -26,7 +26,8 @@ test('shows the simplified desktop or mobile user navigation', async ({ page }) 
       bottomNavigation.getByRole('link', { name: 'Profile', exact: true }),
     ).toBeVisible();
   } else {
-    const desktopNavigation = page.locator('header:visible nav');
+    const desktopHeader = page.locator('header:visible');
+    const desktopNavigation = desktopHeader.locator('nav');
     await expect(desktopNavigation).toBeVisible();
     await expect(
       desktopNavigation.getByRole('link', { name: 'Dashboard', exact: true }),
@@ -45,6 +46,9 @@ test('shows the simplified desktop or mobile user navigation', async ({ page }) 
       0,
     );
     await expect(desktopNavigation.getByRole('link', { name: /Wheel/ })).toHaveCount(0);
+    await expect(desktopHeader.getByRole('button', { name: /Theme$/ })).toBeVisible();
+    await expect(desktopHeader.getByRole('button', { name: 'Choose language' })).toBeVisible();
+    await expect(desktopHeader.getByRole('button', { name: 'Logout' })).toBeVisible();
   }
 
   expect([...unexpectedApiRequests]).toEqual([]);
@@ -57,9 +61,19 @@ test('/balance preserves details without starting a new top-up', async ({ page }
   await expect(page).toHaveURL('/balance');
   const balanceDialog = page.getByRole('dialog');
   await expect(balanceDialog).toBeVisible();
-  await expect(
-    balanceDialog.getByRole('heading', { name: 'Balance', exact: true }).first(),
-  ).toBeVisible();
+  const balanceHeading = balanceDialog
+    .getByRole('heading', { name: 'Balance', exact: true })
+    .first();
+  await expect(balanceHeading).toBeVisible();
+  const [dialogBox, headingBox] = await Promise.all([
+    balanceDialog.boundingBox(),
+    balanceHeading.boundingBox(),
+  ]);
+  if (!dialogBox || !headingBox) throw new Error('Balance overlay header must be visible');
+  expect(
+    Math.abs(headingBox.x + headingBox.width / 2 - (dialogBox.x + dialogBox.width / 2)),
+  ).toBeLessThanOrEqual(1);
+  await expect(balanceHeading).toHaveCSS('text-align', 'center');
   await expect(page.getByRole('heading', { name: 'Select Payment Method' })).toHaveCount(0);
   expect([...unexpectedApiRequests]).toEqual([]);
 });
@@ -224,12 +238,12 @@ test('does not restore legacy user navigation on admin routes', async ({ page })
   await expect(navigation.getByRole('link', { name: 'Profile', exact: true })).toBeVisible();
 });
 
-test('uses black and white base themes with the persistent grid', async ({ page }) => {
+test('uses black and white base themes without a forced grid', async ({ page }) => {
   await prepareAuthenticatedPage(page, {
     responses: {
       '/api/cabinet/branding/animation-config': {
-        enabled: true,
-        type: 'aurora',
+        enabled: false,
+        type: 'none',
         settings: {},
         opacity: 1,
         blur: 0,
@@ -238,43 +252,31 @@ test('uses black and white base themes with the persistent grid', async ({ page 
     },
   });
   await page.goto('/');
-  await page.evaluate(() => localStorage.setItem('cabinet-theme', 'dark'));
-  await page.reload();
-  await expect(page.locator('html')).toHaveClass(/dark/);
-
-  const darkTheme = await page.evaluate(() => ({
-    background: getComputedStyle(document.body).backgroundColor,
-    grid: getComputedStyle(document.body, '::before').backgroundImage,
-    gridSize: getComputedStyle(document.body, '::before').backgroundSize,
-    gridFilter: getComputedStyle(document.body, '::before').filter,
-    gridAnimation: getComputedStyle(document.body, '::before').animationName,
-    animatedBackgrounds: document.querySelectorAll('body > .pointer-events-none.fixed.inset-0')
-      .length,
-  }));
+  const darkTheme = await page.evaluate(() => {
+    document.documentElement.classList.remove('light');
+    document.documentElement.classList.add('dark');
+    return {
+      background: getComputedStyle(document.body).backgroundColor,
+      grid: getComputedStyle(document.body, '::before').backgroundImage,
+      animatedBackgrounds: document.querySelectorAll('body > .pointer-events-none.fixed.inset-0')
+        .length,
+    };
+  });
   expect(darkTheme.background).toBe('rgb(0, 0, 0)');
-  expect(darkTheme.grid).toContain('linear-gradient');
-  expect(darkTheme.gridSize).toBe('48px 48px, 48px 48px');
-  expect(darkTheme.gridFilter).toBe('blur(0.5px)');
-  expect(darkTheme.gridAnimation).toBe('none');
+  expect(darkTheme.grid).toBe('none');
   expect(darkTheme.animatedBackgrounds).toBe(0);
 
-  await page.evaluate(() => localStorage.setItem('cabinet-theme', 'light'));
-  await page.reload();
-  await expect(page.locator('html')).toHaveClass(/light/);
-
-  const lightTheme = await page.evaluate(() => ({
-    background: getComputedStyle(document.body).backgroundColor,
-    grid: getComputedStyle(document.body, '::before').backgroundImage,
-    gridSize: getComputedStyle(document.body, '::before').backgroundSize,
-    gridFilter: getComputedStyle(document.body, '::before').filter,
-    gridAnimation: getComputedStyle(document.body, '::before').animationName,
-    animatedBackgrounds: document.querySelectorAll('body > .pointer-events-none.fixed.inset-0')
-      .length,
-  }));
+  const lightTheme = await page.evaluate(() => {
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
+    return {
+      background: getComputedStyle(document.body).backgroundColor,
+      grid: getComputedStyle(document.body, '::before').backgroundImage,
+      animatedBackgrounds: document.querySelectorAll('body > .pointer-events-none.fixed.inset-0')
+        .length,
+    };
+  });
   expect(lightTheme.background).toBe('rgb(255, 255, 255)');
-  expect(lightTheme.grid).toContain('linear-gradient');
-  expect(lightTheme.gridSize).toBe('48px 48px, 48px 48px');
-  expect(lightTheme.gridFilter).toBe('blur(0.5px)');
-  expect(lightTheme.gridAnimation).toBe('none');
+  expect(lightTheme.grid).toBe('none');
   expect(lightTheme.animatedBackgrounds).toBe(0);
 });

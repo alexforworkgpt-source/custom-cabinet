@@ -23,8 +23,16 @@ import { Card } from '@/components/data-display/Card';
 import { Button } from '@/components/primitives/Button';
 import { Switch } from '@/components/primitives/Switch';
 import { staggerContainer, staggerItem } from '@/components/motion/transitions';
-import { CopyIcon, CheckIcon, ShareIcon, ArrowRightIcon, PencilIcon } from '@/components/icons';
-import ProfileHubSections from '@/components/profile/ProfileHubSections';
+import {
+  ArrowRightIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  CopyIcon,
+  PencilIcon,
+  ShareIcon,
+  UsersIcon,
+} from '@/components/icons';
+import ProfileHubSections, { ProfileAdminSection } from '@/components/profile/ProfileHubSections';
 import { useTheme } from '@/hooks/useTheme';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 
@@ -289,6 +297,331 @@ export default function Profile() {
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('profile.title')}</h1>
       </motion.div>
 
+      {/* User Info Card */}
+      <motion.div variants={staggerItem}>
+        <Card size="md">
+          <h2 className="mb-2 text-base font-semibold text-dark-100">{t('profile.accountInfo')}</h2>
+          <div>
+            <div className="divide-y divide-dark-700">
+              <div className="flex min-h-12 items-center justify-between gap-4 py-2">
+                <span className="text-dark-400">{t('profile.telegramId')}</span>
+                <span className="min-w-0 break-all text-right font-medium text-dark-100">
+                  {user?.telegram_id}
+                </span>
+              </div>
+              {user?.username && (
+                <div className="flex min-h-12 items-center justify-between gap-4 py-2">
+                  <span className="text-dark-400">{t('profile.username')}</span>
+                  <span className="min-w-0 break-all text-right font-medium text-dark-100">
+                    @{user.username}
+                  </span>
+                </div>
+              )}
+              <div className="flex min-h-12 items-center justify-between gap-4 py-2">
+                <span className="text-dark-400">{t('profile.name')}</span>
+                <span className="min-w-0 break-words text-right font-medium text-dark-100">
+                  {displayName(user)}
+                </span>
+              </div>
+              <div className="flex min-h-12 items-center justify-between gap-4 py-2">
+                <span className="text-dark-400">{t('profile.registeredAt')}</span>
+                <span className="font-medium text-dark-100">
+                  {user?.created_at
+                    ? new Date(user.created_at).toLocaleDateString(uiLocale())
+                    : '-'}
+                </span>
+              </div>
+            </div>
+            {isEmailAuthEnabled && (
+              <section
+                aria-labelledby="profile-email-auth-heading"
+                className="mt-3 border-t border-dark-700 pt-3"
+              >
+                <h3
+                  id="profile-email-auth-heading"
+                  className="mb-2 text-base font-semibold text-dark-100"
+                >
+                  {t('profile.emailAuth')}
+                </h3>
+
+                {user?.email ? (
+                  <div>
+                    <div className="grid min-h-12 grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 border-b border-dark-700 py-2 sm:grid-cols-[auto_1fr_auto]">
+                      <span className="text-dark-400">{t('auth.email')}</span>
+                      <span className="col-span-2 row-start-2 min-w-0 break-all font-medium text-dark-100 sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:text-right">
+                        {user.email}
+                      </span>
+                      {user.email_verified ? (
+                        <span className="badge-success col-start-2 row-start-1 justify-self-end sm:col-start-3">
+                          {t('profile.verified')}
+                        </span>
+                      ) : isEmailVerificationEnabled ? (
+                        <span className="badge-warning col-start-2 row-start-1 justify-self-end sm:col-start-3">
+                          {t('profile.notVerified')}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    {!user.email_verified && isEmailVerificationEnabled && (
+                      <div className="mt-3 rounded-linear border border-warning-500/30 bg-warning-500/10 p-4">
+                        <p className="mb-4 text-sm text-warning-400">
+                          {t('profile.verificationRequired')}
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            onClick={() => resendVerificationMutation.mutate()}
+                            loading={resendVerificationMutation.isPending}
+                            disabled={verificationResendCooldown > 0}
+                          >
+                            {verificationResendCooldown > 0
+                              ? t('profile.resendIn', { seconds: verificationResendCooldown })
+                              : t('profile.resendVerification')}
+                          </Button>
+                          <button
+                            onClick={() => setChangeEmailStep('email')}
+                            className="text-sm text-accent-400 transition-colors hover:text-accent-300"
+                          >
+                            {t('profile.changeEmail.button')}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {user.email_verified && (
+                      <div className="flex min-h-12 items-center justify-between gap-3 py-2">
+                        <p className="min-w-0 text-xs text-dark-400">
+                          {t('profile.canLoginWithEmail')}
+                        </p>
+                        <button
+                          onClick={() => setChangeEmailStep('email')}
+                          className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm text-accent-400 transition-colors hover:text-accent-300"
+                        >
+                          <PencilIcon />
+                          <span>{t('profile.changeEmail.button')}</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Inline email change flow */}
+                    <AnimatePresence>
+                      {changeEmailStep === 'email' && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="space-y-3 border-t border-dark-700 pt-4">
+                            <label
+                              htmlFor="profile-new-email"
+                              className="block text-sm font-medium text-dark-400"
+                            >
+                              {t('profile.changeEmail.newEmail')}
+                            </label>
+                            <input
+                              id="profile-new-email"
+                              ref={newEmailInputRef}
+                              type="email"
+                              value={newEmail}
+                              onChange={(e) => setNewEmail(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleSendChangeCode();
+                                }
+                              }}
+                              placeholder="new@email.com"
+                              className="input w-full"
+                              autoComplete="email"
+                              aria-invalid={Boolean(changeError)}
+                              aria-describedby={
+                                changeError ? 'profile-change-email-error' : undefined
+                              }
+                            />
+                            {changeError && (
+                              <p
+                                id="profile-change-email-error"
+                                className="text-sm text-error-400"
+                                role="alert"
+                              >
+                                {changeError}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-3">
+                              <Button
+                                onClick={handleSendChangeCode}
+                                loading={requestEmailChangeMutation.isPending}
+                                disabled={!newEmail.trim()}
+                              >
+                                {t('profile.changeEmail.sendCode')}
+                              </Button>
+                              <button
+                                onClick={resetChangeEmail}
+                                className="text-sm text-dark-400 hover:text-dark-200"
+                              >
+                                {t('common.cancel')}
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {changeEmailStep === 'code' && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="space-y-3 border-t border-dark-700 pt-4">
+                            <div className="rounded-linear border border-accent-500/30 bg-accent-500/10 p-3">
+                              <p className="text-sm text-accent-400">
+                                {t('profile.changeEmail.codeSentTo', { email: newEmail })}
+                              </p>
+                            </div>
+                            <label
+                              htmlFor="profile-email-verification-code"
+                              className="block text-sm font-medium text-dark-400"
+                            >
+                              {t('profile.changeEmail.verificationCode')}
+                            </label>
+                            <input
+                              id="profile-email-verification-code"
+                              ref={codeInputRef}
+                              type="text"
+                              inputMode="numeric"
+                              value={changeCode}
+                              onChange={(e) => setChangeCode(e.target.value.replace(/\D/g, ''))}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleVerifyChangeCode();
+                                }
+                              }}
+                              placeholder="000000"
+                              maxLength={6}
+                              className="input w-full text-center text-2xl tracking-[0.5em]"
+                              autoComplete="one-time-code"
+                              aria-invalid={Boolean(changeError)}
+                              aria-describedby={
+                                changeError ? 'profile-change-code-error' : undefined
+                              }
+                            />
+                            {changeError && (
+                              <p
+                                id="profile-change-code-error"
+                                className="text-sm text-error-400"
+                                role="alert"
+                              >
+                                {changeError}
+                              </p>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Button
+                                  onClick={handleVerifyChangeCode}
+                                  loading={verifyEmailChangeMutation.isPending}
+                                  disabled={!changeCode.trim()}
+                                >
+                                  {t('profile.changeEmail.verify')}
+                                </Button>
+                                <button
+                                  onClick={() => {
+                                    setChangeEmailStep('email');
+                                    setChangeCode('');
+                                    setChangeError(null);
+                                  }}
+                                  className="text-sm text-dark-400 hover:text-dark-200"
+                                >
+                                  {t('common.back')}
+                                </button>
+                              </div>
+                              <button
+                                onClick={handleResendChangeCode}
+                                disabled={
+                                  resendCooldown > 0 || requestEmailChangeMutation.isPending
+                                }
+                                className={`text-sm ${resendCooldown > 0 ? 'text-dark-500' : 'text-accent-400 hover:text-accent-300'}`}
+                              >
+                                {resendCooldown > 0
+                                  ? t('profile.changeEmail.resendIn', { seconds: resendCooldown })
+                                  : t('profile.changeEmail.resendCode')}
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {changeEmailStep === 'success' && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="border-t border-dark-700 pt-4">
+                            <div className="flex items-center gap-3 rounded-linear border border-success-500/30 bg-success-500/10 p-4">
+                              <CheckIcon />
+                              <div>
+                                <p className="font-medium text-success-400">
+                                  {t('profile.changeEmail.success')}
+                                </p>
+                                <p className="text-sm text-dark-400">{newEmail}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-dark-400">{t('profile.linkEmailDescription')}</p>
+                    <Button variant="primary" onClick={() => navigate('/profile/accounts')}>
+                      {t('profile.linkEmail')}
+                    </Button>
+                  </div>
+                )}
+
+                {(error || success) && user?.email && (
+                  <div className="mt-4">
+                    {error && (
+                      <div className="rounded-linear border border-error-500/30 bg-error-500/10 p-4 text-sm text-error-400">
+                        {error}
+                      </div>
+                    )}
+                    {success && (
+                      <div className="rounded-linear border border-success-500/30 bg-success-500/10 p-4 text-sm text-success-400">
+                        {success}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+            )}
+
+            <Link
+              to="/profile/accounts"
+              className="group mt-2 flex min-h-12 items-center gap-3 rounded-xl py-2 text-dark-200 transition-colors hover:bg-dark-800/70 hover:text-dark-100"
+            >
+              <UsersIcon className="h-5 w-5 shrink-0 text-dark-400 transition-colors group-hover:text-accent-400" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium">
+                  {t('profile.accounts.goToAccounts')}
+                </span>
+                <span className="block text-xs text-dark-400">
+                  {t('profile.accounts.subtitle')}
+                </span>
+              </span>
+              <ChevronRightIcon className="h-4 w-4 shrink-0 text-dark-500 transition-colors group-hover:text-dark-300 rtl:rotate-180" />
+            </Link>
+          </div>
+        </Card>
+      </motion.div>
+
       <motion.div variants={staggerItem}>
         <ProfileHubSections
           isDark={isDark}
@@ -301,58 +634,7 @@ export default function Profile() {
           wheelEnabled={wheelEnabled}
           hasContests={hasContests}
           hasPolls={hasPolls}
-          isAdmin={isAdmin}
         />
-      </motion.div>
-
-      {/* User Info Card */}
-      <motion.div variants={staggerItem}>
-        <Card>
-          <h2 className="mb-6 text-lg font-semibold text-dark-100">{t('profile.accountInfo')}</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-dark-800/50 py-3">
-              <span className="text-dark-400">{t('profile.telegramId')}</span>
-              <span className="min-w-0 break-all text-right font-medium text-dark-100">
-                {user?.telegram_id}
-              </span>
-            </div>
-            {user?.username && (
-              <div className="flex items-center justify-between border-b border-dark-800/50 py-3">
-                <span className="text-dark-400">{t('profile.username')}</span>
-                <span className="min-w-0 break-all text-right font-medium text-dark-100">
-                  @{user.username}
-                </span>
-              </div>
-            )}
-            <div className="flex items-center justify-between border-b border-dark-800/50 py-3">
-              <span className="text-dark-400">{t('profile.name')}</span>
-              <span className="min-w-0 break-words text-right font-medium text-dark-100">
-                {displayName(user)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between py-3">
-              <span className="text-dark-400">{t('profile.registeredAt')}</span>
-              <span className="font-medium text-dark-100">
-                {user?.created_at ? new Date(user.created_at).toLocaleDateString(uiLocale()) : '-'}
-              </span>
-            </div>
-          </div>
-        </Card>
-      </motion.div>
-
-      {/* Connected Accounts Link */}
-      <motion.div variants={staggerItem}>
-        <Card>
-          <Link to="/profile/accounts" className="flex min-h-11 items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-dark-100">
-                {t('profile.accounts.goToAccounts')}
-              </h2>
-              <p className="text-sm text-dark-400">{t('profile.accounts.subtitle')}</p>
-            </div>
-            <ArrowRightIcon className="h-5 w-5 text-dark-400" />
-          </Link>
-        </Card>
       </motion.div>
 
       {/* Referral Link Widget — self-animated: mounts after the referral queries
@@ -360,20 +642,27 @@ export default function Profile() {
           would leave it stuck at opacity 0 */}
       {referralTerms?.is_enabled && referralLink && (
         <motion.div variants={staggerItem} initial="initial" animate="animate">
-          <Card>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-dark-100">{t('referral.yourLink')}</h2>
+          <Card size="md">
+            <div className="mb-2 flex items-start justify-between gap-3">
+              <h2 className="text-base font-semibold text-dark-100">{t('referral.yourLink')}</h2>
               <Link
                 to="/referral"
-                className="flex items-center gap-1 text-accent-400 transition-colors hover:text-accent-300"
+                aria-label={t('referral.title')}
+                className="flex shrink-0 items-center gap-1 text-accent-400 transition-colors hover:text-accent-300"
               >
-                <span className="text-sm">{t('referral.title')}</span>
+                <span className="hidden text-sm sm:inline">{t('referral.title')}</span>
                 <ArrowRightIcon className="h-4 w-4" />
               </Link>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <div className="flex-1">
-                <input type="text" readOnly value={referralLink} className="input w-full text-sm" />
+                <input
+                  type="text"
+                  readOnly
+                  value={referralLink}
+                  className="input w-full text-sm"
+                  aria-label={t('referral.yourLink')}
+                />
               </div>
               <div className="flex gap-2">
                 <Button
@@ -386,251 +675,27 @@ export default function Profile() {
                     {copied ? t('referral.copied') : t('referral.copyLink')}
                   </span>
                 </Button>
-                <Button onClick={shareReferralLink} variant="secondary">
+                <Button
+                  onClick={shareReferralLink}
+                  variant="secondary"
+                  aria-label={t('referral.shareButton')}
+                >
                   <ShareIcon className="h-4 w-4" />
                   <span className="ml-2 hidden sm:inline">{t('referral.shareButton')}</span>
                 </Button>
               </div>
             </div>
-            <p className="mt-3 text-sm text-dark-500">
+            <p className="mt-2 text-xs text-dark-500">
               {t('referral.shareHint', { percent: referralInfo?.commission_percent || 0 })}
             </p>
           </Card>
         </motion.div>
       )}
 
-      {/* Email Section - only show when email auth is enabled */}
-      {isEmailAuthEnabled && (
-        <motion.div variants={staggerItem}>
-          <Card>
-            <h2 className="mb-6 text-lg font-semibold text-dark-100">{t('profile.emailAuth')}</h2>
-
-            {user?.email ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-dark-800/50 py-3">
-                  <span className="text-dark-400">Email</span>
-                  <div className="flex items-center gap-3">
-                    <span className="min-w-0 break-all font-medium text-dark-100">
-                      {user.email}
-                    </span>
-                    {user.email_verified ? (
-                      <span className="badge-success">{t('profile.verified')}</span>
-                    ) : isEmailVerificationEnabled ? (
-                      <span className="badge-warning">{t('profile.notVerified')}</span>
-                    ) : null}
-                  </div>
-                </div>
-
-                {!user.email_verified && isEmailVerificationEnabled && (
-                  <div className="rounded-linear border border-warning-500/30 bg-warning-500/10 p-4">
-                    <p className="mb-4 text-sm text-warning-400">
-                      {t('profile.verificationRequired')}
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <Button
-                        onClick={() => resendVerificationMutation.mutate()}
-                        loading={resendVerificationMutation.isPending}
-                        disabled={verificationResendCooldown > 0}
-                      >
-                        {verificationResendCooldown > 0
-                          ? t('profile.resendIn', { seconds: verificationResendCooldown })
-                          : t('profile.resendVerification')}
-                      </Button>
-                      <button
-                        onClick={() => setChangeEmailStep('email')}
-                        className="text-sm text-accent-400 transition-colors hover:text-accent-300"
-                      >
-                        {t('profile.changeEmail.button')}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {user.email_verified && (
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-dark-400">{t('profile.canLoginWithEmail')}</p>
-                    <button
-                      onClick={() => setChangeEmailStep('email')}
-                      className="flex items-center gap-2 text-sm text-accent-400 transition-colors hover:text-accent-300"
-                    >
-                      <PencilIcon />
-                      <span>{t('profile.changeEmail.button')}</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Inline email change flow */}
-                <AnimatePresence>
-                  {changeEmailStep === 'email' && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="space-y-3 border-t border-dark-800/50 pt-4">
-                        <label className="block text-sm font-medium text-dark-400">
-                          {t('profile.changeEmail.newEmail')}
-                        </label>
-                        <input
-                          ref={newEmailInputRef}
-                          type="email"
-                          value={newEmail}
-                          onChange={(e) => setNewEmail(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleSendChangeCode();
-                            }
-                          }}
-                          placeholder="new@email.com"
-                          className="input w-full"
-                          autoComplete="email"
-                        />
-                        {changeError && <p className="text-sm text-error-400">{changeError}</p>}
-                        <div className="flex items-center gap-3">
-                          <Button
-                            onClick={handleSendChangeCode}
-                            loading={requestEmailChangeMutation.isPending}
-                            disabled={!newEmail.trim()}
-                          >
-                            {t('profile.changeEmail.sendCode')}
-                          </Button>
-                          <button
-                            onClick={resetChangeEmail}
-                            className="text-sm text-dark-400 hover:text-dark-200"
-                          >
-                            {t('common.cancel')}
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {changeEmailStep === 'code' && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="space-y-3 border-t border-dark-800/50 pt-4">
-                        <div className="rounded-linear border border-accent-500/30 bg-accent-500/10 p-3">
-                          <p className="text-sm text-accent-400">
-                            {t('profile.changeEmail.codeSentTo', { email: newEmail })}
-                          </p>
-                        </div>
-                        <label className="block text-sm font-medium text-dark-400">
-                          {t('profile.changeEmail.verificationCode')}
-                        </label>
-                        <input
-                          ref={codeInputRef}
-                          type="text"
-                          inputMode="numeric"
-                          value={changeCode}
-                          onChange={(e) => setChangeCode(e.target.value.replace(/\D/g, ''))}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleVerifyChangeCode();
-                            }
-                          }}
-                          placeholder="000000"
-                          maxLength={6}
-                          className="input w-full text-center text-2xl tracking-[0.5em]"
-                          autoComplete="one-time-code"
-                        />
-                        {changeError && <p className="text-sm text-error-400">{changeError}</p>}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Button
-                              onClick={handleVerifyChangeCode}
-                              loading={verifyEmailChangeMutation.isPending}
-                              disabled={!changeCode.trim()}
-                            >
-                              {t('profile.changeEmail.verify')}
-                            </Button>
-                            <button
-                              onClick={() => {
-                                setChangeEmailStep('email');
-                                setChangeCode('');
-                                setChangeError(null);
-                              }}
-                              className="text-sm text-dark-400 hover:text-dark-200"
-                            >
-                              {t('common.back')}
-                            </button>
-                          </div>
-                          <button
-                            onClick={handleResendChangeCode}
-                            disabled={resendCooldown > 0 || requestEmailChangeMutation.isPending}
-                            className={`text-sm ${resendCooldown > 0 ? 'text-dark-500' : 'text-accent-400 hover:text-accent-300'}`}
-                          >
-                            {resendCooldown > 0
-                              ? t('profile.changeEmail.resendIn', { seconds: resendCooldown })
-                              : t('profile.changeEmail.resendCode')}
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {changeEmailStep === 'success' && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="border-t border-dark-800/50 pt-4">
-                        <div className="flex items-center gap-3 rounded-linear border border-success-500/30 bg-success-500/10 p-4">
-                          <CheckIcon />
-                          <div>
-                            <p className="font-medium text-success-400">
-                              {t('profile.changeEmail.success')}
-                            </p>
-                            <p className="text-sm text-dark-400">{newEmail}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-sm text-dark-400">{t('profile.linkEmailDescription')}</p>
-                <Button variant="primary" onClick={() => navigate('/profile/accounts')}>
-                  {t('profile.linkEmail')}
-                </Button>
-              </div>
-            )}
-
-            {(error || success) && user?.email && (
-              <div className="mt-4">
-                {error && (
-                  <div className="rounded-linear border border-error-500/30 bg-error-500/10 p-4 text-sm text-error-400">
-                    {error}
-                  </div>
-                )}
-                {success && (
-                  <div className="rounded-linear border border-success-500/30 bg-success-500/10 p-4 text-sm text-success-400">
-                    {success}
-                  </div>
-                )}
-              </div>
-            )}
-          </Card>
-        </motion.div>
-      )}
-
       {/* Notification Settings */}
       <motion.div variants={staggerItem}>
-        <Card>
-          <h2 className="mb-6 text-lg font-semibold text-dark-100">
+        <Card size="md">
+          <h2 className="mb-2 text-base font-semibold text-dark-100">
             {t('profile.notifications.title')}
           </h2>
 
@@ -639,15 +704,19 @@ export default function Profile() {
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
             </div>
           ) : notificationSettings ? (
-            <div className="space-y-6">
+            <div
+              role="group"
+              aria-label={t('profile.notifications.title')}
+              className="divide-y divide-dark-700"
+            >
               {/* Subscription Expiry */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-dark-100">
+              <div className="space-y-1 py-2">
+                <div className="flex min-h-12 items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-dark-100">
                       {t('profile.notifications.subscriptionExpiry')}
                     </p>
-                    <p className="text-sm text-dark-400">
+                    <p className="text-xs text-dark-400">
                       {t('profile.notifications.subscriptionExpiryDesc')}
                     </p>
                   </div>
@@ -661,11 +730,12 @@ export default function Profile() {
                   />
                 </div>
                 {notificationSettings.subscription_expiry_enabled && (
-                  <div className="flex items-center gap-3 pl-4">
+                  <div className="flex min-h-10 items-center gap-3 ps-4">
                     <span className="text-sm text-dark-400">
                       {t('profile.notifications.daysBeforeExpiry')}
                     </span>
                     <select
+                      aria-label={t('profile.notifications.daysBeforeExpiry')}
                       value={notificationSettings.subscription_expiry_days}
                       onChange={(e) =>
                         handleNotificationValue('subscription_expiry_days', Number(e.target.value))
@@ -683,13 +753,13 @@ export default function Profile() {
               </div>
 
               {/* Traffic Warning */}
-              <div className="space-y-3 border-t border-dark-800/50 pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-dark-100">
+              <div className="space-y-1 py-2">
+                <div className="flex min-h-12 items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-dark-100">
                       {t('profile.notifications.trafficWarning')}
                     </p>
-                    <p className="text-sm text-dark-400">
+                    <p className="text-xs text-dark-400">
                       {t('profile.notifications.trafficWarningDesc')}
                     </p>
                   </div>
@@ -703,11 +773,12 @@ export default function Profile() {
                   />
                 </div>
                 {notificationSettings.traffic_warning_enabled && (
-                  <div className="flex items-center gap-3 pl-4">
+                  <div className="flex min-h-10 items-center gap-3 ps-4">
                     <span className="text-sm text-dark-400">
                       {t('profile.notifications.atPercent')}
                     </span>
                     <select
+                      aria-label={t('profile.notifications.atPercent')}
                       value={notificationSettings.traffic_warning_percent}
                       onChange={(e) =>
                         handleNotificationValue('traffic_warning_percent', Number(e.target.value))
@@ -725,13 +796,13 @@ export default function Profile() {
               </div>
 
               {/* Balance Low */}
-              <div className="space-y-3 border-t border-dark-800/50 pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-dark-100">
+              <div className="space-y-1 py-2">
+                <div className="flex min-h-12 items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-dark-100">
                       {t('profile.notifications.balanceLow')}
                     </p>
-                    <p className="text-sm text-dark-400">
+                    <p className="text-xs text-dark-400">
                       {t('profile.notifications.balanceLowDesc')}
                     </p>
                   </div>
@@ -745,11 +816,12 @@ export default function Profile() {
                   />
                 </div>
                 {notificationSettings.balance_low_enabled && (
-                  <div className="flex items-center gap-3 pl-4">
+                  <div className="flex min-h-10 items-center gap-3 ps-4">
                     <span className="text-sm text-dark-400">
                       {t('profile.notifications.threshold')}
                     </span>
                     <input
+                      aria-label={t('profile.notifications.threshold')}
                       type="number"
                       value={notificationSettings.balance_low_threshold}
                       onChange={(e) =>
@@ -763,10 +835,12 @@ export default function Profile() {
               </div>
 
               {/* News */}
-              <div className="flex items-center justify-between border-t border-dark-800/50 pt-6">
-                <div>
-                  <p className="font-medium text-dark-100">{t('profile.notifications.news')}</p>
-                  <p className="text-sm text-dark-400">{t('profile.notifications.newsDesc')}</p>
+              <div className="flex min-h-14 items-center justify-between gap-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-dark-100">
+                    {t('profile.notifications.news')}
+                  </p>
+                  <p className="text-xs text-dark-400">{t('profile.notifications.newsDesc')}</p>
                 </div>
                 <Switch
                   aria-label={t('profile.notifications.news')}
@@ -777,12 +851,12 @@ export default function Profile() {
               </div>
 
               {/* Promo Offers */}
-              <div className="flex items-center justify-between border-t border-dark-800/50 pt-6">
-                <div>
-                  <p className="font-medium text-dark-100">
+              <div className="flex min-h-14 items-center justify-between gap-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-dark-100">
                     {t('profile.notifications.promoOffers')}
                   </p>
-                  <p className="text-sm text-dark-400">
+                  <p className="text-xs text-dark-400">
                     {t('profile.notifications.promoOffersDesc')}
                   </p>
                 </div>
@@ -801,6 +875,12 @@ export default function Profile() {
           )}
         </Card>
       </motion.div>
+
+      {isAdmin && (
+        <motion.div variants={staggerItem}>
+          <ProfileAdminSection />
+        </motion.div>
+      )}
 
       <motion.div variants={staggerItem} className="pt-2">
         <Button

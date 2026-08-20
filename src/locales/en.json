@@ -270,7 +270,13 @@
     "welcome": "Welcome, {{name}}!",
     "welcomeNoName": "Welcome!",
     "yourSubscription": "Your Subscription",
-    "unifiedOverlayDescription": "Return to the dashboard without losing the selected subscription",
+    "overlayDescriptions": {
+      "subscription": "Subscription term, auto-renewal, and additional options.",
+      "connection": "Select a device and follow the connection instructions.",
+      "devices": "View and manage devices connected to this subscription.",
+      "balance": "Check your balance, activate promo codes, and view transaction history.",
+      "topup": "Choose a convenient top-up method."
+    },
     "subscriptionLoadError": "Subscription data could not be loaded. Please try again.",
     "balanceLoadError": "Balance could not be loaded. Please retry before making a payment or renewal decision.",
     "devicesLoadError": "Device usage could not be loaded. Please try again.",
@@ -1210,7 +1216,7 @@
     "noHistory": "No spin history yet",
     "banner": {
       "title": "Try your luck!",
-      "description": "Spin the wheel and win prizes: subscription days, balance, traffic and more!",
+      "description": "Spin the wheel to win subscription days, balance, or traffic.",
       "button": "Go to wheel"
     },
     "selectSubscription": "Select subscription"
@@ -4949,7 +4955,8 @@
       "information": "Information",
       "informationDescription": "Documents and useful resources",
       "more": "More features",
-      "moreDescription": "Available service features"
+      "moreDescription": "Available service features",
+      "management": "Management"
     },
     "telegramId": "Telegram ID",
     "username": "Username",

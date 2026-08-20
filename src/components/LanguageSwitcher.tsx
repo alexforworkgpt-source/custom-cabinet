@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { infoApi } from '@/api/info';
 import { ChevronDownIcon } from '@/components/icons';
@@ -13,6 +13,8 @@ export default function LanguageSwitcher({ variant = 'default' }: LanguageSwitch
   const { i18n, t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuId = useId();
 
   // Кэш react-query переживает перемонтирование AppShell при смене роута:
   // локальный useState начинал каждый маунт с пустого списка, и до ответа API
@@ -33,8 +35,18 @@ export default function LanguageSwitcher({ variant = 'default' }: LanguageSwitch
         setIsOpen(false);
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const changeLanguage = (code: string) => {
@@ -51,22 +63,38 @@ export default function LanguageSwitcher({ variant = 'default' }: LanguageSwitch
   return (
     <div data-language-switcher className="relative" ref={dropdownRef}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'flex items-center gap-1.5 rounded-xl border text-sm transition-all',
-          variant === 'profile' ? 'h-11 min-w-24 justify-center px-3' : 'px-2.5 py-2',
+          'flex items-center gap-1.5 text-sm transition-colors',
+          variant === 'profile'
+            ? 'min-h-11 min-w-28 justify-end rounded-lg px-2.5'
+            : 'rounded-xl border px-2.5 py-2',
           isOpen
-            ? 'border-dark-600 bg-dark-700'
+            ? variant === 'profile'
+              ? 'bg-dark-800/70'
+              : 'border-dark-600 bg-dark-700'
             : variant === 'profile'
-              ? 'border-dark-700/70 bg-dark-900/80 hover:border-dark-600 hover:bg-dark-800'
+              ? 'hover:bg-dark-800/70'
               : 'border-dark-700/50 bg-dark-800/50 hover:border-dark-600 hover:bg-dark-700',
         )}
-        aria-label={t('profile.hub.changeLanguage')}
+        aria-label={`${t('profile.hub.changeLanguage')}: ${currentLang.name}`}
         aria-expanded={isOpen}
+        aria-haspopup="menu"
+        aria-controls={menuId}
       >
-        <span>{currentLang.flag}</span>
-        <span className="font-medium text-dark-200">{currentLang.code.toUpperCase()}</span>
+        {variant === 'profile' ? (
+          <>
+            <span className="font-medium text-dark-200">{currentLang.name}</span>
+            <span>{currentLang.flag}</span>
+          </>
+        ) : (
+          <>
+            <span>{currentLang.flag}</span>
+            <span className="font-medium text-dark-200">{currentLang.code.toUpperCase()}</span>
+          </>
+        )}
         <ChevronDownIcon
           className={`h-3.5 w-3.5 text-dark-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
@@ -74,12 +102,17 @@ export default function LanguageSwitcher({ variant = 'default' }: LanguageSwitch
 
       {isOpen && (
         <div
+          id={menuId}
+          role="menu"
           data-language-menu
           className="absolute end-0 z-50 mt-2 w-40 animate-fade-in rounded-xl border border-dark-700/50 bg-dark-800 py-1 shadow-lg"
         >
           {availableLanguages.map((lang) => (
             <button
               key={lang.code}
+              type="button"
+              role="menuitemradio"
+              aria-checked={lang.code === i18n.language}
               onClick={() => changeLanguage(lang.code)}
               className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
                 lang.code === i18n.language

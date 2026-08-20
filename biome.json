@@ -6,6 +6,7 @@
       "!dist",
       "!node_modules",
       "!public",
+      "!.scratch",
       "!package-lock.json",
       "!**/*.min.js",
       "!**/*.min.css"

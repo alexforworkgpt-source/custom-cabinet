@@ -347,6 +347,44 @@ test('keeps the compact Dashboard responsive in dark and light themes', async ({
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
+test('keeps Dashboard content clear of the mobile bottom navigation at 320x568', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    featureFlags: { referralEnabled: true },
+    responses: {
+      ...activeResponses,
+      '/api/cabinet/referral/terms': enabledReferralTerms,
+    },
+  });
+  await page.goto('/');
+  await page.addStyleTag({
+    content: `
+      :root { --safe-area-inset-bottom: 34px; }
+      nav:has(a[href="/"]) { bottom: calc(16px + var(--safe-area-inset-bottom)) !important; }
+    `,
+  });
+  const dashboardContent = page.locator('main > div').first();
+  const bottomNavigation = page.locator('nav:visible').filter({
+    has: page.getByRole('link', { name: 'Dashboard', exact: true }),
+  });
+  await expect(dashboardContent).toBeVisible();
+  await expect(bottomNavigation).toBeVisible();
+
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  const [contentBox, navigationBox] = await Promise.all([
+    dashboardContent.boundingBox(),
+    bottomNavigation.boundingBox(),
+  ]);
+  if (!contentBox || !navigationBox) {
+    throw new Error('Dashboard content and mobile bottom navigation must be measurable');
+  }
+
+  expect(navigationBox.y - (contentBox.y + contentBox.height)).toBeGreaterThanOrEqual(24);
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
 test('keeps the top-right traffic value visible at 420 px @telegram-flow', async ({ page }) => {
   await page.setViewportSize({ width: 420, height: 860 });
   const longTrafficSubscription = {
@@ -552,7 +590,17 @@ test('manages Devices from subscription management and returns to it @critical-f
   await expect(page).toHaveURL('/subscriptions/1?overlay=devices');
 
   const dialog = page.getByRole('dialog');
-  await expect(dialog.getByRole('heading', { name: 'My Devices' })).toBeVisible();
+  const devicesHeading = dialog.getByRole('heading', { name: 'My Devices' });
+  await expect(devicesHeading).toBeVisible();
+  const [dialogBox, headingBox] = await Promise.all([
+    dialog.boundingBox(),
+    devicesHeading.boundingBox(),
+  ]);
+  if (!dialogBox || !headingBox) throw new Error('Devices overlay header must be visible');
+  expect(
+    Math.abs(headingBox.x + headingBox.width / 2 - (dialogBox.x + dialogBox.width / 2)),
+  ).toBeLessThanOrEqual(1);
+  await expect(devicesHeading).toHaveCSS('text-align', 'center');
   expect(
     await page.evaluate(() =>
       document.querySelector('[role="dialog"]')?.contains(document.activeElement),
@@ -615,7 +663,7 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   if (testInfo.project.name === 'mobile-320') {
     await expect(overlayHeading).toHaveCSS('text-align', 'center');
     await expect(
-      dialog.getByText('Return to the dashboard without losing the selected subscription'),
+      dialog.getByText('Select a device and follow the connection instructions.'),
     ).toHaveCSS('text-align', 'center');
   }
   await expect(dialog.getByRole('button', { name: otherPlatform, exact: true })).toHaveCount(0);
@@ -714,24 +762,45 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('centers the Russian Connection header at 320 px @critical-flow', async ({
-  page,
-}, testInfo) => {
+test('centers Russian overlay headers at 320 px @critical-flow', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-320');
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
-    responses: { ...activeResponses, ...connectionResponses },
+    responses: {
+      ...activeResponses,
+      ...connectionResponses,
+      '/api/cabinet/subscription/purchase-options': {
+        sales_mode: 'classic',
+        periods: [],
+        balance_kopeks: 100_000,
+        balance_label: '1,000 RUB',
+      },
+      '/api/cabinet/subscription/platega-recurrent': { status: 'none' },
+      '/api/cabinet/subscription/lava-recurrent': { status: 'none' },
+    },
   });
   await page.addInitScript(() => localStorage.setItem('cabinet_language', 'ru'));
 
   await page.goto('/connection?sub=1');
   const dialog = page.getByRole('dialog');
   const title = dialog.getByRole('heading', { name: 'Подключить VPN' });
-  const description = dialog.getByText('Вы вернетесь на Главную без потери выбранной подписки');
+  const description = dialog.getByText('Выберите устройство и следуйте инструкции по подключению.');
 
   await expect(title).toHaveCSS('text-align', 'center');
   await expect(description).toHaveCSS('text-align', 'center');
   await expect(dialog.getByText('Определенное устройство')).toBeVisible();
   await expect(dialog.locator('[data-selected-platform] svg')).toHaveCount(2);
+
+  await page.goto('/subscriptions/1');
+  const subscriptionDialog = page.getByRole('dialog');
+  await expect(subscriptionDialog.getByRole('heading', { name: 'Управление подпиской' })).toHaveCSS(
+    'text-align',
+    'center',
+  );
+  await expect(
+    subscriptionDialog.getByText(
+      'Срок действия, автопродление и дополнительные возможности подписки.',
+    ),
+  ).toHaveCSS('text-align', 'center');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     await page.evaluate(() => window.innerWidth),
   );
@@ -906,28 +975,79 @@ test('groups secondary functions in Profile and gates admin/features by capabili
   });
 
   await page.goto('/profile');
+  const accountHeading = page.getByRole('heading', { name: 'Account Information' });
+  const preferencesHeading = page.getByRole('heading', { name: 'Preferences' });
+  const moreHeading = page.getByRole('heading', { name: 'More features' });
+  const informationHeading = page.getByRole('heading', { name: 'Information', exact: true });
+  const managementHeading = page.getByRole('heading', { name: 'Management' });
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Preferences' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Information', exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'More features' })).toBeVisible();
+  await expect(accountHeading).toBeVisible();
+  await expect(preferencesHeading).toBeVisible();
+  await expect(moreHeading).toBeVisible();
+  await expect(informationHeading).toBeVisible();
+  await expect(managementHeading).toBeVisible();
   await expect(page.getByRole('link', { name: 'Connected Accounts' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Notification Settings' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Admin', exact: true })).toBeVisible();
+  const adminLink = page.getByRole('link', { name: 'Admin', exact: true });
+  await expect(adminLink).toBeVisible();
   await expect(page.getByRole('link', { name: 'Fortune Wheel', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Contests', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Polls', exact: true })).toBeVisible();
-  const themeButton = page.getByRole('button', { name: /Choose theme/ });
+  const [accountBox, preferencesHeadingBox, moreBox, informationBox, managementBox] =
+    await Promise.all([
+      accountHeading.boundingBox(),
+      preferencesHeading.boundingBox(),
+      moreHeading.boundingBox(),
+      informationHeading.boundingBox(),
+      managementHeading.boundingBox(),
+    ]);
+  if (!accountBox || !preferencesHeadingBox || !moreBox || !informationBox || !managementBox) {
+    throw new Error('Profile section order must be measurable');
+  }
+  expect(accountBox.y).toBeLessThan(preferencesHeadingBox.y);
+  expect(preferencesHeadingBox.y).toBeLessThanOrEqual(moreBox.y);
+  expect(moreBox.y).toBeLessThan(informationBox.y);
+  expect(informationBox.y).toBeLessThan(managementBox.y);
+  expect(await adminLink.locator('svg').count()).toBeGreaterThanOrEqual(2);
+
+  const accountContent = accountHeading.locator('xpath=following-sibling::div[1]');
+  const accountRows = accountContent.locator(':scope > div:first-child > div');
+  await expect(accountRows).toHaveCount(4);
+  await expect(accountRows.first()).toHaveCSS('border-top-width', '0px');
+  await expect(accountRows.nth(1)).toHaveCSS('border-top-width', '1px');
+  await expect(accountRows.nth(2)).toHaveCSS('border-top-width', '1px');
+  await expect(accountRows.nth(3)).toHaveCSS('border-top-width', '1px');
+  const accountsLink = accountContent.getByRole('link', { name: 'Connected Accounts' });
+  await expect(accountsLink).toHaveCSS('border-top-width', '0px');
+  await expect(accountsLink).toHaveCSS('margin-top', '8px');
+
+  const preferences = page.getByRole('group', { name: 'Preferences' });
+  const preferenceRows = preferences.locator(':scope > div');
+  await expect(preferenceRows).toHaveCount(2);
+  await expect(preferenceRows.nth(1)).toHaveCSS('border-top-width', '1px');
+  const themeButton = preferences.getByRole('button', { name: /Choose theme/ });
+  await expect(themeButton).toContainText('Light Theme');
+
+  const informationLinks = page
+    .getByRole('navigation', { name: 'Information', exact: true })
+    .getByRole('link');
+  await expect(informationLinks).toHaveCount(4);
+  await expect(informationLinks.nth(1)).toHaveCSS('border-top-width', '1px');
+  await expect(informationLinks.nth(2)).toHaveCSS('border-top-width', '1px');
+  await expect(informationLinks.nth(3)).toHaveCSS('border-top-width', '1px');
+
   await themeButton.click();
   await expect(themeButton).toHaveAccessibleName(/Dark Theme/);
 
-  await page.getByRole('button', { name: 'Choose language' }).click();
-  await page.getByRole('button', { name: 'Русский' }).click();
+  const profileLanguageSwitcher = page.locator('main [data-language-switcher]');
+  await profileLanguageSwitcher.getByRole('button', { name: 'Choose language' }).click();
+  await page.getByRole('menuitemradio', { name: 'Русский' }).click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
-  await page.getByRole('button', { name: 'Выбрать язык' }).click();
-  await page.getByRole('button', { name: 'English' }).click();
+  await profileLanguageSwitcher.getByRole('button', { name: 'Выбрать язык' }).click();
+  await page.getByRole('menuitemradio', { name: 'English' }).click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 
-  const logoutButton = page.getByRole('button', { name: 'Logout' });
+  const logoutButton = page.locator('main').getByRole('button', { name: 'Logout' });
   await expect(logoutButton).toBeVisible();
   await expect(page.locator('main button').last()).toHaveAccessibleName('Logout');
   expect([...unexpectedApiRequests]).toEqual([]);
@@ -937,7 +1057,9 @@ test('groups secondary functions in Profile and gates admin/features by capabili
 
 test('keeps Profile appearance controls compact @critical-flow', async ({ page }) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    featureFlags: { wheelEnabled: true },
     responses: {
+      '/api/cabinet/wheel/config': { is_enabled: true },
       '/api/cabinet/info/languages': {
         languages: [
           { code: 'en', name: 'English', flag: 'EN' },
@@ -954,9 +1076,12 @@ test('keeps Profile appearance controls compact @critical-flow', async ({ page }
   const preferences = page.getByRole('group', { name: 'Preferences' });
   const themeButton = preferences.getByRole('button', { name: /Choose theme/ });
   const languageButton = preferences.getByRole('button', { name: 'Choose language' });
-  await expect(preferences.getByText('Choose theme', { exact: true })).toBeVisible();
-  await expect(preferences.getByText('Choose language', { exact: true })).toBeVisible();
+  await expect(preferences.getByText('Theme', { exact: true })).toBeVisible();
+  await expect(preferences.getByText('Language', { exact: true })).toBeVisible();
+  await expect(themeButton).toContainText('Light Theme');
+  await expect(languageButton).toContainText('English');
   await expect(languageButton).toContainText('EN');
+  await expect(preferences).toHaveCSS('border-top-width', '0px');
   const [preferencesBox, themeBox, languageBox] = await Promise.all([
     preferences.boundingBox(),
     themeButton.boundingBox(),
@@ -966,12 +1091,17 @@ test('keeps Profile appearance controls compact @critical-flow', async ({ page }
   if (!preferencesBox || !themeBox || !languageBox) {
     throw new Error('Profile appearance controls must have visible bounding boxes');
   }
-  expect(themeBox.width).toBeCloseTo(44, 3);
+  expect(themeBox.width).toBeGreaterThanOrEqual(100);
+  expect(themeBox.width).toBeLessThanOrEqual(180);
   expect(themeBox.height).toBeCloseTo(44, 3);
   expect(languageBox.height).toBeCloseTo(44, 3);
   expect(languageBox.y).toBeGreaterThan(themeBox.y + themeBox.height);
-  expect(themeBox.x).toBeGreaterThan(preferencesBox.x + preferencesBox.width / 2);
-  expect(languageBox.x).toBeGreaterThan(preferencesBox.x + preferencesBox.width / 2);
+  expect(
+    Math.abs(themeBox.x + themeBox.width - (preferencesBox.x + preferencesBox.width - 8)),
+  ).toBeLessThanOrEqual(12);
+  expect(
+    Math.abs(languageBox.x + languageBox.width - (preferencesBox.x + preferencesBox.width - 8)),
+  ).toBeLessThanOrEqual(12);
   expect(preferencesBox.width).toBeLessThanOrEqual(await page.evaluate(() => window.innerWidth));
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     await page.evaluate(() => window.innerWidth),
@@ -995,19 +1125,133 @@ test('keeps Profile appearance controls compact @critical-flow', async ({ page }
     }),
   ).toBeNull();
 
+  const moreCard = page.getByRole('heading', { name: 'More features' }).locator('..');
+  await expect(page.getByRole('link', { name: 'Fortune Wheel', exact: true })).toBeVisible();
+  expect((await moreCard.boundingBox())?.height).toBeLessThanOrEqual(128);
+  expect(
+    await page.getByRole('link', { name: 'Fortune Wheel', exact: true }).locator('svg').count(),
+  ).toBe(2);
+
   await languageButton.click();
-  await page.getByRole('button', { name: 'فارسی' }).click();
+  await page.getByRole('menuitemradio', { name: 'فارسی' }).click();
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-  const rtlLanguageButton = page.locator('[data-language-switcher] > button');
+  const rtlLanguageButton = page.locator('main [data-language-switcher] > button');
   await rtlLanguageButton.click();
-  const rtlMenuBox = await page.locator('[data-language-menu]').boundingBox();
+  const rtlMenuBox = await page.locator('main [data-language-menu]').boundingBox();
   if (!rtlMenuBox) throw new Error('RTL language menu must have a visible bounding box');
   expect(rtlMenuBox.x).toBeGreaterThanOrEqual(0);
   expect(rtlMenuBox.x + rtlMenuBox.width).toBeLessThanOrEqual(
     await page.evaluate(() => window.innerWidth),
   );
-  await page.getByRole('button', { name: '中文' }).click();
+  await page.getByRole('menuitemradio', { name: '中文' }).click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh');
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('presents referral tools as a compact Profile section @critical-flow', async ({ page }) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    language: 'ru',
+    featureFlags: { referralEnabled: true },
+    responses: {
+      '/api/cabinet/referral': {
+        referral_code: 'BROWSER_TEST',
+        referral_link: 'https://t.me/test_bot?start=BROWSER_TEST',
+        total_referrals: 3,
+        active_referrals: 2,
+        total_earnings_kopeks: 12000,
+        total_earnings_rubles: 120,
+        commission_percent: 10,
+        available_balance_kopeks: 12000,
+        available_balance_rubles: 120,
+        withdrawn_kopeks: 0,
+      },
+      '/api/cabinet/referral/terms': {
+        is_enabled: true,
+        commission_percent: 10,
+        minimum_topup_kopeks: 0,
+        minimum_topup_rubles: 0,
+        first_topup_bonus_kopeks: 0,
+        first_topup_bonus_rubles: 0,
+        inviter_bonus_kopeks: 0,
+        inviter_bonus_rubles: 0,
+        max_commission_payments: 0,
+      },
+    },
+  });
+
+  await page.goto('/profile');
+  const referralHeading = page.getByRole('heading', { name: 'Ваши реферальные ссылки' });
+  const referralCard = referralHeading.locator(
+    'xpath=ancestor::div[contains(@class, "relative") and contains(@class, "overflow-hidden")][1]',
+  );
+  await expect(referralHeading).toBeVisible();
+  await expect(referralHeading).toHaveCSS('font-size', '16px');
+  await expect(referralCard).toHaveCSS('padding-top', '16px');
+  expect((await referralCard.boundingBox())?.height).toBeLessThanOrEqual(260);
+  await expect(page.getByRole('link', { name: 'Реферальная программа' })).toBeVisible();
+  const copyButton = page.getByRole('button', { name: 'Копировать' });
+  await expect(copyButton).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Поделиться' })).toBeVisible();
+  await copyButton.click();
+  await expect(page.getByRole('button', { name: 'Скопировано!' })).toBeVisible();
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('keeps Email identity and actions readable in Profile @critical-flow', async ({ page }) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, { language: 'ru' });
+
+  await page.goto('/profile');
+  const emailHeading = page.getByRole('heading', { name: 'Авторизация по Email' });
+  const emailCard = emailHeading.locator(
+    'xpath=ancestor::div[contains(@class, "relative") and contains(@class, "overflow-hidden")][1]',
+  );
+  const emailAddress = emailCard.getByText('browser-test@example.test', { exact: true });
+  await expect(emailCard.getByRole('heading', { name: 'Информация об аккаунте' })).toBeVisible();
+  await expect(emailHeading).toHaveCSS('font-size', '16px');
+  await expect(emailCard).toHaveCSS('padding-top', '16px');
+  expect((await emailAddress.boundingBox())?.height).toBeLessThanOrEqual(25);
+  await expect(emailCard.getByText('Подтверждён', { exact: true })).toBeVisible();
+  const changeEmailButton = emailCard.getByRole('button', { name: 'Сменить почту' });
+  await expect(changeEmailButton).toBeVisible();
+  await changeEmailButton.click();
+  await expect(emailCard.getByPlaceholder('new@email.com')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    await page.evaluate(() => window.innerWidth),
+  );
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('presents notification settings as a compact accessible list @critical-flow', async ({
+  page,
+}) => {
+  const { apiRequests, unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    language: 'ru',
+  });
+
+  await page.goto('/profile');
+  const notificationsHeading = page.getByRole('heading', { name: 'Настройки уведомлений' });
+  const notificationsCard = notificationsHeading.locator(
+    'xpath=ancestor::div[contains(@class, "relative") and contains(@class, "overflow-hidden")][1]',
+  );
+  await expect(notificationsHeading).toHaveCSS('font-size', '16px');
+  await expect(notificationsCard).toHaveCSS('padding-top', '16px');
+  expect((await notificationsCard.boundingBox())?.height).toBeLessThanOrEqual(600);
+
+  const settingsGroup = notificationsCard.getByRole('group', { name: 'Настройки уведомлений' });
+  const settingsRows = settingsGroup.locator(':scope > div');
+  await expect(settingsRows).toHaveCount(5);
+  await expect(settingsRows.first()).toHaveCSS('border-top-width', '0px');
+  await expect(settingsRows.nth(1)).toHaveCSS('border-top-width', '1px');
+  await expect(settingsRows.nth(2)).toHaveCSS('border-top-width', '1px');
+  await expect(settingsRows.nth(3)).toHaveCSS('border-top-width', '1px');
+  await expect(settingsRows.nth(4)).toHaveCSS('border-top-width', '1px');
+  await expect(settingsGroup.getByRole('switch')).toHaveCount(5);
+  await expect(settingsGroup.getByRole('combobox', { name: 'Дней до окончания' })).toBeVisible();
+  await expect(settingsGroup.getByRole('combobox', { name: 'При использовании' })).toBeVisible();
+  await expect(settingsGroup.getByRole('spinbutton', { name: 'Порог' })).toBeVisible();
+
+  await settingsGroup.getByRole('switch', { name: 'Новости' }).click();
+  await expect.poll(() => apiRequests.includes('PATCH /api/cabinet/notifications')).toBe(true);
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 

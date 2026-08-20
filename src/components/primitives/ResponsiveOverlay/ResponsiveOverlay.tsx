@@ -9,7 +9,7 @@ interface ResponsiveOverlayProps {
   description: string;
   children: ReactNode;
   restoreFocusTo?: HTMLElement | null;
-  centerMobileHeader?: boolean;
+  centerHeader?: boolean;
 }
 
 function useDesktopOverlay() {
@@ -34,7 +34,7 @@ export function ResponsiveOverlay({
   description,
   children,
   restoreFocusTo,
-  centerMobileHeader = false,
+  centerHeader = false,
 }: ResponsiveOverlayProps) {
   const desktop = useDesktopOverlay();
   const restoreFocusRef = useRef<HTMLElement | null>(null);
@@ -55,7 +55,7 @@ export function ResponsiveOverlay({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-h-[90vh] max-w-4xl p-5 sm:p-6">
-          <DialogHeader className="pr-10">
+          <DialogHeader className={centerHeader ? 'px-10 text-center sm:text-center' : 'pr-10'}>
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
@@ -72,7 +72,7 @@ export function ResponsiveOverlay({
         showCloseButton
         enableDragToClose={false}
       >
-        <SheetHeader className={centerMobileHeader ? 'px-10 text-center sm:text-center' : 'pr-10'}>
+        <SheetHeader className={centerHeader ? 'px-10 text-center sm:text-center' : 'pr-10'}>
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>{description}</SheetDescription>
         </SheetHeader>

@@ -255,7 +255,13 @@
     "welcome": "欢迎，{{name}}！",
     "welcomeNoName": "欢迎！",
     "yourSubscription": "您的订阅",
-    "unifiedOverlayDescription": "返回主页时保留当前选择的订阅",
+    "overlayDescriptions": {
+      "subscription": "订阅期限、自动续订和其他订阅选项。",
+      "connection": "选择设备并按照连接说明操作。",
+      "devices": "查看和管理连接到此订阅的设备。",
+      "balance": "查看余额、激活优惠码并浏览交易记录。",
+      "topup": "选择便捷的充值方式。"
+    },
     "subscriptionLoadError": "无法加载订阅数据，请重试。",
     "balanceLoadError": "无法加载余额。请在付款或续订前重试。",
     "devicesLoadError": "无法加载设备使用情况，请重试。",
@@ -1082,7 +1088,7 @@
     "noHistory": "暂无抽奖记录",
     "banner": {
       "title": "试试运气！",
-      "description": "转动转盘赢取奖品：订阅天数、余额、流量等！",
+      "description": "转动转盘，赢取订阅天数、余额或流量。",
       "button": "前往转盘"
     },
     "selectSubscription": "选择订阅"
@@ -4385,7 +4391,8 @@
       "information": "信息",
       "informationDescription": "文档和实用资料",
       "more": "更多功能",
-      "moreDescription": "可用的服务功能"
+      "moreDescription": "可用的服务功能",
+      "management": "管理"
     },
     "telegramId": "Telegram ID",
     "username": "用户名",
