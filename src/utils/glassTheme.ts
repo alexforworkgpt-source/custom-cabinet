@@ -4,35 +4,37 @@
  * that work on both dark and light backgrounds.
  */
 export function getGlassColors(isDark: boolean) {
+  const primaryText = isDark ? 'var(--color-dark-50)' : 'var(--color-champagne-950)';
+
   return {
     // Card container
     cardBg: isDark
       ? 'linear-gradient(145deg, rgba(var(--color-dark-800),0.94) 0%, rgba(var(--color-dark-900),0.92) 100%)'
-      : 'linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.88) 100%)',
-    cardBorder: isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.1)',
+      : 'linear-gradient(145deg, rgba(var(--color-champagne-50),0.95) 0%, rgba(var(--color-champagne-100),0.88) 100%)',
+    cardBorder: `rgba(${primaryText},${isDark ? '0.14' : '0.1'})`,
 
     // Inner sections (cards within cards)
-    innerBg: isDark ? 'rgba(255,255,255,0.065)' : 'rgba(0,0,0,0.03)',
-    innerBorder: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+    innerBg: `rgba(${primaryText},${isDark ? '0.065' : '0.03'})`,
+    innerBorder: `rgba(${primaryText},${isDark ? '0.1' : '0.06'})`,
 
     // Hover states
-    hoverBg: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-    hoverBorder: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)',
+    hoverBg: `rgba(${primaryText},0.05)`,
+    hoverBorder: `rgba(${primaryText},${isDark ? '0.08' : '0.1'})`,
 
     // Text
-    text: isDark ? '#fff' : '#1a1a2e',
-    textSecondary: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.5)',
-    textMuted: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.35)',
-    textFaint: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)',
-    textGhost: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+    text: `rgb(${primaryText})`,
+    textSecondary: isDark ? 'rgb(var(--color-dark-400))' : 'rgb(var(--color-champagne-600))',
+    textMuted: isDark ? 'rgb(var(--color-dark-500))' : 'rgb(var(--color-champagne-500))',
+    textFaint: `rgba(${primaryText},0.25)`,
+    textGhost: `rgba(${primaryText},${isDark ? '0.08' : '0.06'})`,
 
     // Progress bar track
-    trackBg: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
-    trackBorder: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)',
+    trackBg: `rgba(${primaryText},0.06)`,
+    trackBorder: `rgba(${primaryText},${isDark ? '0.04' : '0.06'})`,
 
     // Code blocks
-    codeBg: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)',
-    codeBorder: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)',
+    codeBg: `rgba(${primaryText},${isDark ? '0.03' : '0.04'})`,
+    codeBorder: `rgba(${primaryText},${isDark ? '0.04' : '0.06'})`,
 
     // Glow effects — reduced in light mode
     glowAlpha: isDark ? '15' : '08',
