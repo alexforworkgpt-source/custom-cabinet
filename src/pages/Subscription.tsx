@@ -23,6 +23,7 @@ import {
   DevicesIcon,
   DownloadIcon,
   TrashIcon,
+  ChevronDownIcon,
   ChevronRightIcon,
 } from '../components/icons';
 import { useHaptic, usePlatform } from '../platform';
@@ -228,6 +229,7 @@ export default function Subscription({
   const [selectedTrafficPackage, setSelectedTrafficPackage] = useState<number | null>(null);
   const [showServerManagement, setShowServerManagement] = useState(false);
   const [selectedServersToUpdate, setSelectedServersToUpdate] = useState<string[]>([]);
+  const [showAdditionalOptions, setShowAdditionalOptions] = useState(false);
 
   // Traffic refresh state
   const [trafficRefreshCooldown, setTrafficRefreshCooldown] = useState(0);
@@ -455,6 +457,7 @@ export default function Subscription({
     setShowDeviceReduction(false);
     setShowTrafficTopup(false);
     setShowServerManagement(false);
+    setShowAdditionalOptions(false);
   }, []);
   useCloseOnSuccessNotification(handleCloseAllModals);
 
@@ -619,7 +622,7 @@ export default function Subscription({
   }
 
   return (
-    <div className="space-y-6">
+    <div className={embedded ? 'space-y-4' : 'space-y-6'}>
       {!embedded && (
         <div className="flex items-center gap-3">
           <WebBackButton to={isMultiTariff ? '/subscriptions' : '/'} />
@@ -683,7 +686,7 @@ export default function Subscription({
                 boxShadow: isDark
                   ? g.shadow
                   : `0 2px 16px ${zone.mainHex}12, 0 0 0 1px ${zone.mainHex}08`,
-                padding: '28px 28px 24px',
+                padding: embedded ? '12px' : '28px 28px 24px',
               }}
             >
               {/* Decorative ambient radial + trial shimmer border were
@@ -1152,239 +1155,243 @@ export default function Subscription({
                    Sibling of the autopay toggle above, guarded ONLY by
                    is_trial + uiState — daily-tariff subscriptions must see
                    this block too (backend supports a day-interval charge). */}
-              {!subscription.is_trial && sbpUiStateValue !== 'hidden' && (
-                <div
-                  className="mt-3 rounded-[14px] p-3.5"
-                  style={{
-                    background: g.innerBg,
-                    border: `1px solid ${g.innerBorder}`,
-                  }}
-                >
-                  {/* Заголовок и статус слева, компактное действие справа —
+              {!subscription.is_trial &&
+                (!embedded || showAdditionalOptions) &&
+                sbpUiStateValue !== 'hidden' && (
+                  <div
+                    className="mt-3 rounded-[14px] p-3.5"
+                    style={{
+                      background: g.innerBg,
+                      border: `1px solid ${g.innerBorder}`,
+                    }}
+                  >
+                    {/* Заголовок и статус слева, компактное действие справа —
                       зеркально соседнему тогглу «Автопродление». На мобиле
                       кнопка падает вниз на всю ширину (w-full sm:w-auto). */}
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold text-dark-50">
-                        {t('subscription.sbpRecurring.title')}
-                      </div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-dark-50">
+                          {t('subscription.sbpRecurring.title')}
+                        </div>
 
-                      {sbpUiStateValue === 'off' && (
-                        <div className="mt-0.5 text-[11px] text-dark-50/30">
-                          {t('subscription.sbpRecurring.autopayHint')}
-                        </div>
-                      )}
-                      {sbpUiStateValue === 'pending' && (
-                        <div className="mt-0.5 text-[11px] text-dark-50/30">
-                          {t('subscription.sbpRecurring.statusPending')}
-                        </div>
-                      )}
-                      {sbpUiStateValue === 'active' && sbpInfo && (
-                        <>
+                        {sbpUiStateValue === 'off' && (
                           <div className="mt-0.5 text-[11px] text-dark-50/30">
-                            {t('subscription.sbpRecurring.amountPerInterval', {
-                              amount: formatAmount((sbpInfo.amount_kopeks ?? 0) / 100),
-                              interval: t(sbpIntervalLabelKey(sbpInfo.interval)),
-                            })}
+                            {t('subscription.sbpRecurring.autopayHint')}
                           </div>
-                          {sbpInfo.next_charge_at && (
+                        )}
+                        {sbpUiStateValue === 'pending' && (
+                          <div className="mt-0.5 text-[11px] text-dark-50/30">
+                            {t('subscription.sbpRecurring.statusPending')}
+                          </div>
+                        )}
+                        {sbpUiStateValue === 'active' && sbpInfo && (
+                          <>
                             <div className="mt-0.5 text-[11px] text-dark-50/30">
-                              {t('subscription.sbpRecurring.nextCharge', {
-                                date: new Date(sbpInfo.next_charge_at).toLocaleDateString(
-                                  uiLocale(),
-                                  {
-                                    day: '2-digit',
-                                    month: '2-digit',
-                                    year: 'numeric',
-                                  },
-                                ),
+                              {t('subscription.sbpRecurring.amountPerInterval', {
+                                amount: formatAmount((sbpInfo.amount_kopeks ?? 0) / 100),
+                                interval: t(sbpIntervalLabelKey(sbpInfo.interval)),
                               })}
                             </div>
-                          )}
-                        </>
-                      )}
-                      {sbpUiStateValue === 'past_due' && (
-                        <div className="mt-0.5 text-[11px] font-medium text-warning-400">
-                          {t('subscription.sbpRecurring.statusPastDue')}
-                        </div>
-                      )}
-                    </div>
+                            {sbpInfo.next_charge_at && (
+                              <div className="mt-0.5 text-[11px] text-dark-50/30">
+                                {t('subscription.sbpRecurring.nextCharge', {
+                                  date: new Date(sbpInfo.next_charge_at).toLocaleDateString(
+                                    uiLocale(),
+                                    {
+                                      day: '2-digit',
+                                      month: '2-digit',
+                                      year: 'numeric',
+                                    },
+                                  ),
+                                })}
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {sbpUiStateValue === 'past_due' && (
+                          <div className="mt-0.5 text-[11px] font-medium text-warning-400">
+                            {t('subscription.sbpRecurring.statusPastDue')}
+                          </div>
+                        )}
+                      </div>
 
-                    <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-                      {sbpUiStateValue === 'off' && (
-                        <button
-                          onClick={() => enableSbpMutation.mutate()}
-                          disabled={enableSbpMutation.isPending}
-                          className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity disabled:opacity-50 sm:w-auto"
-                        >
-                          {enableSbpMutation.isPending ? (
-                            <span className="mx-auto block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          ) : (
-                            t('subscription.sbpRecurring.connect')
-                          )}
-                        </button>
-                      )}
+                      <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+                        {sbpUiStateValue === 'off' && (
+                          <button
+                            onClick={() => enableSbpMutation.mutate()}
+                            disabled={enableSbpMutation.isPending}
+                            className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity disabled:opacity-50 sm:w-auto"
+                          >
+                            {enableSbpMutation.isPending ? (
+                              <span className="mx-auto block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            ) : (
+                              t('subscription.sbpRecurring.connect')
+                            )}
+                          </button>
+                        )}
 
-                      {sbpUiStateValue === 'pending' && (
-                        <>
-                          {sbpInfo?.redirect_url && (
+                        {sbpUiStateValue === 'pending' && (
+                          <>
+                            {sbpInfo?.redirect_url && (
+                              <button
+                                onClick={() => {
+                                  if (sbpInfo.redirect_url) {
+                                    openPaymentUrl(sbpInfo.redirect_url, platform, openLink);
+                                  }
+                                }}
+                                className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity sm:w-auto"
+                              >
+                                {t('subscription.sbpRecurring.confirmInBank')}
+                              </button>
+                            )}
                             <button
-                              onClick={() => {
-                                if (sbpInfo.redirect_url) {
-                                  openPaymentUrl(sbpInfo.redirect_url, platform, openLink);
-                                }
-                              }}
-                              className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity sm:w-auto"
+                              onClick={handleCancelSbp}
+                              disabled={cancelSbpMutation.isPending}
+                              className="text-[11px] font-medium transition-colors disabled:opacity-50 sm:text-right"
+                              style={{ color: 'rgb(var(--color-critical-500))' }}
                             >
-                              {t('subscription.sbpRecurring.confirmInBank')}
+                              {t('subscription.sbpRecurring.cancel')}
                             </button>
-                          )}
+                          </>
+                        )}
+
+                        {(sbpUiStateValue === 'active' || sbpUiStateValue === 'past_due') && (
                           <button
                             onClick={handleCancelSbp}
                             disabled={cancelSbpMutation.isPending}
-                            className="text-[11px] font-medium transition-colors disabled:opacity-50 sm:text-right"
-                            style={{ color: 'rgb(var(--color-critical-500))' }}
+                            className="w-full whitespace-nowrap rounded-xl border border-error-500/30 bg-error-500/10 px-5 py-2.5 text-sm font-medium text-error-400 transition-colors hover:bg-error-500/20 disabled:opacity-50 sm:w-auto"
                           >
                             {t('subscription.sbpRecurring.cancel')}
                           </button>
-                        </>
-                      )}
-
-                      {(sbpUiStateValue === 'active' || sbpUiStateValue === 'past_due') && (
-                        <button
-                          onClick={handleCancelSbp}
-                          disabled={cancelSbpMutation.isPending}
-                          className="w-full whitespace-nowrap rounded-xl border border-error-500/30 bg-error-500/10 px-5 py-2.5 text-sm font-medium text-error-400 transition-colors hover:bg-error-500/20 disabled:opacity-50 sm:w-auto"
-                        >
-                          {t('subscription.sbpRecurring.cancel')}
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* ─── Автопродление Lava ───
                    Независимый от Platega движок: сиблинг того же тоггла, те же
                    состояния. Период задан продуктом в кабинете Lava и приезжает
                    числом дней, поэтому подпись строится из charge_days. */}
-              {!subscription.is_trial && lavaUiStateValue !== 'hidden' && (
-                <div
-                  className="mt-3 rounded-[14px] p-3.5"
-                  style={{
-                    background: g.innerBg,
-                    border: `1px solid ${g.innerBorder}`,
-                  }}
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold text-dark-50">
-                        {t('subscription.lavaRecurring.title')}
+              {!subscription.is_trial &&
+                (!embedded || showAdditionalOptions) &&
+                lavaUiStateValue !== 'hidden' && (
+                  <div
+                    className="mt-3 rounded-[14px] p-3.5"
+                    style={{
+                      background: g.innerBg,
+                      border: `1px solid ${g.innerBorder}`,
+                    }}
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-dark-50">
+                          {t('subscription.lavaRecurring.title')}
+                        </div>
+
+                        {lavaUiStateValue === 'off' && (
+                          <div className="mt-0.5 text-[11px] text-dark-50/30">
+                            {t('subscription.lavaRecurring.autopayHint')}
+                          </div>
+                        )}
+                        {lavaUiStateValue === 'pending' && (
+                          <div className="mt-0.5 text-[11px] text-dark-50/30">
+                            {t('subscription.lavaRecurring.statusPending')}
+                          </div>
+                        )}
+                        {lavaUiStateValue === 'active' && lavaInfo && (
+                          <>
+                            <div className="mt-0.5 text-[11px] text-dark-50/30">
+                              {(() => {
+                                const periodKey = lavaPeriodLabelKey(lavaInfo.charge_days);
+                                const amount = formatAmount((lavaInfo.amount_kopeks ?? 0) / 100);
+                                return periodKey
+                                  ? t('subscription.lavaRecurring.amountPerPeriod', {
+                                      amount,
+                                      period: t(periodKey),
+                                    })
+                                  : t('subscription.lavaRecurring.amountPerDays', {
+                                      amount,
+                                      days: lavaInfo.charge_days ?? 0,
+                                    });
+                              })()}
+                            </div>
+                            {lavaInfo.next_charge_at && (
+                              <div className="mt-0.5 text-[11px] text-dark-50/30">
+                                {t('subscription.lavaRecurring.nextCharge', {
+                                  date: new Date(lavaInfo.next_charge_at).toLocaleDateString(
+                                    uiLocale(),
+                                    {
+                                      day: '2-digit',
+                                      month: '2-digit',
+                                      year: 'numeric',
+                                    },
+                                  ),
+                                })}
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {lavaUiStateValue === 'past_due' && (
+                          <div className="mt-0.5 text-[11px] font-medium text-warning-400">
+                            {t('subscription.lavaRecurring.statusPastDue')}
+                          </div>
+                        )}
                       </div>
 
-                      {lavaUiStateValue === 'off' && (
-                        <div className="mt-0.5 text-[11px] text-dark-50/30">
-                          {t('subscription.lavaRecurring.autopayHint')}
-                        </div>
-                      )}
-                      {lavaUiStateValue === 'pending' && (
-                        <div className="mt-0.5 text-[11px] text-dark-50/30">
-                          {t('subscription.lavaRecurring.statusPending')}
-                        </div>
-                      )}
-                      {lavaUiStateValue === 'active' && lavaInfo && (
-                        <>
-                          <div className="mt-0.5 text-[11px] text-dark-50/30">
-                            {(() => {
-                              const periodKey = lavaPeriodLabelKey(lavaInfo.charge_days);
-                              const amount = formatAmount((lavaInfo.amount_kopeks ?? 0) / 100);
-                              return periodKey
-                                ? t('subscription.lavaRecurring.amountPerPeriod', {
-                                    amount,
-                                    period: t(periodKey),
-                                  })
-                                : t('subscription.lavaRecurring.amountPerDays', {
-                                    amount,
-                                    days: lavaInfo.charge_days ?? 0,
-                                  });
-                            })()}
-                          </div>
-                          {lavaInfo.next_charge_at && (
-                            <div className="mt-0.5 text-[11px] text-dark-50/30">
-                              {t('subscription.lavaRecurring.nextCharge', {
-                                date: new Date(lavaInfo.next_charge_at).toLocaleDateString(
-                                  uiLocale(),
-                                  {
-                                    day: '2-digit',
-                                    month: '2-digit',
-                                    year: 'numeric',
-                                  },
-                                ),
-                              })}
-                            </div>
-                          )}
-                        </>
-                      )}
-                      {lavaUiStateValue === 'past_due' && (
-                        <div className="mt-0.5 text-[11px] font-medium text-warning-400">
-                          {t('subscription.lavaRecurring.statusPastDue')}
-                        </div>
-                      )}
-                    </div>
+                      <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+                        {lavaUiStateValue === 'off' && (
+                          <button
+                            onClick={() => enableLavaMutation.mutate()}
+                            disabled={enableLavaMutation.isPending}
+                            className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity disabled:opacity-50 sm:w-auto"
+                          >
+                            {enableLavaMutation.isPending ? (
+                              <span className="mx-auto block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            ) : (
+                              t('subscription.lavaRecurring.connect')
+                            )}
+                          </button>
+                        )}
 
-                    <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-                      {lavaUiStateValue === 'off' && (
-                        <button
-                          onClick={() => enableLavaMutation.mutate()}
-                          disabled={enableLavaMutation.isPending}
-                          className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity disabled:opacity-50 sm:w-auto"
-                        >
-                          {enableLavaMutation.isPending ? (
-                            <span className="mx-auto block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          ) : (
-                            t('subscription.lavaRecurring.connect')
-                          )}
-                        </button>
-                      )}
-
-                      {lavaUiStateValue === 'pending' && (
-                        <>
-                          {lavaInfo?.redirect_url && (
+                        {lavaUiStateValue === 'pending' && (
+                          <>
+                            {lavaInfo?.redirect_url && (
+                              <button
+                                onClick={() => {
+                                  if (lavaInfo.redirect_url) {
+                                    openPaymentUrl(lavaInfo.redirect_url, platform, openLink);
+                                  }
+                                }}
+                                className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity sm:w-auto"
+                              >
+                                {t('subscription.lavaRecurring.payFirst')}
+                              </button>
+                            )}
                             <button
-                              onClick={() => {
-                                if (lavaInfo.redirect_url) {
-                                  openPaymentUrl(lavaInfo.redirect_url, platform, openLink);
-                                }
-                              }}
-                              className="w-full whitespace-nowrap rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-medium text-on-accent transition-opacity sm:w-auto"
+                              onClick={handleCancelLava}
+                              disabled={cancelLavaMutation.isPending}
+                              className="text-[11px] font-medium transition-colors disabled:opacity-50 sm:text-right"
+                              style={{ color: 'rgb(var(--color-critical-500))' }}
                             >
-                              {t('subscription.lavaRecurring.payFirst')}
+                              {t('subscription.lavaRecurring.cancel')}
                             </button>
-                          )}
+                          </>
+                        )}
+
+                        {(lavaUiStateValue === 'active' || lavaUiStateValue === 'past_due') && (
                           <button
                             onClick={handleCancelLava}
                             disabled={cancelLavaMutation.isPending}
-                            className="text-[11px] font-medium transition-colors disabled:opacity-50 sm:text-right"
-                            style={{ color: 'rgb(var(--color-critical-500))' }}
+                            className="w-full whitespace-nowrap rounded-xl border border-error-500/30 bg-error-500/10 px-5 py-2.5 text-sm font-medium text-error-400 transition-colors hover:bg-error-500/20 disabled:opacity-50 sm:w-auto"
                           >
                             {t('subscription.lavaRecurring.cancel')}
                           </button>
-                        </>
-                      )}
-
-                      {(lavaUiStateValue === 'active' || lavaUiStateValue === 'past_due') && (
-                        <button
-                          onClick={handleCancelLava}
-                          disabled={cancelLavaMutation.isPending}
-                          className="w-full whitespace-nowrap rounded-xl border border-error-500/30 bg-error-500/10 px-5 py-2.5 text-sm font-medium text-error-400 transition-colors hover:bg-error-500/20 disabled:opacity-50 sm:w-auto"
-                        >
-                          {t('subscription.lavaRecurring.cancel')}
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           );
         })()
@@ -1598,88 +1605,7 @@ export default function Subscription({
           </div>
         )}
 
-      {/* Additional Options (Buy Devices) */}
-      {subscription &&
-        (subscription.is_active || subscription.is_limited) &&
-        !subscription.is_trial &&
-        subscription.device_limit !== 0 && (
-          <div
-            className="relative overflow-hidden rounded-3xl"
-            style={{
-              background: g.cardBg,
-              border: `1px solid ${g.cardBorder}`,
-              boxShadow: g.shadow,
-              padding: '24px 28px',
-            }}
-          >
-            <h2 className="mb-4 text-base font-bold tracking-tight text-dark-50">
-              {t('subscription.additionalOptions.title')}
-            </h2>
-
-            {/* Buy Devices */}
-            <DeviceTopupSheet
-              open={showDeviceTopup}
-              onOpen={() => setShowDeviceTopup(true)}
-              onClose={() => setShowDeviceTopup(false)}
-              subscription={subscription}
-              subscriptionId={subscriptionId}
-              devicesToAdd={devicesToAdd}
-              onDevicesToAddChange={setDevicesToAdd}
-              purchaseOptions={purchaseOptions}
-              isDark={isDark}
-            />
-
-            {/* Reduce Devices */}
-            <div className="mt-4">
-              <DeviceReductionSheet
-                open={showDeviceReduction}
-                onOpen={() => setShowDeviceReduction(true)}
-                onClose={() => setShowDeviceReduction(false)}
-                subscriptionPresent={!!subscription}
-                subscriptionId={subscriptionId}
-                targetDeviceLimit={targetDeviceLimit}
-                onTargetDeviceLimitChange={setTargetDeviceLimit}
-                isDark={isDark}
-              />
-            </div>
-
-            {/* Buy Traffic */}
-            {subscription.traffic_limit_gb > 0 && (
-              <div className="mt-4">
-                <TrafficTopupSheet
-                  open={showTrafficTopup}
-                  onOpen={() => setShowTrafficTopup(true)}
-                  onClose={() => setShowTrafficTopup(false)}
-                  subscription={subscription}
-                  subscriptionId={subscriptionId}
-                  selectedTrafficPackage={selectedTrafficPackage}
-                  onSelectedTrafficPackageChange={setSelectedTrafficPackage}
-                  purchaseOptions={purchaseOptions}
-                  isDark={isDark}
-                />
-              </div>
-            )}
-
-            {/* Server Management - only in classic mode */}
-            {!isTariffsMode && (
-              <div className="mt-4">
-                <ServerManagementSheet
-                  open={showServerManagement}
-                  onOpen={() => setShowServerManagement(true)}
-                  onClose={() => setShowServerManagement(false)}
-                  subscription={subscription}
-                  subscriptionId={subscriptionId}
-                  selectedServers={selectedServersToUpdate}
-                  onSelectedServersChange={setSelectedServersToUpdate}
-                  purchaseOptions={purchaseOptions}
-                  isDark={isDark}
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-      {/* Reissue Subscription — standalone block, not dependent on device_limit */}
+      {/* Secondary subscription actions stay collapsed until requested. */}
       {subscription &&
         (subscription.is_active || subscription.is_limited) &&
         !subscription.is_trial && (
@@ -1689,51 +1615,153 @@ export default function Subscription({
               background: g.cardBg,
               border: `1px solid ${g.cardBorder}`,
               boxShadow: g.shadow,
-              padding: '16px 20px',
+              padding: embedded ? '12px' : '24px 28px',
             }}
           >
             <button
-              onClick={handleRevoke}
-              disabled={revokeMutation.isPending || revokeCooldown > 0}
-              className="w-full rounded-xl border border-warning-500/30 bg-warning-500/10 p-4 text-left transition-colors hover:bg-warning-500/20 disabled:opacity-50"
+              type="button"
+              onClick={() => {
+                const nextOpen = !showAdditionalOptions;
+                setShowAdditionalOptions(nextOpen);
+                if (!nextOpen) {
+                  setShowDeviceTopup(false);
+                  setShowDeviceReduction(false);
+                  setShowTrafficTopup(false);
+                  setShowServerManagement(false);
+                }
+              }}
+              className="flex min-h-11 w-full items-center justify-between gap-3 text-left"
+              aria-expanded={showAdditionalOptions}
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-warning-400">
-                    {t('subscription.revoke.button')}
-                  </div>
-                  <div className="mt-1 text-sm text-dark-400">
-                    {revokeCooldown > 0
-                      ? t('subscription.revoke.cooldown', {
-                          minutes: Math.floor(revokeCooldown / 60),
-                          seconds: revokeCooldown % 60,
-                        })
-                      : t('subscription.revoke.description')}
-                  </div>
-                </div>
-                <div className="text-warning-400">
-                  {revokeMutation.isPending ? (
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-warning-400/30 border-t-amber-400" />
-                  ) : (
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={1.5}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"
-                      />
-                    </svg>
-                  )}
-                </div>
-              </div>
+              <span className="text-sm font-semibold tracking-tight text-dark-50">
+                {t('subscription.additionalOptions.title')}
+              </span>
+              <ChevronDownIcon
+                className={`h-5 w-5 shrink-0 text-dark-400 transition-transform ${showAdditionalOptions ? 'rotate-180' : ''}`}
+              />
             </button>
-            {revokeMutation.error && (
-              <p className="mt-2 text-sm text-error-400">{getErrorMessage(revokeMutation.error)}</p>
+
+            {showAdditionalOptions && (
+              <div className="mt-3 space-y-3">
+                {subscription.device_limit !== 0 && (
+                  <>
+                    <DeviceTopupSheet
+                      open={showDeviceTopup}
+                      onOpen={() => {
+                        setShowDeviceTopup(true);
+                        setShowDeviceReduction(false);
+                        setShowTrafficTopup(false);
+                        setShowServerManagement(false);
+                      }}
+                      onClose={() => setShowDeviceTopup(false)}
+                      subscription={subscription}
+                      subscriptionId={subscriptionId}
+                      devicesToAdd={devicesToAdd}
+                      onDevicesToAddChange={setDevicesToAdd}
+                      purchaseOptions={purchaseOptions}
+                      isDark={isDark}
+                    />
+
+                    <DeviceReductionSheet
+                      open={showDeviceReduction}
+                      onOpen={() => {
+                        setShowDeviceTopup(false);
+                        setShowDeviceReduction(true);
+                        setShowTrafficTopup(false);
+                        setShowServerManagement(false);
+                      }}
+                      onClose={() => setShowDeviceReduction(false)}
+                      subscriptionPresent={!!subscription}
+                      subscriptionId={subscriptionId}
+                      targetDeviceLimit={targetDeviceLimit}
+                      onTargetDeviceLimitChange={setTargetDeviceLimit}
+                      isDark={isDark}
+                    />
+
+                    {subscription.traffic_limit_gb > 0 && (
+                      <TrafficTopupSheet
+                        open={showTrafficTopup}
+                        onOpen={() => {
+                          setShowDeviceTopup(false);
+                          setShowDeviceReduction(false);
+                          setShowTrafficTopup(true);
+                          setShowServerManagement(false);
+                        }}
+                        onClose={() => setShowTrafficTopup(false)}
+                        subscription={subscription}
+                        subscriptionId={subscriptionId}
+                        selectedTrafficPackage={selectedTrafficPackage}
+                        onSelectedTrafficPackageChange={setSelectedTrafficPackage}
+                        purchaseOptions={purchaseOptions}
+                        isDark={isDark}
+                      />
+                    )}
+
+                    {!isTariffsMode && (
+                      <ServerManagementSheet
+                        open={showServerManagement}
+                        onOpen={() => {
+                          setShowDeviceTopup(false);
+                          setShowDeviceReduction(false);
+                          setShowTrafficTopup(false);
+                          setShowServerManagement(true);
+                        }}
+                        onClose={() => setShowServerManagement(false)}
+                        subscription={subscription}
+                        subscriptionId={subscriptionId}
+                        selectedServers={selectedServersToUpdate}
+                        onSelectedServersChange={setSelectedServersToUpdate}
+                        purchaseOptions={purchaseOptions}
+                        isDark={isDark}
+                      />
+                    )}
+                  </>
+                )}
+
+                <button
+                  onClick={handleRevoke}
+                  disabled={revokeMutation.isPending || revokeCooldown > 0}
+                  className="w-full rounded-xl border border-warning-500/30 bg-warning-500/10 p-3 text-left transition-colors hover:bg-warning-500/20 disabled:opacity-50"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium text-warning-400">
+                        {t('subscription.revoke.button')}
+                      </div>
+                      <div className="mt-0.5 text-xs text-dark-400">
+                        {revokeCooldown > 0
+                          ? t('subscription.revoke.cooldown', {
+                              minutes: Math.floor(revokeCooldown / 60),
+                              seconds: revokeCooldown % 60,
+                            })
+                          : t('subscription.revoke.description')}
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-warning-400">
+                      {revokeMutation.isPending ? (
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-warning-400/30 border-t-amber-400" />
+                      ) : (
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={1.5}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                </button>
+                {revokeMutation.error && (
+                  <p className="text-sm text-error-400">{getErrorMessage(revokeMutation.error)}</p>
+                )}
+              </div>
             )}
           </div>
         )}

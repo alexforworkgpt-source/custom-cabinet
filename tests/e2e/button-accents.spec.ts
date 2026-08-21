@@ -160,11 +160,7 @@ test('uses restrained accent states for key secondary actions', async ({ page })
       return color;
     });
     await expect(copyIcon).toHaveCSS('color', accentTextColor);
-    const hoverCopyIconColor = await copyIcon.evaluate(
-      (element) => getComputedStyle(element).color,
-    );
-    expect(hoverCopyIconColor).toBe(accentTextColor);
-    expect(hoverCopyIconColor).not.toBe(initialCopyIconColor);
+    expect(accentTextColor).not.toBe(initialCopyIconColor);
 
     await page.goto('/gift');
     const selectedPaymentMode = page.getByRole('button', { name: /From balance/ });

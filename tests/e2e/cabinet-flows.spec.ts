@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { prepareAuthenticatedPage } from './cabinetTestHarness';
+import { browserTestUser, prepareAuthenticatedPage } from './cabinetTestHarness';
 
 const activeSubscription = {
   id: 1,
@@ -187,6 +187,74 @@ const enabledReferralTerms = {
   max_commission_payments: 0,
 };
 
+test('keeps subscription management and Connection as compact as Balance', async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    !['mobile-320', 'mobile-375', 'tablet-768'].includes(testInfo.project.name),
+    'Mobile and tablet density only',
+  );
+  if (testInfo.project.name === 'mobile-320') {
+    await page.setViewportSize({ width: 320, height: 568 });
+  }
+  await prepareAuthenticatedPage(page, {
+    responses: {
+      ...activeResponses,
+      ...connectionResponses,
+      '/api/cabinet/subscription/purchase-options': {
+        sales_mode: 'classic',
+        periods: [],
+        balance_kopeks: 100_000,
+        balance_label: '1,000 RUB',
+      },
+      '/api/cabinet/subscription/platega-recurrent': { status: 'none' },
+      '/api/cabinet/subscription/lava-recurrent': { status: 'none' },
+    },
+  });
+
+  await page.goto('/balance');
+  const balanceDialog = page.getByRole('dialog');
+  await expect(balanceDialog.getByRole('button', { name: 'Transaction History' })).toBeInViewport();
+  const balanceBox = await balanceDialog.boundingBox();
+  if (!balanceBox) throw new Error('Balance overlay must have a visible bounding box');
+
+  await page.goto('/subscriptions/1');
+  const managementDialog = page.getByRole('dialog');
+  const additionalOptions = managementDialog.getByRole('button', { name: 'Additional Options' });
+  await expect(additionalOptions).toHaveAttribute('aria-expanded', 'false');
+  await expect(
+    managementDialog.getByRole('link', { name: /Extend Subscription/ }),
+  ).toBeInViewport();
+  await expect(managementDialog.getByRole('link', { name: /My Devices/ })).toBeInViewport();
+  await expect(managementDialog.getByRole('switch', { name: 'Auto-renew' })).toBeInViewport();
+  await expect(additionalOptions).toBeInViewport();
+  await expect(managementDialog.getByRole('button', { name: 'Reissue Subscription' })).toHaveCount(
+    0,
+  );
+  await expect
+    .poll(async () => (await managementDialog.boundingBox())?.height ?? Number.POSITIVE_INFINITY)
+    .toBeLessThanOrEqual(balanceBox.height + 16);
+  await additionalOptions.click();
+  await expect(additionalOptions).toHaveAttribute('aria-expanded', 'true');
+  await expect(
+    managementDialog.getByRole('button', { name: 'Reissue Subscription' }),
+  ).toBeVisible();
+
+  await page.goto('/connection?sub=1&step=application&platform=windows');
+  const installDialog = page.getByRole('dialog');
+  await expect(installDialog.getByRole('button', { name: 'App is installed' })).toBeInViewport();
+  await expect
+    .poll(async () => (await installDialog.boundingBox())?.height ?? Number.POSITIVE_INFINITY)
+    .toBeLessThanOrEqual(balanceBox.height + 16);
+
+  await page.goto('/connection?sub=1&step=success&platform=windows&app=Test%20App');
+  const successDialog = page.getByRole('dialog');
+  await expect(successDialog.getByRole('button', { name: 'Finish' })).toBeInViewport();
+  await expect
+    .poll(async () => (await successDialog.boundingBox())?.height ?? Number.POSITIVE_INFINITY)
+    .toBeLessThanOrEqual(balanceBox.height + 16);
+});
+
 test.describe('unified dashboard states', () => {
   const scenarios = [
     {
@@ -324,6 +392,7 @@ test('keeps the compact Dashboard responsive in dark and light themes', async ({
     if (!summaryBox || !managementBox || !balanceBox || !referralBox) {
       throw new Error('Compact Dashboard elements must have visible bounding boxes');
     }
+    await expect(balanceCard).toHaveAttribute('href', '/balance');
     expect(summaryBox.height).toBeLessThanOrEqual(500);
     expect(managementBox.y).toBeGreaterThan(summaryBox.y + summaryBox.height / 2);
     expect(referralBox.x).toBeGreaterThan(balanceBox.x);
@@ -535,10 +604,17 @@ test('opens complete subscription management on the Dashboard @desktop-flow', as
     renewalLink.boundingBox(),
     autoRenewSwitch.boundingBox(),
   ]);
-  expect(renewalBox).not.toBeNull();
-  expect(autoRenewBox).not.toBeNull();
-  expect(renewalBox!.y).toBeLessThan(autoRenewBox!.y);
-  await expect(managementDialog.getByRole('heading', { name: 'Additional Options' })).toBeVisible();
+  if (!renewalBox || !autoRenewBox) {
+    throw new Error('Expected subscription management actions to have measurable bounds');
+  }
+  expect(renewalBox.y).toBeLessThan(autoRenewBox.y);
+  const additionalOptions = managementDialog.getByRole('button', { name: 'Additional Options' });
+  await expect(additionalOptions).toHaveAttribute('aria-expanded', 'false');
+  await expect(managementDialog.getByRole('button', { name: 'Reissue Subscription' })).toHaveCount(
+    0,
+  );
+  await additionalOptions.click();
+  await expect(additionalOptions).toHaveAttribute('aria-expanded', 'true');
   await expect(
     managementDialog.getByRole('button', { name: 'Reissue Subscription' }),
   ).toBeVisible();
@@ -911,6 +987,8 @@ test('runs top-up method, amount, validation, cancellation, handoff, and result 
 
   await page.goto('/');
   await page.getByText('Balance', { exact: true }).click();
+  await expect(page).toHaveURL('/balance');
+  await page.getByRole('link', { name: 'Top Up Balance' }).click();
   let dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('heading', { name: 'Select payment method' })).toBeVisible();
   const methodCards = dialog.locator('[data-payment-method-card]');
@@ -930,6 +1008,13 @@ test('runs top-up method, amount, validation, cancellation, handoff, and result 
   }
   await dialog.getByRole('button', { name: /Test Card/ }).click();
   await expect(page).toHaveURL('/balance/top-up/test-card');
+  const quickAmountButtons = dialog.getByRole('button', { name: /^(1|3|5) \$$/ });
+  await expect(quickAmountButtons).toHaveCount(3);
+  const quickAmountButtonHeights = await quickAmountButtons.evaluateAll((buttons) =>
+    buttons.map((button) => button.getBoundingClientRect().height),
+  );
+  expect(Math.min(...quickAmountButtonHeights)).toBeGreaterThanOrEqual(44);
+  expect(Math.max(...quickAmountButtonHeights)).toBeLessThanOrEqual(48.5);
   await page.goto('/');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(
@@ -937,6 +1022,8 @@ test('runs top-up method, amount, validation, cancellation, handoff, and result 
   ).toHaveLength(0);
 
   await page.getByText('Balance', { exact: true }).click();
+  await expect(page).toHaveURL('/balance');
+  await page.getByRole('link', { name: 'Top Up Balance' }).click();
   dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: /Test Card/ }).click();
   const amountInput = dialog.getByLabel('Enter amount');
@@ -973,7 +1060,6 @@ test('groups secondary functions in Profile and gates admin/features by capabili
       '/api/cabinet/wheel/config': { is_enabled: true },
     },
   });
-
   await page.goto('/profile');
   const accountHeading = page.getByRole('heading', { name: 'Account Information' });
   const preferencesHeading = page.getByRole('heading', { name: 'Preferences' });
@@ -987,7 +1073,9 @@ test('groups secondary functions in Profile and gates admin/features by capabili
   await expect(informationHeading).toBeVisible();
   await expect(managementHeading).toBeVisible();
   await expect(page.getByRole('link', { name: 'Connected Accounts' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Notification Settings' })).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Notification Settings', exact: true }),
+  ).toHaveAttribute('href', '/profile/notifications');
   const adminLink = page.getByRole('link', { name: 'Admin', exact: true });
   await expect(adminLink).toBeVisible();
   await expect(page.getByRole('link', { name: 'Fortune Wheel', exact: true })).toBeVisible();
@@ -1012,11 +1100,12 @@ test('groups secondary functions in Profile and gates admin/features by capabili
 
   const accountContent = accountHeading.locator('xpath=following-sibling::div[1]');
   const accountRows = accountContent.locator(':scope > div:first-child > div');
-  await expect(accountRows).toHaveCount(4);
+  await expect(accountRows).toHaveCount(5);
   await expect(accountRows.first()).toHaveCSS('border-top-width', '0px');
   await expect(accountRows.nth(1)).toHaveCSS('border-top-width', '1px');
   await expect(accountRows.nth(2)).toHaveCSS('border-top-width', '1px');
   await expect(accountRows.nth(3)).toHaveCSS('border-top-width', '1px');
+  await expect(accountRows.nth(4)).toHaveCSS('border-top-width', '1px');
   const accountsLink = accountContent.getByRole('link', { name: 'Connected Accounts' });
   await expect(accountsLink).toHaveCSS('border-top-width', '0px');
   await expect(accountsLink).toHaveCSS('margin-top', '8px');
@@ -1197,31 +1286,137 @@ test('presents referral tools as a compact Profile section @critical-flow', asyn
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('keeps Email identity and actions readable in Profile @critical-flow', async ({ page }) => {
+test('presents linked Email and missing Telegram as compact Profile rows @critical-flow', async ({
+  page,
+}) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, { language: 'ru' });
 
   await page.goto('/profile');
-  const emailHeading = page.getByRole('heading', { name: 'Авторизация по Email' });
-  const emailCard = emailHeading.locator(
+  const accountHeading = page.getByRole('heading', { name: 'Информация об аккаунте' });
+  const accountCard = accountHeading.locator(
     'xpath=ancestor::div[contains(@class, "relative") and contains(@class, "overflow-hidden")][1]',
   );
-  const emailAddress = emailCard.getByText('browser-test@example.test', { exact: true });
-  await expect(emailCard.getByRole('heading', { name: 'Информация об аккаунте' })).toBeVisible();
-  await expect(emailHeading).toHaveCSS('font-size', '16px');
-  await expect(emailCard).toHaveCSS('padding-top', '16px');
+  const emailAddress = accountCard.getByText('browser-test@example.test', { exact: true });
+
+  await expect(accountCard.getByRole('heading', { name: 'Авторизация по Email' })).toHaveCount(0);
+  await expect(accountCard.getByText('Email', { exact: true })).toBeVisible();
+  await expect(emailAddress).toBeVisible();
   expect((await emailAddress.boundingBox())?.height).toBeLessThanOrEqual(25);
-  await expect(emailCard.getByText('Подтверждён', { exact: true })).toBeVisible();
-  const changeEmailButton = emailCard.getByRole('button', { name: 'Сменить почту' });
-  await expect(changeEmailButton).toBeVisible();
-  await changeEmailButton.click();
-  await expect(emailCard.getByPlaceholder('new@email.com')).toBeVisible();
+  await expect(accountCard.getByRole('link', { name: 'Привязать Telegram ID' })).toHaveAttribute(
+    'href',
+    '/profile/accounts',
+  );
+  await expect(accountCard.getByRole('link', { name: 'Привязанные аккаунты' })).toHaveAttribute(
+    'href',
+    '/profile/accounts',
+  );
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     await page.evaluate(() => window.innerWidth),
   );
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('presents notification settings as a compact accessible list @critical-flow', async ({
+test('keeps verified Email change available from the compact Profile @critical-flow', async ({
+  page,
+}) => {
+  const { apiRequests, unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    language: 'ru',
+    responses: {
+      '/api/cabinet/auth/email/change': {
+        message: 'sent',
+        new_email: 'new@example.test',
+        expires_in_minutes: 15,
+      },
+      '/api/cabinet/auth/email/change/verify': {
+        message: 'updated',
+        email: 'new@example.test',
+      },
+    },
+  });
+  await page.goto('/profile');
+  await page.getByRole('button', { name: 'Сменить почту' }).click();
+  await page.getByRole('textbox', { name: 'Новый email' }).fill('new@example.test');
+  await expect(page.getByRole('button', { name: 'Отправить код' })).toHaveAttribute(
+    'type',
+    'submit',
+  );
+  await page.getByRole('button', { name: 'Отправить код' }).click();
+
+  await expect.poll(() => apiRequests.includes('POST /api/cabinet/auth/email/change')).toBe(true);
+  await page.getByRole('textbox', { name: 'Код подтверждения' }).fill('123456');
+  await page.getByRole('button', { name: 'Подтвердить' }).click();
+  await expect(page.getByRole('status')).toHaveText('Email успешно изменён!');
+  await expect
+    .poll(() => apiRequests.includes('POST /api/cabinet/auth/email/change/verify'))
+    .toBe(true);
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('keeps Email verification resend available from the compact Profile @critical-flow', async ({
+  page,
+}) => {
+  const unverifiedUser = {
+    ...browserTestUser,
+    email_verified: false,
+  };
+  const { apiRequests, unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    language: 'ru',
+    user: unverifiedUser,
+    responses: {
+      '/api/cabinet/auth/email/resend': { message: 'sent' },
+    },
+  });
+
+  await page.goto('/profile');
+  await page.getByRole('button', { name: 'Отправить письмо повторно' }).click();
+
+  await expect(page.getByRole('status')).toHaveText('Письмо отправлено повторно!');
+  await expect.poll(() => apiRequests.includes('POST /api/cabinet/auth/email/resend')).toBe(true);
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('presents linked Telegram and missing Email as compact Profile rows @critical-flow', async ({
+  page,
+}) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    language: 'ru',
+    responses: {
+      '/api/cabinet/auth/account/linked-providers': { providers: [] },
+    },
+    user: {
+      id: 2,
+      telegram_id: 123456789,
+      username: 'telegram_test',
+      first_name: 'Telegram Test',
+      last_name: null,
+      email: null,
+      email_verified: false,
+      balance_kopeks: 0,
+      balance_rubles: 0,
+      referral_code: null,
+      language: 'ru',
+      created_at: '2026-01-01T00:00:00Z',
+      auth_type: 'telegram',
+    },
+  });
+
+  await page.goto('/profile');
+  const accountHeading = page.getByRole('heading', { name: 'Информация об аккаунте' });
+  const accountCard = accountHeading.locator(
+    'xpath=ancestor::div[contains(@class, "relative") and contains(@class, "overflow-hidden")][1]',
+  );
+
+  await expect(accountCard.getByText('123456789', { exact: true })).toBeVisible();
+  await expect(accountCard.getByRole('link', { name: 'Привязать Telegram ID' })).toHaveCount(0);
+  const linkEmail = accountCard.getByRole('link', { name: 'Привязать Email' });
+  await expect(linkEmail).toHaveAttribute('href', '/profile/accounts');
+  await expect(linkEmail).toHaveCSS('min-height', '44px');
+  await linkEmail.click();
+  await expect(page).toHaveURL(/\/profile\/accounts$/);
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('opens current notification controls from Profile on a dedicated route @critical-flow', async ({
   page,
 }) => {
   const { apiRequests, unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
@@ -1229,15 +1424,18 @@ test('presents notification settings as a compact accessible list @critical-flow
   });
 
   await page.goto('/profile');
-  const notificationsHeading = page.getByRole('heading', { name: 'Настройки уведомлений' });
-  const notificationsCard = notificationsHeading.locator(
-    'xpath=ancestor::div[contains(@class, "relative") and contains(@class, "overflow-hidden")][1]',
-  );
-  await expect(notificationsHeading).toHaveCSS('font-size', '16px');
-  await expect(notificationsCard).toHaveCSS('padding-top', '16px');
-  expect((await notificationsCard.boundingBox())?.height).toBeLessThanOrEqual(600);
+  const notificationsLink = page.getByRole('link', {
+    name: 'Настройки уведомлений',
+    exact: true,
+  });
+  await expect(notificationsLink).toHaveAttribute('href', '/profile/notifications');
+  await expect(page.getByRole('group', { name: 'Настройки уведомлений' })).toHaveCount(0);
 
-  const settingsGroup = notificationsCard.getByRole('group', { name: 'Настройки уведомлений' });
+  await notificationsLink.click();
+  await expect(page).toHaveURL('/profile/notifications');
+  await expect(page.getByRole('heading', { name: 'Настройки уведомлений' })).toBeVisible();
+
+  const settingsGroup = page.getByRole('group', { name: 'Настройки уведомлений' });
   const settingsRows = settingsGroup.locator(':scope > div');
   await expect(settingsRows).toHaveCount(5);
   await expect(settingsRows.first()).toHaveCSS('border-top-width', '0px');
@@ -1252,6 +1450,57 @@ test('presents notification settings as a compact accessible list @critical-flow
 
   await settingsGroup.getByRole('switch', { name: 'Новости' }).click();
   await expect.poll(() => apiRequests.includes('PATCH /api/cabinet/notifications')).toBe(true);
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('shows a retryable error when notification settings fail to load @critical-flow', async ({
+  page,
+}) => {
+  const { apiRequests, unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responseStatuses: {
+      '/api/cabinet/notifications': 500,
+    },
+  });
+
+  await page.goto('/profile/notifications');
+  await expect(page.getByRole('alert')).toHaveText('Error');
+  await expect(page.getByText('Notification settings unavailable')).toHaveCount(0);
+  const requestsBeforeRetry = apiRequests.filter(
+    (request) => request === 'GET /api/cabinet/notifications',
+  ).length;
+  await page.getByRole('button', { name: 'Retry' }).click();
+  await expect
+    .poll(
+      () => apiRequests.filter((request) => request === 'GET /api/cabinet/notifications').length,
+    )
+    .toBeGreaterThan(requestsBeforeRetry);
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('keeps notification state and retries after a save failure @critical-flow', async ({
+  page,
+}) => {
+  let patchAttempts = 0;
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page);
+  await page.route('**/api/cabinet/notifications', async (route) => {
+    if (route.request().method() !== 'PATCH') {
+      await route.fallback();
+      return;
+    }
+    patchAttempts += 1;
+    await route.fulfill({ status: 500, json: { detail: 'save failed' } });
+  });
+
+  await page.goto('/profile/notifications');
+  const newsSwitch = page.getByRole('switch', { name: 'News' });
+  await expect(newsSwitch).toBeChecked();
+  await newsSwitch.click();
+
+  await expect(page.getByRole('alert')).toHaveText('Error');
+  await expect(newsSwitch).toBeChecked();
+  const attemptsBeforeRetry = patchAttempts;
+  await page.getByRole('button', { name: 'Retry' }).click();
+  await expect.poll(() => patchAttempts).toBeGreaterThan(attemptsBeforeRetry);
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 

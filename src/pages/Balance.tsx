@@ -2,7 +2,7 @@ import { uiLocale } from '@/utils/uiLocale';
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams, useNavigate } from 'react-router';
+import { Link, useSearchParams, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useAuthStore } from '../store/auth';
@@ -27,7 +27,12 @@ export default function Balance() {
   const paymentHandledRef = useRef(false);
 
   // Fetch balance from API
-  const { data: balanceData, refetch: refetchBalance } = useQuery({
+  const {
+    data: balanceData,
+    isError: balanceError,
+    isLoading: balanceLoading,
+    refetch: refetchBalance,
+  } = useQuery({
     queryKey: ['balance'],
     queryFn: balanceApi.getBalance,
     staleTime: API.BALANCE_STALE_TIME_MS,
@@ -74,23 +79,21 @@ export default function Balance() {
   const [transactionsPage, setTransactionsPage] = useState(1);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
-  const { data: transactions, isLoading } = useQuery<PaginatedResponse<Transaction>>({
+  const {
+    data: transactions,
+    isError: transactionsError,
+    isLoading: transactionsLoading,
+    refetch: refetchTransactions,
+  } = useQuery<PaginatedResponse<Transaction>>({
     queryKey: ['transactions', transactionsPage],
     queryFn: () => balanceApi.getTransactions({ per_page: 20, page: transactionsPage }),
     placeholderData: (previousData) => previousData,
   });
 
-  const { data: paymentMethods } = useQuery({
-    queryKey: ['payment-methods'],
-    queryFn: balanceApi.getPaymentMethods,
-  });
-
-  // Deferred: only fetch saved cards after payment methods loaded to avoid extra request on first render.
   // The recurrent_enabled flag is cached for 5 min to prevent refetching on every Balance visit.
   const { data: savedCardsData } = useQuery({
     queryKey: ['saved-cards'],
     queryFn: balanceApi.getSavedCards,
-    enabled: !!paymentMethods,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -197,53 +200,87 @@ export default function Balance() {
 
   return (
     <motion.div
-      className="space-y-6"
+      className="space-y-4"
       variants={staggerContainer}
       initial="initial"
       animate="animate"
     >
       <motion.div variants={staggerItem}>
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('balance.title')}</h1>
-      </motion.div>
-
-      {/* Balance Card — flat surface; the giant numeric carries the
-          weight. The previous accent gradient + glow leaked accent into
-          decoration (DESIGN.md Tunable-but-Scarce Rule) and read as the
-          SaaS hero-metric template. */}
-      <motion.div variants={staggerItem}>
-        <Card>
-          <div className="mb-2 text-sm text-dark-400">{t('balance.currentBalance')}</div>
-          <div className="text-4xl font-bold text-dark-50 sm:text-5xl">
-            {formatAmount(balanceData?.balance_rubles || 0)}
-            <span className="ml-2 text-2xl text-dark-400">{currencySymbol}</span>
-          </div>
+        <Card size="sm" data-balance-summary>
+          {balanceLoading ? (
+            <div
+              role="status"
+              aria-label={t('common.loading')}
+              className="flex min-h-14 items-center"
+            >
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
+            </div>
+          ) : balanceError ? (
+            <div className="flex min-h-14 items-center justify-between gap-3">
+              <p role="alert" className="text-sm text-error-400">
+                {t('common.error')}
+              </p>
+              <Button type="button" variant="secondary" size="sm" onClick={() => refetchBalance()}>
+                {t('common.retry')}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex min-h-14 items-center justify-between gap-4">
+              <span className="text-sm text-dark-400">{t('balance.currentBalance')}</span>
+              <span className="min-w-0 text-right text-2xl font-bold text-dark-50 sm:text-3xl">
+                {formatAmount(balanceData?.balance_rubles ?? 0)}
+                <span className="ml-1 text-base text-dark-400">{currencySymbol}</span>
+              </span>
+            </div>
+          )}
         </Card>
       </motion.div>
 
-      {/* Promo Code Section */}
       <motion.div variants={staggerItem}>
-        <Card>
-          <h2 className="mb-4 text-lg font-semibold text-dark-100">
+        <Card asChild size="sm" interactive>
+          <Link
+            to="/balance/top-up"
+            className="flex min-h-14 items-center justify-between gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50"
+          >
+            <span className="flex min-w-0 items-center gap-3">
+              <WalletIcon className="h-5 w-5 shrink-0 text-dark-400" />
+              <span className="text-sm font-semibold text-dark-100">
+                {t('balance.topUpBalance')}
+              </span>
+            </span>
+            <ChevronRightIcon className="h-5 w-5 shrink-0 text-dark-400" />
+          </Link>
+        </Card>
+      </motion.div>
+
+      <motion.div variants={staggerItem}>
+        <Card size="sm" data-balance-promocode>
+          <label
+            htmlFor="balance-promocode"
+            className="mb-2 block text-sm font-semibold text-dark-100"
+          >
             {t('balance.promocode.title')}
-          </h2>
-          <div className="flex gap-3">
+          </label>
+          <form
+            className="flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handlePromocodeActivate();
+            }}
+          >
             <input
+              id="balance-promocode"
               type="text"
               value={promocode}
               onChange={(e) => setPromocode(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handlePromocodeActivate()}
               placeholder={t('balance.promocode.placeholder')}
-              className="input flex-1"
+              className="input min-w-0 flex-1"
               disabled={promocodeLoading}
             />
-            <Button
-              onClick={() => handlePromocodeActivate()}
-              disabled={!promocode.trim()}
-              loading={promocodeLoading}
-            >
+            <Button type="submit" size="sm" disabled={!promocode.trim()} loading={promocodeLoading}>
               {t('balance.promocode.activate')}
             </Button>
-          </div>
+          </form>
           <AnimatePresence mode="wait">
             {promocodeError && (
               <motion.div
@@ -309,60 +346,16 @@ export default function Balance() {
         </Card>
       </motion.div>
 
-      {/* Payment Methods — self-animated: mounts after its query resolves, when
-          the parent stagger orchestration has already finished and would leave
-          it stuck at opacity 0 */}
-      {paymentMethods && paymentMethods.length > 0 && (
-        <motion.div variants={staggerItem} initial="initial" animate="animate">
-          <Card>
-            <h2 className="mb-4 text-lg font-semibold text-dark-100">
-              {t('balance.topUpBalance')}
-            </h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {paymentMethods.map((method) => {
-                const methodKey = method.id.toLowerCase().replace(/-/g, '_');
-                const translatedName = t(`balance.paymentMethods.${methodKey}.name`, {
-                  defaultValue: '',
-                });
-                const translatedDesc = t(`balance.paymentMethods.${methodKey}.description`, {
-                  defaultValue: '',
-                });
-
-                return (
-                  <Card
-                    key={method.id}
-                    interactive={method.is_available}
-                    className={!method.is_available ? 'cursor-not-allowed opacity-50' : ''}
-                    onClick={() => method.is_available && navigate(`/balance/top-up/${method.id}`)}
-                  >
-                    <div className="font-semibold text-dark-100">
-                      {method.name || translatedName}
-                    </div>
-                    {(method.description || translatedDesc) && (
-                      <div className="mt-1 text-sm text-dark-500">
-                        {method.description || translatedDesc}
-                      </div>
-                    )}
-                    <div className="mt-3 text-xs text-dark-400">
-                      {formatAmount(method.min_amount_kopeks / 100, 0)} {t('common.rangeTo', 'to')}{' '}
-                      {formatAmount(method.max_amount_kopeks / 100, 0)} {currencySymbol}
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </Card>
-        </motion.div>
-      )}
-
       {/* Transaction History */}
       <motion.div variants={staggerItem}>
-        <Card className="overflow-hidden">
+        <Card size="sm" className="overflow-hidden" data-balance-history>
           <button
+            type="button"
             onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-            className="flex w-full items-center justify-between text-left"
+            className="flex min-h-11 w-full items-center justify-between text-left"
+            aria-expanded={isHistoryOpen}
           >
-            <h2 className="text-lg font-semibold text-dark-100">
+            <h2 className="text-sm font-semibold text-dark-100">
               {t('balance.transactionHistory')}
             </h2>
             <ChevronDownIcon
@@ -380,9 +373,23 @@ export default function Balance() {
                 className="overflow-hidden"
               >
                 <div className="mt-4">
-                  {isLoading ? (
+                  {transactionsLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
+                    </div>
+                  ) : transactionsError ? (
+                    <div className="flex items-center justify-between gap-3 py-4">
+                      <p role="alert" className="text-sm text-error-400">
+                        {t('common.error')}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => refetchTransactions()}
+                      >
+                        {t('common.retry')}
+                      </Button>
                     </div>
                   ) : transactions?.items && transactions.items.length > 0 ? (
                     <motion.div
@@ -477,12 +484,11 @@ export default function Balance() {
         </Card>
       </motion.div>
 
-      {/* Saved Cards Navigation — self-animated: mounts after its query resolves
-          (see Payment Methods above) */}
+      {/* Saved Cards Navigation self-animates when its query resolves. */}
       {savedCardsData?.recurrent_enabled && (
         <motion.div variants={staggerItem} initial="initial" animate="animate">
-          <Card interactive onClick={() => navigate('/balance/saved-cards')}>
-            <div className="flex items-center justify-between">
+          <Card size="sm" interactive onClick={() => navigate('/balance/saved-cards')}>
+            <div className="flex min-h-11 items-center justify-between">
               <div className="flex items-center gap-3">
                 <CreditCardIcon className="h-5 w-5 text-dark-400" />
                 <span className="font-medium text-dark-100">{t('balance.savedCards.title')}</span>

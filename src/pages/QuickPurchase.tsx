@@ -448,6 +448,7 @@ function SummaryCard({
   isSubmitting,
   canSubmit,
   stickyPayButton = false,
+  stickyPayButtonBlocked = false,
   submitError,
   onSubmit,
 }: {
@@ -458,6 +459,7 @@ function SummaryCard({
   isSubmitting: boolean;
   canSubmit: boolean;
   stickyPayButton?: boolean;
+  stickyPayButtonBlocked?: boolean;
   submitError: string | null;
   onSubmit: () => void;
 }) {
@@ -550,10 +552,10 @@ function SummaryCard({
       </AnimatePresence>
 
       {/* Pay button */}
-      {stickyPayButton && isMobile ? (
+      {stickyPayButton && isMobile && !stickyPayButtonBlocked ? (
         createPortal(
           <div
-            className="fixed bottom-0 left-0 right-0 z-50 p-3"
+            className="fixed bottom-0 left-0 right-0 z-50 px-3 pb-[calc(0.75rem+var(--safe-area-inset-bottom))] pt-3"
             style={{
               background:
                 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 70%, transparent 100%)',
@@ -879,6 +881,8 @@ export default function QuickPurchase() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const paymentMethodsRef = useRef<HTMLDivElement>(null);
+  const [paymentMethodsVisible, setPaymentMethodsVisible] = useState(true);
 
   // Cleanup redirect timeout on unmount
   useEffect(() => {
@@ -886,6 +890,21 @@ export default function QuickPurchase() {
       if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    const paymentMethods = paymentMethodsRef.current;
+    if (!config?.sticky_pay_button || !paymentMethods) {
+      setPaymentMethodsVisible(false);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setPaymentMethodsVisible(entry.isIntersecting),
+      { threshold: 0.01 },
+    );
+    observer.observe(paymentMethods);
+    return () => observer.disconnect();
+  }, [config?.sticky_pay_button]);
 
   // Collect ALL unique periods across ALL tariffs
   const allPeriods = useMemo(() => {
@@ -1221,7 +1240,7 @@ export default function QuickPurchase() {
 
             {/* Payment methods */}
             {config.payment_methods.length > 0 && (
-              <div>
+              <div ref={paymentMethodsRef}>
                 <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-dark-400">
                   {t('landing.paymentMethod', 'Payment method')}
                 </h2>
@@ -1262,7 +1281,7 @@ export default function QuickPurchase() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className={cn(
               'min-w-0 lg:sticky lg:top-8 lg:self-start',
-              config?.sticky_pay_button && 'mb-20 lg:mb-0',
+              config?.sticky_pay_button && 'mb-[calc(5rem+var(--safe-area-inset-bottom))] lg:mb-0',
             )}
           >
             <SummaryCard
@@ -1275,6 +1294,7 @@ export default function QuickPurchase() {
               submitError={submitError}
               onSubmit={handleSubmit}
               stickyPayButton={config?.sticky_pay_button}
+              stickyPayButtonBlocked={paymentMethodsVisible}
             />
           </motion.div>
         </div>

@@ -132,7 +132,7 @@ function AccountCard({ account, label, isSelected, onSelect, showRadio }: Accoun
   const { t } = useTranslation();
 
   return (
-    <Card className={cn('transition-colors', isSelected && 'border-accent-500/50')}>
+    <Card size="md" className={cn('transition-colors', isSelected && 'border-accent-500/50')}>
       <CardHeader>
         <CardTitle>{label}</CardTitle>
       </CardHeader>
@@ -222,7 +222,7 @@ function LoadingSkeleton() {
 
       {Array.from({ length: 3 }).map((_, i) => (
         <motion.div key={i} variants={staggerItem}>
-          <Card>
+          <Card size="md">
             <div className="space-y-4">
               <div className="h-5 w-40 animate-pulse rounded bg-dark-700" />
               <div className="h-4 w-64 animate-pulse rounded bg-dark-700" />
@@ -467,7 +467,7 @@ export default function MergeAccounts() {
     >
       {/* Header with warning */}
       <motion.div variants={staggerItem}>
-        <Card className="border-warning-500/30 bg-warning-500/5">
+        <Card size="md" className="border-warning-500/30 bg-warning-500/5">
           <div className="flex items-start gap-3">
             <WarningIcon className="mt-0.5 h-6 w-6 shrink-0 text-warning-400" />
             <div>
@@ -515,7 +515,7 @@ export default function MergeAccounts() {
 
       {/* After merge summary */}
       <motion.div variants={staggerItem}>
-        <Card>
+        <Card size="md">
           <CardHeader>
             <CardTitle>{t('merge.afterMerge')}</CardTitle>
           </CardHeader>

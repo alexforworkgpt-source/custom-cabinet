@@ -28,12 +28,14 @@ export function ApplicationStep({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-dark-400">
-        {t('subscription.connection.installAppDescription', {
-          defaultValue: 'Download and install {{app}}, then continue.',
-          app: selectedApp.name,
-        })}
-      </p>
+      {installBlocks.length === 0 && (
+        <p className="text-sm text-dark-400">
+          {t('subscription.connection.installAppDescription', {
+            defaultValue: 'Download and install {{app}}, then continue.',
+            app: selectedApp.name,
+          })}
+        </p>
+      )}
       {availableApps.length > 1 && (
         <div className="space-y-2">
           <button

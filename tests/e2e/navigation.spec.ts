@@ -54,7 +54,7 @@ test('shows the simplified desktop or mobile user navigation', async ({ page }) 
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('/balance preserves details without starting a new top-up', async ({ page }) => {
+test('/balance presents compact details before starting a new top-up', async ({ page }) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page);
 
   await page.goto('/balance');
@@ -65,6 +65,7 @@ test('/balance preserves details without starting a new top-up', async ({ page }
     .getByRole('heading', { name: 'Balance', exact: true })
     .first();
   await expect(balanceHeading).toBeVisible();
+  await expect(balanceDialog.getByRole('heading', { name: 'Balance', exact: true })).toHaveCount(1);
   const [dialogBox, headingBox] = await Promise.all([
     balanceDialog.boundingBox(),
     balanceHeading.boundingBox(),
@@ -74,7 +75,86 @@ test('/balance preserves details without starting a new top-up', async ({ page }
     Math.abs(headingBox.x + headingBox.width / 2 - (dialogBox.x + dialogBox.width / 2)),
   ).toBeLessThanOrEqual(1);
   await expect(balanceHeading).toHaveCSS('text-align', 'center');
+  await expect(balanceDialog.locator('[data-balance-summary]')).toBeVisible();
+  await expect(balanceDialog.locator('[data-balance-promocode]')).toBeVisible();
+  await expect(balanceDialog.getByLabel('Promo code')).toBeVisible();
+  await expect(balanceDialog.getByRole('button', { name: 'Transaction History' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
+  const topUpLink = balanceDialog.getByRole('link', { name: 'Top up balance' });
+  await expect(topUpLink).toHaveAttribute('href', '/balance/top-up');
+  expect(
+    (await balanceDialog.locator('[data-balance-summary]').boundingBox())?.height,
+  ).toBeLessThanOrEqual(90);
+  expect(
+    (await balanceDialog.locator('[data-balance-promocode]').boundingBox())?.height,
+  ).toBeLessThanOrEqual(120);
   await expect(page.getByRole('heading', { name: 'Select Payment Method' })).toHaveCount(0);
+  await topUpLink.click();
+  await expect(page).toHaveURL('/balance/top-up');
+  await expect(page.getByRole('heading', { name: 'Select Payment Method' })).toBeVisible();
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('/balance does not mask API failures as zero balance or empty history', async ({ page }) => {
+  const { apiRequests, unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responseStatuses: {
+      '/api/cabinet/balance': 500,
+      '/api/cabinet/balance/transactions': 500,
+    },
+  });
+
+  await page.goto('/balance');
+  const balanceDialog = page.getByRole('dialog');
+  const summary = balanceDialog.locator('[data-balance-summary]');
+  await expect(summary.getByRole('alert')).toHaveText('Error');
+  await expect(summary).not.toContainText('0.00');
+
+  await balanceDialog.getByRole('button', { name: 'Transaction History' }).click();
+  const history = balanceDialog.locator('[data-balance-history]');
+  await expect(history.getByRole('alert')).toHaveText('Error');
+  await expect(history).not.toContainText('No transactions');
+  await expect(balanceDialog.getByRole('button', { name: 'Retry' })).toHaveCount(2);
+
+  const balanceRequestsBeforeRetry = apiRequests.filter(
+    (request) => request === 'GET /api/cabinet/balance',
+  ).length;
+  await summary.getByRole('button', { name: 'Retry' }).click();
+  await expect
+    .poll(() => apiRequests.filter((request) => request === 'GET /api/cabinet/balance').length)
+    .toBeGreaterThan(balanceRequestsBeforeRetry);
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('/profile/accounts uses the standard card density without mobile overflow', async ({
+  page,
+}) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/auth/account/linked-providers': {
+        providers: [
+          {
+            provider: 'email',
+            linked: true,
+            identifier: 'browser-test@example.test',
+          },
+        ],
+      },
+    },
+  });
+
+  await page.goto('/profile/accounts');
+  const identifier = page.getByText('browser-test@example.test', { exact: true });
+  const providerCard = identifier.locator(
+    'xpath=ancestor::div[contains(@class, "relative") and contains(@class, "overflow-hidden")][1]',
+  );
+
+  await expect(identifier).toBeVisible();
+  await expect(providerCard).toHaveCSS('padding-top', '16px');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    await page.evaluate(() => window.innerWidth),
+  );
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
@@ -150,7 +230,9 @@ test('keeps subscription compatibility routes on the unified Dashboard', async (
   await expect(
     managementDialog.getByRole('heading', { name: 'Manage subscription' }),
   ).toBeVisible();
-  await expect(managementDialog.getByRole('heading', { name: 'Additional Options' })).toBeVisible();
+  await expect(
+    managementDialog.getByRole('button', { name: 'Additional Options' }),
+  ).toHaveAttribute('aria-expanded', 'false');
   await expect(managementDialog.getByRole('link', { name: /My Devices/ })).toBeVisible();
   expect(
     await managementDialog.evaluate((dialog) => {
@@ -210,6 +292,27 @@ test('canonicalizes an unknown subscription compatibility route', async ({ page 
   await expect(page).toHaveURL('/?sub=7');
 });
 
+test('exposes the web renewal back link as a full-size accessible target', async ({ page }) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/subscription': {
+        has_subscription: true,
+        subscription: { id: 7, tariff_name: 'Browser plan' },
+      },
+      '/api/cabinet/subscription/renewal-options': [],
+      '/api/cabinet/subscription/purchase-options': { balance_kopeks: 0 },
+    },
+  });
+
+  await page.goto('/subscriptions/7/renew');
+  const backLink = page.getByRole('link', { name: 'Back' });
+  await expect(backLink).toHaveAttribute('href', '/subscriptions/7');
+  const backLinkBox = await backLink.boundingBox();
+  expect(backLinkBox?.width).toBeGreaterThanOrEqual(44);
+  expect(backLinkBox?.height).toBeGreaterThanOrEqual(44);
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
 test('does not restore legacy user navigation on admin routes', async ({ page }) => {
   await prepareAuthenticatedPage(page, {
     responses: {
@@ -236,6 +339,24 @@ test('does not restore legacy user navigation on admin routes', async ({ page })
   await expect(navigation.getByRole('link', { name: 'Tariffs', exact: true })).toBeVisible();
   await expect(navigation.getByRole('link', { name: 'Support', exact: true })).toBeVisible();
   await expect(navigation.getByRole('link', { name: 'Profile', exact: true })).toBeVisible();
+});
+
+test('keeps the mobile Admin theme control at least 44 by 44 pixels', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 1280) >= 1024, 'Mobile Admin header only');
+  await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/auth/me/is-admin': { is_admin: true },
+      '/api/cabinet/admin/apps/remnawave/status': { enabled: false, config_uuid: null },
+      '/api/cabinet/admin/apps/remnawave/configs': [],
+    },
+  });
+
+  await page.goto('/admin/apps');
+  const themeButton = page.getByRole('button', { name: /Theme$/ });
+  await expect(themeButton).toBeVisible();
+  const themeButtonBox = await themeButton.boundingBox();
+  expect(themeButtonBox?.width).toBeGreaterThanOrEqual(44);
+  expect(themeButtonBox?.height).toBeGreaterThanOrEqual(44);
 });
 
 test('uses black and white base themes without a forced grid', async ({ page }) => {

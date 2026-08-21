@@ -101,6 +101,9 @@ export function AppHeader({
     staleTime: 1000 * 60 * 5,
   });
   const canToggle = enabledThemes?.dark && enabledThemes?.light;
+  const themeToggleLabel = isDark
+    ? t('theme.light') || 'Light mode'
+    : t('theme.dark') || 'Dark mode';
 
   // Get user photo from Telegram
   useEffect(() => {
@@ -223,8 +226,9 @@ export function AppHeader({
                     toggleTheme();
                     setMobileMenuOpen(false);
                   }}
-                  className="relative rounded-linear-lg border border-dark-700/50 bg-dark-800/50 p-2 text-dark-400 transition-all duration-200 hover:bg-dark-700 hover:text-accent-400"
-                  title={isDark ? t('theme.light') || 'Light mode' : t('theme.dark') || 'Dark mode'}
+                  className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-linear-lg border border-dark-700/50 bg-dark-800/50 text-dark-400 transition-all duration-200 hover:bg-dark-700 hover:text-accent-400"
+                  aria-label={themeToggleLabel}
+                  title={themeToggleLabel}
                 >
                   <div className="relative h-5 w-5">
                     <div

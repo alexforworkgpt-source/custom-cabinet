@@ -266,7 +266,7 @@ export default function Support() {
 
     return (
       <div className="mx-auto mt-12 max-w-md">
-        <Card className="text-center">
+        <Card size="lg" className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800">
             <ChatIcon className="h-8 w-8 text-dark-400" />
           </div>
@@ -359,7 +359,7 @@ export default function Support() {
         supportConfig.support_username &&
         resolveSupportContact(supportConfig) && (
           <motion.div variants={staggerItem} initial="initial" animate="animate">
-            <Card className="flex items-center justify-between">
+            <Card size="sm" className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-dark-800">
                   <ChatIcon className="h-5 w-5 text-dark-400" />
@@ -382,7 +382,7 @@ export default function Support() {
 
       <motion.div variants={staggerItem} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Tickets List */}
-        <Card className="lg:col-span-1">
+        <Card size="sm" className="lg:col-span-1">
           <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('support.yourTickets')}</h2>
 
           {isLoading ? (
@@ -428,7 +428,14 @@ export default function Support() {
         </Card>
 
         {/* Ticket Detail / Create Form */}
-        <Card className="lg:col-span-2">
+        <Card
+          size="md"
+          className={`lg:col-span-2 ${
+            !isLoading && tickets?.items.length === 0 && !showCreateForm && !selectedTicket
+              ? 'hidden md:block'
+              : ''
+          }`}
+        >
           {showCreateForm ? (
             <div>
               <h2 className="mb-6 text-lg font-semibold text-dark-100">

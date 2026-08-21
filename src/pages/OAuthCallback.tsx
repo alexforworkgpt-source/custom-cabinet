@@ -12,6 +12,7 @@ import {
 } from '../utils/oauth';
 import type { ServerCompleteResponse } from '../types';
 import { CheckIcon, ExclamationIcon } from '@/components/icons';
+import { Card } from '@/components/data-display/Card';
 
 type CallbackMode = 'login' | 'link-browser' | 'link-server';
 
@@ -144,7 +145,7 @@ export default function OAuthCallback() {
       <div className="min-h-viewport flex items-center justify-center px-4 py-8">
         <div className="fixed inset-0 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950" />
         <div className="relative w-full max-w-md text-center">
-          <div className="card">
+          <Card size="lg">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-success-500/20">
               <CheckIcon className="h-8 w-8 text-success-400" />
             </div>
@@ -160,7 +161,7 @@ export default function OAuthCallback() {
                 {t('profile.accounts.openTelegram')}
               </a>
             )}
-          </div>
+          </Card>
         </div>
       </div>
     );
@@ -200,14 +201,14 @@ export default function OAuthCallback() {
       <div className="min-h-viewport flex items-center justify-center px-4 py-8">
         <div className="fixed inset-0 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950" />
         <div className="relative w-full max-w-md text-center">
-          <div className="card">
+          <Card size="lg">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-error-500/20">
               <ExclamationIcon className="h-8 w-8 text-error-400" />
             </div>
             <h2 className="mb-2 text-lg font-semibold text-dark-50">{t('auth.loginFailed')}</h2>
             <p className="mb-6 text-sm text-dark-400">{error}</p>
             {errorAction}
-          </div>
+          </Card>
         </div>
       </div>
     );

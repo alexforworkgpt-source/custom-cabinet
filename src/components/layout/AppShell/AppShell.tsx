@@ -98,12 +98,9 @@ export function AppShell({ children }: AppShellProps) {
 
     const handleFocusOut = (e: FocusEvent) => {
       const relatedTarget = e.relatedTarget as HTMLElement | null;
-      if (
-        !relatedTarget ||
-        (relatedTarget.tagName !== 'INPUT' &&
-          relatedTarget.tagName !== 'TEXTAREA' &&
-          !relatedTarget.isContentEditable)
-      ) {
+      // Keep the nav hidden while focus moves to the control being tapped. Showing it
+      // during pointerdown can place it over that control and steal pointerup.
+      if (!relatedTarget) {
         setIsKeyboardOpen(false);
       }
     };

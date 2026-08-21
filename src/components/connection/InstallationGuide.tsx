@@ -400,7 +400,7 @@ export default function InstallationGuide({
           : t('subscription.connection.successTitle', 'Subscription added successfully');
 
   return (
-    <div className="space-y-5 pb-6">
+    <div className="space-y-4 pb-2">
       <p className="sr-only" aria-live="polite">
         {t('subscription.connection.step', { current: stepIndex + 1, total: 4 })}
       </p>
@@ -506,12 +506,14 @@ export default function InstallationGuide({
 
           {step === 'add' && selectedApp && (
             <div className="space-y-4">
-              <p className="text-sm text-dark-400">
-                {t('subscription.connection.addDescription', {
-                  defaultValue: 'Open {{app}} and add your subscription.',
-                  app: selectedApp.name,
-                })}
-              </p>
+              {renderBlocks.length === 0 && (
+                <p className="text-sm text-dark-400">
+                  {t('subscription.connection.addDescription', {
+                    defaultValue: 'Open {{app}} and add your subscription.',
+                    app: selectedApp.name,
+                  })}
+                </p>
+              )}
               {appConfig.baseSettings?.isShowTutorialButton &&
                 appConfig.baseSettings.tutorialUrl && (
                   <a
@@ -533,29 +535,31 @@ export default function InstallationGuide({
           )}
 
           {step === 'success' && selectedApp && (
-            <div className="flex min-h-72 flex-col items-center justify-center text-center">
+            <div className="flex min-h-48 flex-col items-center justify-center text-center sm:min-h-64">
               <motion.div
                 initial={reducedMotion ? false : { opacity: 0, scale: 0.72 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={transition}
-                className="flex h-20 w-20 items-center justify-center rounded-full border border-success-400/40 bg-success-400/10 text-success-400"
+                className="flex h-16 w-16 items-center justify-center rounded-full border border-success-400/40 bg-success-400/10 text-success-400 sm:h-20 sm:w-20"
               >
-                <CheckIcon className="h-10 w-10" />
+                <CheckIcon className="h-8 w-8 sm:h-10 sm:w-10" />
               </motion.div>
-              <p className="mt-5 max-w-sm text-sm leading-relaxed text-dark-400">
-                {t('subscription.connection.successDescription', {
-                  defaultValue: '{{app}} is ready to use.',
-                  app: selectedApp.name,
-                })}
-              </p>
+              {completionBlocks.length === 0 && (
+                <p className="mt-4 max-w-sm text-sm leading-relaxed text-dark-400">
+                  {t('subscription.connection.successDescription', {
+                    defaultValue: '{{app}} is ready to use.',
+                    app: selectedApp.name,
+                  })}
+                </p>
+              )}
               {completionBlocks.length > 0 && (
-                <div className="mt-5 w-full text-start">
+                <div className="mt-4 w-full text-start">
                   {renderConfiguredBlocks(completionBlocks)}
                 </div>
               )}
               <button
                 type="button"
-                className="btn-primary mt-7 w-full justify-center sm:w-auto sm:px-10"
+                className="btn-primary mt-5 w-full justify-center sm:mt-7 sm:w-auto sm:px-10"
                 onClick={onFinish}
               >
                 {t('subscription.connection.finish', 'Finish')}

@@ -285,7 +285,7 @@ function LoadingSkeleton() {
   return (
     <div className="space-y-3">
       {Array.from({ length: 4 }).map((_, i) => (
-        <Card key={i}>
+        <Card key={i} size="sm">
           <div className="flex animate-pulse items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-6 w-6 rounded-full bg-dark-700" />
@@ -668,7 +668,7 @@ export default function ConnectedAccounts() {
       {/* Error state */}
       {isError && (
         <motion.div variants={staggerItem}>
-          <Card>
+          <Card size="lg">
             <p className="text-center text-dark-400">{t('common.error')}</p>
           </Card>
         </motion.div>
@@ -677,7 +677,7 @@ export default function ConnectedAccounts() {
       {/* Provider cards */}
       {data?.providers.map((provider) => (
         <motion.div key={provider.provider} variants={staggerItem}>
-          <Card>
+          <Card size="md">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <ProviderIcon provider={provider.provider} />

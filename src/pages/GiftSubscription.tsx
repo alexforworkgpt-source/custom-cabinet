@@ -548,7 +548,7 @@ function BuyTabContent({
   }, [selectedTariff]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Tariff selection */}
       {showTariffCards && (
         <div>
@@ -570,7 +570,7 @@ function BuyTabContent({
 
       {/* Selected tariff description */}
       {selectedTariff?.description && (
-        <div className="rounded-xl border border-dark-800/30 bg-dark-800/20 px-4 py-3">
+        <div className="hidden rounded-xl border border-dark-800/30 bg-dark-800/20 px-4 py-3 sm:block">
           <p className="text-sm text-dark-300">{selectedTariff.description}</p>
         </div>
       )}
@@ -670,7 +670,7 @@ function BuyTabContent({
 
       {/* Summary / Balance info */}
       {paymentMode === 'balance' && (
-        <div className="rounded-2xl border border-dark-800/50 bg-dark-900/50 p-4">
+        <div className="hidden rounded-2xl border border-dark-800/50 bg-dark-900/50 p-4 sm:block">
           <div className="flex items-center justify-between">
             <span className="text-sm text-dark-400">{t('gift.yourBalance')}</span>
             <span className="text-sm font-semibold text-dark-200">
@@ -1319,13 +1319,13 @@ export default function GiftSubscription() {
 
   return (
     <div className="min-h-dvh">
-      <div className="mx-auto max-w-2xl px-4 py-6">
+      <div className="mx-auto max-w-2xl sm:px-4 sm:py-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="mb-6 flex items-center gap-3"
+          className="mb-3 flex items-center gap-3 sm:mb-6"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-500/20">
             <GiftIcon className="h-5 w-5 text-accent-400" />
@@ -1338,7 +1338,7 @@ export default function GiftSubscription() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.05 }}
-          className="mb-6 rounded-2xl bg-dark-800/50 p-1"
+          className="mb-3 rounded-2xl bg-dark-800/50 p-1 sm:mb-6"
         >
           <div className="flex" role="tablist" aria-label={t('gift.pageTitle')}>
             {tabs.map((tab) => (

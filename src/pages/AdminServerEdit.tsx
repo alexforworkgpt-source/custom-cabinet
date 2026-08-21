@@ -108,11 +108,11 @@ export default function AdminServerEdit() {
         </div>
         <div>
           <h1 className="text-xl font-semibold text-dark-100">{t('admin.servers.edit')}</h1>
-          <p className="text-sm text-dark-400">
+          <div className="text-sm text-dark-400">
             <Twemoji options={{ className: 'twemoji', folder: 'svg', ext: '.svg' }}>
               {server.display_name}
             </Twemoji>
-          </p>
+          </div>
         </div>
       </div>
 

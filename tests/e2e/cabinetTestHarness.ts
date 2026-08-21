@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
+import type { User } from '../../src/types';
 
-export const browserTestUser = {
+export const browserTestUser: User = {
   id: 1,
   telegram_id: null,
   username: 'browser_test',
@@ -168,7 +169,11 @@ export async function prepareAuthenticatedPage(
   const unexpectedApiRequests = new Set<string>();
   const apiRequests: string[] = [];
   const persistedUser = options.user ?? browserTestUser;
-  const responses = { ...baseApiResponses, ...options.responses };
+  const responses = {
+    ...baseApiResponses,
+    '/api/cabinet/auth/me': persistedUser,
+    ...options.responses,
+  };
   const featureFlags: BrowserFeatureFlags = {
     referralEnabled: false,
     wheelEnabled: false,

@@ -19,6 +19,7 @@ import {
   TrophyIcon,
   WheelIcon,
 } from '@/components/icons';
+import { BellIcon } from '@/components/icons/extended-icons';
 
 interface ProfileHubSectionsProps {
   isDark: boolean;
@@ -98,6 +99,9 @@ export default function ProfileHubSections({
             </span>
             <LanguageSwitcher variant="profile" />
           </div>
+          <HubLink to="/profile/notifications" icon={BellIcon}>
+            {t('profile.notifications.title')}
+          </HubLink>
         </div>
       </Card>
 

@@ -26,7 +26,7 @@ export default function StatsGrid({
   const columnClass = showReferral ? 'grid-cols-2' : 'grid-cols-1';
   return (
     <div className={`grid gap-2.5 ${columnClass}`}>
-      <Link to="/balance/top-up" className="block h-full" data-onboarding="balance">
+      <Link to="/balance" className="block h-full" data-onboarding="balance">
         <StatCard
           label={t('dashboard.stats.balance')}
           value={

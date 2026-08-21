@@ -541,7 +541,7 @@ export default function TopUpAmount() {
                 }}
                 hover
                 glow={isSelected}
-                className={`flex flex-col items-center justify-center px-2 py-3 ${
+                className={`flex h-12 flex-col items-center justify-center px-2 py-0 ${
                   isSelected ? 'border-accent-500/50 bg-accent-500/10' : ''
                 }`}
               >

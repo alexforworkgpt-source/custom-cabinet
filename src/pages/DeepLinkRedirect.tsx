@@ -12,6 +12,7 @@ import {
   ExternalLinkIcon,
   LinkIcon,
 } from '@/components/icons';
+import { Card } from '@/components/data-display/Card';
 
 type Status = 'countdown' | 'fallback' | 'error';
 
@@ -187,7 +188,7 @@ export default function DeepLinkRedirect() {
 
         {/* Countdown State */}
         {status === 'countdown' && (
-          <div className="card !bg-dark-800/80 p-6 backdrop-blur-sm">
+          <Card size="lg" className="!bg-dark-800/80 p-6 backdrop-blur-sm">
             {/* App icon */}
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-500/20">
               <span className="text-2xl font-bold text-accent-400">{appIcon}</span>
@@ -223,12 +224,12 @@ export default function DeepLinkRedirect() {
               <ExternalLinkIcon className="h-5 w-5" />
               {t('deepLink.openApp')}
             </button>
-          </div>
+          </Card>
         )}
 
         {/* Fallback State - App didn't open */}
         {status === 'fallback' && (
-          <div className="card !bg-dark-800/80 p-6 backdrop-blur-sm">
+          <Card size="lg" className="!bg-dark-800/80 p-6 backdrop-blur-sm">
             {/* App icon */}
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-500/20">
               <span className="text-2xl font-bold text-accent-400">{appIcon}</span>
@@ -283,12 +284,12 @@ export default function DeepLinkRedirect() {
                 <li>{t('deepLink.step4')}</li>
               </ol>
             </div>
-          </div>
+          </Card>
         )}
 
         {/* Error State */}
         {status === 'error' && (
-          <div className="card !bg-dark-800/80 p-6 backdrop-blur-sm">
+          <Card size="lg" className="!bg-dark-800/80 p-6 backdrop-blur-sm">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-error-500/20">
               <ExclamationIcon className="h-8 w-8 text-error-400" />
             </div>
@@ -297,7 +298,7 @@ export default function DeepLinkRedirect() {
             <button onClick={() => navigate('/subscriptions')} className="btn-primary w-full">
               {t('deepLink.goToSubscription')}
             </button>
-          </div>
+          </Card>
         )}
 
         {/* Footer */}

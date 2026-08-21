@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { contestsApi, ContestInfo, ContestGameData } from '../api/contests';
 import { GamepadIcon, TrophyIcon, XIcon } from '@/components/icons';
+import { Card } from '@/components/data-display/Card';
 
 export default function Contests() {
   const { t } = useTranslation();
@@ -64,9 +65,9 @@ export default function Contests() {
 
   if (error) {
     return (
-      <div className="card border-error-500/20 bg-error-500/10">
+      <Card size="lg" className="border-error-500/20 bg-error-500/10">
         <p className="text-error-400">{t('contests.error')}</p>
-      </div>
+      </Card>
     );
   }
 
@@ -197,7 +198,7 @@ export default function Contests() {
       {contests && contests.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {contests.map((contest) => (
-            <div key={contest.id} className="card">
+            <Card key={contest.id} size="md">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <h3 className="break-words text-lg font-semibold">{contest.name}</h3>
@@ -224,14 +225,14 @@ export default function Contests() {
                   </button>
                 )}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       ) : (
-        <div className="card py-12 text-center">
+        <Card size="lg" className="py-12 text-center">
           <GamepadIcon className="h-6 w-6" />
           <p className="mt-4 text-dark-400">{t('contests.noContests')}</p>
-        </div>
+        </Card>
       )}
     </div>
   );

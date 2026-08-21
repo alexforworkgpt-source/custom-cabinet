@@ -43,7 +43,7 @@ const cardVariants = cva(
       },
     },
     defaultVariants: {
-      size: 'lg',
+      size: 'md',
       variant: 'default',
       interactive: false,
       glow: false,

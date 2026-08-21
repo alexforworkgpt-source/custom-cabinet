@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { pollsApi, PollInfo, PollQuestion } from '../api/polls';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { ClipboardIcon, GiftIcon, CheckIcon, CloseIcon } from '@/components/icons';
+import { Card } from '@/components/data-display/Card';
 
 export default function Polls() {
   const { t } = useTranslation();
@@ -97,9 +98,9 @@ export default function Polls() {
 
   if (error) {
     return (
-      <div className="card border-error-500/20 bg-error-500/10">
+      <Card size="lg" className="border-error-500/20 bg-error-500/10">
         <p className="text-error-400">{t('polls.error')}</p>
-      </div>
+      </Card>
     );
   }
 
@@ -118,13 +119,14 @@ export default function Polls() {
             onClick={handleClosePoll}
             aria-hidden="true"
           />
-          <div
+          <Card
             ref={pollDialogRef}
+            size="md"
             role="dialog"
             aria-modal="true"
             aria-labelledby="poll-dialog-title"
             tabIndex={-1}
-            className="card relative max-h-[80vh] w-full max-w-lg overflow-y-auto"
+            className="relative max-h-[80vh] w-full max-w-lg overflow-y-auto"
           >
             <div className="mb-4 flex items-center justify-between">
               <h2 id="poll-dialog-title" className="text-xl font-bold">
@@ -196,7 +198,7 @@ export default function Polls() {
                 )}
               </div>
             )}
-          </div>
+          </Card>
         </div>
       )}
 
@@ -204,7 +206,7 @@ export default function Polls() {
       {polls && polls.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {polls.map((poll) => (
-            <div key={poll.id} className="card">
+            <Card key={poll.id} size="md">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <h3 className="break-words text-lg font-semibold">{poll.title}</h3>
@@ -238,14 +240,14 @@ export default function Polls() {
                   </button>
                 )}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       ) : (
-        <div className="card py-12 text-center">
+        <Card size="lg" className="py-12 text-center">
           <ClipboardIcon className="h-6 w-6" />
           <p className="mt-4 text-dark-400">{t('polls.noPolls')}</p>
-        </div>
+        </Card>
       )}
     </div>
   );

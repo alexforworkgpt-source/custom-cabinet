@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router';
 import { promoApi, PromoOffer } from '../api/promo';
 import { ClockIcon, CheckIcon, XCircleIcon } from './icons';
 import { useDestructiveConfirm } from '@/platform/hooks/useNativeDialog';
+import { Card } from '@/components/data-display/Card';
 
 // Helper functions
 const formatTimeLeft = (
@@ -199,7 +200,10 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
     <div className={`space-y-4 ${className}`}>
       {/* Active Discount Banner with actions */}
       {activeDiscount && activeDiscount.is_active && activeDiscount.discount_percent > 0 && (
-        <div className="card border-success-500/30 bg-gradient-to-br from-success-500/10 to-accent-500/5">
+        <Card
+          size="lg"
+          className="border-success-500/30 bg-gradient-to-br from-success-500/10 to-accent-500/5"
+        >
           <div className="flex flex-col gap-4">
             {/* Header */}
             <div className="flex items-center gap-4">
@@ -249,7 +253,7 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
               </button>
             </div>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Success/Error Messages */}
@@ -270,9 +274,10 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
       {availableOffers.length > 0 && (
         <div className="space-y-3">
           {availableOffers.map((offer) => (
-            <div
+            <Card
               key={offer.id}
-              className="card border-warning-500/30 bg-gradient-to-br from-warning-500/5 to-transparent transition-colors hover:border-warning-500/50"
+              size="lg"
+              className="border-warning-500/30 bg-gradient-to-br from-warning-500/5 to-transparent transition-colors hover:border-warning-500/50"
             >
               <div className="flex items-start gap-4">
                 <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-warning-500/30 to-warning-500/20">
@@ -317,14 +322,14 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
       {/* Loading State */}
       {offersLoading && (
-        <div className="card">
+        <Card size="lg">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 animate-pulse rounded-xl bg-dark-700" />
             <div className="flex-1 space-y-2">
@@ -332,7 +337,7 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
               <div className="h-4 w-48 animate-pulse rounded bg-dark-700" />
             </div>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

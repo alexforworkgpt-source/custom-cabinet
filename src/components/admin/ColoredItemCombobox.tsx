@@ -184,50 +184,56 @@ export function ColoredItemCombobox({
 
   return (
     <div ref={containerRef} className={cn('relative', className)}>
-      {/* Trigger button */}
-      <button
-        type="button"
-        onClick={handleToggle}
+      {/* Trigger and clear actions are siblings to keep the HTML valid. */}
+      <div
         className={cn(
-          'flex min-h-[44px] w-full items-center gap-3 rounded-xl border bg-dark-800 px-4 py-2.5 text-left text-sm transition-colors',
+          'flex min-h-[44px] w-full items-center rounded-xl border bg-dark-800 transition-colors',
           isOpen ? 'border-accent-500/50' : 'border-dark-700 hover:border-dark-600',
           isLoading && 'animate-pulse',
         )}
-        aria-label={ariaLabel}
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
       >
-        {value ? (
-          <>
-            <span
-              className="h-3 w-3 shrink-0 rounded-full"
-              style={{ backgroundColor: value.color }}
-            />
-            <span className="flex-1 truncate text-dark-100">{value.name}</span>
-            <button
-              type="button"
-              onClick={handleClear}
-              className="shrink-0 rounded p-0.5 text-dark-500 transition-colors hover:text-dark-300"
-              aria-label={t('news.admin.combobox.clear')}
-            >
-              <CloseIcon className="h-4 w-4" />
-            </button>
-          </>
-        ) : (
-          <>
-            <span className="h-3 w-3 shrink-0 rounded-full bg-dark-600" />
-            <span className="flex-1 truncate text-dark-500">
-              {placeholder ?? t('news.admin.combobox.placeholder')}
-            </span>
-          </>
-        )}
-        <ChevronDownIcon
-          className={cn(
-            'h-4 w-4 shrink-0 text-dark-500 transition-transform duration-200',
-            isOpen && 'rotate-180',
+        <button
+          type="button"
+          onClick={handleToggle}
+          className="flex min-h-[42px] min-w-0 flex-1 items-center gap-3 px-4 py-2.5 text-left text-sm"
+          aria-label={ariaLabel}
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+        >
+          {value ? (
+            <>
+              <span
+                className="h-3 w-3 shrink-0 rounded-full"
+                style={{ backgroundColor: value.color }}
+              />
+              <span className="flex-1 truncate text-dark-100">{value.name}</span>
+            </>
+          ) : (
+            <>
+              <span className="h-3 w-3 shrink-0 rounded-full bg-dark-600" />
+              <span className="flex-1 truncate text-dark-500">
+                {placeholder ?? t('news.admin.combobox.placeholder')}
+              </span>
+            </>
           )}
-        />
-      </button>
+          <ChevronDownIcon
+            className={cn(
+              'h-4 w-4 shrink-0 text-dark-500 transition-transform duration-200',
+              isOpen && 'rotate-180',
+            )}
+          />
+        </button>
+        {value && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="mr-2 shrink-0 rounded p-1.5 text-dark-500 transition-colors hover:text-dark-300"
+            aria-label={t('news.admin.combobox.clear')}
+          >
+            <CloseIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
 
       {/* Dropdown */}
       {isOpen && (
@@ -255,33 +261,37 @@ export function ColoredItemCombobox({
             {filteredItems.length > 0 ? (
               <div className="p-1.5">
                 {filteredItems.map((item) => (
-                  <button
+                  <div
                     key={item.id}
-                    type="button"
-                    onClick={() => handleSelect(item)}
                     className={cn(
-                      'flex min-h-[44px] w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
+                      'flex min-h-[44px] w-full items-center rounded-lg text-sm transition-colors',
                       value?.id === item.id
                         ? 'bg-accent-500/10 text-accent-400'
                         : 'text-dark-200 hover:bg-dark-800',
                     )}
-                    role="option"
-                    aria-selected={value?.id === item.id}
                   >
-                    <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="flex-1 truncate">{item.name}</span>
-                    {value?.id === item.id && (
-                      <CheckIcon className="h-4 w-4 shrink-0 text-accent-400" />
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleSelect(item)}
+                      className="flex min-h-[44px] min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left"
+                      role="option"
+                      aria-selected={value?.id === item.id}
+                    >
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="flex-1 truncate">{item.name}</span>
+                      {value?.id === item.id && (
+                        <CheckIcon className="h-4 w-4 shrink-0 text-accent-400" />
+                      )}
+                    </button>
                     {onDelete && (
                       <button
                         type="button"
                         onClick={(e) => handleDelete(e, item)}
                         disabled={deletingId === item.id}
-                        className="shrink-0 rounded p-1 text-dark-600 transition-colors hover:bg-error-500/10 hover:text-error-400 disabled:opacity-50"
+                        className="mr-2 shrink-0 rounded p-1 text-dark-600 transition-colors hover:bg-error-500/10 hover:text-error-400 disabled:opacity-50"
                         aria-label={t('news.admin.combobox.delete', { name: item.name })}
                       >
                         {deletingId === item.id ? (
@@ -291,7 +301,7 @@ export function ColoredItemCombobox({
                         )}
                       </button>
                     )}
-                  </button>
+                  </div>
                 ))}
               </div>
             ) : (

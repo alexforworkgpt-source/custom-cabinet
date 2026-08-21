@@ -29,6 +29,7 @@ import LegalFooter from '../components/LegalFooter';
 import LegalConsent from '../components/LegalConsent';
 import { infoApi } from '../api/info';
 import type { LegalConsentConfig } from '../types';
+import { Card } from '@/components/data-display/Card';
 
 export default function Login() {
   const { t, i18n } = useTranslation();
@@ -474,7 +475,7 @@ export default function Login() {
 
         {/* Экран согласия: бэк ответил 428 на автоматический Telegram-вход */}
         {pendingConsentRetry ? (
-          <div className="card">
+          <Card size="md">
             <h2 className="mb-2 text-lg font-bold text-dark-50">
               {t('auth.legalConsentTitle', 'Ещё один шаг')}
             </h2>
@@ -519,10 +520,10 @@ export default function Login() {
                 ? t('common.loading', 'Загрузка...')
                 : t('auth.legalConsentContinue', 'Продолжить')}
             </button>
-          </div>
+          </Card>
         ) : /* Check Email Screen */
         registeredEmail ? (
-          <div className="card text-center">
+          <Card size="lg" className="text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-success-500/20">
               <EmailIcon className="h-7 w-7 text-success-400" />
             </div>
@@ -548,10 +549,10 @@ export default function Login() {
             >
               {t('auth.backToLogin', 'Back to login')}
             </button>
-          </div>
+          </Card>
         ) : (
           /* Main auth card */
-          <div className="card">
+          <Card size="md">
             {error && (
               <div
                 role="alert"
@@ -897,7 +898,7 @@ export default function Login() {
                 </div>
               </>
             )}
-          </div>
+          </Card>
         )}
         {footerEnabled && <LegalFooter className="pt-1" />}
       </div>

@@ -518,13 +518,13 @@ export default function Wheel() {
     (paymentType === 'telegram_stars' ? !starsEnabled : !config.can_spin);
 
   return (
-    <div className="animate-fade-in space-y-6 pb-8">
+    <div className="animate-fade-in space-y-4 pb-8 sm:space-y-6">
       {/* Simple Header */}
-      <div>
+      <div className="flex items-center justify-between gap-3 sm:block">
         <h1 className="text-2xl font-bold text-dark-50">{t('wheel.title')}</h1>
         {config.daily_limit > 0 && (
-          <p className="mt-1 text-dark-400">
-            {t('wheel.spinsRemaining')}:{' '}
+          <p className="shrink-0 text-dark-400 sm:mt-1">
+            <span className="sr-only sm:not-sr-only">{t('wheel.spinsRemaining')}: </span>
             <span className="inline-flex items-center rounded-full bg-accent-500/15 px-2 py-0.5 text-sm font-medium text-accent-400">
               {Math.max(0, config.daily_limit - config.user_spins_today)}/{config.daily_limit}
             </span>
@@ -533,8 +533,8 @@ export default function Wheel() {
       </div>
 
       {/* Wheel Section */}
-      <Card>
-        <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1fr,280px]">
+      <Card size="md" className="sm:p-6">
+        <div className="grid gap-4 p-0 sm:gap-6 sm:p-8 lg:grid-cols-[1fr,280px]">
           {/* Left: Wheel and Controls */}
           <div>
             {/* Wheel */}
@@ -546,7 +546,7 @@ export default function Wheel() {
             />
 
             {/* Spin Controls */}
-            <div className="mt-8 space-y-4">
+            <div className="mt-4 space-y-3 sm:mt-8 sm:space-y-4">
               {/* Payment type selector */}
               {(starsEnabled || daysEnabled) && (
                 <div className="rounded-xl border border-dark-700/30 bg-dark-800/30 px-1 pb-1 pt-2">
@@ -749,7 +749,7 @@ export default function Wheel() {
       </Card>
 
       {/* History Section - full width, collapsible */}
-      <Card>
+      <Card size="sm">
         <button
           onClick={() => setHistoryExpanded(!historyExpanded)}
           className="flex w-full items-center justify-between p-4"

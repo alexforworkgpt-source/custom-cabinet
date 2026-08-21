@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { authApi } from '../api/auth';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { CheckIcon } from '@/components/icons';
+import { Card } from '@/components/data-display/Card';
 
 export default function ResetPassword() {
   const { t } = useTranslation();
@@ -65,7 +66,7 @@ export default function ResetPassword() {
           <LanguageSwitcher />
         </div>
         <div className="relative w-full max-w-md text-center">
-          <div className="card">
+          <Card size="lg">
             <div className="mb-4 text-5xl text-error-400">!</div>
             <h2 className="mb-2 text-xl font-semibold text-dark-50">
               {t('resetPassword.invalidToken', 'Invalid reset link')}
@@ -79,7 +80,7 @@ export default function ResetPassword() {
             <Link to="/login" className="btn-primary inline-block w-full">
               {t('auth.backToLogin', 'Back to login')}
             </Link>
-          </div>
+          </Card>
         </div>
       </div>
     );
@@ -94,7 +95,7 @@ export default function ResetPassword() {
       </div>
 
       <div className="relative w-full max-w-md">
-        <div className="card">
+        <Card size="md">
           {status === 'success' ? (
             <div className="text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-success-500/20">
@@ -185,7 +186,7 @@ export default function ResetPassword() {
               </div>
             </>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

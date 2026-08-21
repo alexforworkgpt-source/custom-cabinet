@@ -44,7 +44,7 @@ export function PromptDialogHost() {
         aria-modal="true"
         aria-label={request.title ?? request.label}
         onSubmit={handleSubmit}
-        className="card relative w-full max-w-sm space-y-4"
+        className="card relative w-full max-w-sm space-y-4 p-4"
       >
         {request.title && <h2 className="text-lg font-semibold text-dark-50">{request.title}</h2>}
         <label className="block">

@@ -103,7 +103,7 @@ const FortuneWheel = memo(function FortuneWheel({
   };
 
   return (
-    <div className="relative mx-auto w-full max-w-[380px] select-none">
+    <div className="relative mx-auto w-full max-w-[176px] select-none sm:max-w-[380px]">
       {/* Outer glow effect */}
       <div
         className={`absolute inset-[-30px] rounded-full transition-all duration-500 ${
