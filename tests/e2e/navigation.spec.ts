@@ -280,3 +280,33 @@ test('uses black and white base themes without a forced grid', async ({ page }) 
   expect(lightTheme.grid).toBe('none');
   expect(lightTheme.animatedBackgrounds).toBe(0);
 });
+
+test('renders the configured animated background in the authenticated cabinet', async ({
+  page,
+}) => {
+  await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/branding/animation-config': {
+        enabled: true,
+        type: 'grid',
+        settings: {
+          variant: 'grid',
+          gridColor: 'rgba(255,255,255,0.5)',
+          gridSize: 40,
+        },
+        opacity: 1,
+        blur: 0,
+        reducedOnMobile: false,
+      },
+    },
+  });
+
+  await page.goto('/');
+
+  const background = page.locator('body > .pointer-events-none.fixed.inset-0');
+  await expect(background).toHaveCount(1);
+  await expect(background.locator('.absolute.inset-0')).toHaveCSS(
+    'background-image',
+    /linear-gradient/,
+  );
+});

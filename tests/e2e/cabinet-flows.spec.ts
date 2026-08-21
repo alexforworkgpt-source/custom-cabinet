@@ -1284,6 +1284,60 @@ test('does not edit animated background defaults when its config fails to load @
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
+test('applies an animated background immediately after admin save @desktop-flow', async ({
+  page,
+}) => {
+  const initialConfig = {
+    enabled: false,
+    type: 'none',
+    settings: {},
+    opacity: 1,
+    blur: 0,
+    reducedOnMobile: true,
+  };
+  let savedConfig = initialConfig;
+  let patchBody: unknown;
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/auth/me/is-admin': { is_admin: true },
+      '/api/cabinet/auth/me/permissions': {
+        permissions: ['settings:read'],
+        roles: [],
+        role_level: 100,
+      },
+      '/api/cabinet/admin/settings': [],
+      '/api/cabinet/admin/tickets/notifications/unread-count': { unread_count: 0 },
+      '/api/cabinet/branding/bot-start-video': { has_video: false, file_id: null },
+      '/api/cabinet/branding/footer-enabled': true,
+    },
+  });
+  await page.route('**/api/cabinet/branding/animation-config', async (route) => {
+    if (route.request().method() === 'PATCH') {
+      patchBody = route.request().postDataJSON();
+      savedConfig = patchBody as typeof initialConfig;
+    }
+    await route.fulfill({ status: 200, json: savedConfig });
+  });
+
+  await page.goto('/admin/settings');
+  const backgroundEditor = page
+    .getByRole('heading', { name: 'Animated Background' })
+    .locator('xpath=ancestor::div[contains(@class, "space-y-6")][1]');
+  await backgroundEditor.getByRole('switch', { name: 'Animated Background' }).click();
+  await backgroundEditor.getByRole('button', { name: /^Grid/ }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+  await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
+  expect(patchBody).toMatchObject({ enabled: true, type: 'grid' });
+  const background = page.locator('body > .pointer-events-none.fixed.inset-0');
+  await expect(background).toHaveCount(1);
+  await expect(background.locator('.absolute.inset-0')).toHaveCSS(
+    'background-image',
+    /linear-gradient/,
+  );
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
 test('shows critical data errors instead of zero values @desktop-flow', async ({ page }) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
     responses: activeResponses,
