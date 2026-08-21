@@ -76,6 +76,11 @@ retain readable foreground contrast for arbitrary valid operator colors.
 Interactive cards must render or contain a semantic link or button and work with
 keyboard activation.
 
+User-facing canonical cards use `md` as the standard density. Use `sm` for
+compact rows, actions and lists; use `lg` only explicitly for isolated empty,
+error, success or promotional states. Do not introduce new user-facing uses of
+the legacy `.card` class.
+
 Buttons must provide loading, disabled, icon-only accessible-label and haptic
 behavior through the canonical component.
 

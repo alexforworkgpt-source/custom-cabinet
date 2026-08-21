@@ -90,7 +90,7 @@ rendered states separately from presentation.
 | `src/pages/Login.tsx` | Telegram, OAuth, email, legal consent and branding |
 | `src/pages/Subscription.tsx` | Payments, renewal, connection and status behavior |
 | `src/pages/Balance.tsx` | Payment methods, saved methods and top-up entry |
-| `src/pages/Profile.tsx` | Identity, account linking and notification settings |
+| `src/pages/Profile.tsx`, `src/pages/ProfileEmailAuthSection.tsx`, `src/pages/ProfileNotifications.tsx` | Identity, account linking and notification settings |
 | `src/pages/AdminSettings.tsx` | Broad operator configuration surface |
 | `src/pages/AdminUserDetail.tsx` and components | Permissions and many administrative mutations |
 | `src/styles/globals.css` | Tokens, themes, shared classes, containment and performance rules |
