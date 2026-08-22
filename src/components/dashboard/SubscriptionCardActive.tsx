@@ -425,7 +425,7 @@ export default function SubscriptionCardActive({
         aria-haspopup="dialog"
         aria-expanded={managementOpen}
         onClick={onManageSubscription}
-        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[14px] border border-accent-500/20 bg-accent-500/[0.06] px-4 py-3 text-center text-sm font-semibold text-dark-200 transition-colors hover:border-accent-500/35 hover:bg-accent-500/10"
+        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[14px] bg-accent-500/[0.06] px-4 py-3 text-center text-sm font-semibold text-dark-200 transition-colors hover:bg-accent-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-950"
       >
         <SettingsIcon className="h-4 w-4 shrink-0 text-accent-400" />
         {t('dashboard.manageSubscription')}

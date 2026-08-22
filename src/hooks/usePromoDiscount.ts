@@ -1,6 +1,9 @@
 import { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { promoApi } from '../api/promo';
+import { calculatePromoDiscount, type PromoDiscountResult } from '../utils/promoDiscount';
+
+export type { PromoDiscountResult } from '../utils/promoDiscount';
 
 // ──────────────────────────────────────────────────────────────────
 // usePromoDiscount
@@ -19,13 +22,6 @@ import { promoApi } from '../api/promo';
 //     the existing reduction is a promo-group price.
 // ──────────────────────────────────────────────────────────────────
 
-export interface PromoDiscountResult {
-  price: number;
-  original: number | null;
-  percent: number | null;
-  isPromoGroup: boolean;
-}
-
 export function usePromoDiscount() {
   const { data: activeDiscount } = useQuery({
     queryKey: ['active-discount'],
@@ -34,38 +30,8 @@ export function usePromoDiscount() {
   });
 
   const applyPromoDiscount = useCallback(
-    (priceKopeks: number, existingOriginalPrice?: number | null): PromoDiscountResult => {
-      const hasExisting = (existingOriginalPrice ?? 0) > priceKopeks;
-      const hasPromo = !!activeDiscount?.is_active && !!activeDiscount.discount_percent;
-
-      if (!hasExisting && !hasPromo) {
-        return { price: priceKopeks, original: null, percent: null, isPromoGroup: false };
-      }
-
-      let finalPrice = priceKopeks;
-      if (hasPromo) {
-        finalPrice = Math.round(priceKopeks * (1 - activeDiscount!.discount_percent! / 100));
-      }
-
-      if (hasExisting) {
-        const combinedPercent = hasPromo
-          ? Math.round((1 - finalPrice / existingOriginalPrice!) * 100)
-          : Math.round((1 - priceKopeks / existingOriginalPrice!) * 100);
-        return {
-          price: finalPrice,
-          original: existingOriginalPrice!,
-          percent: combinedPercent,
-          isPromoGroup: true,
-        };
-      }
-
-      return {
-        price: finalPrice,
-        original: priceKopeks,
-        percent: activeDiscount!.discount_percent!,
-        isPromoGroup: false,
-      };
-    },
+    (priceKopeks: number, existingOriginalPrice?: number | null): PromoDiscountResult =>
+      calculatePromoDiscount(priceKopeks, existingOriginalPrice, activeDiscount),
     [activeDiscount],
   );
 

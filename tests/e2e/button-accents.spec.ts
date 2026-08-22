@@ -155,11 +155,14 @@ test('uses restrained accent states for key secondary actions', async ({ page })
 
   for (const theme of ['dark', 'light']) {
     await page.goto('/');
-    await page.evaluate((nextTheme) => localStorage.setItem('cabinet-theme', nextTheme), theme);
-    await page.reload();
-
     const connectDevice = page.locator('[data-onboarding="connect-devices"]');
     await expect(connectDevice).toBeVisible();
+    await page.evaluate((nextTheme) => {
+      localStorage.setItem('cabinet-theme', nextTheme);
+      window.dispatchEvent(new CustomEvent('themeChanged', { detail: nextTheme }));
+    }, theme);
+    await expect(page.locator('html')).toHaveClass(new RegExp(theme));
+
     await expect(connectDevice).toHaveClass(/connect-device-gradient-button/);
     const connectPresentation = await connectDevice.evaluate((element) => {
       const style = getComputedStyle(element);
@@ -211,26 +214,29 @@ test('uses restrained accent states for key secondary actions', async ({ page })
     ).toBeLessThanOrEqual(6);
 
     const manageSubscription = page.getByRole('button', { name: 'Manage subscription' });
-    await expect(manageSubscription).toHaveClass(/border-accent-500\/20/);
+    await expect(manageSubscription).toHaveCSS('border-top-width', '0px');
     await expect(manageSubscription).toHaveClass(/bg-accent-500\/\[0\.06\]/);
     await expect(manageSubscription.locator('svg')).toHaveCount(1);
 
     const copyLink = page.getByRole('button', { name: 'Copy link' });
     const copyIcon = copyLink.locator('svg');
-    const initialCopyIconColor = await copyIcon.evaluate(
-      (element) => getComputedStyle(element).color,
-    );
-    await copyLink.hover();
-    const accentTextColor = await page.evaluate(() => {
-      const probe = document.createElement('span');
-      probe.className = 'text-accent-400';
-      document.body.appendChild(probe);
-      const color = getComputedStyle(probe).color;
-      probe.remove();
-      return color;
-    });
-    await expect(copyIcon).toHaveCSS('color', accentTextColor);
-    expect(accentTextColor).not.toBe(initialCopyIconColor);
+    const supportsHover = await page.evaluate(() => matchMedia('(hover: hover)').matches);
+    if (supportsHover) {
+      const initialCopyIconColor = await copyIcon.evaluate(
+        (element) => getComputedStyle(element).color,
+      );
+      await copyLink.hover();
+      const accentTextColor = await page.evaluate(() => {
+        const probe = document.createElement('span');
+        probe.className = 'text-accent-400';
+        document.body.appendChild(probe);
+        const color = getComputedStyle(probe).color;
+        probe.remove();
+        return color;
+      });
+      await expect(copyIcon).toHaveCSS('color', accentTextColor);
+      expect(accentTextColor).not.toBe(initialCopyIconColor);
+    }
 
     await page.goto('/gift');
     const selectedPaymentMode = page.getByRole('button', { name: /From balance/ });

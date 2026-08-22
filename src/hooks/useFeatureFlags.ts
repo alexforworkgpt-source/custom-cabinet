@@ -33,7 +33,7 @@ export function useFeatureFlags() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const cached = readFlagsCache();
 
-  const { data: referralTerms } = useQuery({
+  const { data: referralTerms, isFetched: referralReady } = useQuery({
     queryKey: ['referral-terms'],
     queryFn: referralApi.getReferralTerms,
     enabled: isAuthenticated,
@@ -65,7 +65,7 @@ export function useFeatureFlags() {
     retry: false,
   });
 
-  const { data: giftConfig } = useQuery({
+  const { data: giftConfig, isFetched: giftReady } = useQuery({
     queryKey: ['gift-enabled'],
     queryFn: brandingApi.getGiftEnabled,
     enabled: isAuthenticated,
@@ -81,6 +81,7 @@ export function useFeatureFlags() {
     giftEnabled: giftConfig ? giftConfig.enabled : cached.giftEnabled,
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Persist only when derived public flags change; raw query objects and the fresh flags object would cause redundant writes.
   useEffect(() => {
     if (!referralTerms && !wheelConfig && !contestsCount && !pollsCount && !giftConfig) return;
     try {
@@ -88,7 +89,6 @@ export function useFeatureFlags() {
     } catch {
       // квоты/приватный режим — некритично
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     flags.referralEnabled,
     flags.wheelEnabled,
@@ -97,5 +97,5 @@ export function useFeatureFlags() {
     flags.giftEnabled,
   ]);
 
-  return flags;
+  return { ...flags, referralReady, giftReady };
 }

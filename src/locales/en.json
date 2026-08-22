@@ -1221,6 +1221,57 @@
     },
     "selectSubscription": "Select subscription"
   },
+  "dashboardPromo": {
+    "ariaLabel": "Recommended actions",
+    "slideControls": "Promo slides",
+    "showSlide": "Show slide {{current}} of {{total}}",
+    "pause": "Pause automatic slide rotation",
+    "resume": "Resume automatic slide rotation",
+    "slides": {
+      "telegram": {
+        "eyebrow": "Top priority",
+        "title": "Link Telegram",
+        "description": "Sign in faster and receive important notifications.",
+        "action": "Link Telegram",
+        "linkLabel": "Link Telegram. Sign in faster and receive important notifications."
+      },
+      "email": {
+        "eyebrow": "Account security",
+        "title": "Protect your account",
+        "description": "Add an email for sign-in and account recovery.",
+        "action": "Add email",
+        "linkLabel": "Protect your account. Add an email."
+      },
+      "connection": {
+        "eyebrow": "New device",
+        "title": "Connect another device",
+        "description": "Choose your platform and follow the quick setup guide.",
+        "action": "Connect device",
+        "linkLabel": "Connect another device. Open the connection guide."
+      },
+      "tariff": {
+        "eyebrow": "Get connected",
+        "title": "Choose your plan",
+        "description": "Find a plan that fits your devices and usage.",
+        "action": "View plans",
+        "linkLabel": "Choose your plan. View available plans."
+      },
+      "gift": {
+        "eyebrow": "For someone special",
+        "title": "Gift a subscription",
+        "description": "Create a gift and send a ready-to-use activation link.",
+        "action": "Choose a gift",
+        "linkLabel": "Gift a subscription. Choose a gift plan."
+      },
+      "earnings": {
+        "eyebrow": "Earn more",
+        "title": "Earn with friends",
+        "description": "Invite friends, receive rewards and withdraw available earnings.",
+        "action": "Start earning",
+        "linkLabel": "Earn with friends. Open the referral program."
+      }
+    }
+  },
   "admin": {
     "backgrounds": {
       "title": "Animated Background",

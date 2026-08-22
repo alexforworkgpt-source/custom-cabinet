@@ -172,6 +172,20 @@ export async function prepareAuthenticatedPage(
   const responses = {
     ...baseApiResponses,
     '/api/cabinet/auth/me': persistedUser,
+    '/api/cabinet/auth/account/linked-providers': {
+      providers: [
+        {
+          provider: 'telegram',
+          linked: persistedUser.telegram_id !== null,
+          identifier: persistedUser.telegram_id?.toString() ?? null,
+        },
+        {
+          provider: 'email',
+          linked: persistedUser.email !== null,
+          identifier: persistedUser.email,
+        },
+      ],
+    },
     ...options.responses,
   };
   const featureFlags: BrowserFeatureFlags = {

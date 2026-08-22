@@ -27,6 +27,10 @@ import { isFailedStatus, isPaidStatus } from '@/utils/paymentStatus';
 import { TrafficTopupSheet } from '@/components/subscription/sheets/TrafficTopupSheet';
 import { copyToClipboard } from '@/utils/clipboard';
 import { resolveConnectionUrlForUi } from '@/utils/connectionLink';
+import { brandingApi } from '@/api/branding';
+import { authApi } from '@/api/auth';
+import DashboardPromoCarousel from '@/components/dashboard/DashboardPromoCarousel';
+import { selectDashboardPromoSlides } from '@/components/dashboard/dashboardPromoSlides';
 
 const Connection = lazy(() => import('./Connection'));
 const TopUpMethodSelect = lazy(() => import('./TopUpMethodSelect'));
@@ -42,13 +46,14 @@ export default function Dashboard() {
   const { subscriptionId: routeSubscriptionId } = useParams<{ subscriptionId: string }>();
   const [searchParams] = useSearchParams();
   const routeState = getUserCabinetRouteState(location.pathname, location.search);
+  const user = useAuthStore((state) => state.user);
   const refreshUser = useAuthStore((state) => state.refreshUser);
   const queryClient = useQueryClient();
   const { isCompleted: isOnboardingCompleted, complete: completeOnboarding } = useOnboarding();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const blockingType = useBlockingStore((state) => state.blockingType);
   const [trialError, setTrialError] = useState<string | null>(null);
-  const { referralEnabled } = useFeatureFlags();
+  const { referralEnabled, giftEnabled, referralReady, giftReady } = useFeatureFlags();
   const { isDark } = useTheme();
   const [showTrafficTopup, setShowTrafficTopup] = useState(false);
   const [selectedTrafficPackage, setSelectedTrafficPackage] = useState<number | null>(null);
@@ -153,6 +158,7 @@ export default function Dashboard() {
   const shouldHideConnectionLink =
     subscription?.hide_subscription_link || connectionLink?.hide_link;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies(subscription?.id): A different subscription must reset the copied-link state.
   useEffect(() => {
     setSubscriptionLinkCopied(false);
   }, [subscription?.id]);
@@ -190,6 +196,20 @@ export default function Dashboard() {
   const { data: wheelConfig } = useQuery({
     queryKey: ['wheel-config'],
     queryFn: wheelApi.getConfig,
+    staleTime: 60000,
+    retry: false,
+  });
+
+  const { data: emailAuthConfig, isFetched: emailAuthReady } = useQuery({
+    queryKey: ['email-auth-enabled'],
+    queryFn: brandingApi.getEmailAuthEnabled,
+    staleTime: 60000,
+    retry: false,
+  });
+
+  const { data: linkedProvidersData, isFetched: linkedProvidersReady } = useQuery({
+    queryKey: ['linked-providers'],
+    queryFn: authApi.getLinkedProviders,
     staleTime: 60000,
     retry: false,
   });
@@ -295,6 +315,7 @@ export default function Dashboard() {
     refreshTrafficMutation.mutate();
   }, [subscription, refreshTrafficMutation]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies(subscription?.id): A different subscription must not display cached traffic from the previous one.
   useEffect(() => {
     setTrafficData(null);
   }, [subscription?.id]);
@@ -305,6 +326,37 @@ export default function Dashboard() {
   const hasNoSubscription = isMultiTariff
     ? multiSubData !== undefined && (multiSubData.subscriptions?.length ?? 0) === 0
     : subscriptionResponse?.has_subscription === false && !subLoading;
+  const promoSubscriptionState =
+    subLoading || subscriptionsLoading || subscriptionsError || subscriptionError
+      ? 'unknown'
+      : subscription &&
+          !subscription.is_expired &&
+          subscription.status !== 'disabled' &&
+          !subscription.is_limited
+        ? 'active'
+        : hasNoSubscription || subscription
+          ? 'none'
+          : 'unknown';
+  const providerLinked = (provider: 'telegram' | 'email', fallback: boolean | undefined) =>
+    linkedProvidersData?.providers.find((item) => item.provider === provider)?.linked ?? fallback;
+  const promoDataReady =
+    linkedProvidersReady &&
+    emailAuthReady &&
+    referralReady &&
+    giftReady &&
+    !subLoading &&
+    !subscriptionsLoading;
+  const promoSlides = promoDataReady
+    ? selectDashboardPromoSlides({
+        telegramLinked: providerLinked('telegram', user ? user.telegram_id !== null : undefined),
+        emailLinked: emailAuthConfig?.enabled
+          ? providerLinked('email', user ? user.email !== null : undefined)
+          : true,
+        subscriptionState: promoSubscriptionState,
+        giftEnabled,
+        referralEnabled,
+      })
+    : [];
 
   // Show onboarding for new users after data loads
   useEffect(() => {
@@ -614,6 +666,8 @@ export default function Dashboard() {
         refLoading={refLoading}
         showReferral={referralEnabled}
       />
+
+      <DashboardPromoCarousel slides={promoSlides} />
 
       {/* Fortune Wheel Banner */}
       {wheelConfig?.is_enabled && (

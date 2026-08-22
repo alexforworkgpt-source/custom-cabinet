@@ -1,7 +1,8 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { renderTelegramHtml } from './telegramHtml';
 
 interface PreviewButton {
   text: string;
@@ -25,157 +26,6 @@ interface EmailPreviewProps {
   htmlContent: string;
 }
 
-interface Token {
-  kind: 'text' | 'open' | 'close' | 'br';
-  tag?: string;
-  href?: string;
-  value?: string;
-}
-
-const TG_TAGS = new Set([
-  'b',
-  'strong',
-  'i',
-  'em',
-  'u',
-  'ins',
-  's',
-  'strike',
-  'del',
-  'code',
-  'pre',
-  'a',
-  'tg-spoiler',
-  'span',
-]);
-
-function tokenize(input: string): Token[] {
-  const tokens: Token[] = [];
-  const pattern = /<(\/?)([a-z][a-z0-9-]*)(\s+[^>]*)?>|<br\s*\/?>/gi;
-  const matches = [...input.matchAll(pattern)];
-  let lastIdx = 0;
-  for (const m of matches) {
-    const idx = m.index || 0;
-    if (idx > lastIdx) tokens.push({ kind: 'text', value: input.slice(lastIdx, idx) });
-    if (m[0].toLowerCase().startsWith('<br')) {
-      tokens.push({ kind: 'br' });
-    } else {
-      const isClose = m[1] === '/';
-      const tag = m[2].toLowerCase();
-      if (!TG_TAGS.has(tag)) {
-        tokens.push({ kind: 'text', value: m[0] });
-      } else if (isClose) {
-        tokens.push({ kind: 'close', tag });
-      } else {
-        let href: string | undefined;
-        if (tag === 'a' && m[3]) {
-          const hrefMatch = m[3].match(/href\s*=\s*"([^"]*)"|href\s*=\s*'([^']*)'/i);
-          href = hrefMatch ? hrefMatch[1] || hrefMatch[2] : undefined;
-        }
-        tokens.push({ kind: 'open', tag, href });
-      }
-    }
-    lastIdx = idx + m[0].length;
-  }
-  if (lastIdx < input.length) tokens.push({ kind: 'text', value: input.slice(lastIdx) });
-  return tokens;
-}
-
-function renderText(value: string, key: number): ReactNode {
-  const parts = value.split(/\n/);
-  return parts.flatMap((p, i) => (i === 0 ? [p] : [<br key={`nl-${key}-${i}`} />, p]));
-}
-
-type Frame = { tag: string | null; href?: string; children: ReactNode[] };
-
-function wrap(frame: Frame, key: number): ReactNode {
-  const k = `el-${key}`;
-  switch (frame.tag) {
-    case 'b':
-    case 'strong':
-      return <b key={k}>{frame.children}</b>;
-    case 'i':
-    case 'em':
-      return <i key={k}>{frame.children}</i>;
-    case 'u':
-    case 'ins':
-      return <u key={k}>{frame.children}</u>;
-    case 's':
-    case 'strike':
-    case 'del':
-      return <s key={k}>{frame.children}</s>;
-    case 'code':
-      return (
-        <code key={k} className="rounded bg-dark-950/30 px-1 font-mono text-[0.92em]">
-          {frame.children}
-        </code>
-      );
-    case 'pre':
-      return (
-        <pre key={k} className="my-1 rounded bg-dark-950/30 p-2 font-mono text-[0.92em]">
-          {frame.children}
-        </pre>
-      );
-    case 'a': {
-      const safeHref =
-        frame.href && /^(https?:|tg:|mailto:|tel:)/i.test(frame.href) ? frame.href : '#';
-      return (
-        <a
-          key={k}
-          href={safeHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-400 underline"
-        >
-          {frame.children}
-        </a>
-      );
-    }
-    case 'tg-spoiler':
-    case 'span':
-      return <span key={k}>{frame.children}</span>;
-    default:
-      return <span key={k}>{frame.children}</span>;
-  }
-}
-
-function tokensToReact(tokens: Token[]): ReactNode {
-  const root: Frame = { tag: null, children: [] };
-  const stack: Frame[] = [root];
-  let textKey = 0;
-  let elKey = 0;
-  for (const tok of tokens) {
-    const top = stack[stack.length - 1];
-    if (tok.kind === 'text') {
-      top.children.push(<span key={`t-${textKey++}`}>{renderText(tok.value || '', textKey)}</span>);
-    } else if (tok.kind === 'br') {
-      top.children.push(<br key={`br-${elKey++}`} />);
-    } else if (tok.kind === 'open') {
-      stack.push({ tag: tok.tag!, href: tok.href, children: [] });
-    } else if (tok.kind === 'close') {
-      let foundIdx = -1;
-      for (let i = stack.length - 1; i >= 1; i--) {
-        if (stack[i].tag === tok.tag) {
-          foundIdx = i;
-          break;
-        }
-      }
-      if (foundIdx === -1) continue;
-      while (stack.length > foundIdx) {
-        const closed = stack.pop()!;
-        const parent = stack[stack.length - 1] || root;
-        parent.children.push(wrap(closed, elKey++));
-      }
-    }
-  }
-  while (stack.length > 1) {
-    const closed = stack.pop()!;
-    const parent = stack[stack.length - 1];
-    parent.children.push(wrap(closed, elKey++));
-  }
-  return root.children;
-}
-
 export function TelegramPreview({
   open,
   onClose,
@@ -185,7 +35,7 @@ export function TelegramPreview({
   buttons,
 }: TelegramPreviewProps) {
   const { t } = useTranslation();
-  const rendered = useMemo(() => tokensToReact(tokenize(text)), [text]);
+  const rendered = useMemo(() => renderTelegramHtml(text), [text]);
   const dialogRef = useFocusTrap<HTMLDivElement>(open, { onEscape: onClose });
   if (!open) return null;
   return createPortal(
