@@ -262,7 +262,7 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                 <select
                   value={selectedTariffId || ''}
                   onChange={(e) =>
-                    onSelectedTariffIdChange(e.target.value ? parseInt(e.target.value) : null)
+                    onSelectedTariffIdChange(e.target.value ? parseInt(e.target.value, 10) : null)
                   }
                   className="input"
                 >
@@ -488,8 +488,7 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
           )}
 
           {/* Add Traffic */}
-          {currentTariff &&
-            currentTariff.traffic_topup_enabled &&
+          {currentTariff?.traffic_topup_enabled &&
             Object.keys(currentTariff.traffic_topup_packages).length > 0 && (
               <div className="rounded-xl bg-dark-800/50 p-4">
                 <div className="mb-3 text-sm font-medium text-dark-200">
@@ -563,7 +562,7 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                   <select
                     value={selectedTariffId || ''}
                     onChange={(e) =>
-                      onSelectedTariffIdChange(e.target.value ? parseInt(e.target.value) : null)
+                      onSelectedTariffIdChange(e.target.value ? parseInt(e.target.value, 10) : null)
                     }
                     className="input"
                   >
@@ -608,7 +607,7 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
             <select
               value={selectedTariffId || ''}
               onChange={(e) =>
-                onSelectedTariffIdChange(e.target.value ? parseInt(e.target.value) : null)
+                onSelectedTariffIdChange(e.target.value ? parseInt(e.target.value, 10) : null)
               }
               className="input"
             >
@@ -664,7 +663,7 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
             <div className="rounded-xl border border-dark-700 bg-dark-800/50 p-4 text-center text-sm text-dark-400">
               {t('admin.users.detail.panelNotFound')}
             </div>
-          ) : panelInfo && panelInfo.found ? (
+          ) : panelInfo?.found ? (
             <>
               {/* Links */}
               {(panelInfo.subscription_url || panelInfo.happ_link) && (
@@ -675,7 +674,10 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                   <div className="space-y-2">
                     {panelInfo.subscription_url && (
                       <button
-                        onClick={() => copyToClipboard(panelInfo.subscription_url!)}
+                        onClick={() => {
+                          const value = panelInfo.subscription_url;
+                          if (value) void copyToClipboard(value);
+                        }}
                         className="w-full rounded-lg bg-dark-700/50 p-2 text-left transition-colors hover:bg-dark-700"
                       >
                         <div className="mb-0.5 text-xs text-dark-500">
@@ -688,7 +690,10 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                     )}
                     {panelInfo.happ_link && (
                       <button
-                        onClick={() => copyToClipboard(panelInfo.happ_link!)}
+                        onClick={() => {
+                          const value = panelInfo.happ_link;
+                          if (value) void copyToClipboard(value);
+                        }}
                         className="w-full rounded-lg bg-dark-700/50 p-2 text-left transition-colors hover:bg-dark-700"
                       >
                         <div className="mb-0.5 text-xs text-dark-500">
@@ -712,7 +717,10 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                   <div className="space-y-2">
                     {panelInfo.trojan_password && (
                       <button
-                        onClick={() => copyToClipboard(panelInfo.trojan_password!)}
+                        onClick={() => {
+                          const value = panelInfo.trojan_password;
+                          if (value) void copyToClipboard(value);
+                        }}
                         className="w-full rounded-lg bg-dark-700/50 p-2 text-left transition-colors hover:bg-dark-700"
                       >
                         <div className="mb-0.5 text-xs text-dark-500">
@@ -725,7 +733,10 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                     )}
                     {panelInfo.vless_uuid && (
                       <button
-                        onClick={() => copyToClipboard(panelInfo.vless_uuid!)}
+                        onClick={() => {
+                          const value = panelInfo.vless_uuid;
+                          if (value) void copyToClipboard(value);
+                        }}
                         className="w-full rounded-lg bg-dark-700/50 p-2 text-left transition-colors hover:bg-dark-700"
                       >
                         <div className="mb-0.5 text-xs text-dark-500">
@@ -738,7 +749,10 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                     )}
                     {panelInfo.ss_password && (
                       <button
-                        onClick={() => copyToClipboard(panelInfo.ss_password!)}
+                        onClick={() => {
+                          const value = panelInfo.ss_password;
+                          if (value) void copyToClipboard(value);
+                        }}
                         className="w-full rounded-lg bg-dark-700/50 p-2 text-left transition-colors hover:bg-dark-700"
                       >
                         <div className="mb-0.5 text-xs text-dark-500">
@@ -921,7 +935,7 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                 {devices.map((device) => {
                   const isEditing = editingDeviceHwid === device.hwid;
                   const displayName =
-                    (device.local_name && device.local_name.trim()) ||
+                    device.local_name?.trim() ||
                     device.platform ||
                     device.device_model ||
                     device.hwid.slice(0, 12);

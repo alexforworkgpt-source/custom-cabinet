@@ -81,7 +81,7 @@ export function useAnimationLoop(
         tg.offEvent?.('deactivated', onTgDeactivated);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // biome-ignore lint/correctness/useExhaustiveDependencies: This reusable hook deliberately forwards the caller-provided dependency list.
   }, deps);
 }
 

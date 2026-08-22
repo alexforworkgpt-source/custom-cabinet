@@ -2,7 +2,13 @@ import { uiLocale } from '@/utils/uiLocale';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { wheelApi, type WheelPrize, type SpinResult, type SpinHistoryItem } from '../api/wheel';
+import {
+  wheelApi,
+  type WheelPrize,
+  type SpinResult,
+  type SpinHistoryItem,
+  type SpinHistoryResponse,
+} from '../api/wheel';
 import FortuneWheel from '../components/wheel/FortuneWheel';
 import WheelLegend from '../components/wheel/WheelLegend';
 import { usePlatform, useHaptic } from '@/platform';
@@ -138,7 +144,7 @@ export default function Wheel() {
       if (signal.aborted) return null;
 
       // Get current history to find the latest spin ID
-      let historyBefore;
+      let historyBefore: Pick<SpinHistoryResponse, 'items' | 'total'>;
       try {
         historyBefore = await wheelApi.getHistory(1, 1);
       } catch {

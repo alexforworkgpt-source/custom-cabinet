@@ -690,7 +690,10 @@ export default function PurchaseSuccess() {
     refetch,
   } = useQuery({
     queryKey: ['purchase-status', token],
-    queryFn: () => landingApi.getPurchaseStatus(token!),
+    queryFn: () => {
+      if (!token) throw new Error('Purchase token is required');
+      return landingApi.getPurchaseStatus(token);
+    },
     enabled: !!token && !pollTimedOut,
     refetchInterval: (query) => {
       const data = query.state.data;
@@ -773,11 +776,9 @@ export default function PurchaseSuccess() {
   const isGiftPendingActivation = isPendingActivation && purchaseStatus?.is_gift && !isActivateHint;
 
   // Email self-purchase delivered → show cabinet credentials
+  const cabinetEmail = purchaseStatus?.cabinet_email;
   const isEmailSelfPurchase =
-    isSuccess &&
-    purchaseStatus.contact_type === 'email' &&
-    !purchaseStatus.is_gift &&
-    purchaseStatus.cabinet_email;
+    isSuccess && purchaseStatus.contact_type === 'email' && !purchaseStatus.is_gift && cabinetEmail;
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-dark-950 px-4">
@@ -797,9 +798,9 @@ export default function PurchaseSuccess() {
             recipientContactValue={purchaseStatus.recipient_contact_value}
             contactType={purchaseStatus.contact_type}
           />
-        ) : isEmailSelfPurchase ? (
+        ) : isEmailSelfPurchase && cabinetEmail ? (
           <CabinetCredentialsState
-            cabinetEmail={purchaseStatus.cabinet_email!}
+            cabinetEmail={cabinetEmail}
             cabinetPassword={purchaseStatus.cabinet_password}
             autoLoginToken={purchaseStatus.auto_login_token}
             tariffName={purchaseStatus.tariff_name}

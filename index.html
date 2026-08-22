@@ -32,13 +32,15 @@
     </noscript>
     <script>
       // Load Telegram Web App script only inside Telegram environment
+      // biome-ignore lint/complexity/useArrowFunction: Keep ES5 syntax for older Telegram WebViews.
       (function () {
+        var s;
         var isTelegram =
           window.TelegramWebviewProxy ||
           location.hash.indexOf('tgWebApp') !== -1 ||
           location.search.indexOf('tgWebApp') !== -1;
         if (isTelegram) {
-          var s = document.createElement('script');
+          s = document.createElement('script');
           s.src = 'https://telegram.org/js/telegram-web-app.js';
           s.async = true;
           document.head.appendChild(s);

@@ -184,7 +184,7 @@ export default function AdminPromoOfferSend() {
     };
 
     if (sendMode === 'user') {
-      const id = parseInt(userId);
+      const id = parseInt(userId, 10);
       if (!id) return;
       data.telegram_id = id;
     } else {

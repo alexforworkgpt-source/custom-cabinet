@@ -1,4 +1,4 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { retrieveRawInitData } from '@telegram-apps/sdk-react';
 import {
   tokenStorage,
@@ -33,6 +33,7 @@ function ensureCsrfToken(): string {
   let token = getCsrfToken();
   if (!token) {
     token = generateCsrfToken();
+    // biome-ignore lint/suspicious/noDocumentCookie: Synchronous double-submit CSRF must support older Telegram WebViews.
     document.cookie = `${CSRF_COOKIE_NAME}=${token}; path=/; SameSite=Strict; Secure`;
   }
   return token;
@@ -224,7 +225,7 @@ apiClient.interceptors.response.use(
     }
 
     if (isMaintenanceError(error)) {
-      const detail = (error.response?.data as { detail: MaintenanceError }).detail;
+      const detail = error.response.data.detail;
       useBlockingStore.getState().setMaintenance({
         message: detail.message,
         reason: detail.reason,
@@ -233,7 +234,7 @@ apiClient.interceptors.response.use(
     }
 
     if (isChannelSubscriptionError(error)) {
-      const detail = (error.response?.data as { detail: ChannelSubscriptionError }).detail;
+      const detail = error.response.data.detail;
       useBlockingStore.getState().setChannelSubscription({
         message: detail.message,
         channel_link: detail.channel_link,
@@ -243,7 +244,7 @@ apiClient.interceptors.response.use(
     }
 
     if (isBlacklistedError(error)) {
-      const detail = (error.response?.data as { detail: BlacklistedError }).detail;
+      const detail = error.response.data.detail;
       useBlockingStore.getState().setBlacklisted({
         message: detail.message,
       });
@@ -251,7 +252,7 @@ apiClient.interceptors.response.use(
     }
 
     if (isAccountDeletedError(error)) {
-      const detail = (error.response?.data as { detail: AccountDeletedError }).detail;
+      const detail = error.response.data.detail;
       // Surface the deleted-account screen. The auth flow (initData login)
       // is allowed to auto-revive; this branch is for token-bearing
       // sessions where the user is already in the cabinet but their row

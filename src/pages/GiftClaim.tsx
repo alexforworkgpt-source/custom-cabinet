@@ -45,7 +45,10 @@ export default function GiftClaim() {
     error,
   } = useQuery({
     queryKey: ['gift-claim', token],
-    queryFn: () => landingApi.getGiftClaim(token!),
+    queryFn: () => {
+      if (!token) throw new Error('Gift claim token is required');
+      return landingApi.getGiftClaim(token);
+    },
     enabled: !!token,
     retry: 1,
     // Poll only while the payment is still settling (not yet claimable / terminal).
@@ -59,7 +62,10 @@ export default function GiftClaim() {
   });
 
   const claimMutation = useMutation({
-    mutationFn: () => landingApi.claimGift(token!, email.trim()),
+    mutationFn: () => {
+      if (!token) throw new Error('Gift claim token is required');
+      return landingApi.claimGift(token, email.trim());
+    },
     onSuccess: (res) => {
       // One-click cabinet login for a fresh email account; otherwise show the link.
       if (res.auto_login_token) {

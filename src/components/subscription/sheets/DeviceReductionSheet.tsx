@@ -53,10 +53,7 @@ export function DeviceReductionSheet({
         ),
       );
     }
-    // onTargetDeviceLimitChange is a setter from the parent and stable
-    // enough; intentionally narrow deps to avoid clobbering user input.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deviceReductionInfo, open]);
+  }, [deviceReductionInfo, open, onTargetDeviceLimitChange]);
 
   const reduceMutation = useMutation({
     mutationFn: () => subscriptionApi.reduceDevices(targetDeviceLimit, subscriptionId),

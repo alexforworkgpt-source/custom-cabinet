@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { rbacApi, AuditLogEntry, AuditLogFilters } from '@/api/rbac';
+import { rbacApi, type AuditLogEntry, type AuditLogFilters } from '@/api/rbac';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { DateField } from '@/components/DateField';
 import { usePlatform } from '@/platform/hooks/usePlatform';
@@ -377,7 +377,7 @@ export default function AdminAuditLog() {
     };
 
     const parsedUserId = parseInt(appliedFilters.userId, 10);
-    if (!isNaN(parsedUserId) && parsedUserId > 0) {
+    if (!Number.isNaN(parsedUserId) && parsedUserId > 0) {
       params.user_id = parsedUserId;
     }
     if (appliedFilters.action.trim()) {
@@ -448,7 +448,7 @@ export default function AdminAuditLog() {
     try {
       const exportParams: AuditLogFilters = {};
       const exportUserId = parseInt(appliedFilters.userId, 10);
-      if (!isNaN(exportUserId) && exportUserId > 0) exportParams.user_id = exportUserId;
+      if (!Number.isNaN(exportUserId) && exportUserId > 0) exportParams.user_id = exportUserId;
       if (appliedFilters.action.trim()) exportParams.action = appliedFilters.action.trim();
       if (appliedFilters.resource) exportParams.resource_type = appliedFilters.resource;
       if (appliedFilters.status) exportParams.status = appliedFilters.status;

@@ -138,7 +138,7 @@ export default function AdminUserDetail() {
       if (!userId) throw new Error('No userId');
       return adminUsersApi.getUser(userId);
     },
-    enabled: !!userId && !isNaN(userId),
+    enabled: !!userId && !Number.isNaN(userId),
   });
 
   useEffect(() => {
@@ -176,40 +176,41 @@ export default function AdminUserDetail() {
   const syncStatusQuery = useQuery({
     queryKey: ['admin-user-sync-status', userId, activeSubscriptionId] as const,
     queryFn: () => adminUsersApi.getSyncStatus(userId as number, activeSubscriptionId ?? undefined),
-    enabled: !!userId && !isNaN(userId) && activeTab === 'sync' && hasPermission('users:sync'),
+    enabled:
+      !!userId && !Number.isNaN(userId) && activeTab === 'sync' && hasPermission('users:sync'),
   });
   const tariffsQuery = useQuery({
     queryKey: ['admin-user-tariffs', userId] as const,
     queryFn: () => adminUsersApi.getAvailableTariffs(userId as number, true),
-    enabled: !!userId && !isNaN(userId) && activeTab === 'subscription',
+    enabled: !!userId && !Number.isNaN(userId) && activeTab === 'subscription',
   });
   // (ticketsQuery moved into TicketsTab.tsx)
   const referralsQuery = useQuery({
     queryKey: ['admin-user-referrals', userId] as const,
     queryFn: () => adminUsersApi.getReferrals(userId as number, 0, 50),
-    enabled: !!userId && !isNaN(userId) && activeTab === 'info',
+    enabled: !!userId && !Number.isNaN(userId) && activeTab === 'info',
   });
   // (referralsListQuery moved into ReferralsTab.tsx — the tab owns it now)
   const panelInfoQuery = useQuery({
     queryKey: ['admin-user-panel-info', userId, activeSubscriptionId] as const,
     queryFn: () => adminUsersApi.getPanelInfo(userId as number, activeSubscriptionId ?? undefined),
-    enabled: !!userId && !isNaN(userId),
+    enabled: !!userId && !Number.isNaN(userId),
   });
   const nodeUsageQuery = useQuery({
     queryKey: ['admin-user-node-usage', userId, activeSubscriptionId] as const,
     queryFn: () => adminUsersApi.getNodeUsage(userId as number, activeSubscriptionId ?? undefined),
-    enabled: !!userId && !isNaN(userId) && activeTab === 'subscription',
+    enabled: !!userId && !Number.isNaN(userId) && activeTab === 'subscription',
   });
   const devicesQuery = useQuery({
     queryKey: ['admin-user-devices', userId, activeSubscriptionId] as const,
     queryFn: () =>
       adminUsersApi.getUserDevices(userId as number, activeSubscriptionId ?? undefined),
-    enabled: !!userId && !isNaN(userId) && activeTab === 'subscription',
+    enabled: !!userId && !Number.isNaN(userId) && activeTab === 'subscription',
   });
   const giftsQuery = useQuery({
     queryKey: ['admin-user-gifts', userId] as const,
     queryFn: () => adminUsersApi.getUserGifts(userId as number),
-    enabled: !!userId && !isNaN(userId) && activeTab === 'gifts',
+    enabled: !!userId && !Number.isNaN(userId) && activeTab === 'gifts',
   });
   const promoGroupsQuery = useQuery({
     queryKey: ['admin-promo-groups-all'] as const,
@@ -322,20 +323,21 @@ export default function AdminUserDetail() {
   // useEffects moved into TicketsTab.tsx)
 
   useEffect(() => {
-    if (!userId || isNaN(userId)) {
+    if (!userId || Number.isNaN(userId)) {
       navigate('/admin/users');
     }
     // user data is auto-loaded by userQuery (enabled when userId is valid)
   }, [userId, navigate]);
 
   // Reload request history when the request-history subscription selector changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Expansion loads in SubscriptionTab; only selector changes should reload here.
   useEffect(() => {
     if (!requestHistoryExpanded || requestHistorySubId === null) return;
     setRequestHistory([]);
     setRequestHistoryOffset(0);
     setRequestHistoryTotal(0);
     loadRequestHistory(0);
-  }, [requestHistorySubId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [requestHistorySubId]);
 
   // All other per-tab data fetching is driven by useQuery `enabled` gating
   // wired to userId / activeSubscriptionId / activeTab — no manual triggers needed.

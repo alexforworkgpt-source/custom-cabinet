@@ -1,4 +1,4 @@
-import { ThemeColors } from '../types/theme';
+import type { ThemeColors } from '../types/theme';
 
 export interface ColorPreset {
   id: string;

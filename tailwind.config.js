@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 
 // Helper function to create color with opacity support using CSS variables
-const withOpacity = (variableName, fallback) => {
+const withOpacity = (variableName, _fallback) => {
   return ({ opacityValue }) => {
     if (opacityValue !== undefined) {
       return `rgba(var(${variableName}), ${opacityValue})`;
@@ -300,7 +300,7 @@ export default {
     },
   },
   plugins: [
-    function ({ addVariant }) {
+    ({ addVariant }) => {
       addVariant('light', '.light &');
     },
   ],

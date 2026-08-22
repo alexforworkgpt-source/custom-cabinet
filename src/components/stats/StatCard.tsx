@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 import { TREND_STYLES } from './constants';
 
@@ -79,9 +79,9 @@ export function StatCard({
           )}
         </div>
       </div>
-      {trendStyle && (
+      {trendStyle && delta && (
         <div className={`mt-1.5 text-xs font-medium ${trendStyle.className}`}>
-          {trendStyle.arrow} {Math.abs(delta!.percent)}%
+          {trendStyle.arrow} {Math.abs(delta.percent)}%
         </div>
       )}
     </div>

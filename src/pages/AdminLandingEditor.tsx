@@ -12,7 +12,7 @@ import {
   type SupportedLocale,
   toLocaleDict,
 } from '../api/landings';
-import { tariffsApi, TariffListItem, PeriodPrice } from '../api/tariffs';
+import { tariffsApi, type TariffListItem, type PeriodPrice } from '../api/tariffs';
 import { formatPrice } from '../utils/format';
 import { useCurrency } from '../hooks/useCurrency';
 import { adminPaymentMethodsApi } from '../api/adminPaymentMethods';
@@ -197,6 +197,7 @@ export default function AdminLandingEditor() {
   });
 
   const tariffPeriodsData = tariffDetailQueries.map((q) => q.data);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Query results are unstable; selected tariff IDs and loaded data IDs form the intentional cache key.
   const tariffPeriodsMap = useMemo(() => {
     const map: Record<number, PeriodPrice[]> = {};
     tariffPeriodsData.forEach((data) => {
@@ -205,7 +206,6 @@ export default function AdminLandingEditor() {
       }
     });
     return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(tariffPeriodsData.map((d) => d?.id)), selectedTariffIds]);
 
   // Fetch landing for editing
@@ -223,6 +223,7 @@ export default function AdminLandingEditor() {
   const formPopulated = useRef(false);
 
   // Reset formPopulated when navigating to a different landing
+  // biome-ignore lint/correctness/useExhaustiveDependencies(id): Route changes intentionally reset the one-time form population guard.
   useEffect(() => {
     formPopulated.current = false;
   }, [id]);

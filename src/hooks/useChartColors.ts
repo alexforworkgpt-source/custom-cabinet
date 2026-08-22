@@ -30,7 +30,7 @@ function cssVarToHex(varName: string, fallback: string): string {
   if (!raw) return fallback;
 
   const parts = raw.split(',').map((s) => parseInt(s.trim(), 10));
-  if (parts.length !== 3 || parts.some(isNaN)) return fallback;
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return fallback;
 
   return rgbToHex(parts[0], parts[1], parts[2]);
 }
@@ -66,6 +66,7 @@ export function useChartColors(): ChartColors {
     return () => observer.disconnect();
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies(themeKey): Theme class changes must trigger a fresh CSS variable read.
   const colors = useMemo<ChartColors>(
     () => ({
       earnings: cssVarToHex(CSS_VARS.earnings, FALLBACK.earnings),
@@ -76,7 +77,6 @@ export function useChartColors(): ChartColors {
       tick: cssVarToHex(CSS_VARS.tick, FALLBACK.tick),
       label: cssVarToHex(CSS_VARS.label, FALLBACK.label),
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [themeKey],
   );
 

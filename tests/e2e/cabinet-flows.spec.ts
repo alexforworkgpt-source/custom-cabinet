@@ -500,7 +500,10 @@ test('keeps the top-right traffic value visible at 420 px @telegram-flow', async
   });
 
   expect(horizontalBounds).not.toBeNull();
-  expect(horizontalBounds!.valueRight).toBeLessThanOrEqual(horizontalBounds!.contentRight + 0.5);
+  if (!horizontalBounds) {
+    throw new Error('Traffic value bounds were not measured');
+  }
+  expect(horizontalBounds.valueRight).toBeLessThanOrEqual(horizontalBounds.contentRight + 0.5);
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 

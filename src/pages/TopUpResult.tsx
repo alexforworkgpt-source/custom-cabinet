@@ -210,7 +210,7 @@ export default function TopUpResult() {
   // Determine if we can poll by specific payment_id (need method + numeric payment_id)
   const parsedPaymentId = pendingInfo?.payment_id ? parseInt(pendingInfo.payment_id, 10) : NaN;
   const canPollById =
-    !!(pendingInfo?.method_id && !isNaN(parsedPaymentId)) &&
+    !!(pendingInfo?.method_id && !Number.isNaN(parsedPaymentId)) &&
     !isRedirectSuccess &&
     !isRedirectFailed;
 
@@ -221,7 +221,10 @@ export default function TopUpResult() {
   // Poll payment status by specific ID (primary path — sessionStorage available)
   const { data: paymentStatus, refetch } = useQuery({
     queryKey: ['topup-status', pendingInfo?.method_id, parsedPaymentId],
-    queryFn: () => balanceApi.getPendingPayment(pendingInfo!.method_id, parsedPaymentId),
+    queryFn: () => {
+      if (!pendingInfo?.method_id) throw new Error('Payment method is required');
+      return balanceApi.getPendingPayment(pendingInfo.method_id, parsedPaymentId);
+    },
     enabled: canPollById && !pollTimedOut,
     refetchInterval: (query) => {
       const payment = query.state.data;
@@ -244,7 +247,10 @@ export default function TopUpResult() {
   // Poll payment status by method latest (fallback — external browser, no sessionStorage)
   const { data: latestPayment, refetch: refetchLatest } = useQuery({
     queryKey: ['topup-status-latest', methodFromUrl],
-    queryFn: () => balanceApi.getLatestPayment(methodFromUrl!),
+    queryFn: () => {
+      if (!methodFromUrl) throw new Error('Payment method is required');
+      return balanceApi.getLatestPayment(methodFromUrl);
+    },
     enabled: canPollByMethod && !pollTimedOut,
     refetchInterval: (query) => {
       const payment = query.state.data;
@@ -275,7 +281,7 @@ export default function TopUpResult() {
     } else {
       refetchLatest();
     }
-  }, [canPollById, setPollTimedOut, refetch, refetchLatest]);
+  }, [canPollById, refetch, refetchLatest]);
 
   const handleGoBack = useCallback(() => {
     clearTopUpPendingInfo();

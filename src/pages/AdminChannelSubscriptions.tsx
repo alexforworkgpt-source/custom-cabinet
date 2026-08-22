@@ -199,7 +199,7 @@ function ChannelCard({
             <div className="mt-1.5 flex items-center gap-1 text-xs text-accent-400">
               <LinkIcon className="h-4 w-4" />
               <a
-                href={channel.channel_link!}
+                href={channel.channel_link ?? undefined}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="truncate hover:underline"
@@ -470,7 +470,7 @@ function EditChannelForm({
       updates.title = newTitle ?? (null as unknown as string);
     if (newLink !== (channel.channel_link ?? undefined))
       updates.channel_link = newLink ?? (null as unknown as string);
-    if (!isNaN(newSort) && newSort !== channel.sort_order) updates.sort_order = newSort;
+    if (!Number.isNaN(newSort) && newSort !== channel.sort_order) updates.sort_order = newSort;
 
     onSubmit(channel.id, updates);
   };

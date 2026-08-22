@@ -91,7 +91,9 @@ function computeRadialPositions(
 
   // BFS: place children at increasing radius
   while (queue.length > 0) {
-    const { userId, depth, parentAngle } = queue.shift()!;
+    const next = queue.shift();
+    if (!next) break;
+    const { userId, depth, parentAngle } = next;
     const children = childrenOf.get(userId) ?? [];
     const childCount = children.length;
     if (childCount === 0) continue;
@@ -527,6 +529,8 @@ export function NetworkGraph({ data, className }: NetworkGraphProps) {
     sigmaRef.current.refresh();
   }, [filters]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies(hoveredNodeId): Hover changes must trigger Sigma's imperative refresh.
+  // biome-ignore lint/correctness/useExhaustiveDependencies(highlightedNodes): Highlight changes must trigger Sigma's imperative refresh.
   useEffect(() => {
     if (sigmaRef.current) {
       sigmaRef.current.refresh();

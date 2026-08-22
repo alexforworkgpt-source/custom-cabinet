@@ -75,6 +75,7 @@ export function BlockButtons({
         const btnIcon = btnSvg ? (
           <div
             className="h-4 w-4 [&>svg]:h-full [&>svg]:w-full"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: The parent sanitizes configured SVG with DOMPurify.
             dangerouslySetInnerHTML={{ __html: btnSvg }}
           />
         ) : null;

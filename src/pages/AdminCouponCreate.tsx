@@ -11,7 +11,7 @@ import { getApiErrorMessage } from '../utils/api-error';
 import { BackIcon, CheckIcon, CopyIcon, DownloadIcon } from '@/components/icons';
 
 const downloadLinksFile = (batch: CouponBatchCreated | { id: number; links: string[] }) => {
-  const blob = new Blob([batch.links.join('\n') + '\n'], { type: 'text/plain;charset=utf-8' });
+  const blob = new Blob([`${batch.links.join('\n')}\n`], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
@@ -70,10 +70,10 @@ export default function AdminCouponCreate() {
 
   const handleSubmit = () => {
     setServerError(null);
-    if (!validate()) return;
+    if (!validate() || !tariffId) return;
     createMutation.mutate({
       name: name.trim(),
-      tariff_id: tariffId!,
+      tariff_id: tariffId,
       period_days: Number(periodDays),
       coupons_count: Number(couponsCount),
       wholesale_price_kopeks: priceRubles === '' ? 0 : Math.round(Number(priceRubles) * 100),

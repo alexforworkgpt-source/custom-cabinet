@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SettingDefinition } from '../../api/adminSettings';
+import type { SettingDefinition } from '../../api/adminSettings';
 import { CheckIcon, CloseIcon, EditIcon } from './icons';
 
 interface SettingInputProps {
@@ -46,10 +46,11 @@ export function SettingInput({ setting, onUpdate, disabled }: SettingInputProps)
     !setting.is_secret && (isLongValue(currentValue) || isListOrJsonKey(setting.key));
 
   // Auto-resize textarea
+  // biome-ignore lint/correctness/useExhaustiveDependencies(value): Recalculate the textarea height after its controlled value changes.
   useEffect(() => {
     if (textareaRef.current && isEditing) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 300) + 'px';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 300)}px`;
     }
   }, [value, isEditing]);
 
@@ -179,7 +180,7 @@ export function SettingInput({ setting, onUpdate, disabled }: SettingInputProps)
   if (needsTextarea) {
     const displayValue = currentValue || '-';
     const previewValue =
-      displayValue.length > 60 ? displayValue.slice(0, 60) + '...' : displayValue;
+      displayValue.length > 60 ? `${displayValue.slice(0, 60)}...` : displayValue;
 
     return (
       <button

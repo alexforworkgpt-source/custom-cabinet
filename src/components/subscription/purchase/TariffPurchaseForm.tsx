@@ -420,7 +420,7 @@ export function TariffPurchaseForm({
                         min={tariff.min_days ?? 1}
                         max={tariff.max_days ?? 365}
                         value={customDays}
-                        onChange={(e) => setCustomDays(parseInt(e.target.value))}
+                        onChange={(e) => setCustomDays(parseInt(e.target.value, 10))}
                         className="flex-1 accent-accent-500"
                       />
                       <input
@@ -434,7 +434,7 @@ export function TariffPurchaseForm({
                               tariff.min_days ?? 1,
                               Math.min(
                                 tariff.max_days ?? 365,
-                                parseInt(e.target.value) || (tariff.min_days ?? 1),
+                                parseInt(e.target.value, 10) || (tariff.min_days ?? 1),
                               ),
                             ),
                           )
@@ -530,7 +530,7 @@ export function TariffPurchaseForm({
                         min={tariff.min_traffic_gb ?? 1}
                         max={tariff.max_traffic_gb ?? 1000}
                         value={customTrafficGb}
-                        onChange={(e) => setCustomTrafficGb(parseInt(e.target.value))}
+                        onChange={(e) => setCustomTrafficGb(parseInt(e.target.value, 10))}
                         className="flex-1 accent-accent-500"
                       />
                       <div className="flex items-center gap-2">
@@ -545,7 +545,7 @@ export function TariffPurchaseForm({
                                 tariff.min_traffic_gb ?? 1,
                                 Math.min(
                                   tariff.max_traffic_gb ?? 1000,
-                                  parseInt(e.target.value) || (tariff.min_traffic_gb ?? 1),
+                                  parseInt(e.target.value, 10) || (tariff.min_traffic_gb ?? 1),
                                 ),
                               ),
                             )
@@ -618,52 +618,45 @@ export function TariffPurchaseForm({
                           </div>
                         </div>
                       ) : (
-                        selectedTariffPeriod && (
+                        selectedTariffPeriod &&
+                        ((selectedTariffPeriod.extra_devices_count ?? 0) > 0 &&
+                        selectedTariffPeriod.base_tariff_price_kopeks ? (
                           <>
-                            {(selectedTariffPeriod.extra_devices_count ?? 0) > 0 &&
-                            selectedTariffPeriod.base_tariff_price_kopeks ? (
-                              <>
-                                <div className="flex justify-between text-sm text-dark-300">
-                                  <span>
-                                    {t('subscription.baseTariff')}: {selectedTariffPeriod.label}
-                                  </span>
-                                  <span>
-                                    {formatPrice(selectedTariffPeriod.base_tariff_price_kopeks)}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between text-sm text-dark-300">
-                                  <span>
-                                    {t('subscription.extraDevices')} (
-                                    {selectedTariffPeriod.extra_devices_count})
-                                  </span>
-                                  <span>
-                                    +
-                                    {formatPrice(
-                                      selectedTariffPeriod.extra_devices_cost_kopeks ?? 0,
-                                    )}
-                                  </span>
-                                </div>
-                              </>
-                            ) : (
-                              <div className="flex justify-between text-sm text-dark-300">
-                                <span>
-                                  {t('subscription.summary.period', {
-                                    label: selectedTariffPeriod.label,
-                                  })}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  <span>{formatPrice(promoPeriod.price)}</span>
-                                  {promoPeriod.original &&
-                                    promoPeriod.original > promoPeriod.price && (
-                                      <span className="text-xs text-dark-500 line-through">
-                                        {formatPrice(promoPeriod.original)}
-                                      </span>
-                                    )}
-                                </div>
-                              </div>
-                            )}
+                            <div className="flex justify-between text-sm text-dark-300">
+                              <span>
+                                {t('subscription.baseTariff')}: {selectedTariffPeriod.label}
+                              </span>
+                              <span>
+                                {formatPrice(selectedTariffPeriod.base_tariff_price_kopeks)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-sm text-dark-300">
+                              <span>
+                                {t('subscription.extraDevices')} (
+                                {selectedTariffPeriod.extra_devices_count})
+                              </span>
+                              <span>
+                                +{formatPrice(selectedTariffPeriod.extra_devices_cost_kopeks ?? 0)}
+                              </span>
+                            </div>
                           </>
-                        )
+                        ) : (
+                          <div className="flex justify-between text-sm text-dark-300">
+                            <span>
+                              {t('subscription.summary.period', {
+                                label: selectedTariffPeriod.label,
+                              })}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span>{formatPrice(promoPeriod.price)}</span>
+                              {promoPeriod.original && promoPeriod.original > promoPeriod.price && (
+                                <span className="text-xs text-dark-500 line-through">
+                                  {formatPrice(promoPeriod.original)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))
                       )}
                       {useCustomTraffic && tariff.custom_traffic_enabled && (
                         <div className="flex justify-between text-sm text-dark-300">

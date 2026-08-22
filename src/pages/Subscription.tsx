@@ -1415,7 +1415,7 @@ export default function Subscription({
       ) : null}
 
       {/* Daily Subscription Pause */}
-      {subscription && subscription.is_daily && !subscription.is_trial && (
+      {subscription?.is_daily && !subscription.is_trial && (
         <div
           className="relative overflow-hidden rounded-3xl"
           style={{
@@ -1536,7 +1536,7 @@ export default function Subscription({
               const now = new Date();
               const nextChargeStr = subscription.next_daily_charge_at.endsWith('Z')
                 ? subscription.next_daily_charge_at
-                : subscription.next_daily_charge_at + 'Z';
+                : `${subscription.next_daily_charge_at}Z`;
               const nextCharge = new Date(nextChargeStr);
               const totalMs = 24 * 60 * 60 * 1000;
               const remainingMs = Math.max(0, nextCharge.getTime() - now.getTime());

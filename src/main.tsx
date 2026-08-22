@@ -40,9 +40,12 @@ installEncodingSurrogateGuard();
 // @telegram-apps/sdk v3 depends on valibot which uses Object.hasOwn internally.
 // Without this, init() throws LaunchParamsRetrieveError on affected devices.
 // See: https://github.com/Telegram-Mini-Apps/tma.js/issues/683
-if (typeof (Object as { hasOwn?: unknown }).hasOwn !== 'function') {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (Object as any).hasOwn = (obj: object, prop: PropertyKey): boolean =>
+const objectWithHasOwn = Object as {
+  hasOwn?: (obj: object, prop: PropertyKey) => boolean;
+};
+if (typeof objectWithHasOwn.hasOwn !== 'function') {
+  objectWithHasOwn.hasOwn = (obj: object, prop: PropertyKey): boolean =>
+    // biome-ignore lint/suspicious/noPrototypeBuiltins: This is the Object.hasOwn polyfill for older WebViews.
     Object.prototype.hasOwnProperty.call(obj, prop);
 }
 
@@ -134,7 +137,12 @@ const queryClient = new QueryClient({
   },
 });
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('Application root element #root was not found');
+}
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <ErrorBoundary level="app">
       <QueryClientProvider client={queryClient}>

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SETTINGS_TREE } from './constants';
 import { StarIcon, SearchIcon, CloseIcon, ChevronDownIcon } from './icons';
-import { SettingDefinition } from '../../api/adminSettings';
+import type { SettingDefinition } from '../../api/adminSettings';
 import { formatSettingKey } from './utils';
 import { cn } from '../../lib/utils';
 
@@ -75,6 +75,8 @@ export function SettingsTreeSidebar({
   }, []);
 
   // Reset highlighted index when suggestions change
+  // biome-ignore lint/correctness/useExhaustiveDependencies(suggestions.length): Reset selection when the result set changes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies(searchQuery): Reset selection for each new search.
   useEffect(() => {
     setHighlightedIndex(0);
   }, [suggestions.length, searchQuery]);

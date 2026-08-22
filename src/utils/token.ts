@@ -289,7 +289,9 @@ class TokenRefreshManager {
   }
 
   private notifySubscribers(token: string | null): void {
-    this.subscribers.forEach((cb) => cb(token));
+    this.subscribers.forEach((cb) => {
+      cb(token);
+    });
     this.subscribers = [];
   }
 

@@ -1,8 +1,8 @@
 import apiClient from './client';
 import {
-  ThemeSettings,
+  type ThemeSettings,
   DEFAULT_THEME_COLORS,
-  EnabledThemes,
+  type EnabledThemes,
   DEFAULT_ENABLED_THEMES,
 } from '../types/theme';
 

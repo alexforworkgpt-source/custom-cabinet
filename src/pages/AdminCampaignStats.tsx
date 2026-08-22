@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { campaignsApi, CampaignBonusType } from '../api/campaigns';
+import { campaignsApi, type CampaignBonusType } from '../api/campaigns';
 import type { AdminCampaignChartData } from '../api/campaigns';
 import { AdminBackButton } from '../components/admin';
 import { DailyChart, PeriodComparison, StatCard } from '../components/stats';
@@ -43,7 +43,7 @@ export default function AdminCampaignStats() {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const numericId = id ? Number(id) : null;
-  const isValidId = numericId !== null && !isNaN(numericId);
+  const isValidId = numericId !== null && !Number.isNaN(numericId);
   const navigate = useNavigate();
   const haptic = useHaptic();
   const { formatWithCurrency } = useCurrency();
@@ -67,7 +67,11 @@ export default function AdminCampaignStats() {
     error,
   } = useQuery({
     queryKey: ['campaign-stats', id],
-    queryFn: () => campaignsApi.getCampaignStats(numericId!),
+    queryFn: () => {
+      if (numericId === null || Number.isNaN(numericId))
+        throw new Error('Valid campaign ID is required');
+      return campaignsApi.getCampaignStats(numericId);
+    },
     enabled: isValidId,
     staleTime: PARTNER_STATS.STATS_STALE_TIME,
   });
@@ -75,14 +79,22 @@ export default function AdminCampaignStats() {
   // Fetch registrations when users section is open
   const { data: registrationsData, isLoading: usersLoading } = useQuery({
     queryKey: ['campaign-registrations', id],
-    queryFn: () => campaignsApi.getCampaignRegistrations(numericId!, 1, 50),
+    queryFn: () => {
+      if (numericId === null || Number.isNaN(numericId))
+        throw new Error('Valid campaign ID is required');
+      return campaignsApi.getCampaignRegistrations(numericId, 1, 50);
+    },
     enabled: isValidId && showUsers,
   });
 
   // Fetch chart data
   const { data: chartData, isLoading: chartLoading } = useQuery<AdminCampaignChartData>({
     queryKey: ['campaign-chart-data', id],
-    queryFn: () => campaignsApi.getChartData(numericId!),
+    queryFn: () => {
+      if (numericId === null || Number.isNaN(numericId))
+        throw new Error('Valid campaign ID is required');
+      return campaignsApi.getChartData(numericId);
+    },
     enabled: isValidId,
     staleTime: PARTNER_STATS.STATS_STALE_TIME,
   });
@@ -204,7 +216,10 @@ export default function AdminCampaignStats() {
                     <span className="truncate text-sm text-dark-300">{stats.deep_link}</span>
                   </div>
                   <button
-                    onClick={() => handleCopy(stats.deep_link!, 'bot')}
+                    onClick={() => {
+                      const url = stats.deep_link;
+                      if (url) void handleCopy(url, 'bot');
+                    }}
                     className="flex shrink-0 items-center gap-1 rounded-lg bg-dark-700 px-3 py-2 text-dark-300 transition-colors hover:bg-dark-600"
                   >
                     <CopyIcon />
@@ -228,7 +243,10 @@ export default function AdminCampaignStats() {
                     <span className="truncate text-sm text-dark-300">{stats.web_link}</span>
                   </div>
                   <button
-                    onClick={() => handleCopy(stats.web_link!, 'web')}
+                    onClick={() => {
+                      const url = stats.web_link;
+                      if (url) void handleCopy(url, 'web');
+                    }}
                     className="flex shrink-0 items-center gap-1 rounded-lg bg-dark-700 px-3 py-2 text-dark-300 transition-colors hover:bg-dark-600"
                   >
                     <CopyIcon />

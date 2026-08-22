@@ -178,7 +178,7 @@ function ProtectedRoute({
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  return withLayout ? <Layout>{children}</Layout> : <>{children}</>;
+  return withLayout ? <Layout>{children}</Layout> : children;
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {

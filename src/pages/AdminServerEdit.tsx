@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { serversApi, ServerUpdateRequest } from '../api/servers';
+import { serversApi, type ServerUpdateRequest } from '../api/servers';
 import { AdminBackButton } from '../components/admin';
 import { ServerIcon } from '../components/icons';
 import { createNumberInputHandler, toNumber } from '../utils/inputHelpers';
@@ -15,7 +15,7 @@ export default function AdminServerEdit() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const serverId = parseInt(id || '0');
+  const serverId = parseInt(id || '0', 10);
 
   const {
     data: server,
@@ -238,7 +238,7 @@ export default function AdminServerEdit() {
                 type="number"
                 value={maxUsers || ''}
                 onChange={(e) =>
-                  setMaxUsers(e.target.value ? Math.max(0, parseInt(e.target.value)) : null)
+                  setMaxUsers(e.target.value ? Math.max(0, parseInt(e.target.value, 10)) : null)
                 }
                 className="input w-32"
                 min={0}

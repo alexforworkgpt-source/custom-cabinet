@@ -389,6 +389,7 @@ export default function NewsArticlePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
         className="prose max-w-none lg:max-w-3xl"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitizedContent is produced by the strict DOMPurify article sanitizer.
         dangerouslySetInnerHTML={{ __html: sanitizedContent }}
       />
     </div>

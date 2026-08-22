@@ -75,7 +75,10 @@ export default function PublicLegal({ doc }: PublicLegalProps) {
           </div>
         ) : (
           <div className="bento-card prose prose-invert max-w-none">
-            <div dangerouslySetInnerHTML={{ __html: formatContent(data.content) }} />
+            <div
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: formatContent sanitizes legal content with a strict DOMPurify allowlist.
+              dangerouslySetInnerHTML={{ __html: formatContent(data.content) }}
+            />
             {data.updated_at && (
               <p className="mt-4 text-xs text-dark-500">
                 {t('info.updatedAt', 'Обновлено')}:{' '}

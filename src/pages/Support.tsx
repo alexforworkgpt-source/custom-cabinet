@@ -74,7 +74,9 @@ export default function Support() {
   useEffect(() => {
     const urls = blobUrlsRef;
     return () => {
-      urls.current.forEach((u) => URL.revokeObjectURL(u));
+      urls.current.forEach((u) => {
+        URL.revokeObjectURL(u);
+      });
     };
   }, []);
 
@@ -125,7 +127,10 @@ export default function Support() {
 
   const { data: ticketDetail, isLoading: detailLoading } = useQuery({
     queryKey: ['ticket', selectedTicket?.id],
-    queryFn: () => ticketsApi.getTicket(selectedTicket!.id),
+    queryFn: () => {
+      if (!selectedTicket) throw new Error('Selected ticket is required');
+      return ticketsApi.getTicket(selectedTicket.id);
+    },
     enabled: !!selectedTicket,
   });
 
@@ -186,6 +191,7 @@ export default function Support() {
 
   const replyMutation = useMutation({
     mutationFn: async () => {
+      if (!selectedTicket) throw new Error('Selected ticket is required');
       const ready = replyAttachments.filter((a) => a.fileId) as Array<{ fileId: string }>;
       const media =
         ready.length > 0
@@ -195,7 +201,7 @@ export default function Support() {
               media_items: ready.map((a) => ({ type: 'photo' as const, file_id: a.fileId })),
             }
           : undefined;
-      await ticketsApi.addMessage(selectedTicket!.id, replyMessage, media);
+      await ticketsApi.addMessage(selectedTicket.id, replyMessage, media);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ticket', selectedTicket?.id] });
@@ -497,7 +503,9 @@ export default function Support() {
                     className="hidden"
                     onChange={(e) => {
                       const files = Array.from(e.target.files || []);
-                      files.forEach((file) => handleFileSelect(file, setCreateAttachments));
+                      files.forEach((file) => {
+                        void handleFileSelect(file, setCreateAttachments);
+                      });
                       e.target.value = '';
                     }}
                   />
@@ -601,6 +609,7 @@ export default function Support() {
                       {msg.message_text && (
                         <div
                           className="whitespace-pre-wrap text-dark-200 [&_a]:text-accent-400 [&_a]:underline"
+                          // biome-ignore lint/security/noDangerouslySetInnerHtml: linkifyText sanitizes message text with a strict DOMPurify allowlist.
                           dangerouslySetInnerHTML={{ __html: linkifyText(msg.message_text) }}
                         />
                       )}
@@ -651,7 +660,9 @@ export default function Support() {
                         className="hidden"
                         onChange={(e) => {
                           const files = Array.from(e.target.files || []);
-                          files.forEach((file) => handleFileSelect(file, setReplyAttachments));
+                          files.forEach((file) => {
+                            void handleFileSelect(file, setReplyAttachments);
+                          });
                           e.target.value = '';
                         }}
                       />

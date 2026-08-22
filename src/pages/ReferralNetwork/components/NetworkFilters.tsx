@@ -35,7 +35,7 @@ export function NetworkFilters({ data, className }: NetworkFiltersProps) {
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [isOpen, setIsOpen]);
+  }, [isOpen]);
 
   function toggleCampaign(campaignId: number) {
     const current = filters.campaigns;

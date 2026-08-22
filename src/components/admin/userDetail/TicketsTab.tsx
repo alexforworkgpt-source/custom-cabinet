@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi, type AdminTicket, type AdminTicketDetail } from '../../../api/admin';
@@ -47,7 +47,7 @@ export function TicketsTab({ userId, formatDate }: TicketsTabProps) {
 
   // ─── Detail loader / refresh chain ──────────────────────────────
 
-  const loadTicketDetail = async (ticketId: number) => {
+  const loadTicketDetail = useCallback(async (ticketId: number) => {
     try {
       setTicketDetailLoading(true);
       const data = await adminApi.getTicket(ticketId);
@@ -57,13 +57,13 @@ export function TicketsTab({ userId, formatDate }: TicketsTabProps) {
     } finally {
       setTicketDetailLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (selectedTicketId) {
       loadTicketDetail(selectedTicketId);
     }
-  }, [selectedTicketId]);
+  }, [selectedTicketId, loadTicketDetail]);
 
   // Auto-scroll messages list to the latest reply
   useEffect(() => {
@@ -319,6 +319,7 @@ function ChatView({
             {msg.message_text && (
               <p
                 className="whitespace-pre-wrap text-sm text-dark-200 [&_a]:text-accent-400 [&_a]:underline"
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: linkifyText sanitizes message text with a strict DOMPurify allowlist.
                 dangerouslySetInnerHTML={{ __html: linkifyText(msg.message_text) }}
               />
             )}

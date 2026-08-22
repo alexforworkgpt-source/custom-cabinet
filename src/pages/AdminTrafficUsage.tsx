@@ -270,7 +270,7 @@ export default function AdminTrafficUsage() {
       });
     }, 500);
     return () => clearTimeout(timer);
-  }, [period, dateMode, limit, queryClient]);
+  }, [period, dateMode, queryClient]);
 
   useEffect(() => {
     if (toast) {

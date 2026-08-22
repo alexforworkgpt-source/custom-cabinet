@@ -83,6 +83,7 @@ export function AppShell({ children }: AppShellProps) {
   }, []);
 
   // Reset keyboard state on route change — prevents bottom nav staying hidden after navigation
+  // biome-ignore lint/correctness/useExhaustiveDependencies(location.pathname): Navigation intentionally resets keyboard-derived UI state.
   useEffect(() => {
     setIsKeyboardOpen(false);
   }, [location.pathname]);

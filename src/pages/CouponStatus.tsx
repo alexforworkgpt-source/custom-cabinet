@@ -3,7 +3,7 @@ import { useParams } from 'react-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
-import { couponsApi, CouponRedeemResponse } from '../api/coupons';
+import { couponsApi, type CouponRedeemResponse } from '../api/coupons';
 import { useAuthStore } from '../store/auth';
 import { formatShortDate } from '../utils/format';
 import { Spinner } from '@/components/ui/Spinner';
@@ -47,7 +47,10 @@ export default function CouponStatus() {
     error,
   } = useQuery({
     queryKey: ['coupon-status', token],
-    queryFn: () => couponsApi.getCouponStatus(token!),
+    queryFn: () => {
+      if (!token) throw new Error('Coupon token is required');
+      return couponsApi.getCouponStatus(token);
+    },
     enabled: !!token,
     // 404 is the expected answer for an invalid/consumed/expired token — the
     // common case for a shared link — so retrying only wastes a request against
@@ -56,7 +59,10 @@ export default function CouponStatus() {
   });
 
   const redeemMutation = useMutation({
-    mutationFn: () => couponsApi.redeemCoupon(token!),
+    mutationFn: () => {
+      if (!token) throw new Error('Coupon token is required');
+      return couponsApi.redeemCoupon(token);
+    },
     onSuccess: (result) => {
       setRedeemError(null);
       setRedeemed(result);

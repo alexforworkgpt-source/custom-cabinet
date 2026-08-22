@@ -79,7 +79,10 @@ export function SwitchTariffSheet({
 
   const { data: switchPreview, isLoading: switchPreviewLoading } = useQuery({
     queryKey: ['tariff-switch-preview', tariffId],
-    queryFn: () => subscriptionApi.previewTariffSwitch(tariffId!, subscriptionId),
+    queryFn: () => {
+      if (!tariffId) throw new Error('Tariff ID is required');
+      return subscriptionApi.previewTariffSwitch(tariffId, subscriptionId);
+    },
     enabled: !!tariffId,
   });
 

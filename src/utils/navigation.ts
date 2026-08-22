@@ -34,5 +34,5 @@ export function hasInAppHistory(): boolean {
 export function getFallbackParentPath(pathname: string): string {
   const segments = pathname.replace(/\/+$/, '').split('/').filter(Boolean);
   const parent = segments.slice(0, -1);
-  return parent.length ? '/' + parent.join('/') : '/';
+  return parent.length ? `/${parent.join('/')}` : '/';
 }

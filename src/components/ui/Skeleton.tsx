@@ -1,4 +1,4 @@
-import { type CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
 
 export type SkeletonVariant = 'text' | 'avatar' | 'card' | 'list' | 'bento';
 
@@ -112,8 +112,6 @@ export function Skeleton({
             </div>
           </div>
         );
-
-      case 'bento':
       default:
         return (
           <div

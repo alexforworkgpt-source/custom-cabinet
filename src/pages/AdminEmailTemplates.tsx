@@ -3,9 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
   adminEmailTemplatesApi,
-  EmailTemplateType,
-  EmailTemplateDetail,
-  EmailTemplateLanguageData,
+  type EmailTemplateType,
+  type EmailTemplateDetail,
+  type EmailTemplateLanguageData,
 } from '../api/adminEmailTemplates';
 import { AdminBackButton, BackIcon } from '../components/admin';
 import { useNativeDialog } from '../platform/hooks/useNativeDialog';
@@ -40,8 +40,8 @@ function TemplateCard({
   currentLang: string;
   onClick: () => void;
 }) {
-  const label = template.label[currentLang] || template.label['en'] || template.type;
-  const description = template.description[currentLang] || template.description['en'] || '';
+  const label = template.label[currentLang] || template.label.en || template.type;
+  const description = template.description[currentLang] || template.description.en || '';
   const customCount = Object.values(template.languages).filter((l) => l.has_custom).length;
 
   return (
@@ -124,6 +124,7 @@ function TemplateEditor({
   const langData: EmailTemplateLanguageData | undefined = detail.languages[activeLang];
 
   // Load data for current language (defaults arrive with {placeholders} intact)
+  // biome-ignore lint/correctness/useExhaustiveDependencies(activeLang): Switching language must reinitialize editor state even if the derived object is referentially unchanged.
   useEffect(() => {
     if (langData) {
       setEditSubject(langData.subject);
@@ -237,7 +238,7 @@ function TemplateEditor({
     setActiveTab('editor');
   };
 
-  const label = detail.label[interfaceLang] || detail.label['en'] || detail.notification_type;
+  const label = detail.label[interfaceLang] || detail.label.en || detail.notification_type;
 
   return (
     <div className="space-y-3 sm:space-y-4">
@@ -253,7 +254,7 @@ function TemplateEditor({
           <div className="min-w-0">
             <h2 className="truncate text-base font-semibold text-dark-100 sm:text-lg">{label}</h2>
             <p className="line-clamp-2 text-xs text-dark-400">
-              {detail.description[interfaceLang] || detail.description['en'] || ''}
+              {detail.description[interfaceLang] || detail.description.en || ''}
             </p>
           </div>
         </div>
@@ -390,7 +391,7 @@ function TemplateEditor({
                     {t('admin.emailTemplates.variablesCommon')}
                   </p>
                   <div className="flex flex-wrap gap-1 sm:gap-1.5">
-                    {detail.common_context_vars!.map((v) => (
+                    {(detail.common_context_vars ?? []).map((v) => (
                       <code
                         key={v}
                         className="cursor-pointer rounded bg-dark-800 px-2 py-0.5 font-mono text-xs text-dark-300 ring-1 ring-dark-600 transition-colors hover:bg-dark-700 hover:text-accent-400"
@@ -509,7 +510,10 @@ export default function AdminEmailTemplates() {
   // Fetch detail for selected type
   const { data: detailData, isLoading: detailLoading } = useQuery({
     queryKey: ['admin', 'email-template', selectedType],
-    queryFn: () => adminEmailTemplatesApi.getTemplate(selectedType!),
+    queryFn: () => {
+      if (!selectedType) throw new Error('Email template type is required');
+      return adminEmailTemplatesApi.getTemplate(selectedType);
+    },
     enabled: !!selectedType,
   });
 

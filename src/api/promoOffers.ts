@@ -31,9 +31,7 @@ export interface PromoOffer {
   claimed_at: string | null;
   is_active: boolean;
   effect_type: string;
-  // Dynamic extra data from backend - shape depends on effect_type
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  extra_data: Record<string, any>;
+  extra_data: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   user: PromoOfferUserInfo | null;

@@ -10,7 +10,7 @@ function getAccentRGB(): [number, number, number] {
     .trim();
   if (!raw) return [96, 165, 250];
   const parts = raw.split(',').map((s) => parseInt(s.trim(), 10));
-  if (parts.length >= 3 && parts.every((n) => !isNaN(n))) {
+  if (parts.length >= 3 && parts.every((n) => !Number.isNaN(n))) {
     return [parts[0], parts[1], parts[2]];
   }
   return [96, 165, 250];
@@ -89,8 +89,9 @@ export default function GridBackground() {
         const bucket = Math.round(rawAlpha * ALPHA_BUCKETS) / ALPHA_BUCKETS;
         const x = i * cellW;
         const wave = Math.sin(time + i * 0.3) * 2;
-        if (!vBuckets.has(bucket)) vBuckets.set(bucket, []);
-        vBuckets.get(bucket)!.push([x + wave, 0, x - wave, h]);
+        const segments = vBuckets.get(bucket) ?? [];
+        segments.push([x + wave, 0, x - wave, h]);
+        vBuckets.set(bucket, segments);
       }
       for (const [alpha, segs] of vBuckets) {
         ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
@@ -109,8 +110,9 @@ export default function GridBackground() {
         const bucket = Math.round(rawAlpha * ALPHA_BUCKETS) / ALPHA_BUCKETS;
         const y = j * cellH;
         const wave = Math.cos(time + j * 0.3) * 2;
-        if (!hBuckets.has(bucket)) hBuckets.set(bucket, []);
-        hBuckets.get(bucket)!.push([0, y + wave, w, y - wave]);
+        const segments = hBuckets.get(bucket) ?? [];
+        segments.push([0, y + wave, w, y - wave]);
+        hBuckets.set(bucket, segments);
       }
       for (const [alpha, segs] of hBuckets) {
         ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;

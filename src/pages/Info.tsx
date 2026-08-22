@@ -196,6 +196,7 @@ function ReplacementFaqItem({
         <div ref={contentRef} className="border-t border-dark-700/50 px-5 pb-4 pt-3">
           <div
             className="prose prose-sm max-w-none text-dark-300"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitizedAnswer is produced by the strict DOMPurify rich-content sanitizer.
             dangerouslySetInnerHTML={{ __html: sanitizedAnswer }}
           />
         </div>
@@ -289,9 +290,8 @@ export default function Info() {
 
   // Parse FAQ items from InfoPage content
   const infoPageFaqItems = useMemo((): FaqItem[] => {
-    if (!infoPage || infoPage.page_type !== 'faq') return [];
-    const raw =
-      infoPage.content[locale] || infoPage.content['ru'] || infoPage.content['en'] || '[]';
+    if (infoPage?.page_type !== 'faq') return [];
+    const raw = infoPage.content[locale] || infoPage.content.ru || infoPage.content.en || '[]';
     try {
       const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
       return Array.isArray(parsed) ? parsed : [];
@@ -303,8 +303,7 @@ export default function Info() {
   // Sanitize regular InfoPage HTML content
   const infoPageHtml = useMemo(() => {
     if (!infoPage || infoPage.page_type === 'faq') return '';
-    const rawContent =
-      infoPage.content[locale] || infoPage.content['ru'] || infoPage.content['en'] || '';
+    const rawContent = infoPage.content[locale] || infoPage.content.ru || infoPage.content.en || '';
     return sanitizeRichHtml(rawContent);
   }, [infoPage, locale]);
 
@@ -365,7 +364,7 @@ export default function Info() {
     });
 
     const customTabs = extraPages.map((p) => {
-      const label = p.title[locale] || p.title['ru'] || p.title['en'] || p.slug;
+      const label = p.title[locale] || p.title.ru || p.title.en || p.slug;
       return { id: p.slug, label, icon: DocumentIcon, emoji: p.icon ?? undefined };
     });
 
@@ -409,7 +408,11 @@ export default function Info() {
 
     return (
       <div className="bento-card prose prose-invert max-w-none">
-        <div className="overflow-x-auto" dangerouslySetInnerHTML={{ __html: infoPageHtml }} />
+        <div
+          className="overflow-x-auto"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: infoPageHtml is produced by the strict DOMPurify rich-content sanitizer.
+          dangerouslySetInnerHTML={{ __html: infoPageHtml }}
+        />
       </div>
     );
   };
@@ -460,7 +463,10 @@ export default function Info() {
               </button>
               {expandedFaq === faq.id && (
                 <div className="prose prose-invert max-w-none px-4 pb-4 text-dark-300">
-                  <div dangerouslySetInnerHTML={{ __html: formatContent(faq.content) }} />
+                  <div
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: formatContent sanitizes legal content with a strict DOMPurify allowlist.
+                    dangerouslySetInnerHTML={{ __html: formatContent(faq.content) }}
+                  />
                 </div>
               )}
             </div>
@@ -486,6 +492,7 @@ export default function Info() {
         <div className="bento-card prose prose-invert max-w-none">
           <div
             className="overflow-x-auto"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: formatContent sanitizes legal content with a strict DOMPurify allowlist.
             dangerouslySetInnerHTML={{ __html: formatContent(rules.content) }}
           />
           {rules.updated_at && (
@@ -514,6 +521,7 @@ export default function Info() {
         <div className="bento-card prose prose-invert max-w-none">
           <div
             className="overflow-x-auto"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: formatContent sanitizes legal content with a strict DOMPurify allowlist.
             dangerouslySetInnerHTML={{ __html: formatContent(privacy.content) }}
           />
           {privacy.updated_at && (
@@ -542,6 +550,7 @@ export default function Info() {
         <div className="bento-card prose prose-invert max-w-none">
           <div
             className="overflow-x-auto"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: formatContent sanitizes legal content with a strict DOMPurify allowlist.
             dangerouslySetInnerHTML={{ __html: formatContent(offer.content) }}
           />
           {offer.updated_at && (

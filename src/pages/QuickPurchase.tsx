@@ -397,7 +397,7 @@ function PaymentMethodCard({
       {isSelected && hasSubOptions && (
         <div className="border-t border-dark-800/30 px-4 pb-4 pt-3">
           <div className="flex flex-wrap gap-2">
-            {method.sub_options!.map((opt) => (
+            {(method.sub_options ?? []).map((opt) => (
               <button
                 key={opt.id}
                 type="button"
@@ -436,7 +436,11 @@ function SanitizedHtml({ html, className }: { html: string; className?: string }
   }, [html]);
 
   return (
-    <div className={cn('break-words', className)} dangerouslySetInnerHTML={{ __html: sanitized }} />
+    <div
+      className={cn('break-words', className)}
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized is produced by the strict DOMPurify footer sanitizer above.
+      dangerouslySetInnerHTML={{ __html: sanitized }}
+    />
   );
 }
 
@@ -775,7 +779,10 @@ export default function QuickPurchase() {
     error,
   } = useQuery({
     queryKey: ['landing-config', slug, i18n.language],
-    queryFn: () => landingApi.getConfig(slug!, i18n.language),
+    queryFn: () => {
+      if (!slug) throw new Error('Landing slug is required');
+      return landingApi.getConfig(slug, i18n.language);
+    },
     enabled: !!slug,
     staleTime: 60_000,
     retry: 1,
@@ -984,10 +991,11 @@ export default function QuickPurchase() {
       meta.name = 'description';
       document.head.appendChild(meta);
     }
-    const prev = meta.content;
-    meta.content = config.meta_description;
+    const descriptionMeta = meta;
+    const prev = descriptionMeta.content;
+    descriptionMeta.content = config.meta_description;
     return () => {
-      meta!.content = prev;
+      descriptionMeta.content = prev;
     };
   }, [config?.meta_description]);
 
@@ -1045,7 +1053,10 @@ export default function QuickPurchase() {
 
   // Purchase mutation
   const purchaseMutation = useMutation({
-    mutationFn: (data: PurchaseRequest) => landingApi.createPurchase(slug!, data),
+    mutationFn: (data: PurchaseRequest) => {
+      if (!slug) throw new Error('Landing slug is required');
+      return landingApi.createPurchase(slug, data);
+    },
     onSuccess: (result) => {
       window.location.href = result.payment_url;
       // If redirect blocked (popup blocker etc.), reset after 5s
@@ -1063,7 +1074,15 @@ export default function QuickPurchase() {
 
   // Submit handler
   const handleSubmit = () => {
-    if (!canSubmit || !slug || isSubmitting) return;
+    if (
+      !canSubmit ||
+      !slug ||
+      !selectedMethod ||
+      !selectedTariffId ||
+      !selectedPeriodDays ||
+      isSubmitting
+    )
+      return;
 
     fireAnalyticsEvent('purchase_click');
 
@@ -1072,14 +1091,14 @@ export default function QuickPurchase() {
 
     // Build the payment_method string: append sub-option suffix if selected
     // e.g. "platega" + "2" → "platega_2", "yookassa" + "sbp" → "yookassa_sbp"
-    let paymentMethod = selectedMethod!;
+    let paymentMethod = selectedMethod;
     if (selectedSubOption) {
       paymentMethod = `${paymentMethod}_${selectedSubOption}`;
     }
 
     const data: PurchaseRequest = {
-      tariff_id: selectedTariffId!,
-      period_days: selectedPeriodDays!,
+      tariff_id: selectedTariffId,
+      period_days: selectedPeriodDays,
       contact_type: detectContactType(contactValue),
       contact_value: contactValue.trim(),
       payment_method: paymentMethod,

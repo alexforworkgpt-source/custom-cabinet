@@ -133,7 +133,10 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
               className="input flex-1 text-xs"
             />
             <button
-              onClick={() => handleCopy(campaign.deep_link!, botKey)}
+              onClick={() => {
+                const url = campaign.deep_link;
+                if (url) void handleCopy(url, botKey);
+              }}
               className={`btn-primary shrink-0 px-3 py-2.5 ${
                 copiedLink === botKey ? 'bg-success-500 hover:bg-success-500' : ''
               }`}
@@ -158,7 +161,10 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
               className="input flex-1 text-xs"
             />
             <button
-              onClick={() => handleCopy(campaign.web_link!, webKey)}
+              onClick={() => {
+                const url = campaign.web_link;
+                if (url) void handleCopy(url, webKey);
+              }}
               className={`btn-primary shrink-0 px-3 py-2.5 ${
                 copiedLink === webKey ? 'bg-success-500 hover:bg-success-500' : ''
               }`}

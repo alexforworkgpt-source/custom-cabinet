@@ -66,7 +66,7 @@ export default function AdminBroadcastDetail() {
       if (!broadcastId) throw new Error('Invalid broadcast ID');
       return adminBroadcastsApi.get(broadcastId);
     },
-    enabled: !!broadcastId && !isNaN(broadcastId),
+    enabled: !!broadcastId && !Number.isNaN(broadcastId),
     refetchInterval: (query) => broadcastPollInterval(query.state.data?.status),
   });
 
@@ -81,7 +81,7 @@ export default function AdminBroadcastDetail() {
 
   const isRunning = broadcast && isBroadcastInFlight(broadcast.status);
 
-  if (!broadcastId || isNaN(broadcastId)) {
+  if (!broadcastId || Number.isNaN(broadcastId)) {
     navigate('/admin/broadcasts');
     return null;
   }

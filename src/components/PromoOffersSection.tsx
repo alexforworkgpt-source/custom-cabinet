@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { promoApi, PromoOffer } from '../api/promo';
+import { promoApi, type PromoOffer } from '../api/promo';
 import { ClockIcon, CheckIcon, XCircleIcon } from './icons';
 import { useDestructiveConfirm } from '@/platform/hooks/useNativeDialog';
 import { Card } from '@/components/data-display/Card';
@@ -19,7 +19,7 @@ const formatTimeLeft = (
     expires = new Date(expiresAt);
   } else {
     // No timezone - treat as UTC
-    expires = new Date(expiresAt + 'Z');
+    expires = new Date(`${expiresAt}Z`);
   }
   const diffMs = expires.getTime() - now.getTime();
 
@@ -188,18 +188,14 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
   const availableOffers = offers.filter((o) => o.is_active && !o.is_claimed);
 
   // Don't render if no offers and no active discount
-  if (
-    !offersLoading &&
-    availableOffers.length === 0 &&
-    (!activeDiscount || !activeDiscount.is_active)
-  ) {
+  if (!offersLoading && availableOffers.length === 0 && !activeDiscount?.is_active) {
     return null;
   }
 
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Active Discount Banner with actions */}
-      {activeDiscount && activeDiscount.is_active && activeDiscount.discount_percent > 0 && (
+      {activeDiscount?.is_active && activeDiscount.discount_percent > 0 && (
         <Card
           size="lg"
           className="border-success-500/30 bg-gradient-to-br from-success-500/10 to-accent-500/5"

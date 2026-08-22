@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { rbacApi, AccessPolicy, AdminRole } from '@/api/rbac';
+import { rbacApi, type AccessPolicy, type AdminRole } from '@/api/rbac';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { usePlatform } from '@/platform/hooks/usePlatform';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
@@ -176,9 +176,10 @@ export default function AdminPolicies() {
         );
       }
 
-      if (parsed.weekdays && parsed.weekdays.length > 0 && parsed.weekdays.length < 7) {
+      const weekdays = parsed.weekdays;
+      if (weekdays && weekdays.length > 0 && weekdays.length < 7) {
         const dayOrder = [1, 2, 3, 4, 5, 6, 0];
-        const sorted = dayOrder.filter((d) => parsed.weekdays!.includes(d));
+        const sorted = dayOrder.filter((d) => weekdays.includes(d));
         const dayNames = sorted.map((d) => t(`admin.policies.conditions.day${d}`));
         icons.push(
           <span

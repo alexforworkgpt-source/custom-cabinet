@@ -85,9 +85,8 @@ export default function TopUpAmount() {
   const submissionLockRef = useRef(false);
 
   const returnTo = searchParams.get('returnTo');
-  const initialAmountRubles = searchParams.get('amount')
-    ? parseFloat(searchParams.get('amount')!)
-    : undefined;
+  const rawInitialAmount = searchParams.get('amount');
+  const initialAmountRubles = rawInitialAmount ? parseFloat(rawInitialAmount) : undefined;
 
   // Fetch payment methods with a real query (dedupes with the method-selection page and
   // Balance via the shared ['payment-methods'] key). A non-reactive getQueryData read used
@@ -159,7 +158,7 @@ export default function TopUpAmount() {
     if (!optionExists) {
       setSelectedOption(getPreferredOptionId(method.options));
     }
-  }, [method?.id, method?.options, selectedOption]);
+  }, [method?.options, selectedOption]);
 
   const starsPaymentMutation = useMutation({
     mutationFn: (amountKopeks: number) => balanceApi.createStarsInvoice(amountKopeks),
@@ -315,7 +314,7 @@ export default function TopUpAmount() {
       return;
     }
     const amountCurrency = parseFloat(amount);
-    if (isNaN(amountCurrency) || amountCurrency <= 0) {
+    if (Number.isNaN(amountCurrency) || amountCurrency <= 0) {
       setError(t('balance.errors.enterAmount'));
       return;
     }
@@ -340,6 +339,7 @@ export default function TopUpAmount() {
       // display-currency rounding step below it, so typing the advertised (rounded)
       // minimum isn't rejected by FX rounding.
       const decimals = targetCurrency === 'IRR' ? 0 : 2;
+      // biome-ignore lint/style/useExponentiationOperator: Math.pow keeps the negative currency-precision exponent explicit.
       const roundingStep = convertToRub(Math.pow(10, -decimals));
       if (canonicalRubles < minRubles && canonicalRubles >= minRubles - roundingStep) {
         canonicalRubles = minRubles;

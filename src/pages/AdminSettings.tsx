@@ -40,6 +40,7 @@ export default function AdminSettings() {
   const { favorites, toggleFavorite, isFavorite } = useFavoriteSettings();
 
   // Scroll to top on section change
+  // biome-ignore lint/correctness/useExhaustiveDependencies(activeSection): Section changes intentionally trigger a scroll reset.
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [activeSection]);
@@ -55,19 +56,16 @@ export default function AdminSettings() {
     queryFn: () => adminSettingsApi.getSettings(),
   });
 
-  // Find active tree info (group + child for tree sub-items)
-  // No useMemo needed — SETTINGS_TREE is a static constant, iteration is trivial
-  let activeTreeInfo: {
-    group: (typeof SETTINGS_TREE.groups)[number];
-    child: (typeof SETTINGS_TREE.groups)[number]['children'][number];
-  } | null = null;
-  for (const group of SETTINGS_TREE.groups) {
-    const child = group.children.find((c) => c.id === activeSection);
-    if (child) {
-      activeTreeInfo = { group, child };
-      break;
+  // Keep the derived object stable so dependent memos only update when the section changes.
+  const activeTreeInfo = useMemo(() => {
+    for (const group of SETTINGS_TREE.groups) {
+      const child = group.children.find((c) => c.id === activeSection);
+      if (child) {
+        return { group, child };
+      }
     }
-  }
+    return null;
+  }, [activeSection]);
 
   // Check if tariffs mode is active
   const isTariffsMode = useMemo(() => {
@@ -96,10 +94,9 @@ export default function AdminSettings() {
         // Hide tariff-dependent settings when not in tariffs mode
         if (!isTariffsMode && TARIFF_MODE_SETTINGS.includes(setting.key)) continue;
 
-        if (!categoryMap.has(setting.category.key)) {
-          categoryMap.set(setting.category.key, []);
-        }
-        categoryMap.get(setting.category.key)!.push(setting);
+        const categorySettings = categoryMap.get(setting.category.key) ?? [];
+        categorySettings.push(setting);
+        categoryMap.set(setting.category.key, categorySettings);
       }
     }
 
@@ -108,8 +105,7 @@ export default function AdminSettings() {
       label: t(`admin.settings.categories.${key}`, key),
       settings,
     }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- activeTreeInfo derived from activeSection
-  }, [activeSection, allSettings, isTariffsMode, t]);
+  }, [activeTreeInfo, allSettings, isTariffsMode, t]);
 
   // Filter settings for search - GLOBAL search across all settings
   const filteredSettings = useMemo(() => {
@@ -153,16 +149,13 @@ export default function AdminSettings() {
   }, [allSettings]);
 
   // Handle setting selection from autocomplete
-  const handleSelectSetting = useCallback(
-    (setting: SettingDefinition) => {
-      const location = findTreeLocation(setting.category.key);
-      if (location) {
-        setActiveSection(location.subItemId);
-      }
-      setSearchQuery(setting.key);
-    },
-    [setActiveSection, setSearchQuery],
-  );
+  const handleSelectSetting = useCallback((setting: SettingDefinition) => {
+    const location = findTreeLocation(setting.category.key);
+    if (location) {
+      setActiveSection(location.subItemId);
+    }
+    setSearchQuery(setting.key);
+  }, []);
 
   // Get the display title for the current section
   const sectionTitle = useMemo(() => {
@@ -174,8 +167,7 @@ export default function AdminSettings() {
     if (activeTreeInfo) return t(`admin.settings.tree.${activeTreeInfo.child.id}`);
 
     return t('admin.settings.title');
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- activeTreeInfo derived from activeSection
-  }, [activeSection, t]);
+  }, [activeSection, activeTreeInfo, t]);
 
   // Render content based on active section
   const renderContent = () => {

@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { cn } from '@/lib/utils';
 
 interface HoverBorderGradientProps extends React.HTMLAttributes<HTMLElement> {
@@ -34,7 +34,7 @@ export function HoverBorderGradient({
   if (accentColor) {
     cssVars['--accent-color'] = accentColor;
     // 30% opacity hex suffix for hover glow
-    cssVars['--accent-glow'] = accentColor + '4D';
+    cssVars['--accent-glow'] = `${accentColor}4D`;
   }
 
   if (duration !== undefined) {

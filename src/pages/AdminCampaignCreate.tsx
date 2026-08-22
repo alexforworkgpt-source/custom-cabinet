@@ -4,10 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
   campaignsApi,
-  CampaignCreateRequest,
-  CampaignBonusType,
-  ServerSquadInfo,
-  TariffListItem,
+  type CampaignCreateRequest,
+  type CampaignBonusType,
+  type ServerSquadInfo,
+  type TariffListItem,
 } from '../api/campaigns';
 import { partnerApi } from '../api/partners';
 import { AdminBackButton } from '../components/admin';
@@ -121,7 +121,7 @@ function TariffSelector({
       <select
         id="campaign-tariff-select"
         value={value || ''}
-        onChange={(e) => onChange(e.target.value ? parseInt(e.target.value) : null)}
+        onChange={(e) => onChange(e.target.value ? parseInt(e.target.value, 10) : null)}
         className="input"
       >
         <option value="">{t('admin.campaigns.form.notSelected')}</option>

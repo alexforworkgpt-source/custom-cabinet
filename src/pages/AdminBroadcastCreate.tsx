@@ -175,7 +175,7 @@ export default function AdminBroadcastCreate() {
     });
 
     if (filtersData.tariff_filters.length > 0) {
-      groups['tariff'] = filtersData.tariff_filters;
+      groups.tariff = filtersData.tariff_filters;
     }
 
     filtersData.custom_filters.forEach((f) => {

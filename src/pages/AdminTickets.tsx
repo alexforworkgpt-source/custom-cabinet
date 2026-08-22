@@ -5,7 +5,7 @@ import { MessageMediaGrid } from '../components/tickets/MessageMediaGrid';
 import { useNavigate, useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { adminApi, AdminTicket, AdminTicketDetail } from '../api/admin';
+import { adminApi, type AdminTicket, type AdminTicketDetail } from '../api/admin';
 import { ticketsApi } from '../api/tickets';
 import { copyToClipboard as copyText } from '../utils/clipboard';
 import { usePlatform } from '../platform/hooks/usePlatform';
@@ -93,7 +93,9 @@ export default function AdminTickets() {
     const urls = blobUrlsRef;
     return () => {
       uploadRef.current++;
-      urls.current.forEach((u) => URL.revokeObjectURL(u));
+      urls.current.forEach((u) => {
+        URL.revokeObjectURL(u);
+      });
     };
   }, []);
 
@@ -114,7 +116,10 @@ export default function AdminTickets() {
 
   const { data: selectedTicket, isLoading: ticketLoading } = useQuery({
     queryKey: ['admin-ticket', selectedTicketId],
-    queryFn: () => adminApi.getTicket(selectedTicketId!),
+    queryFn: () => {
+      if (!selectedTicketId) throw new Error('Selected ticket ID is required');
+      return adminApi.getTicket(selectedTicketId);
+    },
     enabled: !!selectedTicketId,
   });
 
@@ -399,12 +404,13 @@ export default function AdminTickets() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          copyToClipboard(String(ticket.user!.telegram_id));
+                          const telegramId = ticket.user?.telegram_id;
+                          if (telegramId) void copyToClipboard(String(telegramId));
                         }}
                         className="ml-1 text-dark-600 transition-colors hover:text-accent-400"
                         title={t('admin.tickets.copyTelegramId')}
                       >
-                        (TG: {ticket.user!.telegram_id})
+                        (TG: {ticket.user?.telegram_id})
                       </button>
                     )}{' '}
                     | {new Date(ticket.updated_at).toLocaleDateString()}
@@ -487,11 +493,14 @@ export default function AdminTickets() {
                     {t('admin.tickets.from')}: {formatUser(selectedTicket)}
                     {selectedTicket.user?.telegram_id && (
                       <button
-                        onClick={() => copyToClipboard(String(selectedTicket.user!.telegram_id))}
+                        onClick={() => {
+                          const telegramId = selectedTicket.user?.telegram_id;
+                          if (telegramId) void copyToClipboard(String(telegramId));
+                        }}
                         className="ml-1 rounded bg-dark-700 px-2 py-0.5 text-xs transition-colors hover:bg-dark-600"
                         title={t('admin.tickets.copyTelegramId')}
                       >
-                        TG: {selectedTicket.user!.telegram_id}
+                        TG: {selectedTicket.user?.telegram_id}
                       </button>
                     )}{' '}
                     | {t('admin.tickets.created')}:{' '}
@@ -499,7 +508,10 @@ export default function AdminTickets() {
                   </span>
                   {selectedTicket.user && (
                     <button
-                      onClick={() => navigate(`/admin/users/${selectedTicket.user!.id}`)}
+                      onClick={() => {
+                        const userId = selectedTicket.user?.id;
+                        if (userId != null) navigate(`/admin/users/${userId}`);
+                      }}
                       className="shrink-0 rounded-lg border border-accent-500/30 bg-accent-500/10 px-2 py-0.5 text-xs text-accent-400 transition-colors hover:bg-accent-500/20"
                     >
                       {t('admin.tickets.viewUser')}
@@ -552,6 +564,7 @@ export default function AdminTickets() {
                     {msg.message_text && (
                       <p
                         className="whitespace-pre-wrap text-dark-200 [&_a]:text-accent-400 [&_a]:underline"
+                        // biome-ignore lint/security/noDangerouslySetInnerHtml: linkifyText sanitizes message text with a strict DOMPurify allowlist.
                         dangerouslySetInnerHTML={{ __html: linkifyText(msg.message_text) }}
                       />
                     )}

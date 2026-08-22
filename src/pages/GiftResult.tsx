@@ -475,7 +475,10 @@ export default function GiftResult() {
     refetch,
   } = useQuery({
     queryKey: ['gift-status', token],
-    queryFn: () => giftApi.getPurchaseStatus(token!),
+    queryFn: () => {
+      if (!token) throw new Error('Gift purchase token is required');
+      return giftApi.getPurchaseStatus(token);
+    },
     enabled: !!token && !pollTimedOut,
     refetchInterval: (query) => {
       // Balance mode: fetch once, no polling
@@ -521,8 +524,9 @@ export default function GiftResult() {
     );
   }
 
+  const purchaseToken = status?.purchase_token;
   const isClaimablePaid =
-    status?.status === 'paid' && status?.is_claimable && status?.purchase_token != null;
+    status?.status === 'paid' && status?.is_claimable && purchaseToken != null;
   const isDelivered = status?.status === 'delivered';
   const isPendingActivation = status?.status === 'pending_activation';
   const isFailed = status?.status === 'failed' || status?.status === 'expired';
@@ -541,9 +545,9 @@ export default function GiftResult() {
       >
         {isError ? (
           <PollErrorState />
-        ) : isClaimablePaid ? (
+        ) : isClaimablePaid && purchaseToken != null ? (
           <CodeOnlySuccessState
-            purchaseToken={status.purchase_token!}
+            purchaseToken={purchaseToken}
             tariffName={status.tariff_name}
             periodDays={status.period_days}
           />

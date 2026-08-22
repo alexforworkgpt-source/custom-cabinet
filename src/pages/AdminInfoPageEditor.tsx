@@ -451,9 +451,10 @@ function FaqBuilder({ items, onChange, locale, localeLabel }: FaqBuilderProps) {
   const [itemKeys, setItemKeys] = useState<number[]>(() => items.map(() => keyCounter.current++));
 
   // Regenerate all keys on locale switch (items are semantically different)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Locale is the intentional trigger; item edits must not regenerate React keys and reset FAQ inputs.
   useEffect(() => {
     setItemKeys(items.map(() => keyCounter.current++));
-  }, [locale]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [locale]);
 
   // Sync key count when items added/removed within the same locale
   useEffect(() => {
@@ -664,6 +665,7 @@ export default function AdminInfoPageEditor() {
   const handleMediaUploadRef = useRef<(file: File) => void>(() => {});
 
   // TipTap editor
+  // biome-ignore lint/correctness/useExhaustiveDependencies(t): Keep TipTap extensions stable so a locale change cannot recreate the editor and discard content.
   const extensions = useMemo(
     () => [
       StarterKit.configure({
@@ -688,7 +690,6 @@ export default function AdminInfoPageEditor() {
       HighlightExtension,
       VideoExtension,
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
@@ -882,20 +883,18 @@ export default function AdminInfoPageEditor() {
   }, [pageData]);
 
   // Set editor content once when editor is ready
+  // biome-ignore lint/correctness/useExhaustiveDependencies(activeLocale): Initial content is locked at mount; later locale changes go through switchLocale().
   useEffect(() => {
     if (!pageData || !editor || editorPopulated.current) return;
-    const initialContent = pageData.content[activeLocale] ?? pageData.content['ru'] ?? '';
+    const initialContent = pageData.content[activeLocale] ?? pageData.content.ru ?? '';
     editor.commands.setContent(initialContent);
     editorPopulated.current = true;
-    // activeLocale intentionally omitted — initial content is locked at editor
-    // mount; subsequent locale changes are routed through switchLocale().
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageData, editor]);
 
   // Auto-generate slug from Russian title
   useEffect(() => {
-    if (!slugManuallyEdited && titles['ru']) {
-      setSlug(generateSlug(titles['ru']));
+    if (!slugManuallyEdited && titles.ru) {
+      setSlug(generateSlug(titles.ru));
     }
   }, [titles, slugManuallyEdited]);
 

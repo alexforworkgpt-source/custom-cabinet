@@ -4,16 +4,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
   adminRemnawaveApi,
-  NodeInfo,
-  NodeRealtimeStats,
-  SquadWithLocalInfo,
-  SystemStatsResponse,
-  AutoSyncStatus,
-  RecapResponse,
-  DevicesStatsResponse,
-  TopConsumersResponse,
-  HealthResponse,
-  SubscriptionRequestStatsResponse,
+  type NodeInfo,
+  type NodeRealtimeStats,
+  type SquadWithLocalInfo,
+  type SystemStatsResponse,
+  type AutoSyncStatus,
+  type RecapResponse,
+  type DevicesStatsResponse,
+  type TopConsumersResponse,
+  type HealthResponse,
+  type SubscriptionRequestStatsResponse,
 } from '../api/adminRemnawave';
 import { usePlatform } from '../platform/hooks/usePlatform';
 import { formatUptime } from '../utils/format';
@@ -61,7 +61,7 @@ const formatBytes = (bytes: number): string => {
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'];
   const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 };
 
 // Алгоритмический ISO 3166-1 alpha-2 → regional indicator. Глобус-fallback

@@ -116,7 +116,7 @@ function SortablePrizeCard({
         {/* Prize icon */}
         <div
           className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-lg sm:h-10 sm:w-10 sm:text-xl"
-          style={{ backgroundColor: prize.color + '30' }}
+          style={{ backgroundColor: `${prize.color}30` }}
         >
           {prize.emoji}
         </div>
@@ -500,8 +500,8 @@ export default function AdminWheel() {
                         return setSettingsForm((prev) =>
                           prev ? { ...prev, spin_cost_stars: '' } : null,
                         );
-                      const num = parseInt(val);
-                      if (!isNaN(num))
+                      const num = parseInt(val, 10);
+                      if (!Number.isNaN(num))
                         setSettingsForm((prev) =>
                           prev ? { ...prev, spin_cost_stars: num } : null,
                         );
@@ -542,8 +542,8 @@ export default function AdminWheel() {
                         return setSettingsForm((prev) =>
                           prev ? { ...prev, spin_cost_days: '' } : null,
                         );
-                      const num = parseInt(val);
-                      if (!isNaN(num))
+                      const num = parseInt(val, 10);
+                      if (!Number.isNaN(num))
                         setSettingsForm((prev) => (prev ? { ...prev, spin_cost_days: num } : null));
                     }}
                     min={1}
@@ -590,7 +590,7 @@ export default function AdminWheel() {
                   value={settingsForm?.rtp_percent ?? config.rtp_percent}
                   onChange={(e) =>
                     setSettingsForm((prev) =>
-                      prev ? { ...prev, rtp_percent: parseInt(e.target.value) } : null,
+                      prev ? { ...prev, rtp_percent: parseInt(e.target.value, 10) } : null,
                     )
                   }
                   className="w-full"
@@ -617,8 +617,8 @@ export default function AdminWheel() {
                       return setSettingsForm((prev) =>
                         prev ? { ...prev, daily_spin_limit: '' } : null,
                       );
-                    const num = parseInt(val);
-                    if (!isNaN(num))
+                    const num = parseInt(val, 10);
+                    if (!Number.isNaN(num))
                       setSettingsForm((prev) => (prev ? { ...prev, daily_spin_limit: num } : null));
                   }}
                   min={0}
@@ -643,8 +643,8 @@ export default function AdminWheel() {
                       return setSettingsForm((prev) =>
                         prev ? { ...prev, min_subscription_days_for_day_payment: '' } : null,
                       );
-                    const num = parseInt(val);
-                    if (!isNaN(num))
+                    const num = parseInt(val, 10);
+                    if (!Number.isNaN(num))
                       setSettingsForm((prev) =>
                         prev ? { ...prev, min_subscription_days_for_day_payment: num } : null,
                       );
@@ -693,7 +693,7 @@ export default function AdminWheel() {
                     const val = e.target.value;
                     setSettingsForm((prev) =>
                       prev
-                        ? { ...prev, promo_validity_days: val === '' ? '' : parseInt(val) || 0 }
+                        ? { ...prev, promo_validity_days: val === '' ? '' : parseInt(val, 10) || 0 }
                         : null,
                     );
                   }}
@@ -1064,8 +1064,8 @@ function InlinePrizeForm({
               onChange={(e) => {
                 const val = e.target.value;
                 if (val === '') return setFormData({ ...formData, prize_value: '' });
-                const num = parseInt(val);
-                if (!isNaN(num)) setFormData({ ...formData, prize_value: num });
+                const num = parseInt(val, 10);
+                if (!Number.isNaN(num)) setFormData({ ...formData, prize_value: num });
               }}
               min={0}
               className="input w-full"
@@ -1084,8 +1084,8 @@ function InlinePrizeForm({
             onChange={(e) => {
               const val = e.target.value;
               if (val === '') return setFormData({ ...formData, prize_value_kopeks: '' });
-              const num = parseInt(val);
-              if (!isNaN(num)) setFormData({ ...formData, prize_value_kopeks: num });
+              const num = parseInt(val, 10);
+              if (!Number.isNaN(num)) setFormData({ ...formData, prize_value_kopeks: num });
             }}
             min={0}
             className="input w-full"
@@ -1174,7 +1174,7 @@ function InlinePrizeForm({
                   setFormData({
                     ...formData,
                     promo_balance_bonus_kopeks:
-                      e.target.value === '' ? '' : parseInt(e.target.value) || 0,
+                      e.target.value === '' ? '' : parseInt(e.target.value, 10) || 0,
                   })
                 }
                 min={0}
@@ -1192,7 +1192,7 @@ function InlinePrizeForm({
                   setFormData({
                     ...formData,
                     promo_subscription_days:
-                      e.target.value === '' ? '' : parseInt(e.target.value) || 0,
+                      e.target.value === '' ? '' : parseInt(e.target.value, 10) || 0,
                   })
                 }
                 min={0}

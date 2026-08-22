@@ -59,10 +59,7 @@ export function ServerManagementSheet({
       const connected = countriesData.countries.filter((c) => c.is_connected).map((c) => c.uuid);
       onSelectedServersChange(connected);
     }
-    // Intentionally narrow — the setter is stable and we don't want to
-    // re-seed every time the user toggles a server.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [countriesData, open]);
+  }, [countriesData, open, onSelectedServersChange]);
 
   const updateMutation = useMutation({
     mutationFn: (countries: string[]) => subscriptionApi.updateCountries(countries, subscriptionId),

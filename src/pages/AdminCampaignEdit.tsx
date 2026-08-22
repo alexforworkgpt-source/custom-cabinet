@@ -4,11 +4,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
   campaignsApi,
-  CampaignUpdateRequest,
-  CampaignBonusType,
-  ServerSquadInfo,
-  TariffListItem,
-  AvailablePartner,
+  type CampaignUpdateRequest,
+  type CampaignBonusType,
+  type ServerSquadInfo,
+  type TariffListItem,
+  type AvailablePartner,
 } from '../api/campaigns';
 import { AdminBackButton } from '../components/admin';
 import { CheckIcon, CampaignIcon } from '../components/icons';
@@ -121,7 +121,7 @@ function TariffSelector({
       <select
         id="campaign-edit-tariff-select"
         value={value || ''}
-        onChange={(e) => onChange(e.target.value ? parseInt(e.target.value) : null)}
+        onChange={(e) => onChange(e.target.value ? parseInt(e.target.value, 10) : null)}
         className="input"
       >
         <option value="">{t('admin.campaigns.form.notSelected')}</option>
@@ -159,7 +159,7 @@ function PartnerSelector({
       <select
         id="campaign-edit-partner-select"
         value={value || ''}
-        onChange={(e) => onChange(e.target.value ? parseInt(e.target.value) : null)}
+        onChange={(e) => onChange(e.target.value ? parseInt(e.target.value, 10) : null)}
         className="input"
       >
         <option value="">{t('admin.campaigns.form.noPartner')}</option>
@@ -180,7 +180,7 @@ export default function AdminCampaignEdit() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const campaignId = parseInt(id || '0');
+  const campaignId = parseInt(id || '0', 10);
 
   // Fetch campaign
   const {

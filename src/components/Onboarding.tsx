@@ -89,8 +89,7 @@ export default function Onboarding({ steps, onComplete, onSkip }: OnboardingProp
       cancelled = true;
       window.clearTimeout(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step.target]);
+  }, [step.target, currentStep, steps.length]);
 
   // Recalculate position on resize/scroll
   useEffect(() => {

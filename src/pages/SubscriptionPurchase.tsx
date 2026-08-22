@@ -17,9 +17,8 @@ import { ExclamationIcon, SparklesIcon } from '@/components/icons';
 export default function SubscriptionPurchase() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const subscriptionId = searchParams.get('subscriptionId')
-    ? parseInt(searchParams.get('subscriptionId')!, 10)
-    : undefined;
+  const rawSubscriptionId = searchParams.get('subscriptionId');
+  const subscriptionId = rawSubscriptionId ? parseInt(rawSubscriptionId, 10) : undefined;
   const { isDark } = useTheme();
   const g = getGlassColors(isDark);
 

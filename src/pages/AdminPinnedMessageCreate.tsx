@@ -4,8 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
   adminPinnedMessagesApi,
-  PinnedMessageCreateRequest,
-  PinnedMessageUpdateRequest,
+  type PinnedMessageCreateRequest,
+  type PinnedMessageUpdateRequest,
 } from '../api/adminPinnedMessages';
 import { AdminBackButton, Toggle } from '../components/admin';
 import { PinIcon, XIcon, RefreshIcon, PhotoIcon, VideoIcon, SaveIcon } from '@/components/icons';
@@ -45,7 +45,10 @@ export default function AdminPinnedMessageCreate() {
   // Load existing message for editing
   const { data: existingMessage, isLoading: isLoadingMessage } = useQuery({
     queryKey: ['admin', 'pinned-messages', 'detail', messageId],
-    queryFn: () => adminPinnedMessagesApi.get(messageId!),
+    queryFn: () => {
+      if (messageId === null) throw new Error('Pinned message ID is required');
+      return adminPinnedMessagesApi.get(messageId);
+    },
     enabled: isEditing && messageId !== null,
   });
 
@@ -74,8 +77,10 @@ export default function AdminPinnedMessageCreate() {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: (data: PinnedMessageUpdateRequest) =>
-      adminPinnedMessagesApi.update(messageId!, data),
+    mutationFn: (data: PinnedMessageUpdateRequest) => {
+      if (messageId === null) throw new Error('Pinned message ID is required');
+      return adminPinnedMessagesApi.update(messageId, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'pinned-messages'] });
       navigate('/admin/pinned-messages');

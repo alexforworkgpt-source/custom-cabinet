@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
-import { adminUpdatesApi, ReleaseItem, ProjectReleasesInfo } from '../api/adminUpdates';
+import { adminUpdatesApi, type ReleaseItem, type ProjectReleasesInfo } from '../api/adminUpdates';
 import {
   BackIcon,
   RefreshIcon,
@@ -143,6 +143,7 @@ function ReleaseCard({ release }: { release: ReleaseItem }) {
       {bodyHtml ? (
         <div
           className="release-body max-h-48 overflow-auto rounded-lg bg-dark-900/50 p-3 text-xs leading-relaxed text-dark-300 [&_a]:text-accent-400 [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-accent-300 [&_code]:rounded [&_code]:bg-dark-700/50 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-dark-200 [&_h2]:mb-1.5 [&_h2]:mt-2 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-dark-200 first:[&_h2]:mt-0 [&_h3]:mb-1 [&_h3]:mt-2 [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:text-dark-200 first:[&_h3]:mt-0 [&_h4]:mb-0.5 [&_h4]:mt-1.5 [&_h4]:text-xs [&_h4]:font-medium [&_h4]:text-dark-300 [&_li]:ml-4 [&_li]:list-disc [&_li]:py-0.5 [&_p]:my-1"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: renderMarkdown sanitizes release notes with a strict DOMPurify allowlist.
           dangerouslySetInnerHTML={{ __html: bodyHtml }}
         />
       ) : null}

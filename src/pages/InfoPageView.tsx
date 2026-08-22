@@ -213,6 +213,7 @@ function FaqAccordionItem({
         <div ref={contentRef} className="border-t border-dark-700/50 px-5 pb-4 pt-3">
           <div
             className="prose prose-sm max-w-none text-dark-300"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitizedAnswer is produced by the strict DOMPurify info-page sanitizer.
             dangerouslySetInnerHTML={{ __html: sanitizedAnswer }}
           />
         </div>
@@ -316,7 +317,7 @@ export default function InfoPageView() {
 
   const resolvedTitle = useMemo(() => {
     if (!page) return '';
-    return page.title[locale] || page.title['ru'] || page.title['en'] || '';
+    return page.title[locale] || page.title.ru || page.title.en || '';
   }, [page, locale]);
 
   const isFaq = page?.page_type === 'faq';
@@ -324,7 +325,7 @@ export default function InfoPageView() {
   // Parse FAQ items from content
   const faqItems = useMemo((): FaqItem[] => {
     if (!page || !isFaq) return [];
-    const raw = page.content[locale] || page.content['ru'] || page.content['en'] || '[]';
+    const raw = page.content[locale] || page.content.ru || page.content.en || '[]';
     try {
       const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
       return Array.isArray(parsed) ? parsed : [];
@@ -336,7 +337,7 @@ export default function InfoPageView() {
   // Content is sanitized with DOMPurify before rendering
   const sanitizedContent = useMemo(() => {
     if (!page || isFaq) return '';
-    const rawContent = page.content[locale] || page.content['ru'] || page.content['en'] || '';
+    const rawContent = page.content[locale] || page.content.ru || page.content.en || '';
     return sanitizeHtml(rawContent);
   }, [page, locale, isFaq]);
 
@@ -403,6 +404,7 @@ export default function InfoPageView() {
         /* Regular page content - sanitized with DOMPurify (strict allowlist) */
         <div
           className="prose max-w-none overflow-x-auto lg:max-w-3xl"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitizedContent is produced by the strict DOMPurify info-page sanitizer.
           dangerouslySetInnerHTML={{ __html: sanitizedContent }}
         />
       )}

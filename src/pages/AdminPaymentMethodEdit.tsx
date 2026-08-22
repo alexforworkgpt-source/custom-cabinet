@@ -266,7 +266,10 @@ export default function AdminPaymentMethodEdit() {
 
   // Update method mutation
   const updateMethodMutation = useMutation({
-    mutationFn: (data: Record<string, unknown>) => adminPaymentMethodsApi.update(methodId!, data),
+    mutationFn: (data: Record<string, unknown>) => {
+      if (!methodId) throw new Error('Payment method ID is required');
+      return adminPaymentMethodsApi.update(methodId, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-payment-methods'] });
       navigate('/admin/payment-methods');
@@ -337,7 +340,7 @@ export default function AdminPaymentMethodEdit() {
     setQuickAmountsError(null);
     const parsed = parseFloat(quickAmountInput.replace(',', '.'));
     const value = Math.round(parsed);
-    if (isNaN(value) || value <= 0) {
+    if (Number.isNaN(value) || value <= 0) {
       setQuickAmountsError(t('admin.paymentMethods.quickAmountsInvalid'));
       return;
     }

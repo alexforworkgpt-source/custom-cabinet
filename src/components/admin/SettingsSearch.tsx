@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SettingDefinition } from '../../api/adminSettings';
+import type { SettingDefinition } from '../../api/adminSettings';
 import { SearchIcon, CloseIcon } from './icons';
 import { formatSettingKey } from './utils';
 
@@ -55,6 +55,8 @@ export function SettingsSearch({
   }, []);
 
   // Reset highlighted index when suggestions change
+  // biome-ignore lint/correctness/useExhaustiveDependencies(suggestions.length): Reset selection when the result set changes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies(searchQuery): Reset selection for each new search.
   useEffect(() => {
     setHighlightedIndex(0);
   }, [suggestions.length, searchQuery]);
@@ -192,6 +194,8 @@ export function SettingsSearchMobile({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies(suggestions.length): Reset selection when the result set changes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies(searchQuery): Reset selection for each new search.
   useEffect(() => {
     setHighlightedIndex(0);
   }, [suggestions.length, searchQuery]);

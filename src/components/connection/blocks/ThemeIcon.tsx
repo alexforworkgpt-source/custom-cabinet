@@ -27,6 +27,7 @@ export function ThemeIcon({ getSvgHtml, svgIconKey, gradientStyle, isMobile }: T
       <div
         style={{ width: iconSize, height: iconSize }}
         className="[&>svg]:h-full [&>svg]:w-full"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: The parent sanitizes configured SVG with DOMPurify.
         dangerouslySetInnerHTML={{ __html: svgHtml }}
       />
     </div>

@@ -176,7 +176,7 @@ export default function AdminLandingStats() {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const numericId = id ? Number(id) : NaN;
-  const isValidId = !isNaN(numericId);
+  const isValidId = !Number.isNaN(numericId);
   const navigate = useNavigate();
   const { formatWithCurrency } = useCurrency();
   const divisor = CHART_COMMON.KOPEKS_DIVISOR;
@@ -248,7 +248,7 @@ export default function AdminLandingStats() {
   const dailyRevenue = useMemo(() => {
     if (!stats) return [];
     return stats.daily_stats.map((d) => ({ date: d.date, value: d.revenue_kopeks / divisor }));
-  }, [stats, divisor]);
+  }, [stats]);
 
   // Tariff breakdown (by revenue)
   const tariffItems = useMemo(
@@ -258,7 +258,7 @@ export default function AdminLandingStats() {
         label: t2.tariff_name,
         value: t2.revenue_kopeks / divisor,
       })),
-    [stats, divisor],
+    [stats],
   );
 
   // Payment method breakdown (by purchases)

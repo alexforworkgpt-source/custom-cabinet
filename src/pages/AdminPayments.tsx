@@ -70,6 +70,7 @@ export default function AdminPayments() {
   }, [searchInput]);
 
   // Reset page on filter changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Filter values intentionally trigger this reset-only effect.
   useEffect(() => {
     setPage(1);
   }, [statusFilter, periodFilter, methodFilter, dateFrom, dateTo]);

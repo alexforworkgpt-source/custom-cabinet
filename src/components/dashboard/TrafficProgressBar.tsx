@@ -42,7 +42,7 @@ export default function TrafficProgressBar({
     if (percent < 90)
       return `linear-gradient(90deg, ${startColor}, rgb(var(--color-warning-400)), rgb(var(--color-warning-300)), ${zone.mainVar})`;
     return `linear-gradient(90deg, ${startColor}, rgb(var(--color-warning-400)), rgb(var(--color-warning-300)), rgb(var(--color-error-400)))`;
-  }, [percent, zone.mainVar, startColor]);
+  }, [percent, zone.mainVar]);
 
   if (isUnlimited) {
     return (
