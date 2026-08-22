@@ -31,10 +31,10 @@ Workflow: <https://github.com/alexforworkgpt-source/installer/actions/runs/32587
 | --- | --- |
 | Integration URL | `https://web.demolanding.click` |
 | Environment type | Disposable integration VPS; not production |
-| Verification time | `2026-08-22T17:27:02Z` |
+| Verification time | `2026-08-22T17:34:00Z` |
 | Browser smoke | Chrome `151.0.0.0`, desktop and mobile `375 x 812` emulation |
 | Telegram clients | Not available |
-| Checked account | Clean unauthenticated guest only |
+| Checked accounts | Clean unauthenticated guest; one authorized full-admin test account with a trial subscription |
 
 ## Change Scope
 
@@ -75,6 +75,7 @@ Workflow: <https://github.com/alexforworkgpt-source/installer/actions/runs/32587
 | Root and direct `/balance` route | PASS, HTTP `200`; response matches the published `index.html` |
 | Real Cabinet assets | PASS, HTTP `200`, JavaScript/CSS content types |
 | Clean guest browser smoke | PASS; redirected to `/login`, all 34 requests succeeded, no console warnings/errors |
+| Authenticated browser smoke | PASS; Dashboard, subscription, Balance, Profile/accounts, Connection and read-only Admin loaded without console errors or unexpected failed requests |
 | Mobile browser smoke | PASS; no page-level horizontal overflow at `375 x 812` |
 
 ## Functional Results
@@ -82,11 +83,16 @@ Workflow: <https://github.com/alexforworkgpt-source/installer/actions/runs/32587
 | Area | Result | Checked scenarios | Limitations |
 | --- | --- | --- | --- |
 | Runtime smoke | PASS | Exact identities, deploy receipt, doctor, HTTPS, health and artifact identity | Disposable VPS only |
-| Web authentication | PASS guest | Root and direct route redirect to visible Login | Authenticated accounts not checked |
-| Dashboard | PASS locally | Promo ordering, account-provider loading, rotation, pause, subscription states and responsive fixtures | No authenticated VPS state |
-| Subscription discounts | PASS locally | Promo discount normalization and display fixtures | No live purchase or payment |
-| Broadcast preview | PASS locally | Sanitized Telegram entities and line breaks | No live broadcast sent |
-| Other Cabinet flows | PASS locally | Existing unit and Playwright suites | No destructive admin action |
+| Web authentication | PASS | Guest redirect and an existing authorized session | Registration, logout and invalid credentials not checked |
+| Dashboard | PASS | Real trial subscription, traffic, promo carousel rotation and responsive layout | Other live subscription states unavailable |
+| Subscription management | PASS read-only | Management dialog and device summary | No renewal, device mutation or purchase |
+| Subscription discounts | PASS locally | Promo discount normalization and display fixtures | No live active discount, purchase or payment |
+| Balance | PASS read-only | Current balance, promo field and history entry point | No top-up or promocode activation |
+| Connection | PASS read-only | Platform detection and application selection through the download step | No external download, app launch or deep link |
+| Profile/accounts | PASS read-only | Profile summary and linked-provider state | No account or notification mutation |
+| Broadcast preview | PASS | Staging Admin form rendered harmless Telegram HTML and link preview | No audience selected and no broadcast sent |
+| Admin | PASS read-only | Admin dashboard and broadcast-create screen | Restricted role and mutations not checked |
+| Other Cabinet flows | PASS locally | Existing unit and Playwright suites | No destructive action |
 
 ## Defects
 
@@ -100,7 +106,8 @@ was not included because it has not passed the required full lifecycle gate.
 
 ## Residual Risks
 
-- Authenticated integration states were not checked.
+- Only one full-admin trial account was checked; new, paid, expiring, expired,
+  multi-subscription and restricted-admin states were unavailable.
 - Real Telegram Android, iOS and Desktop clients were unavailable.
 - No real payment, email mutation, broadcast or destructive admin action was
   initiated.
@@ -117,9 +124,10 @@ Reason:
 
 ```text
 The exact source, automated gates, public assets, Protected Update, runtime
-health and clean guest browser smoke passed. Authenticated integration, real
-Telegram clients and provider evidence are unavailable, so the complete staging
-matrix remains BLOCKED.
+health, guest smoke and a non-destructive authenticated full-admin smoke passed.
+The complete account-state matrix, restricted-admin role, real Telegram clients
+and provider evidence are unavailable, so the complete staging matrix remains
+BLOCKED.
 ```
 
 ## Production Smoke
@@ -141,7 +149,7 @@ Post-update health/Login: `PASS`
 - [x] Exact source versions recorded.
 - [x] Automated gate passed.
 - [x] Public Release assets independently verified.
-- [x] Disposable integration Protected Update and guest smoke passed.
+- [x] Disposable integration Protected Update, guest smoke and targeted authenticated smoke passed.
 - [ ] Required authenticated staging flows completed.
 - [ ] Real Telegram checks completed.
 - [x] Rollback source recorded.
