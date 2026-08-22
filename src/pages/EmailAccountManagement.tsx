@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { authApi } from '@/api/auth';
 import { Button } from '@/components/primitives/Button';
@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/auth';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { isValidEmail } from '@/utils/validation';
 
-interface ProfileEmailAuthSectionProps {
+interface EmailAccountManagementProps {
   email: string;
   verified: boolean;
   verificationEnabled: boolean;
@@ -16,12 +16,13 @@ interface ProfileEmailAuthSectionProps {
 
 type ChangeStep = 'email' | 'code' | 'success' | null;
 
-export default function ProfileEmailAuthSection({
+export default function EmailAccountManagement({
   email,
   verified,
   verificationEnabled,
-}: ProfileEmailAuthSectionProps) {
+}: EmailAccountManagementProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const setUser = useAuthStore((state) => state.setUser);
   const [step, setStep] = useState<ChangeStep>(null);
   const [newEmail, setNewEmail] = useState('');
@@ -40,7 +41,10 @@ export default function ProfileEmailAuthSection({
     return () => window.clearInterval(timer);
   }, [resendCooldown, verificationCooldown]);
 
-  const refreshUser = async () => setUser(await authApi.getMe());
+  const refreshUser = async () => {
+    setUser(await authApi.getMe());
+    await queryClient.invalidateQueries({ queryKey: ['linked-providers'] });
+  };
 
   const resendVerification = useMutation({
     mutationFn: authApi.resendVerification,
@@ -135,24 +139,7 @@ export default function ProfileEmailAuthSection({
   };
 
   return (
-    <section
-      aria-labelledby="profile-email-auth-heading"
-      className="mt-2 border-t border-dark-700 pt-3"
-    >
-      <div className="flex min-h-11 items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h3 id="profile-email-auth-heading" className="text-sm font-semibold text-dark-100">
-            {t('profile.emailAuth')}
-          </h3>
-          <p className="text-xs text-dark-400">{t('profile.canLoginWithEmail')}</p>
-        </div>
-        {verified ? (
-          <span className="badge-success shrink-0">{t('profile.verified')}</span>
-        ) : verificationEnabled ? (
-          <span className="badge-warning shrink-0">{t('profile.notVerified')}</span>
-        ) : null}
-      </div>
-
+    <section aria-label={t('profile.emailAuth')} className="mt-4 border-t border-dark-700/30 pt-4">
       {!verified && verificationEnabled && (
         <div className="mt-2 rounded-linear border border-warning-500/30 bg-warning-500/10 p-3">
           <p className="text-sm text-warning-400">{t('profile.verificationRequired')}</p>

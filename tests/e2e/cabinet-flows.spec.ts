@@ -782,7 +782,12 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
     .boundingBox();
   const downloadAppBox = await downloadApp.boundingBox();
   expect(chooseAnotherAppBox?.y).toBeLessThan(downloadAppBox?.y ?? 0);
+  expect(downloadAppBox?.width).toBeGreaterThanOrEqual((installActionsBox?.width ?? 0) - 1);
   await expect(dialog.getByRole('button', { name: 'Add to Test App' })).toHaveCount(0);
+  await downloadApp.click();
+  await expect(page).toHaveURL(/step=add/);
+  await dialog.getByRole('button', { name: 'Back' }).click();
+  await expect(page).toHaveURL(/step=application/);
   const appInstalled = dialog.getByRole('button', { name: 'App is installed' });
   await expect(appInstalled).toHaveClass(/btn-secondary/);
   await appInstalled.click();
@@ -803,7 +808,12 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   expect(addActionsBox?.y).toBeGreaterThanOrEqual(
     (addContentBox?.y ?? 0) + (addContentBox?.height ?? 0),
   );
-  await expect(dialog.getByRole('button', { name: 'Subscription added' })).toHaveCount(0);
+  expect((await addToApp.boundingBox())?.width).toBeGreaterThanOrEqual(
+    (addActionsBox?.width ?? 0) - 1,
+  );
+  const subscriptionAdded = dialog.getByRole('button', { name: 'Subscription added' });
+  await expect(subscriptionAdded).toBeVisible();
+  await expect(subscriptionAdded).toHaveClass(/btn-secondary/);
   await addToApp.click();
   await expect(page).toHaveURL(/step=success/);
   await expect(
@@ -829,7 +839,8 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   ).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: 'Continue with Windows' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'App is installed' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Add to Test App' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Subscription added' }).click();
+  await expect(page).toHaveURL(/step=success/);
   await page.getByRole('dialog').getByRole('button', { name: 'Finish' }).click();
   await expect(page).toHaveURL('/?sub=1');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
@@ -1291,7 +1302,11 @@ test('presents linked Email and missing Telegram as compact Profile rows @critic
 }) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, { language: 'ru' });
 
+  const emailAuthLoaded = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === '/api/cabinet/branding/email-auth',
+  );
   await page.goto('/profile');
+  await emailAuthLoaded;
   const accountHeading = page.getByRole('heading', { name: 'Информация об аккаунте' });
   const accountCard = accountHeading.locator(
     'xpath=ancestor::div[contains(@class, "relative") and contains(@class, "overflow-hidden")][1]',
@@ -1299,6 +1314,8 @@ test('presents linked Email and missing Telegram as compact Profile rows @critic
   const emailAddress = accountCard.getByText('browser-test@example.test', { exact: true });
 
   await expect(accountCard.getByRole('heading', { name: 'Авторизация по Email' })).toHaveCount(0);
+  await expect(accountCard.getByRole('button', { name: 'Сменить почту' })).toHaveCount(0);
+  await expect(accountCard.getByText('Подтверждён', { exact: true })).toHaveCount(0);
   await expect(accountCard.getByText('Email', { exact: true })).toBeVisible();
   await expect(emailAddress).toBeVisible();
   expect((await emailAddress.boundingBox())?.height).toBeLessThanOrEqual(25);
@@ -1316,12 +1333,21 @@ test('presents linked Email and missing Telegram as compact Profile rows @critic
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('keeps verified Email change available from the compact Profile @critical-flow', async ({
+test('keeps verified Email change available from Connected Accounts @critical-flow', async ({
   page,
 }) => {
   const { apiRequests, unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
     language: 'ru',
     responses: {
+      '/api/cabinet/auth/account/linked-providers': {
+        providers: [
+          {
+            provider: 'email',
+            linked: true,
+            identifier: 'browser-test@example.test',
+          },
+        ],
+      },
       '/api/cabinet/auth/email/change': {
         message: 'sent',
         new_email: 'new@example.test',
@@ -1333,7 +1359,8 @@ test('keeps verified Email change available from the compact Profile @critical-f
       },
     },
   });
-  await page.goto('/profile');
+  await page.goto('/profile/accounts');
+  await expect(page.getByRole('heading', { name: 'Авторизация по Email' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Сменить почту' }).click();
   await page.getByRole('textbox', { name: 'Новый email' }).fill('new@example.test');
   await expect(page.getByRole('button', { name: 'Отправить код' })).toHaveAttribute(
@@ -1352,7 +1379,7 @@ test('keeps verified Email change available from the compact Profile @critical-f
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('keeps Email verification resend available from the compact Profile @critical-flow', async ({
+test('keeps Email verification resend available from Connected Accounts @critical-flow', async ({
   page,
 }) => {
   const unverifiedUser = {
@@ -1363,11 +1390,20 @@ test('keeps Email verification resend available from the compact Profile @critic
     language: 'ru',
     user: unverifiedUser,
     responses: {
+      '/api/cabinet/auth/account/linked-providers': {
+        providers: [
+          {
+            provider: 'email',
+            linked: true,
+            identifier: 'browser-test@example.test',
+          },
+        ],
+      },
       '/api/cabinet/auth/email/resend': { message: 'sent' },
     },
   });
 
-  await page.goto('/profile');
+  await page.goto('/profile/accounts');
   await page.getByRole('button', { name: 'Отправить письмо повторно' }).click();
 
   await expect(page.getByRole('status')).toHaveText('Письмо отправлено повторно!');

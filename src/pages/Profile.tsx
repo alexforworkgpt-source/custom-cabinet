@@ -24,7 +24,6 @@ import {
 import ProfileHubSections, { ProfileAdminSection } from '@/components/profile/ProfileHubSections';
 import { useTheme } from '@/hooks/useTheme';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
-import ProfileEmailAuthSection from './ProfileEmailAuthSection';
 
 export default function Profile() {
   const { t } = useTranslation();
@@ -60,7 +59,6 @@ export default function Profile() {
     staleTime: 60000,
   });
   const isEmailAuthEnabled = emailAuthConfig?.enabled ?? true;
-  const isEmailVerificationEnabled = emailAuthConfig?.verification_enabled ?? true;
 
   // Build referral link for cabinet
   const referralLink = referralInfo?.referral_code
@@ -173,13 +171,6 @@ export default function Profile() {
                 </span>
               </div>
             </div>
-            {isEmailAuthEnabled && user?.email && (
-              <ProfileEmailAuthSection
-                email={user.email}
-                verified={user.email_verified}
-                verificationEnabled={isEmailVerificationEnabled}
-              />
-            )}
             <Link
               to="/profile/accounts"
               className="group mt-2 flex min-h-12 items-center gap-3 rounded-xl py-2 text-dark-200 transition-colors hover:bg-dark-800/70 hover:text-dark-100"

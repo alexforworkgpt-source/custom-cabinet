@@ -11,7 +11,13 @@ import { useCurrency } from '../../hooks/useCurrency';
 import { useHapticFeedback } from '../../platform/hooks/useHaptic';
 import { getGlassColors } from '../../utils/glassTheme';
 import { getInsufficientBalanceError } from '../../utils/subscriptionHelpers';
-import { ClockIcon, ExclamationIcon, PlusIcon, SubscriptionIcon } from '@/components/icons';
+import {
+  ClockIcon,
+  ExclamationIcon,
+  PlusIcon,
+  SettingsIcon,
+  SubscriptionIcon,
+} from '@/components/icons';
 
 interface SubscriptionCardExpiredProps {
   subscription: Subscription;
@@ -329,8 +335,9 @@ export default function SubscriptionCardExpired({
         aria-haspopup="dialog"
         aria-expanded={managementOpen}
         onClick={onManageSubscription}
-        className="mt-3 flex min-h-11 w-full items-center justify-center rounded-[14px] border border-dark-700/60 bg-dark-900/80 px-4 py-3 text-center text-sm font-semibold text-dark-200 transition-colors hover:border-dark-600/80 hover:bg-dark-800/80"
+        className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-[14px] border border-dark-700/60 bg-dark-900/80 px-4 py-3 text-center text-sm font-semibold text-dark-200 transition-colors hover:border-dark-600/80 hover:bg-dark-800/80"
       >
+        <SettingsIcon className="h-4 w-4 shrink-0 text-accent-400" />
         {t('dashboard.manageSubscription')}
       </button>
     </div>

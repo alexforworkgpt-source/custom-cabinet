@@ -36,6 +36,7 @@ interface BlockButtonsProps {
   getSvgHtml: (key: string | undefined) => string;
   onOpenDeepLink: (url: string) => void;
   onSubscriptionOpen?: () => void;
+  onExternalOpen?: () => void;
 }
 
 export function BlockButtons({
@@ -51,6 +52,7 @@ export function BlockButtons({
   getSvgHtml,
   onOpenDeepLink,
   onSubscriptionOpen,
+  onExternalOpen,
 }: BlockButtonsProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
@@ -122,7 +124,14 @@ export function BlockButtons({
         const href = btn.link || btn.url || '';
         if (!isValidExternalUrl(href)) return null;
         return (
-          <a key={idx} href={href} target="_blank" rel="noopener noreferrer" className={baseClass}>
+          <a
+            key={idx}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={baseClass}
+            onClick={onExternalOpen}
+          >
             {btnIcon || <DownloadIcon />}
             {btnText}
           </a>

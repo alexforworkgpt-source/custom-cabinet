@@ -17,6 +17,7 @@ import { usePlatform, useIsTelegram } from '@/platform/hooks/usePlatform';
 import { useAuthStore } from '../store/auth';
 import { isValidEmail } from '../utils/validation';
 import type { LinkedProvider } from '../types';
+import EmailAccountManagement from './EmailAccountManagement';
 
 const OAUTH_PROVIDERS = ['google', 'yandex', 'discord', 'vk'];
 
@@ -325,6 +326,7 @@ export default function ConnectedAccounts() {
   // one-time code was mailed to it; verifying the code yields the merge token.
   const [emailMergeCodePending, setEmailMergeCodePending] = useState(false);
   const [emailMergeCode, setEmailMergeCode] = useState('');
+  const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
 
   const { data: emailAuthConfig } = useQuery<EmailAuthEnabled>({
@@ -333,6 +335,7 @@ export default function ConnectedAccounts() {
     staleTime: 60000,
   });
   const isEmailAuthEnabled = emailAuthConfig?.enabled ?? true;
+  const isEmailVerificationEnabled = emailAuthConfig?.verification_enabled ?? true;
 
   const inTelegram = useIsTelegram();
   const platform = usePlatform();
@@ -720,6 +723,16 @@ export default function ConnectedAccounts() {
                 )}
               </div>
             </div>
+
+            {provider.provider === 'email' &&
+              provider.linked &&
+              (user?.email || provider.identifier) && (
+                <EmailAccountManagement
+                  email={user?.email || provider.identifier || ''}
+                  verified={user?.email_verified ?? false}
+                  verificationEnabled={isEmailVerificationEnabled}
+                />
+              )}
 
             {/* Inline email linking form */}
             {provider.provider === 'email' && !provider.linked && (

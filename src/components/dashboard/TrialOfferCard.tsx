@@ -262,7 +262,7 @@ export default function TrialOfferCard({
               : {
                   background:
                     'linear-gradient(135deg, rgb(var(--color-accent-400)), rgb(var(--color-accent-500)))',
-                  color: '#0a2a1e',
+                  color: 'rgb(var(--color-on-accent))',
                   boxShadow: '0 4px 20px rgba(var(--color-accent-400), 0.25)',
                 }
           }

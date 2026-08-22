@@ -10,7 +10,7 @@ import { useTrafficZone } from '../../hooks/useTrafficZone';
 import { formatTraffic } from '../../utils/formatTraffic';
 import { getGlassColors } from '../../utils/glassTheme';
 import { HoverBorderGradient } from '../ui/hover-border-gradient';
-import { CalendarIcon, CheckIcon, CopyIcon, RefreshIcon } from '@/components/icons';
+import { CalendarIcon, CheckIcon, CopyIcon, RefreshIcon, SettingsIcon } from '@/components/icons';
 import { useHaptic } from '../../platform';
 import type { Subscription } from '../../types';
 
@@ -149,18 +149,23 @@ export default function SubscriptionCardActive({
               type="button"
               onClick={() => refreshTrafficMutation.mutate()}
               disabled={refreshTrafficMutation.isPending || trafficRefreshCooldown > 0}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-dark-50/35 transition-colors hover:bg-dark-50/[0.05] hover:text-dark-50/50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-full px-2 text-[11px] font-medium text-dark-50/35 transition-colors hover:bg-dark-50/[0.05] hover:text-dark-50/50 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label={
                 trafficRefreshCooldown > 0
                   ? `${t('common.refresh')}: ${trafficRefreshCooldown}s`
                   : t('common.refresh')
               }
-              title={t('common.refresh')}
+              title={
+                trafficRefreshCooldown > 0
+                  ? `${t('common.refresh')}: ${trafficRefreshCooldown}s`
+                  : t('common.refresh')
+              }
               data-traffic-refresh
             >
               <RefreshIcon
                 className={`h-4 w-4 ${refreshTrafficMutation.isPending ? 'animate-spin' : ''}`}
               />
+              {trafficRefreshCooldown > 0 ? `${trafficRefreshCooldown}s` : t('common.refresh')}
             </button>
             {isUnlimited ? (
               <div
@@ -420,8 +425,9 @@ export default function SubscriptionCardActive({
         aria-haspopup="dialog"
         aria-expanded={managementOpen}
         onClick={onManageSubscription}
-        className="flex min-h-11 w-full items-center justify-center rounded-[14px] border border-accent-500/20 bg-accent-500/[0.06] px-4 py-3 text-center text-sm font-semibold text-dark-200 transition-colors hover:border-accent-500/35 hover:bg-accent-500/10"
+        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[14px] border border-accent-500/20 bg-accent-500/[0.06] px-4 py-3 text-center text-sm font-semibold text-dark-200 transition-colors hover:border-accent-500/35 hover:bg-accent-500/10"
       >
+        <SettingsIcon className="h-4 w-4 shrink-0 text-accent-400" />
         {t('dashboard.manageSubscription')}
       </button>
 

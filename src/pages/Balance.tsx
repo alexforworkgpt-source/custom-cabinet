@@ -240,7 +240,7 @@ export default function Balance() {
         <Card asChild size="sm" interactive>
           <Link
             to="/balance/top-up"
-            className="flex min-h-14 items-center justify-between gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50"
+            className="hover-border-gradient balance-top-up-gradient-button flex min-h-14 items-center justify-between gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50"
           >
             <span className="flex min-w-0 items-center gap-3">
               <WalletIcon className="h-5 w-5 shrink-0 text-dark-400" />
@@ -277,7 +277,13 @@ export default function Balance() {
               className="input min-w-0 flex-1"
               disabled={promocodeLoading}
             />
-            <Button type="submit" size="sm" disabled={!promocode.trim()} loading={promocodeLoading}>
+            <Button
+              type="submit"
+              size="sm"
+              className="h-auto self-stretch"
+              disabled={!promocode.trim()}
+              loading={promocodeLoading}
+            >
               {t('balance.promocode.activate')}
             </Button>
           </form>

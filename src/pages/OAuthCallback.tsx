@@ -156,7 +156,7 @@ export default function OAuthCallback() {
             {telegramLink && (
               <a
                 href={telegramLink}
-                className="btn-primary inline-block w-full rounded-lg bg-accent-500 px-6 py-3 text-center font-medium text-dark-950 no-underline transition-colors hover:bg-accent-400"
+                className="btn-primary inline-block w-full rounded-lg bg-accent-500 px-6 py-3 text-center font-medium text-on-accent no-underline transition-colors hover:bg-accent-400"
               >
                 {t('profile.accounts.openTelegram')}
               </a>
@@ -177,7 +177,7 @@ export default function OAuthCallback() {
       isServerMode && telegramLink ? (
         <a
           href={telegramLink}
-          className="btn-primary inline-block w-full rounded-lg bg-accent-500 px-6 py-3 text-center font-medium text-dark-950 no-underline transition-colors hover:bg-accent-400"
+          className="btn-primary inline-block w-full rounded-lg bg-accent-500 px-6 py-3 text-center font-medium text-on-accent no-underline transition-colors hover:bg-accent-400"
         >
           {t('profile.accounts.openTelegram')}
         </a>

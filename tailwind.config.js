@@ -45,8 +45,8 @@ export default {
           900: withOpacity('--color-champagne-900'),
           950: withOpacity('--color-champagne-950'),
         },
-        // Readable text on top of status-colored fills (computed from the
-        // operator palette in useThemeColors — black or white, whichever reads)
+        // White product foreground for filled accent actions; status foregrounds
+        // remain contrast-aware because operator status colors may be very light.
         'on-accent': withOpacity('--color-on-accent'),
         'on-success': withOpacity('--color-on-success'),
         'on-warning': withOpacity('--color-on-warning'),

@@ -227,6 +227,7 @@ export default function InstallationGuide({
       buttons: RemnawaveButtonClient[] | undefined,
       variant: 'light' | 'subtle',
       onSubscriptionOpen?: () => void,
+      onExternalOpen?: () => void,
     ) => (
       <BlockButtons
         buttons={buttons}
@@ -241,6 +242,7 @@ export default function InstallationGuide({
         getSvgHtml={getSvgHtml}
         onOpenDeepLink={onOpenDeepLink}
         onSubscriptionOpen={onSubscriptionOpen}
+        onExternalOpen={onExternalOpen}
       />
     ),
     [
@@ -332,6 +334,7 @@ export default function InstallationGuide({
     options?: {
       section?: 'install' | 'add';
       onSubscriptionOpen?: () => void;
+      onExternalOpen?: () => void;
     },
   ) => {
     const buttons = options ? blocks.flatMap((block) => block.buttons ?? []) : [];
@@ -356,7 +359,12 @@ export default function InstallationGuide({
         <div data-connection-section-content>{content}</div>
         {buttons.length > 0 && (
           <div data-connection-section-actions>
-            {renderBlockButtons(buttons, 'light', options.onSubscriptionOpen)}
+            {renderBlockButtons(
+              buttons,
+              'light',
+              options.onSubscriptionOpen,
+              options.onExternalOpen,
+            )}
           </div>
         )}
       </div>
@@ -499,6 +507,7 @@ export default function InstallationGuide({
               renderBlocks={(blocks) =>
                 renderConfiguredBlocks(blocks, {
                   section: 'install',
+                  onExternalOpen: () => setFlowStep('add', currentPlatformKey, selectedApp.name),
                 })
               }
             />
@@ -531,6 +540,13 @@ export default function InstallationGuide({
                 onSubscriptionOpen: () =>
                   setFlowStep('success', currentPlatformKey, selectedApp.name),
               })}
+              <button
+                type="button"
+                className="btn-secondary w-full justify-center"
+                onClick={() => setFlowStep('success', currentPlatformKey, selectedApp.name)}
+              >
+                {t('subscription.connection.subscriptionAdded', 'Subscription added')}
+              </button>
             </div>
           )}
 

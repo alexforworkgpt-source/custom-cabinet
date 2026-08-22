@@ -77,13 +77,47 @@ test('/balance presents compact details before starting a new top-up', async ({ 
   await expect(balanceHeading).toHaveCSS('text-align', 'center');
   await expect(balanceDialog.locator('[data-balance-summary]')).toBeVisible();
   await expect(balanceDialog.locator('[data-balance-promocode]')).toBeVisible();
-  await expect(balanceDialog.getByLabel('Promo code')).toBeVisible();
+  const promocodeInput = balanceDialog.getByLabel('Promo code');
+  const activatePromocodeButton = balanceDialog.getByRole('button', { name: 'Activate' });
+  await expect(promocodeInput).toBeVisible();
+  await expect(activatePromocodeButton).toBeVisible();
+  const [promocodeInputBox, activatePromocodeButtonBox] = await Promise.all([
+    promocodeInput.boundingBox(),
+    activatePromocodeButton.boundingBox(),
+  ]);
+  if (!promocodeInputBox || !activatePromocodeButtonBox) {
+    throw new Error('Promo code form controls must be visible');
+  }
+  expect(
+    Math.abs(promocodeInputBox.height - activatePromocodeButtonBox.height),
+  ).toBeLessThanOrEqual(1);
   await expect(balanceDialog.getByRole('button', { name: 'Transaction History' })).toHaveAttribute(
     'aria-expanded',
     'false',
   );
   const topUpLink = balanceDialog.getByRole('link', { name: 'Top up balance' });
   await expect(topUpLink).toHaveAttribute('href', '/balance/top-up');
+  await expect(topUpLink).toHaveClass(/hover-border-gradient/);
+  await expect(topUpLink).toHaveClass(/balance-top-up-gradient-button/);
+  const topUpBackground = await topUpLink.evaluate(
+    (element) => getComputedStyle(element).backgroundImage,
+  );
+  expect(topUpBackground).toContain('conic-gradient');
+  const readTopUpFillAlpha = () =>
+    topUpLink.evaluate((element) => {
+      const fill = getComputedStyle(element).getPropertyValue('--border-inner-bg');
+      const canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Canvas context must be available');
+      context.fillStyle = fill;
+      context.fillRect(0, 0, 1, 1);
+      return context.getImageData(0, 0, 1, 1).data[3];
+    });
+  expect(await readTopUpFillAlpha()).toBe(255);
+  await page.evaluate(() => document.documentElement.classList.add('light'));
+  expect(await readTopUpFillAlpha()).toBe(255);
   expect(
     (await balanceDialog.locator('[data-balance-summary]').boundingBox())?.height,
   ).toBeLessThanOrEqual(90);
@@ -152,6 +186,8 @@ test('/profile/accounts uses the standard card density without mobile overflow',
 
   await expect(identifier).toBeVisible();
   await expect(providerCard).toHaveCSS('padding-top', '16px');
+  await expect(providerCard.getByRole('button', { name: 'Change email' })).toBeVisible();
+  await expect(providerCard.getByText('Verified', { exact: true })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     await page.evaluate(() => window.innerWidth),
   );

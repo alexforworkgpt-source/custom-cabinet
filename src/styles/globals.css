@@ -67,6 +67,40 @@
   --border-inner-bg: rgb(var(--color-accent-600));
 }
 
+.hover-border-gradient.balance-top-up-gradient-button {
+  --border-inner-bg: color-mix(
+    in srgb,
+    rgb(var(--color-accent-500)) 6%,
+    rgb(var(--color-dark-900)) 94%
+  );
+}
+
+.hover-border-gradient.balance-top-up-gradient-button:hover,
+.hover-border-gradient.balance-top-up-gradient-button:active {
+  --border-inner-bg: color-mix(
+    in srgb,
+    rgb(var(--color-accent-500)) 10%,
+    rgb(var(--color-dark-900)) 90%
+  );
+}
+
+.light .hover-border-gradient.balance-top-up-gradient-button {
+  --border-inner-bg: color-mix(
+    in srgb,
+    rgb(var(--color-accent-500)) 6%,
+    rgb(var(--color-champagne-100)) 94%
+  );
+}
+
+.light .hover-border-gradient.balance-top-up-gradient-button:hover,
+.light .hover-border-gradient.balance-top-up-gradient-button:active {
+  --border-inner-bg: color-mix(
+    in srgb,
+    rgb(var(--color-accent-500)) 10%,
+    rgb(var(--color-champagne-100)) 90%
+  );
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hover-border-gradient {
     animation-play-state: paused;

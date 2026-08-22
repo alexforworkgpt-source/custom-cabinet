@@ -12,6 +12,7 @@ function rgbToString(r: number, g: number, b: number): string {
 // Generate color palette from base color (returns RGB strings)
 function generatePalette(baseHex: string): ColorPalette {
   const { h, s } = hexToHsl(baseHex);
+  const baseRgb = hexToRgb(baseHex);
 
   // Lightness values for each shade level (from light to dark)
   const lightnessMap: Record<number, number> = {
@@ -31,6 +32,11 @@ function generatePalette(baseHex: string): ColorPalette {
   const palette: Partial<ColorPalette> = {};
 
   for (const shade of SHADE_LEVELS) {
+    if (shade === 500) {
+      palette[shade] = rgbToString(baseRgb.r, baseRgb.g, baseRgb.b);
+      continue;
+    }
+
     const lightness = lightnessMap[shade];
     // Adjust saturation slightly for very light/dark shades
     const adjustedS = shade <= 100 ? s * 0.7 : shade >= 900 ? s * 0.8 : s;
@@ -99,8 +105,7 @@ function ensureReadable(fg: Rgb, towards: Rgb, bg: Rgb, minRatio: number): Rgb {
   return towards;
 }
 
-// Black-or-white text for a given button/badge background: pick whichever
-// side actually reads on top of it (operators may choose a light accent).
+// Black-or-white text for a status fill: pick whichever side reads on top of it.
 function onColorFor(bgTriplet: string): string {
   const [r, g, b] = bgTriplet.split(',').map((x) => Number(x.trim()));
   const bg = { r, g, b };
@@ -238,9 +243,9 @@ export function applyThemeColors(themeColors: ThemeColors): void {
     root.style.setProperty(`--color-error-${shade}`, errorPalette[shade]);
   }
 
-  // Readable text color on top of each status color (buttons, filled badges).
-  // Hardcoded white breaks the moment an operator picks a light accent.
-  root.style.setProperty('--color-on-accent', onColorFor(accentPalette[500]));
+  // Filled accent actions keep the product's white foreground contract.
+  root.style.setProperty('--color-on-accent', '255, 255, 255');
+  // Status fills remain contrast-aware because warning/success colors can be very light.
   root.style.setProperty('--color-on-success', onColorFor(successPalette[500]));
   root.style.setProperty('--color-on-warning', onColorFor(warningPalette[500]));
   root.style.setProperty('--color-on-error', onColorFor(errorPalette[500]));

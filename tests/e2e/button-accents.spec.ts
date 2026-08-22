@@ -28,29 +28,98 @@ const subscription = {
   tariff_name: 'Standard',
 };
 
+const activeSubscriptionResponses = {
+  '/api/cabinet/subscription': { has_subscription: true, subscription },
+  '/api/cabinet/subscriptions': {
+    subscriptions: [subscription],
+    multi_tariff_enabled: false,
+  },
+  '/api/cabinet/subscription/devices': {
+    devices: [],
+    total: 0,
+    device_limit: subscription.device_limit,
+  },
+  '/api/cabinet/subscription/refresh-traffic': {
+    success: true,
+    cached: false,
+    traffic_used_gb: subscription.traffic_used_gb,
+    traffic_used_percent: subscription.traffic_used_percent,
+    traffic_limit_gb: subscription.traffic_limit_gb,
+    is_unlimited: false,
+  },
+};
+
+test('keeps white content on filled actions for the operator accent', async ({ page }) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      ...activeSubscriptionResponses,
+      '/api/cabinet/branding/colors': {
+        accent: '#0EA5E9',
+        darkBackground: '#000000',
+        darkSurface: '#0a0a0a',
+        darkText: '#fafafa',
+        darkTextSecondary: '#a3a3a3',
+        lightBackground: '#ffffff',
+        lightSurface: '#fafafa',
+        lightText: '#0a0a0a',
+        lightTextSecondary: '#525252',
+        success: '#22c55e',
+        warning: '#f59e0b',
+        error: '#ef4444',
+      },
+    },
+  });
+
+  await page.goto('/');
+
+  const connectDevice = page.locator('[data-onboarding="connect-devices"]');
+  const connectTitle = connectDevice.locator('.text-sm.font-semibold');
+  const connectIcon = connectDevice.locator('svg').first();
+
+  await expect(connectDevice).toBeVisible();
+  await expect(connectTitle).toHaveCSS('color', 'rgb(255, 255, 255)');
+  await expect(connectIcon).toHaveCSS('color', 'rgb(255, 255, 255)');
+  expect(
+    await connectDevice.evaluate((element) => getComputedStyle(element).backgroundImage),
+  ).toContain('rgb(14, 165, 233)');
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('shows the traffic refresh countdown before restoring the action', async ({ page }) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      ...activeSubscriptionResponses,
+      '/api/cabinet/subscription/refresh-traffic': {
+        ...activeSubscriptionResponses['/api/cabinet/subscription/refresh-traffic'],
+        rate_limited: true,
+        retry_after_seconds: 3,
+      },
+    },
+  });
+  let refreshRequests = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/cabinet/subscription/refresh-traffic') {
+      refreshRequests += 1;
+    }
+  });
+  await page.goto('/');
+  const refreshButton = page.locator('[data-traffic-refresh]');
+
+  await expect(refreshButton).toContainText(/^[123]s$/);
+  await expect(refreshButton).toHaveText('Refresh', { timeout: 5000 });
+  await expect(refreshButton).toBeEnabled();
+  await refreshButton.click();
+  await expect(refreshButton).toHaveText('3s');
+  expect(refreshRequests).toBe(2);
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
 test('uses restrained accent states for key secondary actions', async ({ page }) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
     featureFlags: { giftEnabled: true },
     responses: {
       '/api/cabinet/branding/gift-enabled': { enabled: true },
-      '/api/cabinet/subscription': { has_subscription: true, subscription },
-      '/api/cabinet/subscriptions': {
-        subscriptions: [subscription],
-        multi_tariff_enabled: false,
-      },
-      '/api/cabinet/subscription/devices': {
-        devices: [],
-        total: 0,
-        device_limit: subscription.device_limit,
-      },
-      '/api/cabinet/subscription/refresh-traffic': {
-        success: true,
-        cached: false,
-        traffic_used_gb: subscription.traffic_used_gb,
-        traffic_used_percent: subscription.traffic_used_percent,
-        traffic_limit_gb: subscription.traffic_limit_gb,
-        is_unlimited: false,
-      },
+      ...activeSubscriptionResponses,
       '/api/cabinet/gift/config': {
         is_enabled: true,
         tariffs: [
@@ -144,6 +213,7 @@ test('uses restrained accent states for key secondary actions', async ({ page })
     const manageSubscription = page.getByRole('button', { name: 'Manage subscription' });
     await expect(manageSubscription).toHaveClass(/border-accent-500\/20/);
     await expect(manageSubscription).toHaveClass(/bg-accent-500\/\[0\.06\]/);
+    await expect(manageSubscription.locator('svg')).toHaveCount(1);
 
     const copyLink = page.getByRole('button', { name: 'Copy link' });
     const copyIcon = copyLink.locator('svg');
