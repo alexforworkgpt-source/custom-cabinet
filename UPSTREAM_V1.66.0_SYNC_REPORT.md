@@ -1,6 +1,6 @@
 # Upstream Synchronization Report: `v1.66.0`
 
-Status: `source-integrated; Local Gate and compatibility runtime blocked`
+Status: `source-integrated; automated source gate passed; compatibility runtime blocked`
 Date: `2026-08-23`
 Owner: `repository owner and OpenCode`
 
@@ -18,6 +18,7 @@ verified and recorded in `UPSTREAM.md` and `COMPATIBILITY.md`.
 | Target upstream tag | `v1.66.0` |
 | Target upstream SHA | `2192484b011068d8cb75c61a6aeaada1d06115aa` |
 | Receiving Custom Cabinet commit | `c1ddbf39b145b298fbc0af0557fd26ef70a83c5e` |
+| Integrated Custom Cabinet source commit | `653e26238105c8394c6abc271b6da836de5fa974` |
 | Intended Upstream Bot | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` (owner-approved) |
 | Intended Release Bundle | Not scheduled; publication remains `BLOCKED` |
 
@@ -39,8 +40,9 @@ Decision totals: `5` direct ports, `21` adapted ports and `19` skipped metadata
 or merge commits. No source commit is blocked. GeoCheck runtime verification is
 blocked because the current Remnawave panel and nodes are `2.8`, below `3.3.0`.
 
-The Custom Cabinet source candidate is version `1.66.0`. It remains uncommitted,
-so no exact candidate SHA, immutable tag or Release Bundle is declared here.
+The Custom Cabinet source candidate is version `1.66.0`, committed as exact SHA
+`653e26238105c8394c6abc271b6da836de5fa974`. No immutable tag or Release Bundle
+is declared here.
 
 ## Commit Impact Matrix
 
@@ -273,7 +275,7 @@ Production build transformed 2,857 modules; the lazy AdminRemnawave chunk is
 | `npm run type-check` | `PASS` | TypeScript completed without errors |
 | `npm run build` | `PASS` | Vite production build completed; build output remains ignored |
 | `npm run check` | `PASS` | Biome checked 584 files without changes |
-| Browser smoke | `PASS` (mocked worktree) | 257 Playwright tests passed and 6 were intentionally skipped across 320, 375, 768, 1024 and 1280 px projects; GeoCheck reload/Telegram Back passed 40 repeated runs and Close/Forward restoration passed 20 |
+| Browser smoke | `PASS` (mocked committed source) | 257 Playwright tests passed and 6 were intentionally skipped across 320, 375, 768, 1024 and 1280 px projects; GeoCheck reload/Telegram Back passed 40 repeated runs and Close/Forward restoration passed 20 |
 | Telegram smoke | `PASS` (mocked source UI) / `BLOCKED` (real clients) | Manual login, fallback, cancellation and platform guards passed; Android/iOS evidence is still required |
 | Theme and locale smoke | `PASS` (automated) | Dark/light/operator palette, Russian, English and Persian RTL scenarios passed |
 | Accessibility smoke | `PARTIAL` | Automated focus return, Back/Escape, names, wrapping and 44 px GeoCheck controls passed; physical screen reader and 200% browser zoom were not run |
@@ -287,7 +289,7 @@ Production build transformed 2,857 modules; the lazy AdminRemnawave chunk is
 - [x] Every skipped change has a reason.
 - [x] No upstream license, copyright or technical attribution was removed.
 - [x] No build output, environment file, screenshot or agent data is included.
-- [ ] The work is committed before Release Bundle construction.
+- [x] The integrated source is committed before Release Bundle construction.
 - [ ] A changed release uses a new immutable tag.
 
 ## Residual Risks and Rollback
@@ -305,6 +307,8 @@ Production build transformed 2,857 modules; the lazy AdminRemnawave chunk is
 
 ## Final Outcome
 
-`Source integration and automated worktree checks passed. The full Local Gate,
-exact candidate commit, Upstream Bot/runtime compatibility, GeoCheck runtime and
-Release remain BLOCKED.`
+`Source integration and the automated gate passed on exact source commit
+653e26238105c8394c6abc271b6da836de5fa974. The full Local Gate remains PARTIAL
+until 200% browser zoom and physical screen-reader checks run. Real Telegram
+clients, Upstream Bot/runtime compatibility, GeoCheck runtime and Release remain
+BLOCKED.`
