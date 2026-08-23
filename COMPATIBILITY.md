@@ -8,15 +8,31 @@ identifiers, not public branding.
 
 | Component | Version or reference | Exact source |
 | --- | --- | --- |
-| Custom Cabinet | `1.65.0`; `cabinet-v2026.08.22.2`; Release Bundle `v2026.08.17` | `23c9889f6ab1ad514faf36ad9cbf66dc5407ad44` |
-| Upstream Cabinet baseline | `v1.65.0` | `b866bebeeb6032db4baa3869a4917316fe8e0453` |
+| Custom Cabinet | `1.66.0`; source candidate; no immutable tag or Release Bundle yet | `653e26238105c8394c6abc271b6da836de5fa974` |
+| Upstream Cabinet baseline | `v1.66.0` | `2192484b011068d8cb75c61a6aeaada1d06115aa` |
 | Upstream Cabinet source | Repository | <https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git> |
-| Upstream Bot | `v4.0.0` | `f553d1896dcd347fd74012f6394fd2277161bdd1` |
+| Upstream Bot | `v4.1.0` | `49b05d5ab79dd9bb92f0404bb0066cda8a175649` |
 | Node.js development baseline | 20+ | Declared in `README.md` |
 
 The current upstream source identity is also recorded in
 [`UPSTREAM.md`](UPSTREAM.md). If this table and `UPSTREAM.md` disagree, stop and
 resolve the provenance mismatch before synchronization or release.
+
+## Current Candidate Verification
+
+The source candidate is compatible with the exact Upstream Bot identity below,
+but it is not a published Release Bundle and is not approved for production.
+
+| Item | Exact value or result |
+| --- | --- |
+| Installer | `8d5feb922958f6d3deed0f837060059d1919b356` |
+| Upstream Bot | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` |
+| Runtime-tested Custom Cabinet commit | `bbd56ee8f8ec4533e1bd5eeb692249345672190c` (same application source as `653e26238105c8394c6abc271b6da836de5fa974`; later commit changes verification documentation only) |
+| Candidate Cabinet artifact SHA-256 | `94f974dc4293cfdc99b73a4803a5c90b7351c60d9287e13d5230897aa82292a5`; repeated builds were byte-identical |
+| Database migration | `0104 → 0106`; injected failure restored the verified pre-update dump and `v4.0.0`, then the clean retry committed `v4.1.0` |
+| Runtime result | Installer doctor, frontend, branding and API passed on the disposable Ubuntu 24.04 VPS; the five new server contracts passed the exact Bot source suite, while unauthenticated runtime probes confirmed the corresponding routes without exercising account mutations; final postflight found 0 candidate containers and 0 candidate volumes |
+| Verification date | `2026-08-24` |
+| Release status | `BLOCKED`: real Telegram Android/iOS, physical screen reader, Remnawave `3.3.0+` GeoCheck runtime and separate owner publication/production approval remain unavailable |
 
 ## Release Bundle Record
 

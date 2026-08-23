@@ -1,7 +1,7 @@
 # Upstream Synchronization Report: `v1.66.0`
 
-Status: `source-integrated; automated source gate passed; compatibility runtime blocked`
-Date: `2026-08-23`
+Status: `source-integrated; automated, 200% zoom and Bot compatibility runtime gates passed; Release blocked`
+Date: `2026-08-24`
 Owner: `repository owner and OpenCode`
 
 Do not mark this report completed until the selected range is integrated,
@@ -275,16 +275,22 @@ Production build transformed 2,857 modules; the lazy AdminRemnawave chunk is
 | `npm run type-check` | `PASS` | TypeScript completed without errors |
 | `npm run build` | `PASS` | Vite production build completed; build output remains ignored |
 | `npm run check` | `PASS` | Biome checked 584 files without changes |
-| Browser smoke | `PASS` (mocked committed source) | 257 Playwright tests passed and 6 were intentionally skipped across 320, 375, 768, 1024 and 1280 px projects; GeoCheck reload/Telegram Back passed 40 repeated runs and Close/Forward restoration passed 20 |
+| Browser smoke | `PASS` (mocked committed source) | 257 Playwright tests passed and 6 were intentionally skipped across 320, 375, 768, 1024 and 1280 px projects; GeoCheck reload/Telegram Back passed 40 repeated runs and Close/Forward restoration passed 20; Login and GeoCheck passed 200% zoom smoke with no horizontal overflow or console errors at desktop 1280x800-equivalent reflow and mobile 375x812 pinch zoom |
 | Telegram smoke | `PASS` (mocked source UI) / `BLOCKED` (real clients) | Manual login, fallback, cancellation and platform guards passed; Android/iOS evidence is still required |
 | Theme and locale smoke | `PASS` (automated) | Dark/light/operator palette, Russian, English and Persian RTL scenarios passed |
-| Accessibility smoke | `PARTIAL` | Automated focus return, Back/Escape, names, wrapping and 44 px GeoCheck controls passed; physical screen reader and 200% browser zoom were not run |
+| Accessibility smoke | `PARTIAL` | Automated focus return, Back/Escape, names, wrapping and 44 px GeoCheck controls passed; 200% desktop reflow and mobile pinch zoom passed; a physical screen reader was not run |
 | GeoCheck runtime | `BLOCKED` | Current panel and nodes are `2.8`; requires `3.3.0+` |
+| Upstream Bot source gate | `PASS` | Exact `v4.1.0` SHA `49b05d5ab79dd9bb92f0404bb0066cda8a175649`: 3,302 tests passed and 3 were intentionally skipped on Python 3.13.15 |
+| Installer lifecycle | `PASS` | Full disposable Ubuntu 24.04 lifecycle and final postflight passed on exact Installer SHA `8d5feb922958f6d3deed0f837060059d1919b356`; this proof was repeated because the protected Bot identity changed |
+| Candidate artifact | `PASS` | Exact Cabinet commit `bbd56ee8f8ec4533e1bd5eeb692249345672190c` built twice with pinned Node/Nginx images; archives were byte-identical at SHA-256 `94f974dc4293cfdc99b73a4803a5c90b7351c60d9287e13d5230897aa82292a5` |
+| Protected Update and migration | `PASS` | Public Bundle `v2026.08.18` (`v4.0.0`, DB `0104`) updated to the candidate; injected post-migration failure restored the dump, old exact SHAs and health, then a clean retry committed `v4.1.0` with DB `0106` |
+| Candidate runtime smoke | `PASS` (route availability) / `BLOCKED` (authenticated account matrix) | Exact Bot/Cabinet checkouts, doctor, frontend and branding returned healthy/HTTP `200`; unauthenticated sort, subscription delete, promocode, Telegram auth and GeoCheck probes returned expected auth/validation responses rather than `404/405/500`; account mutations were not attempted |
+| Candidate final postflight | `PASS` | Candidate project, Caddy snippet and private env were absent; 0 candidate containers and 0 candidate volumes remained; Installer management launcher stayed executable with its lifecycle receipt at mode `600` |
 
 ## Provenance and Compatibility Completion
 
-- [ ] `UPSTREAM.md` promotes the target exact tag and SHA after the full compatibility gate.
-- [ ] `COMPATIBILITY.md` records the exact verified combination after the full compatibility gate.
+- [x] `UPSTREAM.md` promotes the target exact tag and SHA after the compatibility runtime gate.
+- [x] `COMPATIBILITY.md` records the exact verified candidate combination and its remaining release blockers.
 - [x] Every incoming commit is classified.
 - [x] Every skipped change has a reason.
 - [x] No upstream license, copyright or technical attribution was removed.
@@ -296,8 +302,10 @@ Production build transformed 2,857 modules; the lazy AdminRemnawave chunk is
 
 - GeoCheck source can be integrated and hidden below `3.3.0`, but its runtime
   behavior cannot be accepted on the current Remnawave `2.8` deployment.
-- Upstream Bot `v4.1.0` migration/runtime compatibility is not yet proven.
+- Upstream Bot `v4.1.0` source, `0104 → 0106` migration, verified rollback and
+  candidate runtime compatibility passed on the disposable integration VPS.
 - Android/iOS Telegram evidence is unavailable.
+- Physical screen-reader evidence is unavailable.
 - `npm ci` reports five high-severity dependency audit findings; no broad or
   breaking `npm audit fix` was applied during synchronization.
 - The last rollback Release Bundle remains `v2026.08.18` with Installer
@@ -308,7 +316,8 @@ Production build transformed 2,857 modules; the lazy AdminRemnawave chunk is
 ## Final Outcome
 
 `Source integration and the automated gate passed on exact source commit
-653e26238105c8394c6abc271b6da836de5fa974. The full Local Gate remains PARTIAL
-until 200% browser zoom and physical screen-reader checks run. Real Telegram
-clients, Upstream Bot/runtime compatibility, GeoCheck runtime and Release remain
-BLOCKED.`
+653e26238105c8394c6abc271b6da836de5fa974. Exact Upstream Bot v4.1.0 source,
+migration, rollback and candidate runtime compatibility also passed. The full
+Local Gate remains PARTIAL until a physical screen-reader check runs. Real
+Telegram clients, GeoCheck on Remnawave 3.3.0+ and owner approval for immutable
+tags, public Release Bundle and production rollout remain BLOCKED.`
