@@ -1,4 +1,5 @@
 import type React from 'react';
+import { Button } from '@/components/primitives/Button';
 import { cn } from '@/lib/utils';
 
 interface HoverBorderGradientProps extends React.HTMLAttributes<HTMLElement> {
@@ -10,6 +11,8 @@ interface HoverBorderGradientProps extends React.HTMLAttributes<HTMLElement> {
   duration?: number;
   /** Disables the element (applies to interactive elements like buttons) */
   disabled?: boolean;
+  /** Native button type when rendered with `as="button"`. */
+  type?: 'button' | 'submit' | 'reset';
 }
 
 /**
@@ -27,6 +30,7 @@ export function HoverBorderGradient({
   accentColor,
   duration,
   style,
+  type,
   ...props
 }: HoverBorderGradientProps) {
   const cssVars: Record<string, string> = {};
@@ -41,12 +45,26 @@ export function HoverBorderGradient({
     cssVars['--border-duration'] = `${duration}s`;
   }
 
+  const mergedStyle = { ...cssVars, ...style } as React.CSSProperties;
+  const mergedClassName = cn('hover-border-gradient', className);
+
+  if (Tag === 'button') {
+    return (
+      <Button
+        type={type ?? 'button'}
+        variant="ghost"
+        size="lg"
+        className={cn('h-auto', mergedClassName)}
+        style={mergedStyle}
+        {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+      >
+        {children}
+      </Button>
+    );
+  }
+
   return (
-    <Tag
-      className={cn('hover-border-gradient', className)}
-      style={{ ...cssVars, ...style } as React.CSSProperties}
-      {...props}
-    >
+    <Tag className={mergedClassName} style={mergedStyle} {...props}>
       {children}
     </Tag>
   );

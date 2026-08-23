@@ -20,6 +20,7 @@ import { formatUptime } from '../utils/format';
 import { getFlagEmoji } from '../utils/subscriptionHelpers';
 import Twemoji from 'react-twemoji';
 import { StatCard } from '../components/stats';
+import { Button } from '@/components/primitives/Button';
 import {
   ServerIcon,
   ChartIcon,
@@ -54,7 +55,11 @@ import {
   SubscriptionIcon,
   BackIcon,
   ChevronRightIcon,
+  GeoCheckIcon,
 } from '../components/icons';
+import { GeoCheckModal } from '../components/admin/remnawave/GeoCheckModal';
+import { PermissionGate } from '../components/auth/PermissionGate';
+import { supportsGeoCheck } from '../utils/nodeVersion';
 
 const formatBytes = (bytes: number): string => {
   if (bytes === 0) return '0 B';
@@ -143,12 +148,21 @@ interface NodeCardProps {
   providerName?: string;
   realtime?: NodeRealtimeStats;
   onAction: (uuid: string, action: 'enable' | 'disable' | 'restart') => void;
+  onGeoCheck: (node: NodeInfo, trigger: HTMLButtonElement) => void;
   isLoading?: boolean;
 }
 
-function NodeCard({ node, providerName, realtime, onAction, isLoading }: NodeCardProps) {
+function NodeCard({
+  node,
+  providerName,
+  realtime,
+  onAction,
+  onGeoCheck,
+  isLoading,
+}: NodeCardProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
+  const canGeoCheck = supportsGeoCheck(node.versions);
 
   const isUp = node.is_connected && node.is_node_online && !node.is_disabled;
   const dotColor = node.is_disabled ? 'bg-dark-500' : isUp ? 'bg-success-400' : 'bg-error-400';
@@ -233,6 +247,25 @@ function NodeCard({ node, providerName, realtime, onAction, isLoading }: NodeCar
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
+          {canGeoCheck && (
+            <PermissionGate permission="remnawave:manage">
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon-lg"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onGeoCheck(node, event.currentTarget);
+                }}
+                disabled={node.is_disabled || !node.is_connected}
+                className="rounded-lg bg-dark-700 text-dark-300 hover:bg-dark-600 hover:text-dark-100"
+                title={t('admin.remnawave.geoCheck.title', 'GeoCheck')}
+                aria-label={t('admin.remnawave.geoCheck.title', 'GeoCheck')}
+              >
+                <GeoCheckIcon className="h-3.5 w-3.5" />
+              </Button>
+            </PermissionGate>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -949,6 +982,7 @@ interface NodesTabProps {
   onAction: (uuid: string, action: 'enable' | 'disable' | 'restart') => void;
   onRestartAll: () => void;
   isActionLoading: boolean;
+  onGeoCheck: (node: NodeInfo, trigger: HTMLButtonElement) => void;
 }
 
 function NodesTab({
@@ -960,6 +994,7 @@ function NodesTab({
   onAction,
   onRestartAll,
   isActionLoading,
+  onGeoCheck,
 }: NodesTabProps) {
   const { t } = useTranslation();
 
@@ -1078,6 +1113,7 @@ function NodesTab({
               providerName={providerByUuid[node.uuid]}
               realtime={realtimeByUuid[node.uuid]}
               onAction={onAction}
+              onGeoCheck={onGeoCheck}
               isLoading={isActionLoading}
             />
           ))
@@ -1336,6 +1372,12 @@ export default function AdminRemnawave() {
 
   // State
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [geoCheckOpen, setGeoCheckOpen] = useState(false);
+  const [geoCheckTarget, setGeoCheckTarget] = useState<{
+    node: NodeInfo;
+    trigger: HTMLButtonElement | null;
+    session: number;
+  } | null>(null);
   const [syncResults, setSyncResults] = useState<
     Record<string, { success: boolean; message?: string } | null>
   >({});
@@ -1482,6 +1524,21 @@ export default function AdminRemnawave() {
     nodeActionMutation.mutate({ uuid, action });
   };
 
+  const openGeoCheck = (node: NodeInfo, trigger: HTMLButtonElement) => {
+    setGeoCheckTarget((current) => ({
+      node,
+      trigger,
+      session: (current?.session ?? 0) + 1,
+    }));
+    setGeoCheckOpen(true);
+  };
+
+  const restoreGeoCheckFromHistory = () => {
+    setGeoCheckTarget((current) => (current ? { ...current, trigger: null } : current));
+    setActiveTab('nodes');
+    setGeoCheckOpen(true);
+  };
+
   const handleRestartAll = () => {
     if (
       confirm(
@@ -1622,6 +1679,7 @@ export default function AdminRemnawave() {
           onAction={handleNodeAction}
           onRestartAll={handleRestartAll}
           isActionLoading={nodeActionMutation.isPending || restartAllMutation.isPending}
+          onGeoCheck={openGeoCheck}
         />
       )}
 
@@ -1647,6 +1705,17 @@ export default function AdminRemnawave() {
           onSyncToPanel={() => handleSyncAction('toPanel', adminRemnawaveApi.syncToPanel)}
           syncResults={syncResults}
           loadingStates={loadingStates}
+        />
+      )}
+
+      {geoCheckTarget && (
+        <GeoCheckModal
+          key={`${geoCheckTarget.node.uuid}:${geoCheckTarget.session}`}
+          node={geoCheckTarget.node}
+          open={geoCheckOpen}
+          restoreFocusTo={geoCheckTarget.trigger}
+          onClose={() => setGeoCheckOpen(false)}
+          onHistoryRestore={restoreGeoCheckFromHistory}
         />
       )}
     </div>

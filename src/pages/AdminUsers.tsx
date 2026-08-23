@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useCurrency } from '../hooks/useCurrency';
-import { adminUsersApi, type UserListItem } from '../api/adminUsers';
+import { adminUsersApi, type AdminUserSortBy, type UserListItem } from '../api/adminUsers';
 import { usePlatform } from '../platform/hooks/usePlatform';
 import { StatCard } from '@/components/stats';
 import {
@@ -124,7 +124,7 @@ export default function AdminUsers() {
   const [search, setSearch] = useState('');
   const [emailSearch, setEmailSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [sortBy, setSortBy] = useState<string>('created_at');
+  const [sortBy, setSortBy] = useState<AdminUserSortBy>('created_at');
   const [offset, setOffset] = useState(0);
 
   const limit = 20;
@@ -279,7 +279,7 @@ export default function AdminUsers() {
           <select
             value={sortBy}
             onChange={(e) => {
-              setSortBy(e.target.value);
+              setSortBy(e.target.value as AdminUserSortBy);
               setOffset(0);
             }}
             className="rounded-xl border border-dark-700 bg-dark-800 px-3 py-2 text-dark-100"
@@ -288,6 +288,9 @@ export default function AdminUsers() {
             <option value="balance">{t('admin.users.filters.byBalance')}</option>
             <option value="last_activity">{t('admin.users.filters.byActivity')}</option>
             <option value="total_spent">{t('admin.users.filters.bySpent')}</option>
+            <option value="subscription_end_date">
+              {t('admin.users.filters.byExpiry', 'По истечению подписки')}
+            </option>
           </select>
         </div>
       </div>

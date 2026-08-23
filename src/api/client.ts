@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
-import { retrieveRawInitData } from '@telegram-apps/sdk-react';
+import { getTelegramInitData as readTelegramInitData } from '../utils/telegramInitData';
 import {
   tokenStorage,
   isTokenExpired,
@@ -42,13 +42,11 @@ function ensureCsrfToken(): string {
 const getTelegramInitData = (): string | null => {
   if (typeof window === 'undefined') return null;
 
-  try {
-    const raw = retrieveRawInitData();
-    if (raw) {
-      tokenStorage.setTelegramInitData(raw);
-      return raw;
-    }
-  } catch {}
+  const raw = readTelegramInitData();
+  if (raw) {
+    tokenStorage.setTelegramInitData(raw);
+    return raw;
+  }
 
   return tokenStorage.getTelegramInitData();
 };

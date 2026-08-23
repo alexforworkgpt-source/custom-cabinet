@@ -13,6 +13,36 @@ const promoResponses = {
     inviter_bonus_rubles: 0,
     max_commission_payments: 0,
   },
+  '/api/cabinet/referral/list': { items: [], total: 0, page: 1, per_page: 10 },
+  '/api/cabinet/referral/earnings': {
+    items: [],
+    total: 0,
+    page: 1,
+    per_page: 10,
+    total_amount_kopeks: 0,
+    total_amount_rubles: 0,
+  },
+  '/api/cabinet/referral/partner/status': {
+    partner_status: 'none',
+    commission_percent: null,
+    latest_application: null,
+    campaigns: [],
+  },
+  '/api/cabinet/referral/withdrawal/balance': {
+    total_earned: 0,
+    referral_spent: 0,
+    withdrawn: 0,
+    pending: 0,
+    available_referral: 0,
+    available_total: 0,
+    only_referral_mode: true,
+    min_amount_kopeks: 0,
+    is_withdrawal_enabled: false,
+    can_request: false,
+    cannot_request_reason: 'Disabled in browser tests',
+    requisites_text: '',
+  },
+  '/api/cabinet/referral/withdrawal/history': { items: [], total: 0 },
   '/api/cabinet/branding/gift-enabled': { enabled: true },
   '/api/cabinet/wheel/config': { is_enabled: true },
 };
@@ -20,7 +50,7 @@ const promoResponses = {
 test('shows personalized promo actions above the fortune wheel in priority order', async ({
   page,
 }) => {
-  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+  const { apiRequests, unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
     featureFlags: {
       referralEnabled: true,
       giftEnabled: true,
@@ -65,6 +95,16 @@ test('shows personalized promo actions above the fortune wheel in priority order
   await expect(earningsSlide).toHaveAttribute('href', '/referral');
   await earningsSlide.click();
   await expect(page).toHaveURL(/\/referral$/);
+  const referralPageRequests = [
+    'GET /api/cabinet/referral/list',
+    'GET /api/cabinet/referral/earnings',
+    'GET /api/cabinet/referral/partner/status',
+    'GET /api/cabinet/referral/withdrawal/balance',
+    'GET /api/cabinet/referral/withdrawal/history',
+  ];
+  await expect
+    .poll(() => referralPageRequests.filter((request) => apiRequests.includes(request)))
+    .toEqual(referralPageRequests);
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 

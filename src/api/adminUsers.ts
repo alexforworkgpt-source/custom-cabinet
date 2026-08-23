@@ -436,6 +436,15 @@ export interface AdminUserGiftsResponse {
   received_total: number;
 }
 
+export type AdminUserSortBy =
+  | 'created_at'
+  | 'balance'
+  | 'traffic'
+  | 'last_activity'
+  | 'total_spent'
+  | 'purchase_count'
+  | 'subscription_end_date';
+
 export const adminUsersApi = {
   // List users
   getUsers: async (
@@ -450,13 +459,7 @@ export const adminUsersApi = {
       promo_group_id?: number;
       campaign_id?: number;
       partner_id?: number;
-      sort_by?:
-        | 'created_at'
-        | 'balance'
-        | 'traffic'
-        | 'last_activity'
-        | 'total_spent'
-        | 'purchase_count';
+      sort_by?: AdminUserSortBy;
     } = {},
   ): Promise<UsersListResponse> => {
     const response = await apiClient.get('/cabinet/admin/users', { params });
@@ -515,6 +518,19 @@ export const adminUsersApi = {
     const response = await apiClient.post(
       `/cabinet/admin/users/${userId}/subscriptions/${subId}/cancel-sbp-recurring`,
     );
+    return response.data;
+  },
+
+  // Delete one subscription. force is reserved for a separate destructive confirmation.
+  deleteSubscription: async (
+    userId: number,
+    subId: number,
+    force = false,
+  ): Promise<{ status: string }> => {
+    const url = `/cabinet/admin/users/${userId}/subscriptions/${subId}`;
+    const response = force
+      ? await apiClient.delete(url, { params: { force: true } })
+      : await apiClient.delete(url);
     return response.data;
   },
 

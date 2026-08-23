@@ -10,6 +10,7 @@ import {
   RefreshIcon,
   XIcon,
 } from '@/components/icons';
+import { Button } from '@/components/primitives/Button';
 import { DEVICE_ALIAS_MAX_LENGTH } from '../../../constants/devices';
 import { createNumberInputHandler } from '../../../utils/inputHelpers';
 import { getFlagEmoji } from '../../../utils/subscriptionHelpers';
@@ -131,6 +132,8 @@ export interface SubscriptionTabProps {
   onRemoveTraffic: (purchaseId: number) => Promise<void>;
   onResetDevices: () => Promise<void>;
   onCancelSbpRecurring: () => Promise<void>;
+  deleteConfirmation: 'ordinary' | 'destructive';
+  onDeleteSubscription: () => Promise<void>;
   onDeleteDevice: (hwid: string) => Promise<void>;
   onRenameDevice: (hwid: string) => Promise<void>;
   onLoadDevices: () => Promise<void>;
@@ -195,6 +198,8 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
     onRemoveTraffic,
     onResetDevices,
     onCancelSbpRecurring,
+    deleteConfirmation,
+    onDeleteSubscription,
     onDeleteDevice,
     onRenameDevice,
     onLoadDevices,
@@ -425,6 +430,48 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                       : t('admin.users.detail.subscription.sbpCancel')}
                   </button>
                 )}
+              </div>
+            </div>
+          )}
+
+          {hasPermission('users:subscription') && (
+            <div className="rounded-xl bg-dark-800/50 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium text-dark-200">
+                    {t('admin.users.detail.subscription.deleteTitle', 'Удаление подписки')}
+                  </div>
+                  <div className="mt-0.5 text-xs text-dark-400">
+                    {t(
+                      'admin.users.detail.subscription.deleteHint',
+                      'Подписка и её устройства будут удалены безвозвратно',
+                    )}
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="lg"
+                  onClick={() => {
+                    if (deleteConfirmation === 'destructive') {
+                      void onDeleteSubscription();
+                      return;
+                    }
+                    onInlineConfirm(`deleteSubscription_${selectedSub.id}`, onDeleteSubscription);
+                  }}
+                  disabled={actionLoading}
+                  className={`shrink-0 px-3 text-sm ${
+                    deleteConfirmation === 'ordinary' &&
+                    confirmingAction === `deleteSubscription_${selectedSub.id}`
+                      ? 'bg-error-500 text-white'
+                      : 'bg-error-500/15 text-error-400 hover:bg-error-500/25'
+                  }`}
+                >
+                  {deleteConfirmation === 'ordinary' &&
+                  confirmingAction === `deleteSubscription_${selectedSub.id}`
+                    ? t('admin.users.detail.actions.areYouSure')
+                    : t('admin.users.detail.subscription.deleteButton', 'Удалить подписку')}
+                </Button>
               </div>
             </div>
           )}

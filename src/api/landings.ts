@@ -114,6 +114,7 @@ export interface PurchaseRequest {
   yandex_cid?: string;
   referrer?: string;
   subid?: string;
+  campaign_slug?: string;
 }
 
 export interface PurchaseResponse {

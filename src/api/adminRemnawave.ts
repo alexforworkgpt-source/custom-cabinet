@@ -112,6 +112,23 @@ export interface SystemStatsResponse {
 }
 
 // Nodes
+export type NodeIpStatus =
+  | 'INBOUND'
+  | 'OUTBOUND'
+  | 'MANAGEMENT'
+  | 'TRANSIT'
+  | 'MONITORING'
+  | 'RESERVE'
+  | 'BLOCKED'
+  | 'FLAGGED'
+  | 'DEPRECATED'
+  | 'UNKNOWN';
+
+export interface NodeIpAddress {
+  ip: string;
+  status: NodeIpStatus;
+}
+
 export interface NodeInfo {
   uuid: string;
   name: string;
@@ -165,6 +182,7 @@ export interface NodeInfo {
     };
   } | null;
   active_plugin_uuid?: string;
+  ips?: NodeIpAddress[];
   config_profile?: {
     active_config_profile_uuid: string | null;
     active_inbounds: Array<{
@@ -204,6 +222,38 @@ export interface NodeActionResponse {
   success: boolean;
   message?: string;
   is_disabled?: boolean;
+}
+
+// GeoCheck (Remnawave 3.3.0)
+export interface GeoCheckRequest {
+  ip?: string;
+  interface?: string;
+}
+
+export interface GeoCheckStartResponse {
+  job_id: string;
+}
+
+export interface GeoCheckImage {
+  format: string;
+  media_type: string;
+  encoding: string;
+  data: string;
+}
+
+export interface GeoCheckResult {
+  success: boolean;
+  node_uuid?: string | null;
+  image?: GeoCheckImage | null;
+  raw_report?: Record<string, unknown> | null;
+  message?: string | null;
+}
+
+export interface GeoCheckJobResponse {
+  job_id: string;
+  is_completed: boolean;
+  is_failed: boolean;
+  result?: GeoCheckResult | null;
 }
 
 // Realtime Traffic
@@ -400,6 +450,19 @@ export const adminRemnawaveApi = {
     const response = await apiClient.post(`/cabinet/admin/remnawave/nodes/${uuid}/action`, {
       action,
     });
+    return response.data;
+  },
+
+  startNodeGeoCheck: async (
+    uuid: string,
+    body: GeoCheckRequest = {},
+  ): Promise<GeoCheckStartResponse> => {
+    const response = await apiClient.post(`/cabinet/admin/remnawave/nodes/${uuid}/geocheck`, body);
+    return response.data;
+  },
+
+  getGeoCheckJob: async (jobId: string): Promise<GeoCheckJobResponse> => {
+    const response = await apiClient.get(`/cabinet/admin/remnawave/geocheck/${jobId}`);
     return response.data;
   },
 

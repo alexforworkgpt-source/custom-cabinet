@@ -382,6 +382,15 @@ test('keeps the compact Dashboard responsive in dark and light themes', async ({
     const managementButton = summary.getByRole('button', { name: 'Manage subscription' });
     const balanceCard = page.getByRole('link', { name: /Balance/ });
     const referralCard = page.getByRole('link', { name: /Referrals/ });
+    await expect
+      .poll(async () => {
+        const [balanceBox, referralBox] = await Promise.all([
+          balanceCard.boundingBox(),
+          referralCard.boundingBox(),
+        ]);
+        return balanceBox && referralBox ? Math.abs(referralBox.y - balanceBox.y) : Infinity;
+      })
+      .toBeLessThan(2);
     const [summaryBox, managementBox, balanceBox, referralBox] = await Promise.all([
       summary.boundingBox(),
       managementButton.boundingBox(),
@@ -789,6 +798,7 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   await expect(dialog.getByRole('button', { name: 'Add to Test App' })).toHaveCount(0);
   await downloadApp.click();
   await expect(page).toHaveURL(/step=add/);
+  await expect(dialog.getByRole('heading', { name: 'Add subscription', level: 2 })).toBeVisible();
   await dialog.getByRole('button', { name: 'Back' }).click();
   await expect(page).toHaveURL(/step=application/);
   const appInstalled = dialog.getByRole('button', { name: 'App is installed' });

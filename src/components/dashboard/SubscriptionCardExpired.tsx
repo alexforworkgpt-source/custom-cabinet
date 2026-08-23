@@ -18,6 +18,8 @@ import {
   SettingsIcon,
   SubscriptionIcon,
 } from '@/components/icons';
+import { SubscriptionConnectFooter } from '../subscription/SubscriptionConnectFooter';
+import { connectFooterState } from '../subscription/connectFooterState';
 
 interface SubscriptionCardExpiredProps {
   subscription: Subscription;
@@ -26,6 +28,12 @@ interface SubscriptionCardExpiredProps {
   isTrafficTopupOpen: boolean;
   trafficTopupTriggerRef: RefObject<HTMLButtonElement | null>;
   onBuyTraffic: () => void;
+  connectedDevices: number | undefined;
+  devicesError: boolean;
+  onConnectDevice: () => void;
+  onManageDevices: () => void;
+  onRetryDevices: () => void;
+  devicesOpen: boolean;
   onManageSubscription: () => void;
   managementOpen: boolean;
   className?: string;
@@ -38,6 +46,12 @@ export default function SubscriptionCardExpired({
   isTrafficTopupOpen,
   trafficTopupTriggerRef,
   onBuyTraffic,
+  connectedDevices,
+  devicesError,
+  onConnectDevice,
+  onManageDevices,
+  onRetryDevices,
+  devicesOpen,
   onManageSubscription,
   managementOpen,
   className,
@@ -62,6 +76,13 @@ export default function SubscriptionCardExpired({
   // Detect daily subscription (disabled or expired)
   const isDaily = subscription.is_daily;
   const isDisabledDaily = subscription.status === 'disabled' && isDaily;
+  const connectState = connectFooterState({
+    status: subscription.status,
+    subscriptionUrl: subscription.subscription_url,
+    deviceLimit: subscription.device_limit,
+    connected: connectedDevices,
+    hasError: devicesError,
+  });
 
   // For daily subs, check if balance covers daily price; otherwise 100 kopeks minimum
   const dailyPrice = subscription.daily_price_kopeks ?? 0;
@@ -330,6 +351,17 @@ export default function SubscriptionCardExpired({
           )
         ) : null}
       </div>
+      {isLimited && (
+        <SubscriptionConnectFooter
+          state={connectState}
+          variant="prominent"
+          className="mt-3"
+          managementOpen={devicesOpen}
+          onConnect={onConnectDevice}
+          onManage={onManageDevices}
+          onRetry={onRetryDevices}
+        />
+      )}
       <button
         type="button"
         aria-haspopup="dialog"

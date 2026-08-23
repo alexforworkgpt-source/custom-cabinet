@@ -1,4 +1,9 @@
 import {
+  PiArrowsInSimple,
+  PiArrowsOutSimple,
+  PiCode,
+  PiMapTrifold,
+  PiNetwork,
   PiSlidersHorizontal,
   PiWrench,
   PiBookOpen,
@@ -262,6 +267,26 @@ export const ExclamationIcon = ({ className }: IconProps) => (
 
 export const ExternalLinkIcon = ({ className }: IconProps) => (
   <PiArrowSquareOut className={cn('h-5 w-5', className)} />
+);
+
+export const CodeIcon = ({ className }: IconProps) => (
+  <PiCode className={cn('h-5 w-5', className)} />
+);
+
+export const CollapseIcon = ({ className }: IconProps) => (
+  <PiArrowsInSimple className={cn('h-5 w-5', className)} />
+);
+
+export const ExpandIcon = ({ className }: IconProps) => (
+  <PiArrowsOutSimple className={cn('h-5 w-5', className)} />
+);
+
+export const GeoCheckIcon = ({ className }: IconProps) => (
+  <PiMapTrifold className={cn('h-5 w-5', className)} />
+);
+
+export const NetworkIcon = ({ className }: IconProps) => (
+  <PiNetwork className={cn('h-5 w-5', className)} />
 );
 
 export const EyeIcon = ({ className }: IconProps) => <PiEye className={cn('h-5 w-5', className)} />;

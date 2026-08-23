@@ -563,7 +563,7 @@ export default function AdminTickets() {
                     </div>
                     {msg.message_text && (
                       <p
-                        className="whitespace-pre-wrap text-dark-200 [&_a]:text-accent-400 [&_a]:underline"
+                        className="whitespace-pre-wrap break-words text-dark-200 [&_a]:text-accent-400 [&_a]:underline"
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: linkifyText sanitizes message text with a strict DOMPurify allowlist.
                         dangerouslySetInnerHTML={{ __html: linkifyText(msg.message_text) }}
                       />

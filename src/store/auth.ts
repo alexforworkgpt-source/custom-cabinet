@@ -61,7 +61,11 @@ interface AuthState {
     state: string,
     deviceId?: string | null,
   ) => Promise<void>;
-  loginWithDeepLink: (token: string, campaignSlug?: string | null) => Promise<void>;
+  loginWithDeepLink: (
+    token: string,
+    campaignSlug?: string | null,
+    signal?: AbortSignal,
+  ) => Promise<void>;
   registerWithEmail: (
     email: string,
     password: string,
@@ -373,8 +377,8 @@ export const useAuthStore = create<AuthState>()(
         await get().checkAdminStatus();
       },
 
-      loginWithDeepLink: async (token, campaignSlug) => {
-        const response = await authApi.pollDeepLinkToken(token, campaignSlug);
+      loginWithDeepLink: async (token, campaignSlug, signal) => {
+        const response = await authApi.pollDeepLinkToken(token, campaignSlug, signal);
         if (!response.access_token || !response.refresh_token) {
           throw new Error('Invalid auth response: missing tokens');
         }

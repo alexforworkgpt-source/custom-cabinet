@@ -29,6 +29,39 @@ const TWEMOJI_OPTIONS = { className: 'twemoji', folder: 'svg', ext: '.svg' } as 
 /** Pages reachable from bottom nav — treat as top-level (no back button). */
 const BOTTOM_NAV_PATHS = ['/', '/subscription/purchase', '/support', '/profile'];
 
+function TransientOverlayHistoryRecovery() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const shouldRecover = useRef(
+    Boolean(
+      location.state &&
+        typeof location.state === 'object' &&
+        typeof (location.state as Record<string, unknown>).cabinetOverlayParent === 'object' &&
+        (
+          (location.state as Record<string, unknown>).cabinetOverlayParent as Record<
+            string,
+            unknown
+          >
+        ).transient === true,
+    ),
+  );
+
+  useEffect(() => {
+    if (!shouldRecover.current) return;
+    shouldRecover.current = false;
+
+    const routerState = window.history.state as { usr?: unknown } | null;
+    if (routerState?.usr && typeof routerState.usr === 'object') {
+      const stateWithoutOverlay = { ...(routerState.usr as Record<string, unknown>) };
+      delete stateWithoutOverlay.cabinetOverlayParent;
+      window.history.replaceState({ ...routerState, usr: stateWithoutOverlay }, '');
+    }
+    navigate(-1);
+  }, [navigate]);
+
+  return null;
+}
+
 function TelegramBackButton() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -39,6 +72,10 @@ function TelegramBackButton() {
   pathnameRef.current = location.pathname;
   const searchRef = useRef(location.search);
   searchRef.current = location.search;
+  const hasHistoryOverlayRef = useRef(false);
+  hasHistoryOverlayRef.current = Boolean(
+    (location.state as { cabinetOverlayParent?: unknown } | null)?.cabinetOverlayParent,
+  );
 
   // A full-screen blocking overlay (maintenance / channel-sub / blacklist /
   // account-deleted / backend-unavailable) takes over the native back button:
@@ -98,6 +135,16 @@ function TelegramBackButton() {
     // flip-flop between Back and Close).
     if (blockingTypeRef.current) {
       closeTelegramApp();
+      return;
+    }
+    const currentHistoryState = window.history.state?.usr;
+    const hasCurrentHistoryOverlay = Boolean(
+      currentHistoryState &&
+        typeof currentHistoryState === 'object' &&
+        (currentHistoryState as Record<string, unknown>).cabinetOverlayParent,
+    );
+    if (hasHistoryOverlayRef.current || hasCurrentHistoryOverlay) {
+      navigateRef.current(-1);
       return;
     }
     // Real in-app history (depth > 0): a normal back. Otherwise we were opened
@@ -185,6 +232,7 @@ export function AppWithNavigator() {
 
   return (
     <BrowserRouter>
+      <TransientOverlayHistoryRecovery />
       {isTelegram && <TelegramBackButton />}
       {isTelegram && <StartParamNavigator />}
       <ErrorBoundary level="page">

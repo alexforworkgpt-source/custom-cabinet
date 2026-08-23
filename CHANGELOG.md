@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.66.0](https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/compare/v1.65.0...v1.66.0) (2026-08-23)
+
+### Custom Cabinet Integration
+
+* **auth:** fresh Telegram init data selection and recoverable manual bot login
+* **privacy:** guest contact cleanup before client requests with campaign attribution preserved
+* **dashboard:** device connect and management actions for active, trial and limited subscriptions
+* **support:** backend mutation errors and safe wrapping for long ticket content
+* **admin:** subscription-end sorting, protected subscription deletion and traffic promocodes
+* **remnawave:** source integration for GeoCheck with a `3.3.0+` panel/node gate
+* **i18n:** synchronized feature keys across English, Russian, Persian and Chinese
+
+### Compatibility
+
+* Source contracts target Upstream Bot `v4.1.0` at `49b05d5ab79dd9bb92f0404bb0066cda8a175649`.
+* GeoCheck runtime verification remains `BLOCKED` on the current Remnawave `2.8` deployment.
+* No Release Bundle is declared by this source-only changelog entry.
+
 ## [1.65.0](https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/compare/v1.64.0...v1.65.0) (2026-08-03)
 
 

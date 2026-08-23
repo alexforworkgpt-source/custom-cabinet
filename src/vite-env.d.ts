@@ -21,6 +21,8 @@ interface TelegramWebAppGlobal {
   offEvent?: (event: string, callback: () => void) => void;
   /** Closes the Mini App (injected by telegram-web-app.js). */
   close?: () => void;
+  /** Raw init data snapshotted by Telegram's official bridge at page load. */
+  initData?: string;
 }
 
 /** Telegram Login JS SDK — loaded from https://oauth.telegram.org/js/telegram-login.js */

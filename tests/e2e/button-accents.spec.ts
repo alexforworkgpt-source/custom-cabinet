@@ -153,15 +153,20 @@ test('uses restrained accent states for key secondary actions', async ({ page })
     },
   });
 
+  await page.addInitScript(() => {
+    if (window.name === 'dark' || window.name === 'light') {
+      localStorage.setItem('cabinet-theme', window.name);
+    }
+  });
   for (const theme of ['dark', 'light']) {
+    await page.evaluate((nextTheme) => {
+      window.name = nextTheme;
+    }, theme);
     await page.goto('/');
     const connectDevice = page.locator('[data-onboarding="connect-devices"]');
     await expect(connectDevice).toBeVisible();
-    await page.evaluate((nextTheme) => {
-      localStorage.setItem('cabinet-theme', nextTheme);
-      window.dispatchEvent(new CustomEvent('themeChanged', { detail: nextTheme }));
-    }, theme);
-    await expect(page.locator('html')).toHaveClass(new RegExp(theme));
+    const root = page.locator('html');
+    await expect(root).toHaveClass(new RegExp(theme));
 
     await expect(connectDevice).toHaveClass(/connect-device-gradient-button/);
     const connectPresentation = await connectDevice.evaluate((element) => {
@@ -198,6 +203,7 @@ test('uses restrained accent states for key secondary actions', async ({ page })
     const refreshButton = page.locator('[data-traffic-refresh]');
     const trafficPercentage = page.locator('[data-traffic-percentage]');
     const trafficCard = page.getByRole('region', { name: 'Traffic Usage' });
+    await expect(trafficPercentage).toHaveText('99%');
     expect(
       await trafficCard.evaluate((element) => element.scrollWidth <= element.clientWidth),
     ).toBe(true);

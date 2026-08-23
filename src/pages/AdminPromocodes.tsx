@@ -196,16 +196,23 @@ export default function AdminPromocodes() {
                   </div>
                   {/* Info line */}
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-dark-400">
-                    {(promo.type === 'balance' || promo.type === 'balance_and_days') && (
-                      <span className="text-success-400">
-                        +{promo.balance_bonus_rubles} {t('admin.promocodes.form.rub')}
-                      </span>
-                    )}
+                    {(promo.type === 'balance' || promo.type === 'balance_and_days') &&
+                      promo.balance_bonus_rubles > 0 && (
+                        <span className="text-success-400">
+                          +{promo.balance_bonus_rubles} {t('admin.promocodes.form.rub')}
+                        </span>
+                      )}
                     {(promo.type === 'subscription_days' ||
                       promo.type === 'trial_subscription' ||
-                      promo.type === 'balance_and_days') && (
+                      promo.type === 'balance_and_days') &&
+                      promo.subscription_days > 0 && (
+                        <span className="text-accent-400">
+                          +{promo.subscription_days} {t('admin.promocodes.form.days')}
+                        </span>
+                      )}
+                    {(promo.traffic_gb ?? 0) > 0 && (
                       <span className="text-accent-400">
-                        +{promo.subscription_days} {t('admin.promocodes.form.days')}
+                        +{promo.traffic_gb} {t('common.units.gb')}
                       </span>
                     )}
                     {promo.type === 'discount' && (

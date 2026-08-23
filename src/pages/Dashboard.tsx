@@ -31,6 +31,7 @@ import { brandingApi } from '@/api/branding';
 import { authApi } from '@/api/auth';
 import DashboardPromoCarousel from '@/components/dashboard/DashboardPromoCarousel';
 import { selectDashboardPromoSlides } from '@/components/dashboard/dashboardPromoSlides';
+import { DeviceLimitPanel } from '@/components/subscription/DeviceLimitSheet';
 
 const Connection = lazy(() => import('./Connection'));
 const TopUpMethodSelect = lazy(() => import('./TopUpMethodSelect'));
@@ -400,6 +401,10 @@ export default function Dashboard() {
   };
 
   const overlaySubscriptionId = routeState.subscriptionId ?? subscription?.id;
+  const overlaySubscription =
+    subscription?.id === overlaySubscriptionId
+      ? subscription
+      : subscriptions.find((item) => item.id === overlaySubscriptionId);
   const closeOverlay = () => {
     if (location.state?.cabinetOverlayParent) {
       navigate(-1);
@@ -437,7 +442,24 @@ export default function Dashboard() {
       );
     }
     if (routeState.overlay === 'devices' && overlaySubscriptionId) {
-      return <DevicesPanel subscriptionId={overlaySubscriptionId} />;
+      return (
+        <DeviceLimitPanel
+          subscriptionName={
+            overlaySubscription?.tariff_name || t('subscription.defaultName', 'Подписка')
+          }
+          deviceLimit={overlaySubscription?.device_limit ?? 0}
+          connectedDevices={devicesData?.total}
+          isTrial={overlaySubscription?.is_trial ?? false}
+          onAddSlots={() =>
+            navigate(`/subscriptions/${overlaySubscriptionId}`, {
+              replace: true,
+              state: { cabinetOverlayParent: true },
+            })
+          }
+        >
+          <DevicesPanel subscriptionId={overlaySubscriptionId} />
+        </DeviceLimitPanel>
+      );
     }
     if (routeState.overlay === 'connection') return <Connection />;
     if (routeState.overlay === 'balance') return <Balance />;
@@ -583,6 +605,16 @@ export default function Dashboard() {
             setSelectedTrafficPackage(null);
             setShowTrafficTopup(true);
           }}
+          connectedDevices={devicesData?.total}
+          devicesError={devicesError}
+          onConnectDevice={() => navigate(`/connection?sub=${subscription.id}`)}
+          onManageDevices={() =>
+            navigate(`/?sub=${subscription.id}&overlay=devices`, {
+              state: { cabinetOverlayParent: true },
+            })
+          }
+          onRetryDevices={() => void refetchDevices()}
+          devicesOpen={routeState.overlay === 'devices'}
           onManageSubscription={() =>
             navigate(`/subscriptions/${subscription.id}`, {
               state: { cabinetOverlayParent: true },
@@ -596,7 +628,8 @@ export default function Dashboard() {
           trafficData={trafficData}
           refreshTrafficMutation={refreshTrafficMutation}
           trafficRefreshCooldown={trafficRefreshCooldown}
-          connectedDevices={devicesError ? null : (devicesData?.total ?? null)}
+          connectedDevices={devicesData?.total}
+          devicesError={devicesError}
           connectionUrl={shouldHideConnectionLink ? null : displayedConnectionUrl}
           connectionUrlCopied={subscriptionLinkCopied}
           onCopyConnectionUrl={() => {
@@ -605,6 +638,14 @@ export default function Dashboard() {
             setSubscriptionLinkCopied(true);
             setTimeout(() => setSubscriptionLinkCopied(false), 2000);
           }}
+          onConnectDevice={() => navigate(`/connection?sub=${subscription.id}`)}
+          onManageDevices={() =>
+            navigate(`/?sub=${subscription.id}&overlay=devices`, {
+              state: { cabinetOverlayParent: true },
+            })
+          }
+          onRetryDevices={() => void refetchDevices()}
+          devicesOpen={routeState.overlay === 'devices'}
           onManageSubscription={() =>
             navigate(`/subscriptions/${subscription.id}`, {
               state: { cabinetOverlayParent: true },

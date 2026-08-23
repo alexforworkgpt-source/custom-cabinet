@@ -28,6 +28,11 @@ import { ActivityTab } from '../components/admin/userDetail/ActivityTab';
 import { TicketsTab } from '../components/admin/userDetail/TicketsTab';
 import { InfoTab } from '../components/admin/userDetail/InfoTab';
 import { SubscriptionTab } from '../components/admin/userDetail/SubscriptionTab';
+import { useDestructiveConfirm } from '../platform/hooks/useNativeDialog';
+import {
+  getAdminSubscriptionDeletionDecision,
+  getAdminSubscriptionDeletionErrorMessage,
+} from '../utils/adminSubscriptionDeletion';
 import { toNumber } from '../utils/inputHelpers';
 import { usePermissionStore } from '../store/permissions';
 
@@ -41,6 +46,7 @@ export default function AdminUserDetail() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const notify = useNotify();
+  const confirmDeleteSubscription = useDestructiveConfirm();
   const { id } = useParams<{ id: string }>();
   const hasPermission = usePermissionStore((s) => s.hasPermission);
 
@@ -563,6 +569,9 @@ export default function AdminUserDetail() {
   const userSubscriptions = useMemo(() => user?.subscriptions ?? [], [user?.subscriptions]);
   const selectedSub =
     userSubscriptions.find((s) => s.id === activeSubscriptionId) ?? user?.subscription ?? null;
+  const selectedSubDeletionDecision = selectedSub
+    ? getAdminSubscriptionDeletionDecision(selectedSub)
+    : null;
 
   // Auto-select first subscription when user loads (one-time init)
   useEffect(() => {
@@ -659,6 +668,57 @@ export default function AdminUserDetail() {
       await loadUser();
     } catch {
       notify.error(t('admin.users.userActions.error'), t('common.error'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteSubscription = async () => {
+    if (!userId || !selectedSub || !selectedSubDeletionDecision) return;
+
+    if (selectedSubDeletionDecision.confirmation === 'destructive') {
+      const confirmed = await confirmDeleteSubscription(
+        t(
+          'admin.users.detail.subscription.forceDeleteWarning',
+          'Активная платная подписка «{{name}}» и её устройства будут удалены безвозвратно. Все связанные автоплатежи будут отменены до удаления.',
+          { name: selectedSubDeletionDecision.subscriptionName },
+        ),
+        t('admin.users.detail.subscription.forceDeleteButton', 'Удалить безвозвратно'),
+        t('admin.users.detail.subscription.forceDeleteTitle', 'Удалить подписку «{{name}}»?', {
+          name: selectedSubDeletionDecision.subscriptionName,
+        }),
+      );
+      if (!confirmed) return;
+    }
+
+    setActionLoading(true);
+    try {
+      await adminUsersApi.deleteSubscription(
+        userId,
+        selectedSub.id,
+        selectedSubDeletionDecision.force,
+      );
+      notify.success(t('admin.users.detail.subscription.deleted', 'Подписка удалена'));
+      setSubscriptionDetailView(false);
+      setActiveSubscriptionId(null);
+      setRequestHistorySubId(null);
+      hasAutoSelectedSub.current = false;
+      await loadUser();
+    } catch (err) {
+      notify.error(
+        getAdminSubscriptionDeletionErrorMessage(err, {
+          conflict: t(
+            'admin.users.detail.subscription.deleteConflict',
+            'Подписку нельзя удалить в её текущем состоянии',
+          ),
+          notFound: t(
+            'admin.users.detail.subscription.deleteNotFound',
+            'Подписка не найдена или уже удалена',
+          ),
+          fallback: t('admin.users.userActions.error'),
+        }),
+        t('common.error'),
+      );
     } finally {
       setActionLoading(false);
     }
@@ -876,6 +936,8 @@ export default function AdminUserDetail() {
             userSubscriptions={userSubscriptions}
             selectedSub={selectedSub}
             onCancelSbpRecurring={handleCancelSbpRecurring}
+            deleteConfirmation={selectedSubDeletionDecision?.confirmation ?? 'ordinary'}
+            onDeleteSubscription={handleDeleteSubscription}
             activeSubscriptionId={activeSubscriptionId}
             onActiveSubscriptionChange={setActiveSubscriptionId}
             subscriptionDetailView={subscriptionDetailView}

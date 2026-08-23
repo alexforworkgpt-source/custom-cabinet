@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   init,
   restoreInitData,
-  retrieveRawInitData,
   mountMiniApp,
   miniAppReady,
   mountViewport,
@@ -21,6 +20,8 @@ import {
 } from '@telegram-apps/sdk-react';
 import { clearStaleSessionIfNeeded } from './utils/token';
 import { installEncodingSurrogateGuard } from './utils/installEncodingSurrogateGuard';
+import { getTelegramInitData } from './utils/telegramInitData';
+import { captureContactPrefillFromUrl } from './utils/contactPrefill';
 import { useAuthStore } from './store/auth';
 import { AppWithNavigator } from './AppWithNavigator';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -49,6 +50,10 @@ if (typeof objectWithHasOwn.hasOwn !== 'function') {
     Object.prototype.hasOwnProperty.call(obj, prop);
 }
 
+// Capture and remove contact before auth, health, analytics, or landing API
+// requests can expose it through a later URL or Referer.
+captureContactPrefillFromUrl();
+
 // Only initialize Telegram SDK when running inside Telegram
 const isTelegramEnv =
   !!(window as unknown as Record<string, unknown>).TelegramWebviewProxy ||
@@ -65,7 +70,7 @@ if (isTelegramEnv && !alreadyInitialized) {
     init();
     restoreInitData();
 
-    clearStaleSessionIfNeeded(retrieveRawInitData() || null);
+    clearStaleSessionIfNeeded(getTelegramInitData());
 
     // Adopt the user's Telegram client language on first run (no explicit choice yet).
     applyTelegramLanguage();

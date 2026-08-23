@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useParams } from 'react-router';
+import { useLocation, useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { fireAnalyticsEvent, getYandexCid } from '../hooks/useAnalyticsCounters';
@@ -25,6 +25,8 @@ import { CheckCircleIcon, CheckIcon, DevicesIcon, DownloadIcon } from '@/compone
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { cn } from '../lib/utils';
 import { getApiErrorMessage } from '../utils/api-error';
+import { getPendingCampaignSlug } from '../utils/campaign';
+import { captureContactPrefillFromUrl, readContactPrefill } from '../utils/contactPrefill';
 import { formatPrice } from '../utils/format';
 import { setFavicon, letterFaviconDataUri, roundedFaviconDataUri } from '../utils/favicon';
 import { useCurrency } from '../hooks/useCurrency';
@@ -765,8 +767,25 @@ function DiscountBanner({
 
 export default function QuickPurchase() {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
+  const contactKey = `lp_contact_${slug ?? ''}`;
+  const [contactValue, setContactValue] = useState(() => readContactPrefill(contactKey));
+  const activeContactKeyRef = useRef(contactKey);
+
+  // BrowserRouter navigation does not rerun main.tsx. Clean a newly received
+  // contact before query and analytics effects can issue requests with it in Referer.
+  useLayoutEffect(() => {
+    const hasContact = new URLSearchParams(location.search).has('contact');
+    if (hasContact) {
+      captureContactPrefillFromUrl();
+    }
+    if (hasContact || activeContactKeyRef.current !== contactKey) {
+      setContactValue(readContactPrefill(contactKey));
+    }
+    activeContactKeyRef.current = contactKey;
+  }, [contactKey, location.search]);
 
   // Подгружаем курсы валют, чтобы formatPrice конвертировал суммы для не-RU локалей
   // (хук кладёт rates в глобальный кэш utils/format.ts).
@@ -844,11 +863,11 @@ export default function QuickPurchase() {
       sessionStorage.setItem('landing_referrer', document.referrer.slice(0, 500));
     }
     // Save subid from URL (also clamped to backend limit of 255)
-    const urlSubid = new URLSearchParams(window.location.search).get('subid');
+    const urlSubid = new URLSearchParams(location.search).get('subid');
     if (urlSubid) {
       sessionStorage.setItem('landing_subid', urlSubid.slice(0, 255));
     }
-  }, []);
+  }, [location.search]);
 
   // Fire landing-specific view goal on mount
   useEffect(() => {
@@ -872,14 +891,6 @@ export default function QuickPurchase() {
   // Selection state
   const [selectedTariffId, setSelectedTariffId] = useState<number | null>(null);
   const [selectedPeriodDays, setSelectedPeriodDays] = useState<number | null>(null);
-  const contactKey = `lp_contact_${slug ?? ''}`;
-  const [contactValue, setContactValue] = useState(() => {
-    try {
-      return localStorage.getItem(contactKey) || '';
-    } catch {
-      return '';
-    }
-  });
   const [isGift, setIsGift] = useState(false);
   const [giftRecipient, setGiftRecipient] = useState('');
   const [giftMessage, setGiftMessage] = useState('');
@@ -1118,6 +1129,10 @@ export default function QuickPurchase() {
     if (ymCid) data.yandex_cid = ymCid;
     const subid = sessionStorage.getItem('landing_subid');
     if (subid) (data as unknown as Record<string, unknown>).subid = subid;
+
+    // Keep the slug available for a later auth flow after the guest purchase.
+    const campaignSlug = getPendingCampaignSlug();
+    if (campaignSlug) data.campaign_slug = campaignSlug;
 
     // Fire landing-specific click goal
     if (config?.analytics_click_enabled && config?.analytics_click_goal) {

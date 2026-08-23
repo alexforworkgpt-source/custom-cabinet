@@ -17,6 +17,7 @@ export interface PromoCode {
   balance_bonus_kopeks: number;
   balance_bonus_rubles: number;
   subscription_days: number;
+  traffic_gb?: number | null;
   max_uses: number;
   current_uses: number;
   uses_left: number;
@@ -60,6 +61,7 @@ export interface PromoCodeCreateRequest {
   type: PromoCodeType;
   balance_bonus_kopeks?: number;
   subscription_days?: number;
+  traffic_gb?: number;
   max_uses?: number;
   valid_from?: string;
   valid_until?: string | null;
@@ -74,6 +76,7 @@ export interface PromoCodeUpdateRequest {
   type?: PromoCodeType;
   balance_bonus_kopeks?: number;
   subscription_days?: number;
+  traffic_gb?: number;
   max_uses?: number;
   valid_from?: string;
   valid_until?: string | null;

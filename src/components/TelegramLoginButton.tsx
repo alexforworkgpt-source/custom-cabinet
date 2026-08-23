@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router';
 import { getPendingCampaignSlug } from '../utils/campaign';
 import { copyToClipboard } from '../utils/clipboard';
 import { isEndpointMissingError } from '../utils/api-error';
+import { Button } from './primitives/Button';
 
 interface TelegramLoginButtonProps {
   referralCode?: string;
@@ -26,6 +27,8 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
   const [oidcError, setOidcError] = useState('');
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [scriptFailed, setScriptFailed] = useState(false);
+  const [manualDeepLink, setManualDeepLink] = useState(false);
+  const showDeepLinkUI = scriptFailed || manualDeepLink;
   const loginWithTelegramOIDC = useAuthStore((s) => s.loginWithTelegramOIDC);
 
   // Deep link auth state
@@ -38,6 +41,8 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
   const expireTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
   const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
   const pollInFlightRef = useRef(false);
+  const pollAbortRef = useRef<AbortController | null>(null);
+  const pollSessionRef = useRef(0);
 
   const loginWithDeepLink = useAuthStore((s) => s.loginWithDeepLink);
 
@@ -73,6 +78,7 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
       if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
       if (expireTimeoutRef.current) clearTimeout(expireTimeoutRef.current);
       if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
+      pollAbortRef.current?.abort();
     };
   }, []);
 
@@ -168,7 +174,9 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
   const loginWithTelegramWidget = useAuthStore((s) => s.loginWithTelegramWidget);
 
   useEffect(() => {
-    if (isOIDC || !containerRef.current || !botUsername || !widgetConfig) return;
+    // Re-run when returning from manual auth because the widget container was
+    // unmounted while the deep-link UI was visible.
+    if (showDeepLinkUI || isOIDC || !containerRef.current || !botUsername || !widgetConfig) return;
 
     const container = containerRef.current;
     while (container.firstChild) {
@@ -229,11 +237,88 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
         container.removeChild(container.firstChild);
       }
     };
-  }, [isOIDC, botUsername, widgetConfig, loginWithTelegramWidget, navigate, handleScriptFailed]);
+  }, [
+    showDeepLinkUI,
+    isOIDC,
+    botUsername,
+    widgetConfig,
+    loginWithTelegramWidget,
+    navigate,
+    handleScriptFailed,
+  ]);
+
+  const pollDeepLinkSession = useCallback(
+    async function pollDeepLinkSession(
+      token: string,
+      capturedCampaign: string | null,
+      sessionId: number,
+    ) {
+      if (!mountedRef.current || sessionId !== pollSessionRef.current || pollInFlightRef.current)
+        return;
+
+      pollTimeoutRef.current = null;
+      pollInFlightRef.current = true;
+      const controller = new AbortController();
+      pollAbortRef.current = controller;
+
+      try {
+        await loginWithDeepLink(token, capturedCampaign, controller.signal);
+        if (!mountedRef.current || sessionId !== pollSessionRef.current) return;
+
+        if (expireTimeoutRef.current) {
+          clearTimeout(expireTimeoutRef.current);
+          expireTimeoutRef.current = null;
+        }
+        setDeepLinkPolling(false);
+        navigate('/');
+      } catch (err: unknown) {
+        if (
+          controller.signal.aborted ||
+          !mountedRef.current ||
+          sessionId !== pollSessionRef.current
+        )
+          return;
+
+        if (isAxiosError(err)) {
+          if (err.response?.status === 202) {
+            pollTimeoutRef.current = setTimeout(
+              () => void pollDeepLinkSession(token, capturedCampaign, sessionId),
+              DEEPLINK_POLL_INTERVAL_MS,
+            );
+            return;
+          }
+          if (err.response?.status === 410) {
+            if (expireTimeoutRef.current) {
+              clearTimeout(expireTimeoutRef.current);
+              expireTimeoutRef.current = null;
+            }
+            setDeepLinkPolling(false);
+            setDeepLinkToken(null);
+            setDeepLinkError(t('auth.deepLinkExpired'));
+            return;
+          }
+        }
+
+        if (expireTimeoutRef.current) {
+          clearTimeout(expireTimeoutRef.current);
+          expireTimeoutRef.current = null;
+        }
+        setDeepLinkPolling(false);
+        setDeepLinkToken(null);
+        setDeepLinkError(t('common.error'));
+      } finally {
+        if (pollAbortRef.current === controller) pollAbortRef.current = null;
+        if (sessionId === pollSessionRef.current) pollInFlightRef.current = false;
+      }
+    },
+    [loginWithDeepLink, navigate, t],
+  );
 
   // Deep link auth: request token and start polling with recursive setTimeout
   const startDeepLinkAuth = useCallback(async () => {
     setDeepLinkError('');
+    setDeepLinkPolling(true);
+    const sessionId = ++pollSessionRef.current;
 
     // Clear any previous timers and in-flight guard
     if (pollTimeoutRef.current) {
@@ -244,6 +329,8 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
       clearTimeout(expireTimeoutRef.current);
       expireTimeoutRef.current = null;
     }
+    pollAbortRef.current?.abort();
+    pollAbortRef.current = null;
     pollInFlightRef.current = false;
 
     try {
@@ -259,86 +346,53 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
       const capturedCampaign = capturedCampaignRef.current;
 
       const response = await authApi.requestDeepLinkToken();
+      if (!mountedRef.current || sessionId !== pollSessionRef.current) return;
       const { token, bot_username, expires_in } = response;
       setDeepLinkToken(token);
       setDeepLinkBotUsername(bot_username || botUsername);
       setDeepLinkPolling(true);
 
-      // Recursive setTimeout prevents overlapping async calls
-      const poll = async () => {
-        if (!mountedRef.current || pollInFlightRef.current) return;
-        pollInFlightRef.current = true;
-        try {
-          // Deep link auth is for existing bot users — only campaign_slug applies
-          await loginWithDeepLink(token, capturedCampaign);
-          // Success — auth store is updated, navigate
-          if (expireTimeoutRef.current) {
-            clearTimeout(expireTimeoutRef.current);
-            expireTimeoutRef.current = null;
-          }
-          if (mountedRef.current) {
-            setDeepLinkPolling(false);
-            navigate('/');
-          }
-        } catch (err: unknown) {
-          if (!mountedRef.current) return;
-          if (isAxiosError(err)) {
-            if (err.response?.status === 202) {
-              // Still pending — schedule next poll
-              pollTimeoutRef.current = setTimeout(poll, DEEPLINK_POLL_INTERVAL_MS);
-              return;
-            }
-            if (err.response?.status === 410) {
-              // Token expired — clear expire timer to prevent stale timer killing future sessions
-              if (expireTimeoutRef.current) {
-                clearTimeout(expireTimeoutRef.current);
-                expireTimeoutRef.current = null;
-              }
-              setDeepLinkPolling(false);
-              setDeepLinkToken(null);
-              setDeepLinkError(t('auth.deepLinkExpired'));
-              return;
-            }
-          }
-          // Other error — stop polling and clear expire timer
-          if (expireTimeoutRef.current) {
-            clearTimeout(expireTimeoutRef.current);
-            expireTimeoutRef.current = null;
-          }
-          setDeepLinkPolling(false);
-          setDeepLinkError(t('common.error'));
-        } finally {
-          pollInFlightRef.current = false;
-        }
-      };
-
       // Start first poll
-      pollTimeoutRef.current = setTimeout(poll, DEEPLINK_POLL_INTERVAL_MS);
+      pollTimeoutRef.current = setTimeout(
+        () => void pollDeepLinkSession(token, capturedCampaign, sessionId),
+        DEEPLINK_POLL_INTERVAL_MS,
+      );
 
       // Auto-expire after server-provided TTL
       expireTimeoutRef.current = setTimeout(
         () => {
+          expireTimeoutRef.current = null;
+          if (sessionId !== pollSessionRef.current || useAuthStore.getState().isAuthenticated) {
+            return;
+          }
+
+          pollSessionRef.current += 1;
           if (pollTimeoutRef.current) {
             clearTimeout(pollTimeoutRef.current);
             pollTimeoutRef.current = null;
           }
-          if (mountedRef.current && !useAuthStore.getState().isAuthenticated) {
-            setDeepLinkPolling(false);
-            setDeepLinkToken(null);
-            setDeepLinkError(t('auth.deepLinkExpired'));
-          }
+          pollAbortRef.current?.abort();
+          pollAbortRef.current = null;
+          pollInFlightRef.current = false;
+
+          if (!mountedRef.current) return;
+          setDeepLinkPolling(false);
+          setDeepLinkToken(null);
+          setDeepLinkError(t('auth.deepLinkExpired'));
         },
         (expires_in || 300) * 1000,
       );
     } catch (err) {
+      if (!mountedRef.current || sessionId !== pollSessionRef.current) return;
       // 404 = the deep-link auth routes don't exist on this bot build (< v3.33.0)
+      setDeepLinkPolling(false);
       setDeepLinkError(t(isEndpointMissingError(err) ? 'auth.botOutdated' : 'common.error'));
     }
-  }, [botUsername, loginWithDeepLink, navigate, t]);
+  }, [botUsername, pollDeepLinkSession, t]);
 
-  // Auto-start deep link auth when script fails (with cancellation for Strict Mode)
+  // Auto-start for both the explicit choice and the widget failure fallback.
   useEffect(() => {
-    if (scriptFailed && !deepLinkToken && !deepLinkPolling) {
+    if (showDeepLinkUI && !deepLinkToken && !deepLinkPolling && !deepLinkError) {
       let cancelled = false;
       const start = async () => {
         if (!cancelled) await startDeepLinkAuth();
@@ -348,12 +402,13 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
         cancelled = true;
       };
     }
-  }, [scriptFailed, deepLinkToken, deepLinkPolling, startDeepLinkAuth]);
+  }, [showDeepLinkUI, deepLinkToken, deepLinkPolling, deepLinkError, startDeepLinkAuth]);
 
   // Resume polling immediately when user returns to the page (e.g. after confirming in Telegram)
   // Browsers throttle setTimeout in background tabs, so polling may have stalled.
   useEffect(() => {
     if (!deepLinkPolling || !deepLinkToken) return;
+    const sessionId = pollSessionRef.current;
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && mountedRef.current) {
@@ -364,49 +419,7 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
         }
         // Skip if another poll is already in-flight to prevent race conditions
         if (pollInFlightRef.current) return;
-        const capturedCampaign = capturedCampaignRef.current;
-        const immediatePoll = async () => {
-          if (!mountedRef.current || pollInFlightRef.current) return;
-          pollInFlightRef.current = true;
-          try {
-            await loginWithDeepLink(deepLinkToken, capturedCampaign);
-            if (expireTimeoutRef.current) {
-              clearTimeout(expireTimeoutRef.current);
-              expireTimeoutRef.current = null;
-            }
-            if (mountedRef.current) {
-              setDeepLinkPolling(false);
-              navigate('/');
-            }
-          } catch (err: unknown) {
-            if (!mountedRef.current) return;
-            if (isAxiosError(err)) {
-              if (err.response?.status === 202) {
-                pollTimeoutRef.current = setTimeout(immediatePoll, DEEPLINK_POLL_INTERVAL_MS);
-                return;
-              }
-              if (err.response?.status === 410) {
-                if (expireTimeoutRef.current) {
-                  clearTimeout(expireTimeoutRef.current);
-                  expireTimeoutRef.current = null;
-                }
-                setDeepLinkPolling(false);
-                setDeepLinkToken(null);
-                setDeepLinkError(t('auth.deepLinkExpired'));
-                return;
-              }
-            }
-            if (expireTimeoutRef.current) {
-              clearTimeout(expireTimeoutRef.current);
-              expireTimeoutRef.current = null;
-            }
-            setDeepLinkPolling(false);
-            setDeepLinkError(t('common.error'));
-          } finally {
-            pollInFlightRef.current = false;
-          }
-        };
-        immediatePoll();
+        void pollDeepLinkSession(deepLinkToken, capturedCampaignRef.current, sessionId);
       }
     };
 
@@ -419,7 +432,7 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
         pollTimeoutRef.current = null;
       }
     };
-  }, [deepLinkPolling, deepLinkToken, loginWithDeepLink, navigate, t]);
+  }, [deepLinkPolling, deepLinkToken, pollDeepLinkSession]);
 
   if (!botUsername || botUsername === 'your_bot') {
     // 404 on the config route = the bot build predates the cabinet endpoints,
@@ -431,8 +444,8 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
     );
   }
 
-  // Deep link fallback UI
-  if (scriptFailed) {
+  // Deep-link UI is either selected manually or opened as widget fallback.
+  if (showDeepLinkUI) {
     const resolvedBotUsername = deepLinkBotUsername || botUsername;
     const deepLinkUrl = deepLinkToken
       ? `https://t.me/${resolvedBotUsername}?start=webauth_${deepLinkToken}`
@@ -441,10 +454,14 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
 
     return (
       <div className="flex flex-col items-center space-y-5">
-        {/* Info message */}
-        <p className="max-w-xs text-center text-xs text-dark-400">
-          {t('auth.telegramWidgetBlocked')}
-        </p>
+        {scriptFailed && (
+          <p className="max-w-xs text-center text-xs text-dark-400">
+            {t('auth.telegramWidgetBlocked')}
+          </p>
+        )}
+        {!scriptFailed && (
+          <p className="max-w-xs text-center text-xs text-dark-400">{t('auth.deepLinkIntro')}</p>
+        )}
 
         {deepLinkToken && deepLinkUrl ? (
           <>
@@ -466,14 +483,17 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
               </svg>
-              {t('auth.openBotToLogin')}
+              {t('auth.loginWithBot')}
             </a>
 
             {/* Manual command */}
             <div className="flex w-full max-w-xs flex-col items-center space-y-1.5">
               <p className="text-[11px] text-dark-500">{t('auth.orSendCommand')}</p>
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="lg"
+                fullWidth
                 onClick={() => {
                   copyToClipboard(startCommand)
                     .then(() => {
@@ -483,13 +503,13 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
                     })
                     .catch(() => {});
                 }}
-                className="group flex w-full items-center justify-between rounded-lg border border-dark-700 bg-dark-800/50 px-3 py-2 transition-colors hover:border-dark-600"
+                className="group justify-between border-dark-700 bg-dark-800/50 px-3 hover:border-dark-600"
               >
                 <code className="truncate text-xs text-dark-300">{startCommand}</code>
                 <span className="ml-2 flex-shrink-0 text-[10px] text-dark-500 transition-colors group-hover:text-dark-300">
                   {copied ? t('auth.commandCopied') : t('common.copy')}
                 </span>
-              </button>
+              </Button>
             </div>
 
             {/* Polling status */}
@@ -503,19 +523,46 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
         ) : deepLinkError ? (
           <div className="flex flex-col items-center space-y-2">
             <p className="text-xs text-error-500">{deepLinkError}</p>
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="lg"
               onClick={startDeepLinkAuth}
-              className="text-sm text-accent-400 transition-colors hover:text-accent-300"
+              className="text-sm text-accent-400 hover:text-accent-300"
             >
               {t('auth.tryAgain')}
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="flex items-center gap-2 text-xs text-dark-400">
             <span className="h-3 w-3 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
             {t('common.loading')}
           </div>
+        )}
+
+        {!scriptFailed && (
+          <Button
+            type="button"
+            variant="link"
+            size="lg"
+            onClick={() => {
+              pollSessionRef.current += 1;
+              pollAbortRef.current?.abort();
+              pollAbortRef.current = null;
+              if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+              if (expireTimeoutRef.current) clearTimeout(expireTimeoutRef.current);
+              pollTimeoutRef.current = null;
+              expireTimeoutRef.current = null;
+              pollInFlightRef.current = false;
+              setDeepLinkToken(null);
+              setDeepLinkPolling(false);
+              setDeepLinkError('');
+              setManualDeepLink(false);
+            }}
+            className="min-w-11 px-2 text-xs text-dark-400 underline decoration-dotted hover:text-dark-300"
+          >
+            {t('auth.backToWidget')}
+          </Button>
         )}
       </div>
     );
@@ -526,8 +573,9 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
     <div className="flex flex-col items-center space-y-4">
       {isOIDC ? (
         <div className="flex flex-col items-center space-y-2">
-          <button
+          <Button
             type="button"
+            size="lg"
             onClick={() => {
               setOidcError('');
               setOidcLoading(true);
@@ -538,37 +586,48 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
               }
             }}
             disabled={oidcLoading || !scriptLoaded}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#54a9eb] px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#4a96d2] disabled:opacity-50"
+            className="bg-[#54a9eb] text-sm text-white shadow-sm hover:bg-[#4a96d2]"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
             </svg>
             {oidcLoading ? t('common.loading') : t('auth.loginWithTelegram')}
-          </button>
+          </Button>
           {oidcError && <p className="text-xs text-error-500">{oidcError}</p>}
         </div>
       ) : (
         <div ref={containerRef} className="flex justify-center" />
       )}
 
-      <div className="text-center">
-        <p className="mb-2 text-xs text-dark-400">{t('auth.orOpenInApp')}</p>
+      {referralCode && (
         <a
-          href={
-            referralCode
-              ? `https://t.me/${botUsername}?start=${encodeURIComponent(referralCode)}`
-              : `https://t.me/${botUsername}`
-          }
+          href={`https://t.me/${botUsername}?start=${encodeURIComponent(referralCode)}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-telegram-blue inline-flex items-center text-sm hover:underline"
+          className="text-telegram-blue inline-flex items-center text-xs hover:underline"
         >
-          <svg className="mr-1 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
-          </svg>
-          @{botUsername}
+          {t('auth.orOpenInApp')}&nbsp;@{botUsername}
         </a>
+      )}
+
+      <div className="flex w-full max-w-xs items-center gap-3">
+        <div className="h-px flex-1 bg-dark-700" />
+        <span className="text-[11px] text-dark-500">{t('common.or')}</span>
+        <div className="h-px flex-1 bg-dark-700" />
       </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="lg"
+        onClick={() => setManualDeepLink(true)}
+        className="border-dark-700 bg-dark-800/50 text-sm text-dark-200 hover:border-dark-600 hover:bg-dark-800"
+      >
+        <svg className="h-5 w-5 text-telegram-blue" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+        </svg>
+        {t('auth.loginWithBot')}
+      </Button>
     </div>
   );
 }

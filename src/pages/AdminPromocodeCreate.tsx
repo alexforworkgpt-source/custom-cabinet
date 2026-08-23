@@ -7,13 +7,17 @@ import { createNumberInputHandler } from '../utils/inputHelpers';
 import {
   promocodesApi,
   type PromoCodeDetail,
-  type PromoCodeType,
   type PromoCodeCreateRequest,
   type PromoCodeUpdateRequest,
   type PromoGroup,
 } from '../api/promocodes';
 import { tariffsApi } from '../api/tariffs';
 import { usePlatform } from '../platform/hooks/usePlatform';
+import {
+  buildPromocodeBonusFields,
+  getPromocodeBonusSelection,
+  getPromocodeBonusValidationErrors,
+} from '../utils/promocodeForm';
 import { BackIcon, RefreshIcon } from '@/components/icons';
 
 // valid_until is created as end-of-day in the admin's LOCAL tz, then stored/returned
@@ -44,8 +48,10 @@ export default function AdminPromocodeCreate() {
   const [includeBalance, setIncludeBalance] = useState(true);
   const [includeDays, setIncludeDays] = useState(false);
   const [includeGroup, setIncludeGroup] = useState(false);
+  const [includeTraffic, setIncludeTraffic] = useState(false);
   const [balanceBonusRubles, setBalanceBonusRubles] = useState<number | ''>(0);
   const [subscriptionDays, setSubscriptionDays] = useState<number | ''>(0);
+  const [trafficGb, setTrafficGb] = useState<number | ''>(0);
   const [maxUses, setMaxUses] = useState<number | ''>(1);
   const [isActive, setIsActive] = useState(true);
   const [firstPurchaseOnly, setFirstPurchaseOnly] = useState(false);
@@ -85,11 +91,11 @@ export default function AdminPromocodeCreate() {
         setMode(data.type);
       } else {
         setMode('bonus_set');
-        setIncludeBalance(data.type === 'balance' || data.type === 'balance_and_days');
-        setIncludeDays(data.type === 'subscription_days' || data.type === 'balance_and_days');
-        // Промогруппа комбинируется с любым составом (bэкенд назначает её
-        // независимо от типа), поэтому чекбокс — по факту наличия группы
-        setIncludeGroup(data.type === 'promo_group' || !!data.promo_group_id);
+        const selection = getPromocodeBonusSelection(data);
+        setIncludeBalance(selection.includeBalance);
+        setIncludeDays(selection.includeDays);
+        setIncludeGroup(selection.includeGroup);
+        setIncludeTraffic(selection.includeTraffic);
       }
       // For discount type, balance_bonus_kopeks is percentage directly
       // For balance type, balance_bonus_kopeks needs to be converted to rubles
@@ -99,6 +105,7 @@ export default function AdminPromocodeCreate() {
         setBalanceBonusRubles(data.balance_bonus_rubles || 0);
       }
       setSubscriptionDays(data.subscription_days || 0);
+      setTrafficGb(data.traffic_gb || 0);
       setMaxUses(data.max_uses || 1);
       setIsActive(data.is_active ?? true);
       setFirstPurchaseOnly(data.first_purchase_only || false);
@@ -128,19 +135,16 @@ export default function AdminPromocodeCreate() {
     },
   });
 
-  // Тип промокода выводится из режима и выбранных чекбоксов. «Только
-  // промогруппа» — легаси-тип promo_group; группа в комбинации с балансом/днями
-  // едет через promo_group_id при любом типе (бэкенд применяет её независимо).
-  const derivedType: PromoCodeType =
-    mode === 'bonus_set'
-      ? includeBalance && includeDays
-        ? 'balance_and_days'
-        : includeBalance
-          ? 'balance'
-          : includeDays
-            ? 'subscription_days'
-            : 'promo_group'
-      : mode;
+  const bonusInput = {
+    includeBalance,
+    includeDays,
+    includeGroup,
+    includeTraffic,
+    balanceBonusRubles,
+    subscriptionDays,
+    trafficGb,
+    promoGroupId,
+  };
 
   const handleSubmit = () => {
     // For discount: balance_bonus_kopeks = percent (integer), subscription_days = hours
@@ -148,22 +152,22 @@ export default function AdminPromocodeCreate() {
     const balanceValue = balanceBonusRubles === '' ? 0 : balanceBonusRubles;
     const daysValue = subscriptionDays === '' ? 0 : subscriptionDays;
     const maxUsesValue = maxUses === '' ? 0 : maxUses;
+    const bonusFields = buildPromocodeBonusFields(bonusInput);
 
     const data: PromoCodeCreateRequest | PromoCodeUpdateRequest = {
       code: code.trim().toUpperCase(),
-      type: derivedType,
+      type: mode === 'bonus_set' ? bonusFields.type : mode,
       balance_bonus_kopeks:
         mode === 'discount'
           ? Math.round(balanceValue) // percent as integer
-          : mode === 'bonus_set' && includeBalance
-            ? Math.round(balanceValue * 100) // rubles to kopeks
+          : mode === 'bonus_set'
+            ? bonusFields.balance_bonus_kopeks
             : 0,
       subscription_days:
-        mode === 'discount' ||
-        mode === 'trial_subscription' ||
-        (mode === 'bonus_set' && includeDays)
+        mode === 'discount' || mode === 'trial_subscription'
           ? daysValue
-          : 0,
+          : bonusFields.subscription_days,
+      traffic_gb: mode === 'bonus_set' ? bonusFields.traffic_gb : 0,
       max_uses: maxUsesValue,
       is_active: isActive,
       first_purchase_only: firstPurchaseOnly,
@@ -173,7 +177,7 @@ export default function AdminPromocodeCreate() {
       // (the START of the day) — for a GMT+3 admin that made a code picked for
       // "today" already expired by 3am, surfacing as a bogus "expired" error.
       valid_until: validUntil ? new Date(`${validUntil}T23:59:59`).toISOString() : null,
-      promo_group_id: mode === 'bonus_set' && includeGroup ? promoGroupId : null,
+      promo_group_id: mode === 'bonus_set' ? bonusFields.promo_group_id : null,
       ...(mode === 'trial_subscription' && tariffId ? { tariff_id: tariffId } : {}),
     };
 
@@ -197,18 +201,7 @@ export default function AdminPromocodeCreate() {
     validationErrors.push('codeRequired');
   }
   if (mode === 'bonus_set') {
-    if (!includeBalance && !includeDays && !includeGroup) {
-      validationErrors.push('bonusSetEmpty');
-    }
-    if (includeBalance && balanceValue <= 0) {
-      validationErrors.push('balanceRequired');
-    }
-    if (includeDays && daysValue <= 0) {
-      validationErrors.push('daysRequired');
-    }
-    if (includeGroup && !promoGroupId) {
-      validationErrors.push('groupRequired');
-    }
+    validationErrors.push(...getPromocodeBonusValidationErrors(bonusInput));
   }
   if (mode === 'trial_subscription' && daysValue <= 0) {
     validationErrors.push('daysRequired');
@@ -223,6 +216,7 @@ export default function AdminPromocodeCreate() {
       validationErrors.push('discountHoursRequired');
     }
   }
+  const hasTrafficError = validationErrors.includes('trafficRequired');
 
   const isValid = (): boolean => validationErrors.length === 0;
 
@@ -306,18 +300,19 @@ export default function AdminPromocodeCreate() {
             <div className="flex flex-col gap-2">
               {(
                 [
-                  ['includeBalance', includeBalance, setIncludeBalance] as const,
-                  ['includeDays', includeDays, setIncludeDays] as const,
-                  ['includePromoGroup', includeGroup, setIncludeGroup] as const,
+                  ['includeBalance', includeBalance, setIncludeBalance, 'Баланс'] as const,
+                  ['includeDays', includeDays, setIncludeDays, 'Дни подписки'] as const,
+                  ['includeTraffic', includeTraffic, setIncludeTraffic, 'Трафик'] as const,
+                  ['includePromoGroup', includeGroup, setIncludeGroup, 'Промогруппа'] as const,
                 ] as const
-              ).map(([key, checked, setChecked]) => (
+              ).map(([key, checked, setChecked, fallback]) => (
                 <label key={key} className="flex cursor-pointer items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setChecked(!checked)}
                     role="switch"
                     aria-checked={checked}
-                    aria-label={t(`admin.promocodes.form.${key}`)}
+                    aria-label={t(`admin.promocodes.form.${key}`, fallback)}
                     className={`relative h-6 w-10 rounded-full transition-colors ${
                       checked ? 'bg-accent-500' : 'bg-dark-600'
                     }`}
@@ -328,7 +323,9 @@ export default function AdminPromocodeCreate() {
                       }`}
                     />
                   </button>
-                  <span className="text-sm text-dark-200">{t(`admin.promocodes.form.${key}`)}</span>
+                  <span className="text-sm text-dark-200">
+                    {t(`admin.promocodes.form.${key}`, fallback)}
+                  </span>
                 </label>
               ))}
             </div>
@@ -358,6 +355,38 @@ export default function AdminPromocodeCreate() {
               />
               <span className="text-dark-400">{t('admin.promocodes.form.rub')}</span>
             </div>
+          </div>
+        )}
+
+        {mode === 'bonus_set' && includeTraffic && (
+          <div>
+            <label htmlFor="pc-traffic-gb" className="mb-2 block text-sm font-medium text-dark-300">
+              {t('admin.promocodes.form.trafficAmount', 'Объём трафика')}
+              <span className="text-error-400">*</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                id="pc-traffic-gb"
+                type="number"
+                value={trafficGb}
+                onChange={createNumberInputHandler(setTrafficGb, 0)}
+                className="input w-32"
+                aria-invalid={hasTrafficError}
+                aria-describedby={hasTrafficError ? 'pc-traffic-gb-error' : undefined}
+                min={0}
+                step={1}
+                placeholder="0"
+              />
+              <span className="text-dark-400">{t('common.units.gb')}</span>
+            </div>
+            {hasTrafficError && (
+              <p id="pc-traffic-gb-error" className="mt-1 text-xs text-error-400">
+                {t(
+                  'admin.promocodes.validation.trafficRequired',
+                  'Объём трафика должен быть больше 0',
+                )}
+              </p>
+            )}
           </div>
         )}
 
@@ -601,7 +630,12 @@ export default function AdminPromocodeCreate() {
             </p>
             <ul className="list-inside list-disc space-y-1 text-xs text-error-300">
               {validationErrors.map((error) => (
-                <li key={error}>{t(`admin.promocodes.validation.${error}`)}</li>
+                <li key={error}>
+                  {t(
+                    `admin.promocodes.validation.${error}`,
+                    error === 'trafficRequired' ? 'Объём трафика должен быть больше 0' : error,
+                  )}
+                </li>
               ))}
             </ul>
           </div>
