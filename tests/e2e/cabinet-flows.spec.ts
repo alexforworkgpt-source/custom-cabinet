@@ -1725,6 +1725,87 @@ test('keeps tariff sales mode free of a redundant outer card @critical-flow', as
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
+test('shows purchase context banners for classic env tariffs @critical-flow', async ({ page }) => {
+  const trialSubscription = {
+    ...activeSubscription,
+    status: 'trial',
+    is_trial: true,
+  };
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      ...activeResponses,
+      '/api/cabinet/subscription': {
+        has_subscription: true,
+        subscription: trialSubscription,
+      },
+      '/api/cabinet/subscriptions': {
+        subscriptions: [trialSubscription],
+        multi_tariff_enabled: false,
+      },
+      '/api/cabinet/promo/group-discounts': {
+        group_name: 'Base user',
+        server_discount_percent: 0,
+        traffic_discount_percent: 0,
+        device_discount_percent: 0,
+        period_discounts: { '30': 10 },
+      },
+      '/api/cabinet/subscription/purchase-options': {
+        sales_mode: 'classic',
+        currency: 'RUB',
+        balance_kopeks: 100_000,
+        balance_label: '1,000 RUB',
+        subscription_id: trialSubscription.id,
+        periods: [
+          {
+            id: '30-days',
+            period_days: 30,
+            months: 1,
+            label: '30 days',
+            price_kopeks: 30_000,
+            price_label: '300 RUB',
+            per_month_price_kopeks: 30_000,
+            per_month_price_label: '300 RUB',
+            is_available: true,
+            traffic: { selectable: false, mode: 'fixed', options: [], current: 100 },
+            servers: { options: [], min: 0, max: 0, default: [], selected: [] },
+            devices: {
+              min: 1,
+              max: 1,
+              default: 1,
+              current: 1,
+              price_per_device_kopeks: 0,
+              price_per_device_label: '0 RUB',
+            },
+          },
+        ],
+        traffic: { selectable: false, mode: 'fixed', options: [], current: 100 },
+        servers: { options: [], min: 0, max: 0, default: [], selected: [] },
+        devices: {
+          min: 1,
+          max: 1,
+          default: 1,
+          current: 1,
+          price_per_device_kopeks: 0,
+          price_per_device_label: '0 RUB',
+        },
+        selection: {
+          period_id: '30-days',
+          period_days: 30,
+          traffic_value: 100,
+          servers: [],
+          devices: 1,
+        },
+      },
+    },
+  });
+
+  await page.goto('/subscription/purchase');
+  await expect(page.locator('[data-purchase-layout="classic"]')).toBeVisible();
+  await expect(page.getByText('Choose a plan to continue')).toBeVisible();
+  await expect(page.getByText('Your group: Base user')).toBeVisible();
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
 test('opens the classic period constructor from Tariffs before renewing @critical-flow', async ({
   page,
 }) => {
