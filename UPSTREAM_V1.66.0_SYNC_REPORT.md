@@ -1,6 +1,6 @@
 # Upstream Synchronization Report: `v1.66.0`
 
-Status: `release authorized with manual-gate waiver; automated, zoom and Bot runtime gates passed`
+Status: `RELEASED WITH OWNER MANUAL-GATE WAIVER; production not deployed`
 Date: `2026-08-24`
 Owner: `repository owner and OpenCode`
 
@@ -20,7 +20,8 @@ verified and recorded in `UPSTREAM.md` and `COMPATIBILITY.md`.
 | Receiving Custom Cabinet commit | `c1ddbf39b145b298fbc0af0557fd26ef70a83c5e` |
 | Integrated Custom Cabinet source commit | `653e26238105c8394c6abc271b6da836de5fa974` |
 | Intended Upstream Bot | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` (owner-approved) |
-| Intended Release Bundle | `v2026.08.19`; owner authorized publication with the manual-gate waiver recorded below |
+| Published Custom Cabinet | [`cabinet-v2026.08.24.1`](https://github.com/alexforworkgpt-source/custom-cabinet/releases/tag/cabinet-v2026.08.24.1) / `0a0062b96f467aa04cc460db925f7d116d411e94` |
+| Published Release Bundle | [`v2026.08.19`](https://github.com/alexforworkgpt-source/installer/releases/tag/v2026.08.19) / Installer `8d5feb922958f6d3deed0f837060059d1919b356` |
 
 ## Range Summary
 
@@ -40,9 +41,12 @@ Decision totals: `5` direct ports, `21` adapted ports and `19` skipped metadata
 or merge commits. No source commit is blocked. GeoCheck runtime verification is
 blocked because the current Remnawave panel and nodes are `2.8`, below `3.3.0`.
 
-The Custom Cabinet source candidate is version `1.66.0`, committed as exact SHA
-`653e26238105c8394c6abc271b6da836de5fa974`. No immutable tag or Release Bundle
-is declared here.
+The integrated Custom Cabinet application source is version `1.66.0`, committed
+as exact SHA `653e26238105c8394c6abc271b6da836de5fa974`. Documentation-only commits then
+recorded verification and the owner waiver. Immutable tag
+`cabinet-v2026.08.24.1` points to `0a0062b96f467aa04cc460db925f7d116d411e94`,
+and Release Bundle `v2026.08.19` is published without changing the application
+source after the verified commit.
 
 ## Commit Impact Matrix
 
@@ -287,6 +291,18 @@ Production build transformed 2,857 modules; the lazy AdminRemnawave chunk is
 | Candidate runtime smoke | `PASS` (route availability) / `BLOCKED` (authenticated account matrix) | Exact Bot/Cabinet checkouts, doctor, frontend and branding returned healthy/HTTP `200`; unauthenticated sort, subscription delete, promocode, Telegram auth and GeoCheck probes returned expected auth/validation responses rather than `404/405/500`; account mutations were not attempted |
 | Candidate final postflight | `PASS` | Candidate project, Caddy snippet and private env were absent; 0 candidate containers and 0 candidate volumes remained; Installer management launcher stayed executable with its lifecycle receipt at mode `600` |
 
+## Publication Results
+
+| Publication gate | Result | Evidence or limitation |
+| --- | --- | --- |
+| Custom Cabinet immutable tag and release | `PASS` | [`cabinet-v2026.08.24.1`](https://github.com/alexforworkgpt-source/custom-cabinet/releases/tag/cabinet-v2026.08.24.1) resolves to exact SHA `0a0062b96f467aa04cc460db925f7d116d411e94` |
+| Release Bundle workflow | `PASS` | [GitHub Actions run `32702349027`](https://github.com/alexforworkgpt-source/installer/actions/runs/32702349027) verified exact tag identity, contract tests, source revisions, two deterministic Cabinet builds, manifest, packaging, draft assets and publication |
+| Public Release Bundle | `PASS` | [`v2026.08.19`](https://github.com/alexforworkgpt-source/installer/releases/tag/v2026.08.19) is public, not a draft or prerelease, and resolves to Installer SHA `8d5feb922958f6d3deed0f837060059d1919b356` |
+| Public asset re-download | `PASS` | Assets were downloaded through public HTTPS with GitHub tokens unset; published checksum files validated both archives |
+| Cabinet artifact identity | `PASS` | SHA-256 `94f974dc4293cfdc99b73a4803a5c90b7351c60d9287e13d5230897aa82292a5` |
+| Installer archive identity | `PASS` | SHA-256 `89f1add764f6b6519e2dd3aaa8179479e32dcdf405c446bc1cb37b44d2a6f75a`; archive contains no `server.env`, `env.txt`, agent data or Python cache files |
+| Production rollout | `NOT STARTED` | No production SSH profile or verified production target exists in the workspace; only the disposable integration VPS was available and it was cleaned after verification |
+
 ## Provenance and Compatibility Completion
 
 - [x] `UPSTREAM.md` promotes the target exact tag and SHA after the compatibility runtime gate.
@@ -296,7 +312,7 @@ Production build transformed 2,857 modules; the lazy AdminRemnawave chunk is
 - [x] No upstream license, copyright or technical attribution was removed.
 - [x] No build output, environment file, screenshot or agent data is included.
 - [x] The integrated source is committed before Release Bundle construction.
-- [ ] A changed release uses a new immutable tag.
+- [x] A changed release uses a new immutable tag.
 
 ## Residual Risks and Rollback
 
@@ -309,6 +325,9 @@ Production build transformed 2,857 modules; the lazy AdminRemnawave chunk is
 - On `2026-08-24`, the owner explicitly instructed publication without the
   remaining manual checks and accepted these evidence gaps. This is a release
   decision, not a technical `PASS` for the skipped scenarios.
+- Production rollout was not attempted because the workspace does not identify
+  or authenticate a production VPS. The disposable integration VPS is not a
+  production target and was left clean after the lifecycle checks.
 - `npm ci` reports five high-severity dependency audit findings; no broad or
   breaking `npm audit fix` was applied during synchronization.
 - The last rollback Release Bundle remains `v2026.08.18` with Installer
@@ -320,8 +339,10 @@ Production build transformed 2,857 modules; the lazy AdminRemnawave chunk is
 
 `Source integration and the automated gate passed on exact source commit
 653e26238105c8394c6abc271b6da836de5fa974. Exact Upstream Bot v4.1.0 source,
-migration, rollback and candidate runtime compatibility also passed. The full
-Local Gate remains PARTIAL because physical screen-reader, real Telegram clients
-and GeoCheck on Remnawave 3.3.0+ were not run. The owner explicitly waived those
-manual release blockers and authorized immutable tags and public Release Bundle
-`v2026.08.19`; production rollout remains separate and unproven.`
+migration, rollback and candidate runtime compatibility also passed. Custom
+Cabinet cabinet-v2026.08.24.1 and public Release Bundle v2026.08.19 were
+published and independently re-downloaded with exact checksums. The full Local
+Gate remains PARTIAL because physical screen-reader, real Telegram clients and
+GeoCheck on Remnawave 3.3.0+ were not run; the owner explicitly waived those
+manual release blockers. Production rollout was not performed because no
+production VPS identity or access profile exists in the workspace.`
