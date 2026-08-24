@@ -1,6 +1,6 @@
 # Upstream Synchronization Report: `v1.66.0`
 
-Status: `source-integrated; automated, 200% zoom and Bot compatibility runtime gates passed; Release blocked`
+Status: `release authorized with manual-gate waiver; automated, zoom and Bot runtime gates passed`
 Date: `2026-08-24`
 Owner: `repository owner and OpenCode`
 
@@ -20,7 +20,7 @@ verified and recorded in `UPSTREAM.md` and `COMPATIBILITY.md`.
 | Receiving Custom Cabinet commit | `c1ddbf39b145b298fbc0af0557fd26ef70a83c5e` |
 | Integrated Custom Cabinet source commit | `653e26238105c8394c6abc271b6da836de5fa974` |
 | Intended Upstream Bot | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` (owner-approved) |
-| Intended Release Bundle | Not scheduled; publication remains `BLOCKED` |
+| Intended Release Bundle | `v2026.08.19`; owner authorized publication with the manual-gate waiver recorded below |
 
 ## Range Summary
 
@@ -306,6 +306,9 @@ Production build transformed 2,857 modules; the lazy AdminRemnawave chunk is
   candidate runtime compatibility passed on the disposable integration VPS.
 - Android/iOS Telegram evidence is unavailable.
 - Physical screen-reader evidence is unavailable.
+- On `2026-08-24`, the owner explicitly instructed publication without the
+  remaining manual checks and accepted these evidence gaps. This is a release
+  decision, not a technical `PASS` for the skipped scenarios.
 - `npm ci` reports five high-severity dependency audit findings; no broad or
   breaking `npm audit fix` was applied during synchronization.
 - The last rollback Release Bundle remains `v2026.08.18` with Installer
@@ -318,6 +321,7 @@ Production build transformed 2,857 modules; the lazy AdminRemnawave chunk is
 `Source integration and the automated gate passed on exact source commit
 653e26238105c8394c6abc271b6da836de5fa974. Exact Upstream Bot v4.1.0 source,
 migration, rollback and candidate runtime compatibility also passed. The full
-Local Gate remains PARTIAL until a physical screen-reader check runs. Real
-Telegram clients, GeoCheck on Remnawave 3.3.0+ and owner approval for immutable
-tags, public Release Bundle and production rollout remain BLOCKED.`
+Local Gate remains PARTIAL because physical screen-reader, real Telegram clients
+and GeoCheck on Remnawave 3.3.0+ were not run. The owner explicitly waived those
+manual release blockers and authorized immutable tags and public Release Bundle
+`v2026.08.19`; production rollout remains separate and unproven.`

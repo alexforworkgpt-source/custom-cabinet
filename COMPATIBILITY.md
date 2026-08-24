@@ -8,7 +8,7 @@ identifiers, not public branding.
 
 | Component | Version or reference | Exact source |
 | --- | --- | --- |
-| Custom Cabinet | `1.66.0`; source candidate; no immutable tag or Release Bundle yet | `653e26238105c8394c6abc271b6da836de5fa974` |
+| Custom Cabinet | `1.66.0`; release candidate for `cabinet-v2026.08.24.1` / Release Bundle `v2026.08.19` | `653e26238105c8394c6abc271b6da836de5fa974` |
 | Upstream Cabinet baseline | `v1.66.0` | `2192484b011068d8cb75c61a6aeaada1d06115aa` |
 | Upstream Cabinet source | Repository | <https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git> |
 | Upstream Bot | `v4.1.0` | `49b05d5ab79dd9bb92f0404bb0066cda8a175649` |
@@ -32,7 +32,7 @@ but it is not a published Release Bundle and is not approved for production.
 | Database migration | `0104 → 0106`; injected failure restored the verified pre-update dump and `v4.0.0`, then the clean retry committed `v4.1.0` |
 | Runtime result | Installer doctor, frontend, branding and API passed on the disposable Ubuntu 24.04 VPS; the five new server contracts passed the exact Bot source suite, while unauthenticated runtime probes confirmed the corresponding routes without exercising account mutations; final postflight found 0 candidate containers and 0 candidate volumes |
 | Verification date | `2026-08-24` |
-| Release status | `BLOCKED`: real Telegram Android/iOS, physical screen reader, Remnawave `3.3.0+` GeoCheck runtime and separate owner publication/production approval remain unavailable |
+| Release status | `OWNER-AUTHORIZED WITH MANUAL-GATE WAIVER`: on `2026-08-24` the owner explicitly accepted publication without real Telegram Android/iOS, physical screen-reader and Remnawave `3.3.0+` GeoCheck evidence; this waiver does not prove those scenarios and does not authorize an unidentified production VPS |
 
 ## Release Bundle Record
 
