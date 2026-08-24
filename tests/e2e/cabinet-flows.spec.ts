@@ -756,6 +756,7 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   }
   await expect(dialog.getByRole('button', { name: otherPlatform, exact: true })).toHaveCount(0);
   const chooseAnotherDevice = dialog.getByRole('button', { name: 'Choose another device' });
+  await expect(chooseAnotherDevice.locator('svg')).toHaveCount(1);
   const continueWithPlatform = dialog.getByRole('button', {
     name: `Continue with ${detectedPlatform}`,
   });
@@ -789,9 +790,9 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   expect(installActionsBox?.y).toBeGreaterThanOrEqual(
     (installContentBox?.y ?? 0) + (installContentBox?.height ?? 0),
   );
-  const chooseAnotherAppBox = await dialog
-    .getByRole('button', { name: 'Choose another app' })
-    .boundingBox();
+  const chooseAnotherApp = dialog.getByRole('button', { name: 'Choose another app' });
+  await expect(chooseAnotherApp.locator('svg')).toHaveCount(1);
+  const chooseAnotherAppBox = await chooseAnotherApp.boundingBox();
   const downloadAppBox = await downloadApp.boundingBox();
   expect(chooseAnotherAppBox?.y).toBeLessThan(downloadAppBox?.y ?? 0);
   expect(downloadAppBox?.width).toBeGreaterThanOrEqual((installActionsBox?.width ?? 0) - 1);
@@ -1261,7 +1262,7 @@ test('keeps Profile appearance controls compact @critical-flow', async ({ page }
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('presents referral tools as a compact Profile section @critical-flow', async ({ page }) => {
+test('keeps referral link tools out of Profile @critical-flow', async ({ page }) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
     language: 'ru',
     featureFlags: { referralEnabled: true },
@@ -1293,20 +1294,10 @@ test('presents referral tools as a compact Profile section @critical-flow', asyn
   });
 
   await page.goto('/profile');
-  const referralHeading = page.getByRole('heading', { name: 'Ваши реферальные ссылки' });
-  const referralCard = referralHeading.locator(
-    'xpath=ancestor::div[contains(@class, "relative") and contains(@class, "overflow-hidden")][1]',
-  );
-  await expect(referralHeading).toBeVisible();
-  await expect(referralHeading).toHaveCSS('font-size', '16px');
-  await expect(referralCard).toHaveCSS('padding-top', '16px');
-  expect((await referralCard.boundingBox())?.height).toBeLessThanOrEqual(260);
-  await expect(page.getByRole('link', { name: 'Реферальная программа' })).toBeVisible();
-  const copyButton = page.getByRole('button', { name: 'Копировать' });
-  await expect(copyButton).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Поделиться' })).toBeVisible();
-  await copyButton.click();
-  await expect(page.getByRole('button', { name: 'Скопировано!' })).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  await expect(page.getByRole('heading', { name: 'Ваши реферальные ссылки' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Копировать' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Поделиться' })).toHaveCount(0);
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 

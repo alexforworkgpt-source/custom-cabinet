@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { RemnawaveAppClient } from '@/types';
+import { CabinetIcon } from '@/components/icons';
 import type { RenderBlock } from './blocks';
 
 interface ApplicationStepProps {
@@ -44,6 +45,9 @@ export function ApplicationStep({
             aria-expanded={showOtherApps}
             onClick={onToggleOtherApps}
           >
+            <span aria-hidden="true" className="text-accent-400">
+              <CabinetIcon className="h-5 w-5 shrink-0" />
+            </span>
             {t('subscription.connection.chooseAnotherApp', 'Choose another app')}
           </button>
           {showOtherApps && (

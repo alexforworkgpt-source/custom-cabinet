@@ -85,6 +85,9 @@ export function PlatformStep({
             aria-expanded={showOtherPlatforms}
             onClick={() => setShowOtherPlatforms((visible) => !visible)}
           >
+            <span aria-hidden="true" className="text-accent-400">
+              <DevicesIcon className="h-5 w-5 shrink-0" />
+            </span>
             {showOtherPlatforms
               ? t('subscription.connection.hideOtherDevices', 'Hide other devices')
               : t('subscription.connection.chooseAnotherDevice', 'Choose another device')}

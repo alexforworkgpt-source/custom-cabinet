@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { cn } from '@/lib/utils';
 import { TREND_STYLES } from './constants';
 
 export interface StatCardDelta {
@@ -18,7 +19,9 @@ const TONE = {
 } as const;
 
 interface StatCardProps {
+  className?: string;
   label: string;
+  labelClassName?: string;
   value: string | number;
   icon?: ReactNode;
   /** Tints the icon chip and (unless valueClassName is set) the value colour. */
@@ -35,7 +38,9 @@ interface StatCardProps {
 }
 
 export function StatCard({
+  className,
   label,
+  labelClassName,
   value,
   icon,
   tone = 'neutral',
@@ -50,9 +55,21 @@ export function StatCard({
   const trendStyle = delta ? (TREND_STYLES[delta.trend] ?? TREND_STYLES.stable) : null;
 
   return (
-    <div className="h-full rounded-xl border border-dark-700/60 bg-dark-900/90 p-3 shadow-[0_10px_24px_-22px_rgba(0,0,0,0.9)] transition-colors hover:border-dark-600/80 hover:bg-dark-800/85">
+    <div
+      className={cn(
+        'h-full rounded-xl border border-dark-700/60 bg-dark-900/90 p-3 shadow-[0_10px_24px_-22px_rgba(0,0,0,0.9)] transition-colors hover:border-dark-600/80 hover:bg-dark-800/85',
+        className,
+      )}
+    >
       <div className="flex items-center justify-between gap-2">
-        <span className="line-clamp-2 text-xs leading-tight text-dark-500 sm:text-sm">{label}</span>
+        <span
+          className={cn(
+            'line-clamp-2 text-xs leading-tight text-dark-500 sm:text-sm',
+            labelClassName,
+          )}
+        >
+          {label}
+        </span>
         {trailing}
       </div>
       {/* Chip is centred against the value line only (delta sits below the whole
