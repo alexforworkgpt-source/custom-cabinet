@@ -147,15 +147,7 @@ export default function SubscriptionPurchase() {
 
       {/* Tariffs Section */}
       {isTariffsMode && tariffs.length > 0 && (
-        <div
-          className="relative overflow-hidden rounded-3xl"
-          style={{
-            background: g.cardBg,
-            border: `1px solid ${g.cardBorder}`,
-            boxShadow: g.shadow,
-            padding: '24px 28px',
-          }}
-        >
+        <section data-purchase-layout="tariffs">
           {/* Trial upgrade prompt — hidden when expired banner is active */}
           {subscription?.is_trial &&
             !(
@@ -302,7 +294,7 @@ export default function SubscriptionPurchase() {
               />
             )
           )}
-        </div>
+        </section>
       )}
 
       {/* Purchase/Extend Section - Classic Mode */}

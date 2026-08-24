@@ -1666,6 +1666,65 @@ test('shows a load failure on an expanded subscription route @desktop-flow', asy
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
+test('keeps tariff sales mode free of a redundant outer card @critical-flow', async ({ page }) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/subscription': { has_subscription: false, subscription: null },
+      '/api/cabinet/subscriptions': { subscriptions: [], multi_tariff_enabled: false },
+      '/api/cabinet/subscription/purchase-options': {
+        sales_mode: 'tariffs',
+        tariffs: [
+          {
+            id: 10,
+            name: 'Standard',
+            description: 'Base tariff plan',
+            tier_level: 1,
+            traffic_limit_gb: 100,
+            traffic_limit_label: '100 GB',
+            is_unlimited_traffic: false,
+            device_limit: 1,
+            extra_devices_count: 0,
+            servers_count: 1,
+            servers: [],
+            periods: [
+              {
+                days: 30,
+                months: 1,
+                label: '30 days',
+                price_kopeks: 50_000,
+                price_label: '500 RUB',
+                price_per_month_kopeks: 50_000,
+                price_per_month_label: '500 RUB',
+              },
+            ],
+            is_current: false,
+            is_available: true,
+            promo_group_name: 'Base user',
+            traffic_reset_mode: 'MONTHLY',
+          },
+        ],
+        current_tariff_id: null,
+        balance_kopeks: 100_000,
+        balance_label: '1,000 RUB',
+      },
+    },
+  });
+
+  await page.goto('/subscription/purchase');
+  const purchaseLayout = page.locator('[data-purchase-layout="tariffs"]');
+  await expect(purchaseLayout).toBeVisible();
+  await expect(purchaseLayout).not.toHaveAttribute('style');
+  await expect(purchaseLayout).not.toHaveClass(/rounded-3xl/);
+  await expect(page.getByText('Your group: Base user')).toBeVisible();
+
+  const tariffCard = page
+    .getByText('Base tariff plan')
+    .locator('xpath=ancestor::div[contains(@class, "bento-card-hover")][1]');
+  await expect(tariffCard).toBeVisible();
+  await expect(tariffCard).toHaveCSS('border-top-width', '1px');
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
 test('opens the classic period constructor from Tariffs before renewing @critical-flow', async ({
   page,
 }) => {
@@ -1767,8 +1826,13 @@ test('opens the classic period constructor from Tariffs before renewing @critica
   const tariffsLink = navigation.getByRole('link', { name: 'Tariffs', exact: true });
   await tariffsLink.click();
   await expect(page).toHaveURL('/subscription/purchase');
+  const classicLayout = page.locator('[data-purchase-layout="classic"]');
+  await expect(classicLayout).toBeVisible();
+  await expect(classicLayout).not.toHaveAttribute('style');
+  await expect(classicLayout).not.toHaveClass(/rounded-3xl/);
   const periodButton = page.getByRole('button', { name: /30 days.*3[.,]00/ });
   await expect(periodButton).toBeVisible();
+  await expect(periodButton).toHaveCSS('border-top-width', '1px');
   await expect(page.getByRole('button', { name: 'Extend Subscription', exact: true })).toHaveCount(
     0,
   );
