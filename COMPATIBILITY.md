@@ -8,7 +8,7 @@ identifiers, not public branding.
 
 | Component | Version or reference | Exact source |
 | --- | --- | --- |
-| Custom Cabinet | `1.66.0`; published as `cabinet-v2026.08.24.1` / Release Bundle `v2026.08.19` | Integrated source `653e26238105c8394c6abc271b6da836de5fa974`; immutable release tag `0a0062b96f467aa04cc460db925f7d116d411e94` |
+| Custom Cabinet | `1.66.0`; published as `cabinet-v2026.08.24.2` / Release Bundle `v2026.08.20` | Integrated and refined source `4fc5eee26d6364459a96eee96f6eba23e703b7f0`; immutable release tag points to the same commit |
 | Upstream Cabinet baseline | `v1.66.0` | `2192484b011068d8cb75c61a6aeaada1d06115aa` |
 | Upstream Cabinet source | Repository | <https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git> |
 | Upstream Bot | `v4.1.0` | `49b05d5ab79dd9bb92f0404bb0066cda8a175649` |
@@ -21,19 +21,20 @@ resolve the provenance mismatch before synchronization or release.
 ## Current Release Verification
 
 The published Custom Cabinet is compatible with the exact Upstream Bot identity
-below. Publication was owner-authorized with the documented manual-gate waiver;
-production deployment remains separate and was not performed.
+below. Publication and the disposable VPS update were requested by the owner;
+the outstanding physical/manual gates remain untested, and production deployment
+was not performed.
 
 | Item | Exact value or result |
 | --- | --- |
 | Installer | `8d5feb922958f6d3deed0f837060059d1919b356` |
 | Upstream Bot | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` |
-| Runtime-tested Custom Cabinet commit | `bbd56ee8f8ec4533e1bd5eeb692249345672190c` (same application source as `653e26238105c8394c6abc271b6da836de5fa974`; later commits through release tag `0a0062b96f467aa04cc460db925f7d116d411e94` change verification documentation only) |
-| Candidate Cabinet artifact SHA-256 | `94f974dc4293cfdc99b73a4803a5c90b7351c60d9287e13d5230897aa82292a5`; repeated builds were byte-identical |
+| Runtime-tested Custom Cabinet commit | `4fc5eee26d6364459a96eee96f6eba23e703b7f0` |
+| Candidate Cabinet artifact SHA-256 | `ece03fbc7e5f7094378d68e248b9461c244a9052302c51f062220ef956539321`; publication workflow repeated the build and verified byte identity |
 | Database migration | `0104 → 0106`; injected failure restored the verified pre-update dump and `v4.0.0`, then the clean retry committed `v4.1.0` |
-| Runtime result | Installer doctor, frontend, branding and API passed on the disposable Ubuntu 24.04 VPS; the five new server contracts passed the exact Bot source suite, while unauthenticated runtime probes confirmed the corresponding routes without exercising account mutations; final postflight found 0 candidate containers and 0 candidate volumes |
+| Runtime result | Targeted Protected Update from `v2026.08.19` to `v2026.08.20` committed on the disposable Ubuntu 24.04 VPS; Installer doctor, exact Bot/Cabinet HEAD, three healthy containers, Cabinet HTTP `200`, webhook default `404`, Caddy and cleanup checks passed |
 | Verification date | `2026-08-24` |
-| Release status | `PUBLISHED WITH OWNER MANUAL-GATE WAIVER`: Custom Cabinet `cabinet-v2026.08.24.1` and Release Bundle `v2026.08.19` were published on `2026-08-24`; the owner explicitly accepted publication without real Telegram Android/iOS, physical screen-reader and Remnawave `3.3.0+` GeoCheck evidence; this waiver does not prove those scenarios and does not authorize an unidentified production VPS |
+| Release status | `PUBLISHED AND INSTALLED ON DISPOSABLE VPS; MANUAL GATES OUTSTANDING`: Custom Cabinet `cabinet-v2026.08.24.2` and Release Bundle `v2026.08.20` were published and installed on `2026-08-24`; real Telegram Android/iOS, physical screen-reader, initial Remnawave synchronization and live Remnawave `3.3.0+` GeoCheck were not performed; no unidentified production VPS was accessed |
 
 ## Release Bundle Record
 
@@ -51,6 +52,7 @@ live sign-off remains `BLOCKED` as recorded in the linked reports.
 | `v2026.08.17` | `a5af6c72069a98b42e97cfb17ebcf1d59443324f` | `v4.0.0` / `f553d1896dcd347fd74012f6394fd2277161bdd1` | `cabinet-v2026.08.22.2` / `23c9889f6ab1ad514faf36ad9cbf66dc5407ad44` | `b866bebeeb6032db4baa3869a4917316fe8e0453` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-08-22 | Published assets and exact identities independently verified; protected identities and contracts are unchanged, so the exact Installer lifecycle proof was reused; targeted Protected Update, postflight and guest browser smoke passed on the disposable integration VPS with `outcome=committed`; full product live sign-off remains `BLOCKED`; see `LIVE_CHECK_REPORT_2026.08.17.md` |
 | `v2026.08.18` | `8d5feb922958f6d3deed0f837060059d1919b356` | `v4.0.0` / `f553d1896dcd347fd74012f6394fd2277161bdd1` | `cabinet-v2026.08.22.2` / `23c9889f6ab1ad514faf36ad9cbf66dc5407ad44` | `b866bebeeb6032db4baa3869a4917316fe8e0453` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-08-22 | Installer-only Bundle; exact Installer SHA passed the full disposable Ubuntu 24.04 lifecycle and final postflight; public assets, fresh targeted installation, `outcome=committed`, doctor, health, app-shell `no-store`, missing-asset `404` and guest browser smoke passed on the disposable integration VPS; full product live sign-off remains `BLOCKED`; see `LIVE_CHECK_REPORT_2026.08.18.md` |
 | `v2026.08.19` | `8d5feb922958f6d3deed0f837060059d1919b356` | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` | `cabinet-v2026.08.24.1` / `0a0062b96f467aa04cc460db925f7d116d411e94` | `2192484b011068d8cb75c61a6aeaada1d06115aa` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-08-24 | Published immutable assets independently downloaded and verified; Cabinet SHA-256 `94f974dc4293cfdc99b73a4803a5c90b7351c60d9287e13d5230897aa82292a5`, Installer archive SHA-256 `89f1add764f6b6519e2dd3aaa8179479e32dcdf405c446bc1cb37b44d2a6f75a`; fresh persistent installation, doctor and independent postflight passed on the disposable integration VPS with `outcome=committed`; owner waived the remaining manual gates, which are not technical passes; production deployment was not performed; see `LIVE_CHECK_REPORT_2026.08.19.md` |
+| `v2026.08.20` | `8d5feb922958f6d3deed0f837060059d1919b356` | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` | `cabinet-v2026.08.24.2` / `4fc5eee26d6364459a96eee96f6eba23e703b7f0` | `2192484b011068d8cb75c61a6aeaada1d06115aa` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-08-24 | Exact Installer lifecycle proof reused because Installer, Bot, image digests, Release Bundle contract and target OS were unchanged; 6 public assets, checksums and provenance passed; targeted Protected Update and independent smoke passed on the disposable integration VPS with `outcome=committed`; manual gates remain outstanding and production was not accessed; see `LIVE_CHECK_REPORT_2026.08.20.md` |
 
 Use this format for every released combination:
 
