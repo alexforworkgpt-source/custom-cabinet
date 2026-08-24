@@ -301,7 +301,8 @@ Production build transformed 2,857 modules; the lazy AdminRemnawave chunk is
 | Public asset re-download | `PASS` | Assets were downloaded through public HTTPS with GitHub tokens unset; published checksum files validated both archives |
 | Cabinet artifact identity | `PASS` | SHA-256 `94f974dc4293cfdc99b73a4803a5c90b7351c60d9287e13d5230897aa82292a5` |
 | Installer archive identity | `PASS` | SHA-256 `89f1add764f6b6519e2dd3aaa8179479e32dcdf405c446bc1cb37b44d2a6f75a`; archive contains no `server.env`, `env.txt`, agent data or Python cache files |
-| Production rollout | `NOT STARTED` | No production SSH profile or verified production target exists in the workspace; only the disposable integration VPS was available and it was cleaned after verification |
+| Disposable VPS installation | `PASS WITH OWNER MANUAL-GATE WAIVER` | Public Bundle `v2026.08.19` installed persistently with `outcome=committed`; exact Bot and Custom Cabinet SHAs, 3 containers, doctor, Cabinet HTTP `200`, webhook default deny `404`, Caddy, launcher and an independent postflight passed; see `LIVE_CHECK_REPORT_2026.08.19.md` |
+| Production rollout | `NOT STARTED` | No production SSH profile or verified production target exists in the workspace; the disposable integration VPS now keeps the persistent `v2026.08.19` test installation and is not a production target |
 
 ## Provenance and Compatibility Completion
 
@@ -327,7 +328,7 @@ Production build transformed 2,857 modules; the lazy AdminRemnawave chunk is
   decision, not a technical `PASS` for the skipped scenarios.
 - Production rollout was not attempted because the workspace does not identify
   or authenticate a production VPS. The disposable integration VPS is not a
-  production target and was left clean after the lifecycle checks.
+  production target and now runs the persistent `v2026.08.19` test installation.
 - `npm ci` reports five high-severity dependency audit findings; no broad or
   breaking `npm audit fix` was applied during synchronization.
 - The last rollback Release Bundle remains `v2026.08.18` with Installer
