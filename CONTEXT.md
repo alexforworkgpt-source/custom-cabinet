@@ -11,6 +11,29 @@ The product has three interface modes:
 2. User Cabinet for subscriptions, connection, payments and account management.
 3. Administrative console protected by roles and permissions.
 
+## Current Release Reference
+
+As of `2026-08-25`, `main` contains the released Upstream Cabinet `v1.66.0`
+integration through `92906d0e9a128d0a6cdf0f056996e4db44d72d94`.
+
+- Production management Installer: `v2026.08.25`, commit
+  `27e73f662297bbfe459af86cbe00b2a132d8ac0e`.
+- Running production Release Bundle: `v2026.08.24`, policy
+  `rollback-compatible`.
+- Production Custom Cabinet: `cabinet-v2026.08.24.4`, commit
+  `3250e3a7f31fc2dc6f2c7779a42d86cf99a03210`.
+- Production baseline, transition, Status, Diagnostics, health, exact runtime
+  identities and authorized browser smoke passed. The later Installer update
+  was management-only and did not change the runtime Bundle.
+- Real Telegram Android/iOS, physical screen-reader, authenticated staging,
+  initial Remnawave synchronization and Remnawave `3.3.0+` GeoCheck remain
+  `BLOCKED`, not `PASS`.
+
+See [`COMPATIBILITY.md`](COMPATIBILITY.md) for exact source, image and Release
+Bundle identities. Historical live-check reports retain the result known at
+their verification date and must not be reinterpreted as current production
+state.
+
 ## Actors
 
 **Guest**
