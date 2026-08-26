@@ -379,7 +379,7 @@ test('keeps the compact Dashboard responsive in dark and light themes', async ({
 
   const expectCompactLayout = async () => {
     const summary = page.getByRole('region', { name: 'Traffic Usage' });
-    const managementButton = summary.getByRole('button', { name: 'Manage subscription' });
+    const managementButton = page.getByRole('button', { name: 'Manage subscription' });
     const balanceCard = page.getByRole('link', { name: /Balance/ });
     const referralCard = page.getByRole('link', { name: /Referrals/ });
     await expect
@@ -575,7 +575,7 @@ test('opens complete subscription management on the Dashboard @desktop-flow', as
   await page.goto('/?sub=1');
 
   const summary = page.getByRole('region', { name: 'Traffic Usage' });
-  const managementTrigger = summary.getByRole('button', { name: 'Manage subscription' });
+  const managementTrigger = page.getByRole('button', { name: 'Manage subscription' });
   await expect(managementTrigger).toHaveAttribute('aria-expanded', 'false');
   await expect(page.getByText(activeSubscription.subscription_url, { exact: true })).toBeVisible();
   await expect(page.getByText(activeSubscription.tariff_name, { exact: true })).toHaveCount(1);
@@ -592,7 +592,7 @@ test('opens complete subscription management on the Dashboard @desktop-flow', as
   expect(referralBox.x).toBeGreaterThan(balanceBox.x);
   expect(Math.abs(referralBox.y - balanceBox.y)).toBeLessThan(2);
   const dashboardActions = await page.locator('main button, main a, main code').allTextContents();
-  expect(dashboardActions.findIndex((text) => text.includes('Connect Device'))).toBeLessThan(
+  expect(dashboardActions.findIndex((text) => text.includes('Set Up VPN'))).toBeLessThan(
     dashboardActions.findIndex((text) => text.includes(activeSubscription.subscription_url)),
   );
   await expect(summary.getByRole('link', { name: 'Choose tariff' })).toHaveCount(0);
@@ -888,7 +888,7 @@ test('centers Russian overlay headers at 320 px @critical-flow', async ({ page }
 
   await expect(title).toHaveCSS('text-align', 'center');
   await expect(description).toHaveCSS('text-align', 'center');
-  await expect(dialog.getByText('Определенное устройство')).toBeVisible();
+  await expect(dialog.getByText('Ваше устройство', { exact: true })).toBeVisible();
   await expect(dialog.locator('[data-selected-platform] svg')).toHaveCount(2);
 
   await page.goto('/subscriptions/1');

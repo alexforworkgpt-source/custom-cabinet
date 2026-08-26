@@ -19,11 +19,11 @@ describe('legacy primary button theme contract', () => {
 });
 
 describe('connect device button theme contract', () => {
-  it('combines the original animated border with the full accent background', () => {
+  it('combines the original animated border with the 95% accent background', () => {
     const connectButtonRule = globalsCss.match(/\.connect-device-gradient-button\s*{([^}]*)}/)?.[1];
 
     expect(connectButtonRule).toBeDefined();
-    expect(connectButtonRule).toContain('--border-inner-bg: rgb(var(--color-accent-500))');
+    expect(connectButtonRule).toContain('--border-inner-bg: rgba(var(--color-accent-500), 0.95)');
     expect(connectButtonRule).toContain('--_accent: rgba(var(--color-on-accent), 0.8)');
   });
 });

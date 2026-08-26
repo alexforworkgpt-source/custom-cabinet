@@ -30,7 +30,10 @@ import { resolveConnectionUrlForUi } from '@/utils/connectionLink';
 import { brandingApi } from '@/api/branding';
 import { authApi } from '@/api/auth';
 import DashboardPromoCarousel from '@/components/dashboard/DashboardPromoCarousel';
-import { selectDashboardPromoSlides } from '@/components/dashboard/dashboardPromoSlides';
+import {
+  resolveEmailIdentityLinked,
+  selectDashboardPromoSlides,
+} from '@/components/dashboard/dashboardPromoSlides';
 import { DeviceLimitPanel } from '@/components/subscription/DeviceLimitSheet';
 
 const Connection = lazy(() => import('./Connection'));
@@ -351,7 +354,10 @@ export default function Dashboard() {
     ? selectDashboardPromoSlides({
         telegramLinked: providerLinked('telegram', user ? user.telegram_id !== null : undefined),
         emailLinked: emailAuthConfig?.enabled
-          ? providerLinked('email', user ? user.email !== null : undefined)
+          ? resolveEmailIdentityLinked(
+              linkedProvidersData?.providers ?? [],
+              user ? user.email !== null : undefined,
+            )
           : true,
         subscriptionState: promoSubscriptionState,
         giftEnabled,

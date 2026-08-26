@@ -11,6 +11,7 @@ interface TrafficProgressBarProps {
   percent: number;
   isUnlimited: boolean;
   compact?: boolean;
+  inverseSurface?: boolean;
 }
 
 const THRESHOLDS = [50, 75, 90];
@@ -21,28 +22,42 @@ export default function TrafficProgressBar({
   percent,
   isUnlimited,
   compact = false,
+  inverseSurface = false,
 }: TrafficProgressBarProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const g = getGlassColors(isDark);
   const zone = useTrafficZone(percent);
 
-  // Gradient always starts from the accent color (normal zone)
-  const startColor = 'rgb(var(--color-accent-400))';
+  const inverseShade = isDark ? 700 : 500;
+  const startColor = inverseSurface
+    ? `rgb(var(--color-accent-${inverseShade}))`
+    : 'rgb(var(--color-accent-400))';
+  const mainColor = inverseSurface
+    ? `rgb(var(--color-${zone.colorKey}-${inverseShade}))`
+    : zone.mainVar;
+  const mainColorRaw = inverseSurface
+    ? `var(--color-${zone.colorKey}-${inverseShade})`
+    : zone.mainVarRaw;
   const clampedPercent = Math.min(percent, 100);
   const barHeight = compact ? 8 : 14;
+  const inverseText = isDark ? 'var(--color-champagne-950)' : 'var(--color-champagne-50)';
+  const trackBackground = inverseSurface ? `rgba(${inverseText}, 0.1)` : g.trackBg;
+  const trackBorder = inverseSurface ? `rgba(${inverseText}, 0.12)` : g.trackBorder;
+  const markerColor = inverseSurface ? `rgba(${inverseText}, 0.12)` : g.textGhost;
 
   // Multi-segment gradient matching prototype
   // Warning/danger hex colors are intentional — they represent fixed threshold tints,
   // not theme-dynamic values, and must remain distinct from the zone-based mainVar.
   const fillGradient = useMemo(() => {
+    if (inverseSurface) return `linear-gradient(90deg, ${startColor}, ${mainColor})`;
     if (percent < 50) return `linear-gradient(90deg, ${startColor}, ${zone.mainVar})`;
     if (percent < 75)
       return `linear-gradient(90deg, ${startColor}, rgb(var(--color-warning-400)), ${zone.mainVar})`;
     if (percent < 90)
       return `linear-gradient(90deg, ${startColor}, rgb(var(--color-warning-400)), rgb(var(--color-warning-300)), ${zone.mainVar})`;
     return `linear-gradient(90deg, ${startColor}, rgb(var(--color-warning-400)), rgb(var(--color-warning-300)), rgb(var(--color-error-400)))`;
-  }, [percent, zone.mainVar]);
+  }, [inverseSurface, mainColor, percent, startColor, zone.mainVar]);
 
   if (isUnlimited) {
     return (
@@ -53,14 +68,14 @@ export default function TrafficProgressBar({
           style={{
             height: barHeight,
             borderRadius: 10,
-            background: g.trackBg,
-            border: `1px solid rgba(${zone.mainVarRaw}, 0.12)`,
+            background: trackBackground,
+            border: `1px solid rgba(${mainColorRaw}, 0.12)`,
           }}
         >
           <div
             className="absolute inset-0 animate-unlimited-flow"
             style={{
-              background: `linear-gradient(90deg, rgba(${zone.mainVarRaw}, 0.31), ${zone.mainVar}, rgba(${zone.mainVarRaw}, 0.31))`,
+              background: `linear-gradient(90deg, rgba(${mainColorRaw}, 0.31), ${mainColor}, rgba(${mainColorRaw}, 0.31))`,
               backgroundSize: '200% 100%',
             }}
           />
@@ -101,8 +116,8 @@ export default function TrafficProgressBar({
         style={{
           height: barHeight,
           borderRadius: 10,
-          background: g.trackBg,
-          border: `1px solid ${g.trackBorder}`,
+          background: trackBackground,
+          border: `1px solid ${trackBorder}`,
         }}
       >
         {/* Warning zone tint backgrounds */}
@@ -160,7 +175,7 @@ export default function TrafficProgressBar({
             style={{
               left: `${threshold}%`,
               width: 1,
-              background: g.textGhost,
+              background: markerColor,
             }}
             aria-hidden="true"
           />
@@ -176,7 +191,7 @@ export default function TrafficProgressBar({
               left: `calc(${clampedPercent}% - 8px)`,
               width: 16,
               borderRadius: '50%',
-              background: `radial-gradient(circle, rgba(${zone.mainVarRaw}, 0.38), transparent)`,
+              background: `radial-gradient(circle, rgba(${mainColorRaw}, 0.38), transparent)`,
               filter: 'blur(4px)',
               transition: 'left 1.2s cubic-bezier(0.16, 1, 0.3, 1)',
             }}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
+import { usePlatform } from '@/platform';
 import {
   ArrowRightIcon,
   DevicesIcon,
@@ -65,6 +66,14 @@ const PRESENTATION: Record<DashboardPromoSlideId, SlidePresentation> = {
     iconSurface: 'border-warning-300/30 bg-warning-500/20 text-warning-300',
     accentText: 'text-warning-300',
   },
+  channel: {
+    Icon: TelegramIcon,
+    DetailIcon: GiftIcon,
+    gradient: 'from-accent-500/20 via-dark-900/95 to-dark-900',
+    glow: 'bg-accent-400/25',
+    iconSurface: 'border-accent-300/30 bg-accent-500/20 text-accent-300',
+    accentText: 'text-accent-300',
+  },
   gift: {
     Icon: GiftIcon,
     DetailIcon: SubscriptionIcon,
@@ -89,6 +98,7 @@ interface DashboardPromoCarouselProps {
 
 export default function DashboardPromoCarousel({ slides }: DashboardPromoCarouselProps) {
   const { t } = useTranslation();
+  const { openTelegramLink } = usePlatform();
   const [activeIndex, setActiveIndex] = useState(0);
   const [manualPaused, setManualPaused] = useState(false);
   const [interactionPaused, setInteractionPaused] = useState(false);
@@ -160,6 +170,13 @@ export default function DashboardPromoCarousel({ slides }: DashboardPromoCarouse
         <Link
           key={activeSlide.id}
           to={activeSlide.href}
+          target={activeSlide.external ? '_blank' : undefined}
+          rel={activeSlide.external ? 'noopener noreferrer' : undefined}
+          onClick={(event) => {
+            if (!activeSlide.external) return;
+            event.preventDefault();
+            openTelegramLink(activeSlide.href);
+          }}
           className={`group absolute inset-0 flex animate-fade-in overflow-hidden bg-gradient-to-r ${presentation.gradient} px-5 pb-10 pt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-400 sm:px-6 sm:pb-11 sm:pt-5`}
           aria-label={t(`dashboardPromo.slides.${activeSlide.id}.linkLabel`)}
           data-dashboard-promo-slide={activeSlide.id}

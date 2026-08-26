@@ -302,10 +302,10 @@
       "danger": "High",
       "critical": "Critical"
     },
-    "connectDevice": "Connect Device",
+    "connectDevice": "Set Up VPN",
     "devicesConnected": "{{count}} connected",
-    "devicesOfMax": "{{used}} of {{max}} connected",
-    "devicesConnectedUnlimited": "{{used}} connected · unlimited",
+    "devicesOfMax": "{{used}} of {{max}} devices set up",
+    "devicesConnectedUnlimited": "{{used}} devices set up · unlimited",
     "devicesShort": "dev.",
     "trafficUsage": "{{used}} / {{limit}} GB",
     "trafficUsageTitle": "Traffic Usage",
@@ -1273,6 +1273,13 @@
         "description": "Find a plan that fits your devices and usage.",
         "action": "View plans",
         "linkLabel": "Choose your plan. View available plans."
+      },
+      "channel": {
+        "eyebrow": "Telegram channel",
+        "title": "News and giveaways",
+        "description": "Follow service updates and join our giveaways.",
+        "action": "Subscribe",
+        "linkLabel": "News and giveaways. Open the Telegram channel."
       },
       "gift": {
         "eyebrow": "For someone special",

@@ -31,7 +31,7 @@ export default function StatsGrid({
     <div className={`grid gap-2.5 ${columnClass}`}>
       <Link to="/balance" className={actionLinkClass} data-onboarding="balance">
         <StatCard
-          className="border-0 bg-success-500/10 transition-[background-color,box-shadow] duration-200 group-active:bg-success-500/20 motion-reduce:transition-none md:group-hover:bg-success-500/15 md:group-hover:shadow-md"
+          className="border-0 bg-[color-mix(in_srgb,rgba(var(--color-success-500),0.80)_10%,rgba(var(--color-dark-900),0.80)_90%)] transition-[background-color,box-shadow] duration-200 group-active:bg-[color-mix(in_srgb,rgba(var(--color-success-500),0.80)_15%,rgba(var(--color-dark-900),0.80)_85%)] motion-reduce:transition-none md:group-hover:shadow-md lg:bg-[color-mix(in_srgb,rgba(var(--color-success-500),0.85)_10%,rgba(var(--color-dark-900),0.85)_90%)] lg:group-hover:bg-[color-mix(in_srgb,rgba(var(--color-success-500),0.85)_15%,rgba(var(--color-dark-900),0.85)_85%)]"
           label={t('dashboard.stats.balance')}
           labelClassName="text-success-400"
           value={

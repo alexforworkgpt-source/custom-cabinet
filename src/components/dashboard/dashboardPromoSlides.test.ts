@@ -11,7 +11,7 @@ describe('selectDashboardPromoSlides', () => {
         giftEnabled: true,
         referralEnabled: true,
       }).map((slide) => slide.id),
-    ).toEqual(['telegram', 'email', 'connection', 'gift']);
+    ).toEqual(['telegram', 'email', 'connection', 'channel', 'gift']);
   });
 
   it('removes linked account actions and offers a tariff without an active subscription', () => {
@@ -23,7 +23,7 @@ describe('selectDashboardPromoSlides', () => {
         giftEnabled: true,
         referralEnabled: true,
       }).map((slide) => slide.id),
-    ).toEqual(['tariff', 'gift', 'earnings']);
+    ).toEqual(['tariff', 'channel', 'gift', 'earnings']);
   });
 
   it('does not invent actions while account, subscription and feature states are unknown', () => {

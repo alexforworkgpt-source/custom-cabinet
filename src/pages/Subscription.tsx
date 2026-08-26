@@ -21,6 +21,7 @@ import {
   CalendarIcon,
   RefreshIcon,
   DevicesIcon,
+  KeyIcon,
   DownloadIcon,
   TrashIcon,
   ChevronDownIcon,
@@ -951,7 +952,7 @@ export default function Subscription({
                     className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] transition-colors duration-500"
                     style={{ background: `${zone.mainHex}12`, color: zone.mainHex }}
                   >
-                    <DevicesIcon className="h-4 w-4" />
+                    <KeyIcon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-semibold tracking-tight text-dark-50">

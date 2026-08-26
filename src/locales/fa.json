@@ -308,9 +308,9 @@
     "subscriptionLink": "لینک اشتراک",
     "showAll": "نمایش همه",
     "subscriptions": "اشتراک‌ها",
-    "connectDevice": "اتصال دستگاه",
-    "devicesConnectedUnlimited": "{{used}} دستگاه متصل · نامحدود",
-    "devicesOfMax": "{{used}} از {{max}}",
+    "connectDevice": "راه‌اندازی VPN",
+    "devicesConnectedUnlimited": "{{used}} دستگاه راه‌اندازی شده · نامحدود",
+    "devicesOfMax": "{{used}} از {{max}} دستگاه راه‌اندازی شده",
     "maxUsage": "حداکثر {{amount}}",
     "remaining": "باقی‌مانده",
     "stats": {

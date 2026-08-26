@@ -81,7 +81,7 @@ test('keeps white content on filled actions for the operator accent', async ({ p
   await expect(connectIcon).toHaveCSS('color', 'rgb(255, 255, 255)');
   expect(
     await connectDevice.evaluate((element) => getComputedStyle(element).backgroundImage),
-  ).toContain('rgb(14, 165, 233)');
+  ).toContain('rgba(14, 165, 233, 0.95)');
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
@@ -186,8 +186,9 @@ test('uses restrained accent states for key secondary actions', async ({ page })
       probe.remove();
       return color;
     });
+    const translucentAccent = accentRgb.replace(/^rgb\((.+)\)$/, 'rgba($1, 0.95)');
     expect(connectPresentation.backgroundImage).toContain(
-      `linear-gradient(${accentRgb}, ${accentRgb})`,
+      `linear-gradient(${translucentAccent}, ${translucentAccent})`,
     );
 
     const onAccentColor = await page.evaluate(() => {
@@ -220,8 +221,8 @@ test('uses restrained accent states for key secondary actions', async ({ page })
     ).toBeLessThanOrEqual(6);
 
     const manageSubscription = page.getByRole('button', { name: 'Manage subscription' });
-    await expect(manageSubscription).toHaveCSS('border-top-width', '0px');
-    await expect(manageSubscription).toHaveClass(/bg-accent-500\/\[0\.06\]/);
+    await expect(manageSubscription).toHaveCSS('border-top-width', '1px');
+    await expect(manageSubscription).toHaveClass(/bg-accent-500\/15/);
     await expect(manageSubscription.locator('svg')).toHaveCount(1);
 
     const copyLink = page.getByRole('button', { name: 'Copy link' });

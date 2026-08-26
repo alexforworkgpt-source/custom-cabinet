@@ -58,13 +58,13 @@
 }
 
 .connect-device-gradient-button {
-  --border-inner-bg: rgb(var(--color-accent-500));
+  --border-inner-bg: rgba(var(--color-accent-500), 0.95);
   --_accent: rgba(var(--color-on-accent), 0.8);
 }
 
 .connect-device-gradient-button:hover,
 .connect-device-gradient-button:active {
-  --border-inner-bg: rgb(var(--color-accent-600));
+  --border-inner-bg: rgba(var(--color-accent-600), 0.95);
 }
 
 .hover-border-gradient.balance-top-up-gradient-button {

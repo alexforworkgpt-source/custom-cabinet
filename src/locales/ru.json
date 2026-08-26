@@ -305,10 +305,10 @@
       "danger": "Высокий",
       "critical": "Критический"
     },
-    "connectDevice": "Подключить устройство",
+    "connectDevice": "Настроить VPN",
     "devicesConnected": "{{count}} подключено",
-    "devicesOfMax": "{{used}} из {{max}} подключено",
-    "devicesConnectedUnlimited": "{{used}} подключено · без лимита",
+    "devicesOfMax": "{{used}} из {{max}} устройств настроено",
+    "devicesConnectedUnlimited": "{{used}} устройств настроено · без лимита",
     "devicesShort": "устр.",
     "trafficUsage": "{{used}} / {{limit}} ГБ",
     "trafficUsageTitle": "Расход трафика",
@@ -520,7 +520,7 @@
       "installApp": "1. Установите приложение",
       "addSubscription": "Добавьте подписку",
       "setupPlatform": "Настройка для {{platform}}",
-      "detectedPlatform": "Определенное устройство",
+      "detectedPlatform": "Ваше устройство",
       "detectedPlatformDescription": "Мы определили ваше устройство. При необходимости его можно изменить.",
       "selectedPlatform": "Выбранное устройство",
       "selectedPlatformDescription": "Продолжите с выбранным устройством или укажите другое.",
@@ -1293,6 +1293,13 @@
         "description": "Найди вариант под свои устройства и задачи.",
         "action": "Смотреть тарифы",
         "linkLabel": "Выбрать подходящий тариф. Открыть список тарифов."
+      },
+      "channel": {
+        "eyebrow": "Telegram-канал",
+        "title": "Новости и розыгрыши",
+        "description": "Следи за новостями сервиса и участвуй в розыгрышах.",
+        "action": "Подписаться",
+        "linkLabel": "Новости и розыгрыши. Открыть Telegram-канал."
       },
       "gift": {
         "eyebrow": "Для близких",

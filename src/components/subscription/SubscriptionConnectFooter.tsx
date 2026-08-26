@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { ChevronRightIcon, DevicesIcon, RefreshIcon, WarningIcon } from '@/components/icons';
+import { ChevronRightIcon, KeyIcon, RefreshIcon, WarningIcon } from '@/components/icons';
 import { Button } from '@/components/primitives/Button';
 import { cn } from '@/lib/utils';
 import { HoverBorderGradient } from '../ui/hover-border-gradient';
@@ -138,7 +138,7 @@ export function SubscriptionConnectFooter({
         style={{ fontFamily: 'inherit' }}
       >
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-on-accent/15 text-on-accent">
-          {full ? <WarningIcon className="h-4 w-4" /> : <DevicesIcon className="h-4 w-4" />}
+          {full ? <WarningIcon className="h-4 w-4" /> : <KeyIcon className="h-4 w-4" />}
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold tracking-tight text-on-accent">{label}</span>
@@ -168,9 +168,7 @@ export function SubscriptionConnectFooter({
       {full ? (
         <WarningIcon className="h-4 w-4 shrink-0 text-warning-400" />
       ) : (
-        <DevicesIcon
-          className={cn('h-4 w-4 shrink-0', highlight ? 'text-accent-400' : 'opacity-40')}
-        />
+        <KeyIcon className={cn('h-4 w-4 shrink-0', highlight ? 'text-accent-400' : 'opacity-40')} />
       )}
       <span
         className={cn(

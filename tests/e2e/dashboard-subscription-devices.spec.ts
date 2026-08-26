@@ -48,7 +48,7 @@ const commonResponses = {
 };
 
 for (const scenario of [
-  { name: 'a free device slot', connectedDevices: 0, deviceAction: 'Connect Device' },
+  { name: 'a free device slot', connectedDevices: 0, deviceAction: 'Set Up VPN' },
   { name: 'a full device limit', connectedDevices: 3, deviceAction: 'My Devices' },
 ]) {
   test(`keeps Buy Traffic and shows ${scenario.deviceAction} for limited subscription with ${scenario.name}`, async ({
@@ -119,7 +119,7 @@ test('opens Connection for a free slot and restores focus to the selected subscr
   });
 
   await page.goto('/?sub=7');
-  const connect = page.getByRole('button', { name: /Connect Device/ });
+  const connect = page.getByRole('button', { name: /Set Up VPN/ });
   await connect.click();
 
   await expect(page).toHaveURL('/connection?sub=7');
