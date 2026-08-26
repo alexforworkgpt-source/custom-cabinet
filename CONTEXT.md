@@ -13,9 +13,13 @@ The product has three interface modes:
 
 ## Current Release Reference
 
-As of `2026-08-25`, `main` contains the released Upstream Cabinet `v1.66.0`
+As of `2026-08-26`, `main` contains the released Upstream Cabinet `v1.66.0`
 integration through `92906d0e9a128d0a6cdf0f056996e4db44d72d94`.
 
+- Latest published candidate: Custom Cabinet `cabinet-v2026.08.26.1`, commit
+  `e4002ebe225ea32a047d86ce311f26d4071a61bc`, through Release Bundle
+  `v2026.08.26`. Public assets and a fresh disposable-VPS smoke passed; this
+  candidate has not been deployed to production.
 - Production management Installer: `v2026.08.25`, commit
   `27e73f662297bbfe459af86cbe00b2a132d8ac0e`.
 - Running production Release Bundle: `v2026.08.24`, policy

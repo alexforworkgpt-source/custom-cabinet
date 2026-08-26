@@ -8,7 +8,7 @@ identifiers, not public branding.
 
 | Component | Version or reference | Exact source |
 | --- | --- | --- |
-| Custom Cabinet | `1.66.0`; published as `cabinet-v2026.08.24.4` and running in production through Release Bundle `v2026.08.24` | Integrated and refined source `3250e3a7f31fc2dc6f2c7779a42d86cf99a03210`; immutable release tag points to the same commit |
+| Custom Cabinet | `1.66.0`; latest published candidate `cabinet-v2026.08.26.1` through Release Bundle `v2026.08.26`; production remains on `cabinet-v2026.08.24.4` through `v2026.08.24` | Latest released source `e4002ebe225ea32a047d86ce311f26d4071a61bc`; both immutable tags point to their recorded commits |
 | Upstream Cabinet baseline | `v1.66.0` | `2192484b011068d8cb75c61a6aeaada1d06115aa` |
 | Upstream Cabinet source | Repository | <https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git> |
 | Upstream Bot | `v4.1.0` | `49b05d5ab79dd9bb92f0404bb0066cda8a175649` |
@@ -23,17 +23,21 @@ resolve the provenance mismatch before synchronization or release.
 Production has separate management and runtime reference points. The management
 Installer is `v2026.08.25`, while the running Release Bundle remains
 `v2026.08.24`. The management-only update did not run Protected Update and did
-not change the runtime identities below. Physical-device and staging product
-gates remain `BLOCKED`; they are not implied by the successful production
-transition.
+not change the runtime identities below. The newer `v2026.08.26` Bundle was
+published and passed a fresh targeted installation on the disposable integration
+VPS, but it was not deployed to production. Physical-device and staging product
+gates remain `BLOCKED`; they are not implied by publication or infrastructure
+smoke results.
 
 | Item | Exact value or result |
 | --- | --- |
 | Management Installer | `v2026.08.25` / `27e73f662297bbfe459af86cbe00b2a132d8ac0e`; management-only production update `PASS` |
 | Runtime Release Bundle | `v2026.08.24`, policy `rollback-compatible`; Installer tag commit `462f3fb315f063a90522cd6e3ffc718434e516f9` |
+| Latest published candidate | Release Bundle `v2026.08.26`; Custom Cabinet `cabinet-v2026.08.26.1` / `e4002ebe225ea32a047d86ce311f26d4071a61bc`; production deployment `NOT STARTED` |
 | Upstream Bot | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` |
 | Production Custom Cabinet | `cabinet-v2026.08.24.4` / `3250e3a7f31fc2dc6f2c7779a42d86cf99a03210` |
 | Cabinet artifact SHA-256 | `a8214dcbc09acda7f0598132c43794ed235c333440530173e8569614519100a8`; deterministic publication and public re-download passed |
+| Candidate Cabinet artifact SHA-256 | `dc1a30208807ffb28943ec1551b69b704eafe38338fa7fc0d546c116c62851ae`; deterministic publication, public re-download and fresh disposable-VPS installation passed |
 | Runtime images | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2` |
 | Database schema | Revision `0106`; production migration and rollback-compatible transition `PASS` |
 | Production technical verification | `PASS`: baseline, Status, Diagnostics, three healthy services, exact Git/image/volume identities, public Cabinet, Remnawave, Telegram webhook and authorized browser smoke |
@@ -63,6 +67,7 @@ live sign-off remains `BLOCKED` as recorded in the linked reports.
 | `v2026.08.22` | `8d5feb922958f6d3deed0f837060059d1919b356` | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` | `cabinet-v2026.08.24.4` / `3250e3a7f31fc2dc6f2c7779a42d86cf99a03210` | `2192484b011068d8cb75c61a6aeaada1d06115aa` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-08-24 | Exact Installer lifecycle proof reused because Installer, Bot, image digests, Release Bundle contract and Ubuntu 24.04 were unchanged; Biome, unit, type, build and targeted browser gates passed; all six public assets, checksums, provenance and exact source identities passed; targeted Protected Update committed on the disposable integration VPS and exact SHA, artifact hash, three containers, Cabinet `200` and webhook default `404` were confirmed; production was not accessed |
 | `v2026.08.24` | `462f3fb315f063a90522cd6e3ffc718434e516f9` | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` | `cabinet-v2026.08.24.4` / `3250e3a7f31fc2dc6f2c7779a42d86cf99a03210` | `2192484b011068d8cb75c61a6aeaada1d06115aa` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-08-24 | Immutable public assets, checksum, manifest, exact source identities, full disposable Ubuntu 24.04 lifecycle and final postflight passed. Production transition passed baseline, migration, Status, Diagnostics, exact runtime identity, health and authorized browser smoke. Physical-device and staging product gates remain `BLOCKED`. |
 | `v2026.08.25` | `27e73f662297bbfe459af86cbe00b2a132d8ac0e` | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` | `cabinet-v2026.08.24.4` / `3250e3a7f31fc2dc6f2c7779a42d86cf99a03210` | `2192484b011068d8cb75c61a6aeaada1d06115aa` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-08-25 | Exact Installer commit passed local gates, a clean full disposable Ubuntu 24.04 lifecycle, final postflight, immutable publication and independent public asset verification. Production received only the management Installer and launcher; Protected Update was not run, so the running runtime Release Bundle remains `v2026.08.24`. Physical-device and staging product gates remain `BLOCKED`. |
+| `v2026.08.26` | `27e73f662297bbfe459af86cbe00b2a132d8ac0e` | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` | `cabinet-v2026.08.26.1` / `e4002ebe225ea32a047d86ce311f26d4071a61bc` | `2192484b011068d8cb75c61a6aeaada1d06115aa` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-08-26 | Exact Installer lifecycle proof reused because the Installer commit, Bot SHA, image digests, Bundle contract and Ubuntu target are unchanged. Custom Cabinet gates, deterministic publication and independent public asset verification passed. A fresh targeted installation committed on the disposable integration VPS; doctor, exact source identities, three containers, Cabinet HTTP `200`, webhook default `404` and complete cleanup passed. Production was not accessed; see `LIVE_CHECK_REPORT_2026.08.26.md`. |
 
 Use this format for every released combination:
 
