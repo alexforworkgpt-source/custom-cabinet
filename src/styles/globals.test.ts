@@ -28,17 +28,15 @@ describe('connect device button theme contract', () => {
   });
 });
 
-describe('global background grid contract', () => {
-  it('keeps the grid visible in dark and light themes', () => {
+describe('admin-controlled background contract', () => {
+  it('does not force a static grid onto the page body', () => {
     const darkBodyRule = globalsCss.match(/body,\s*\.dark body\s*{([^}]*)}/)?.[1];
     const lightBodyRule = globalsCss.match(/\.light body\s*{([^}]*)}/)?.[1];
 
     expect(darkBodyRule).toBeDefined();
-    expect(darkBodyRule).toContain('--app-grid-line: rgba(255, 255, 255, 0.06)');
-    expect(darkBodyRule).toContain('background-image:');
-    expect(darkBodyRule).toContain('background-size: 32px 32px');
-
     expect(lightBodyRule).toBeDefined();
-    expect(lightBodyRule).toContain('--app-grid-line: rgba(10, 10, 10, 0.06)');
+    expect(darkBodyRule).not.toContain('--app-grid-line');
+    expect(darkBodyRule).not.toContain('background-image:');
+    expect(lightBodyRule).not.toContain('--app-grid-line');
   });
 });
