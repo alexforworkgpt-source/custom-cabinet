@@ -370,6 +370,7 @@
     "buyDevices": "增加设备",
     "renewalOptions": "续费选项",
     "days": "天",
+    "months": "{{count}} 个月",
     "days_other": "{{count}} 天",
     "hours": "小时",
     "hours_other": "{{count}} 小时",
@@ -402,7 +403,10 @@
       "traffic": "流量：{{gb}} GB"
     },
     "total": "总计",
+    "discount": "优惠",
     "purchase": "购买",
+    "nextWithPrice": "下一步 · {{amount}}",
+    "payAmount": "支付 {{amount}}",
     "step": "第 {{current}} 步，共 {{total}} 步",
     "stepPeriod": "时长",
     "stepTraffic": "流量",
@@ -713,7 +717,7 @@
       "title": "试用期"
     },
     "trialUpgrade": {
-      "description": "您的试用期即将结束。请选择合适的套餐，以继续无限制使用 VPN。",
+      "description": "试用期即将结束。请选择套餐以继续无限制访问。",
       "title": "升级订阅"
     }
   },

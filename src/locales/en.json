@@ -401,6 +401,9 @@
     "daysShort": "d.",
     "days_one": "{{count}} day",
     "days_other": "{{count}} days",
+    "months": "{{count}} months",
+    "months_one": "{{count}} month",
+    "months_other": "{{count}} months",
     "hours": "h",
     "hours_one": "{{count}} h",
     "hours_other": "{{count}} h",
@@ -451,7 +454,10 @@
       "traffic": "Traffic: {{gb}} GB"
     },
     "total": "Total",
+    "discount": "Discount",
     "purchase": "Purchase",
+    "nextWithPrice": "Next · {{amount}}",
+    "payAmount": "Pay {{amount}}",
     "step": "Step {{current}} of {{total}}",
     "stepPeriod": "Period",
     "stepTraffic": "Traffic",
@@ -492,7 +498,7 @@
     },
     "trialUpgrade": {
       "title": "Choose a plan to continue",
-      "description": "Your trial period is ending soon. Select a plan to continue using VPN without restrictions."
+      "description": "Your trial ends soon. Choose a plan for unrestricted access."
     },
     "expiredBanner": {
       "title": "Subscription expired",

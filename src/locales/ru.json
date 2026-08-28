@@ -408,6 +408,10 @@
     "days_one": "{{count}} день",
     "days_few": "{{count}} дня",
     "days_many": "{{count}} дней",
+    "months": "{{count}} месяцев",
+    "months_one": "{{count}} месяц",
+    "months_few": "{{count}} месяца",
+    "months_many": "{{count}} месяцев",
     "hours": "ч",
     "hours_one": "{{count}} ч",
     "hours_few": "{{count}} ч",
@@ -463,7 +467,10 @@
       "traffic": "Трафик: {{gb}} ГБ"
     },
     "total": "К оплате",
+    "discount": "Скидка",
     "purchase": "Купить",
+    "nextWithPrice": "Далее · {{amount}}",
+    "payAmount": "Оплатить {{amount}}",
     "step": "Шаг {{current}} из {{total}}",
     "stepPeriod": "Период",
     "stepTraffic": "Трафик",
@@ -506,7 +513,7 @@
     },
     "trialUpgrade": {
       "title": "Выберите тариф для продолжения",
-      "description": "Ваш пробный период скоро закончится. Выберите подходящий тариф, чтобы продолжить пользоваться VPN без ограничений."
+      "description": "Пробный период скоро закончится. Выберите тариф для доступа без ограничений."
     },
     "expiredBanner": {
       "title": "Подписка истекла",

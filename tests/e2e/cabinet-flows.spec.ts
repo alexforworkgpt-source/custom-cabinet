@@ -1796,6 +1796,17 @@ test('shows purchase context banners for classic env tariffs @critical-flow', as
           devices: 1,
         },
       },
+      '/api/cabinet/subscription/purchase-preview': {
+        total_price_kopeks: 30_000,
+        total_price_label: '300 RUB',
+        per_month_price_kopeks: 30_000,
+        per_month_price_label: '300 RUB',
+        breakdown: [{ label: '30 days', value: '300 RUB' }],
+        balance_kopeks: 100_000,
+        balance_label: '1,000 RUB',
+        missing_amount_kopeks: 0,
+        can_purchase: true,
+      },
     },
   });
 
@@ -1803,6 +1814,172 @@ test('shows purchase context banners for classic env tariffs @critical-flow', as
   await expect(page.locator('[data-purchase-layout="classic"]')).toBeVisible();
   await expect(page.getByText('Choose a plan to continue')).toBeVisible();
   await expect(page.getByText('Your group: Base user')).toBeVisible();
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('shows the complete classic env order before purchase @critical-flow', async ({ page }) => {
+  const trialSubscription = {
+    ...activeSubscription,
+    status: 'trial',
+    is_active: false,
+    is_trial: true,
+  };
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    language: 'ru',
+    responses: {
+      ...activeResponses,
+      '/api/cabinet/subscription': {
+        has_subscription: true,
+        subscription: trialSubscription,
+      },
+      '/api/cabinet/subscriptions': {
+        subscriptions: [trialSubscription],
+        multi_tariff_enabled: false,
+      },
+      '/api/cabinet/subscription/purchase-options': {
+        sales_mode: 'classic',
+        currency: 'RUB',
+        balance_kopeks: 100_000,
+        balance_label: '1 000 ₽',
+        subscription_id: trialSubscription.id,
+        periods: [
+          {
+            id: '30-days',
+            period_days: 365,
+            months: 12,
+            label: '12 месяцев',
+            price_kopeks: 89_100,
+            price_label: '891 ₽',
+            per_month_price_kopeks: 89_100,
+            per_month_price_label: '891 ₽',
+            is_available: true,
+            traffic: { selectable: false, mode: 'fixed', options: [], current: 100 },
+            servers: { options: [], min: 0, max: 0, default: [], selected: [] },
+            devices: {
+              min: 1,
+              max: 3,
+              default: 2,
+              current: 2,
+              price_per_device_kopeks: 10_000,
+              price_per_device_label: '100 ₽',
+            },
+          },
+        ],
+        traffic: { selectable: false, mode: 'fixed', options: [], current: 100 },
+        servers: { options: [], min: 0, max: 0, default: [], selected: [] },
+        devices: {
+          min: 1,
+          max: 3,
+          default: 2,
+          current: 2,
+          price_per_device_kopeks: 10_000,
+          price_per_device_label: '100 ₽',
+        },
+        selection: {
+          period_id: '30-days',
+          period_days: 365,
+          traffic_value: 100,
+          servers: [],
+          devices: 2,
+        },
+      },
+      '/api/cabinet/subscription/purchase-preview': {
+        total_price_kopeks: 99_100,
+        total_price_label: '991 ₽',
+        original_price_kopeks: 110_000,
+        original_price_label: '1 100 ₽',
+        discount_percent: 10,
+        discount_label: 'Скидка группы 10%',
+        per_month_price_kopeks: 99_100,
+        per_month_price_label: '991 ₽',
+        breakdown: [
+          { label: 'Период', value: '891 ₽' },
+          { label: 'Устройства', value: '100 ₽' },
+        ],
+        balance_kopeks: 100_000,
+        balance_label: '1 000 ₽',
+        missing_amount_kopeks: 0,
+        can_purchase: true,
+      },
+    },
+  });
+
+  await page.route('**/api/cabinet/subscription/purchase-preview', async (route) => {
+    const body = route.request().postDataJSON() as { selection?: { devices?: number } };
+    const selectedDevices = body.selection?.devices ?? 1;
+    const devicesPriceKopeks = Math.max(0, selectedDevices - 1) * 10_000;
+    const totalPriceKopeks = 89_100 + devicesPriceKopeks;
+    await route.fulfill({
+      status: 200,
+      json: {
+        total_price_kopeks: totalPriceKopeks,
+        total_price_label: `${totalPriceKopeks / 100} ₽`,
+        original_price_kopeks: totalPriceKopeks + 10_900,
+        original_price_label: `${(totalPriceKopeks + 10_900) / 100} ₽`,
+        discount_percent: 10,
+        discount_label: 'Скидка группы 10%',
+        per_month_price_kopeks: totalPriceKopeks,
+        per_month_price_label: `${totalPriceKopeks / 100} ₽`,
+        breakdown: [
+          { label: 'Период', value: '891 ₽' },
+          { label: 'Устройства', value: `${devicesPriceKopeks / 100} ₽` },
+        ],
+        balance_kopeks: 200_000,
+        balance_label: '2 000 ₽',
+        missing_amount_kopeks: 0,
+        can_purchase: true,
+      },
+    });
+  });
+
+  await page.goto('/subscription/purchase');
+  await expect(page.getByRole('heading', { name: 'Оформить подписку' })).toHaveCount(1);
+
+  const nextButton = page.getByRole('button', { name: 'Далее · 991 ₽' });
+  await expect(nextButton).toBeEnabled();
+  await nextButton.click();
+
+  await expect(page.getByText('891 ₽', { exact: true }).locator('..')).toContainText('Период');
+  await expect(page.getByText('891 ₽', { exact: true }).locator('..')).toContainText('12 месяцев');
+  await expect(page.getByText('100 ₽', { exact: true }).locator('..')).toContainText('Устройства');
+  await expect(page.getByText('100 ₽', { exact: true }).locator('..')).toContainText(
+    '2 устройства',
+  );
+  const devicesSummary = page.locator('[data-order-summary]');
+  const devicesSummaryWidth = (await devicesSummary.boundingBox())?.width;
+  const devicesSummaryFontSize = await devicesSummary
+    .locator('[data-order-summary-row]')
+    .first()
+    .evaluate((element) => window.getComputedStyle(element).fontSize);
+  await expect(devicesSummary.locator('svg')).toHaveCount(3);
+
+  await page.getByRole('button', { name: '+', exact: true }).click();
+  const updatedNextButton = page.getByRole('button', { name: 'Далее · 1091 ₽' });
+  await expect(updatedNextButton).toBeEnabled();
+  await expect(page.getByText('200 ₽', { exact: true }).locator('..')).toContainText('Устройства');
+  await expect(page.getByText('200 ₽', { exact: true }).locator('..')).toContainText(
+    '3 устройства',
+  );
+  await updatedNextButton.click();
+
+  await expect(page.getByText('Скидка', { exact: true })).toBeVisible();
+  await expect(page.getByText('−109 ₽', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Оплатить 1091 ₽' })).toBeEnabled();
+  const confirmationSummary = page.locator('[data-order-summary]');
+  const confirmationSummaryWidth = (await confirmationSummary.boundingBox())?.width;
+  const confirmationSummaryFontSize = await confirmationSummary
+    .locator('[data-order-summary-row]')
+    .first()
+    .evaluate((element) => window.getComputedStyle(element).fontSize);
+  expect(devicesSummaryWidth).toBeCloseTo(confirmationSummaryWidth ?? 0, 0);
+  expect(devicesSummaryFontSize).toBe(confirmationSummaryFontSize);
+  await expect(confirmationSummary.locator('svg')).toHaveCount(4);
+  await expect(confirmationSummary.locator('[data-order-summary-icon-tone="accent"]')).toHaveCount(
+    3,
+  );
+  await expect(confirmationSummary.locator('[data-order-summary-icon-tone="success"]')).toHaveCount(
+    1,
+  );
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
@@ -1925,8 +2102,8 @@ test('opens the classic period constructor from Tariffs before renewing @critica
   ).toEqual([]);
 
   await periodButton.click();
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
-  const purchaseButton = page.getByRole('button', { name: 'Purchase', exact: true });
+  await page.getByRole('button', { name: /^Next · / }).click();
+  const purchaseButton = page.getByRole('button', { name: /^Pay / });
   await expect(purchaseButton).toBeEnabled();
   await purchaseButton.dblclick();
   await expect(page).toHaveURL('/subscriptions');

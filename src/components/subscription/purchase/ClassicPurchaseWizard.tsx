@@ -9,6 +9,7 @@ import { useCloseOnSuccessNotification } from '../../../store/successNotificatio
 import { getErrorMessage, type PurchaseStep } from '../../../utils/subscriptionHelpers';
 import { CheckIcon } from '../../icons';
 import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
+import { PurchaseOrderSummary } from './PurchaseOrderSummary';
 import Twemoji from 'react-twemoji';
 import type {
   ClassicPurchaseOptions,
@@ -57,6 +58,10 @@ export function ClassicPurchaseWizard({
     kopeks === 0
       ? t('subscription.free', 'Бесплатно')
       : `${formatAmount(kopeks / 100)} ${currencySymbol}`;
+  const formatCtaPrice = (kopeks: number) =>
+    kopeks === 0
+      ? t('subscription.free', 'Бесплатно')
+      : `${formatAmount(kopeks / 100, 0)} ${currencySymbol}`;
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState<PurchaseStep>('period');
@@ -142,8 +147,29 @@ export function ClassicPurchaseWizard({
   const { data: preview, isLoading: previewLoading } = useQuery({
     queryKey: ['purchase-preview', currentSelection],
     queryFn: () => subscriptionApi.previewPurchase(currentSelection, subscriptionId),
-    enabled: !!selectedPeriod && showPurchaseForm && currentStep === 'confirm',
+    enabled: !!selectedPeriod && showPurchaseForm,
   });
+
+  const previewTotal = preview
+    ? applyPromoDiscount(preview.total_price_kopeks, preview.original_price_kopeks)
+    : null;
+  const ctaPrice = previewTotal ? formatCtaPrice(previewTotal.price) : null;
+  const previewTotalValue = previewTotal
+    ? formatPrice(previewTotal.price)
+    : preview?.total_price_label;
+  const previewOriginalTotalValue =
+    previewTotal?.original && previewTotal.original > previewTotal.price
+      ? formatPrice(previewTotal.original)
+      : null;
+  const previewDiscountValue =
+    previewTotal?.original && previewTotal.original > previewTotal.price
+      ? `−${formatCtaPrice(previewTotal.original - previewTotal.price)}`
+      : preview?.discount_label;
+  const selectedPeriodDetail = selectedPeriod
+    ? selectedPeriod.months > 0
+      ? t('subscription.months', { count: selectedPeriod.months })
+      : t('subscription.days', { count: selectedPeriod.period_days })
+    : undefined;
 
   const purchaseMutation = useMutation({
     mutationFn: () => subscriptionApi.submitPurchase(currentSelection, subscriptionId),
@@ -211,20 +237,15 @@ export function ClassicPurchaseWizard({
 
   return (
     <section data-purchase-layout="classic">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base font-bold tracking-tight text-dark-50">
-          {subscription && !subscription.is_trial
-            ? t('subscription.extend')
-            : t('subscription.getSubscription')}
-        </h2>
-        {!showPurchaseForm && (
+      {!showPurchaseForm && (
+        <div className="flex justify-end">
           <button onClick={() => setShowPurchaseForm(true)} className="btn-primary">
             {subscription && !subscription.is_trial
               ? t('subscription.extend')
               : t('subscription.getSubscription')}
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {showPurchaseForm && (
         <div className="space-y-6">
@@ -461,6 +482,21 @@ export function ClassicPurchaseWizard({
                   </div>
                 )}
               </div>
+              {previewLoading ? (
+                <div className="mt-6 h-32 w-full animate-pulse rounded-xl bg-dark-800/50" />
+              ) : preview ? (
+                <div className="mt-6 w-full">
+                  <PurchaseOrderSummary
+                    breakdown={preview.breakdown}
+                    details={{
+                      period: selectedPeriodDetail,
+                      devices: t('subscription.devices', { count: selectedDevices }),
+                    }}
+                    totalLabel={t('subscription.total')}
+                    totalValue={previewTotalValue ?? preview.total_price_label}
+                  />
+                </div>
+              ) : null}
             </div>
           )}
 
@@ -472,7 +508,7 @@ export function ClassicPurchaseWizard({
                   <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
                 </div>
               ) : preview ? (
-                <div className="space-y-4 rounded-xl bg-dark-800/50 p-5">
+                <div className="space-y-4">
                   {activeDiscount?.is_active && activeDiscount.discount_percent && (
                     <div className="flex items-center justify-center gap-2 rounded-lg border border-warning-500/30 bg-warning-500/10 p-3">
                       <svg
@@ -494,43 +530,18 @@ export function ClassicPurchaseWizard({
                     </div>
                   )}
 
-                  {preview.breakdown.map((item, idx) => (
-                    <div key={idx} className="flex justify-between text-dark-300">
-                      <span>{item.label}</span>
-                      <span>{item.value}</span>
-                    </div>
-                  ))}
-
-                  {(() => {
-                    const promoTotal = applyPromoDiscount(
-                      preview.total_price_kopeks,
-                      preview.original_price_kopeks,
-                    );
-
-                    return (
-                      <div className="flex items-center justify-between border-t border-dark-700/50 pt-4">
-                        <span className="text-lg font-semibold text-dark-100">
-                          {t('subscription.total')}
-                        </span>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-accent-400">
-                            {formatPrice(promoTotal.price)}
-                          </div>
-                          {promoTotal.original && promoTotal.original > promoTotal.price && (
-                            <div className="text-sm text-dark-500 line-through">
-                              {formatPrice(promoTotal.original)}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {preview.discount_label && (
-                    <div className="text-center text-sm text-success-400">
-                      {preview.discount_label}
-                    </div>
-                  )}
+                  <PurchaseOrderSummary
+                    breakdown={preview.breakdown}
+                    details={{
+                      period: selectedPeriodDetail,
+                      devices: t('subscription.devices', { count: selectedDevices }),
+                    }}
+                    totalLabel={t('subscription.total')}
+                    totalValue={previewTotalValue ?? preview.total_price_label}
+                    originalTotalValue={previewOriginalTotalValue}
+                    discountLabel={t('subscription.discount')}
+                    discountValue={previewDiscountValue}
+                  />
 
                   {!preview.can_purchase &&
                     (preview.missing_amount_kopeks > 0 ? (
@@ -568,7 +579,9 @@ export function ClassicPurchaseWizard({
                 disabled={!selectedPeriod}
                 className="btn-primary flex-1"
               >
-                {t('common.next')}
+                {ctaPrice
+                  ? t('subscription.nextWithPrice', { amount: ctaPrice })
+                  : t('common.next')}
               </button>
             ) : (
               <button
@@ -581,6 +594,8 @@ export function ClassicPurchaseWizard({
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                     {t('common.loading')}
                   </span>
+                ) : ctaPrice ? (
+                  t('subscription.payAmount', { amount: ctaPrice })
                 ) : (
                   t('subscription.purchase')
                 )}

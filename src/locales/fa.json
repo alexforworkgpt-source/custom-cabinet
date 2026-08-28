@@ -370,6 +370,7 @@
     "buyDevices": "خرید دستگاه",
     "renewalOptions": "گزینه‌های تمدید",
     "days": "روز",
+    "months": "{{count}} ماه",
     "days_other": "{{count}} روز",
     "hours": "ساعت",
     "hours_other": "{{count}} ساعت",
@@ -402,7 +403,10 @@
       "traffic": "ترافیک: {{gb}} GB"
     },
     "total": "جمع کل",
+    "discount": "تخفیف",
     "purchase": "خرید",
+    "nextWithPrice": "ادامه · {{amount}}",
+    "payAmount": "پرداخت {{amount}}",
     "step": "مرحله {{current}} از {{total}}",
     "stepPeriod": "دوره",
     "stepTraffic": "ترافیک",
@@ -713,7 +717,7 @@
       "title": "دوره آزمایشی"
     },
     "trialUpgrade": {
-      "description": "دوره آزمایشی شما به‌زودی به پایان می‌رسد. برای ادامه استفاده از VPN بدون محدودیت، یک تعرفه مناسب انتخاب کنید.",
+      "description": "دوره آزمایشی شما به‌زودی تمام می‌شود. برای دسترسی بدون محدودیت یک تعرفه انتخاب کنید.",
       "title": "ارتقای اشتراک"
     }
   },

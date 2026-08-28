@@ -35,32 +35,16 @@ export function PurchaseContextBanners({
   return (
     <div className="space-y-4">
       {showTrialUpgrade && (
-        <div
-          className="rounded-[14px] p-4"
-          style={{
-            background:
-              'linear-gradient(135deg, rgba(255,184,0,0.08), rgba(var(--color-accent-400),0.06))',
-            border: '1px solid rgba(255,184,0,0.15)',
-          }}
-        >
+        <div className="rounded-[14px] border border-warning-500/30 bg-warning-500/15 p-4">
           <div className="flex items-start gap-3">
-            <div
-              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]"
-              style={{
-                background: 'rgba(255,184,0,0.12)',
-                color: 'rgb(var(--color-urgent-400))',
-              }}
-            >
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] bg-warning-500/20 text-warning-400">
               <SparklesIcon className="h-4 w-4" />
             </div>
             <div>
-              <div
-                className="text-sm font-semibold"
-                style={{ color: 'rgb(var(--color-urgent-400))' }}
-              >
+              <div className="text-sm font-semibold text-warning-400">
                 {t('subscription.trialUpgrade.title')}
               </div>
-              <div className="mt-1 text-[12px] text-dark-50/40">
+              <div className="mt-1 text-[12px] text-dark-300">
                 {t('subscription.trialUpgrade.description')}
               </div>
             </div>
@@ -69,15 +53,15 @@ export function PurchaseContextBanners({
       )}
 
       {showPromoGroup && promoGroupName && (
-        <div className="flex items-center gap-3 rounded-xl border border-success-500/30 bg-success-500/10 p-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success-500/20 text-success-400">
+        <div className="flex items-center gap-3 rounded-xl border border-success-500/40 bg-success-500/15 p-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success-500/25 text-success-400">
             <GiftIcon className="h-5 w-5" />
           </div>
           <div>
             <div className="text-sm font-medium text-success-400">
               {t('subscription.promoGroup.yourGroup', { name: promoGroupName })}
             </div>
-            <div className="text-xs text-dark-400">
+            <div className="text-xs text-dark-300">
               {t('subscription.promoGroup.personalDiscountsApplied')}
             </div>
           </div>
