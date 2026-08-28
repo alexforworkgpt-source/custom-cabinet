@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/data-display/Card';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { cn } from '@/lib/utils';
 import {
   ChevronRightIcon,
   ClipboardIcon,
@@ -35,17 +36,32 @@ interface HubLinkProps {
   to: string;
   icon: ComponentType<{ className?: string }>;
   children: ReactNode;
+  highlighted?: boolean;
 }
 
-function HubLink({ to, icon: Icon, children }: HubLinkProps) {
+function HubLink({ to, icon: Icon, children, highlighted = false }: HubLinkProps) {
   return (
     <Link
       to={to}
-      className="group flex min-h-12 items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium text-dark-200 transition-colors hover:bg-dark-800/70 hover:text-dark-100"
+      className={cn(
+        'group flex min-h-12 items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium text-dark-200 transition-colors hover:bg-dark-800/70 hover:text-dark-100',
+        highlighted &&
+          'border border-accent-400/25 bg-accent-500/10 px-3 text-accent-300 shadow-[inset_0_1px_0_rgba(var(--color-accent-300),0.08)] hover:border-accent-400/40 hover:bg-accent-500/15 hover:text-accent-200',
+      )}
     >
-      <Icon className="h-5 w-5 shrink-0 text-dark-400 transition-colors group-hover:text-accent-400" />
+      <Icon
+        className={cn(
+          'h-5 w-5 shrink-0 text-dark-400 transition-colors group-hover:text-accent-400',
+          highlighted && 'text-accent-400 group-hover:text-accent-300',
+        )}
+      />
       <span className="min-w-0 flex-1 break-words">{children}</span>
-      <ChevronRightIcon className="h-4 w-4 shrink-0 text-dark-500 transition-colors group-hover:text-dark-300 rtl:rotate-180" />
+      <ChevronRightIcon
+        className={cn(
+          'h-4 w-4 shrink-0 text-dark-500 transition-colors group-hover:text-dark-300 rtl:rotate-180',
+          highlighted && 'text-accent-400/70 group-hover:text-accent-300',
+        )}
+      />
     </Link>
   );
 }
@@ -87,7 +103,7 @@ export default function ProfileHubSections({
                 aria-label={`${t('profile.hub.chooseTheme')}: ${isDark ? t('theme.dark') : t('theme.light')}`}
                 title={`${t('profile.hub.theme')}: ${isDark ? t('theme.dark') : t('theme.light')}`}
               >
-                <span>{isDark ? t('theme.dark') : t('theme.light')}</span>
+                <span>{isDark ? t('profile.hub.themeDark') : t('profile.hub.themeLight')}</span>
                 {isDark ? <MoonIcon className="h-5 w-5" /> : <SunIcon className="h-5 w-5" />}
               </button>
             </div>
@@ -167,7 +183,7 @@ export function ProfileAdminSection() {
     <Card size="md">
       <SectionTitle>{t('profile.hub.management')}</SectionTitle>
       <nav aria-label={t('profile.hub.management')}>
-        <HubLink to="/admin" icon={ShieldIcon}>
+        <HubLink to="/admin" icon={ShieldIcon} highlighted>
           {t('admin.nav.title')}
         </HubLink>
       </nav>

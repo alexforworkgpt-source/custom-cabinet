@@ -5628,6 +5628,8 @@
       "changeLanguage": "Выбрать язык",
       "theme": "Тема",
       "chooseTheme": "Выбрать тему",
+      "themeLight": "Светлая",
+      "themeDark": "Тёмная",
       "information": "Информация",
       "informationDescription": "Документы и полезные материалы",
       "more": "Дополнительные возможности",

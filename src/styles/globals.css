@@ -341,7 +341,15 @@
   /* Dark theme (default) */
   body,
   .dark body {
+    --app-grid-line: rgba(255, 255, 255, 0.06);
     @apply bg-dark-950 font-sans text-dark-100 antialiased;
+    /* Static technical grid stays on the base surface; optional
+       administrator-controlled animated backgrounds remain a separate layer. */
+    background-image:
+      linear-gradient(to right, var(--app-grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--app-grid-line) 1px, transparent 1px);
+    background-position: center top;
+    background-size: 32px 32px;
     overscroll-behavior-y: contain;
     /* iOS smooth scrolling */
     -webkit-overflow-scrolling: touch;
@@ -356,6 +364,7 @@
 
   /* Light theme */
   .light body {
+    --app-grid-line: rgba(10, 10, 10, 0.06);
     @apply bg-champagne-200 font-sans text-champagne-900 antialiased;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;

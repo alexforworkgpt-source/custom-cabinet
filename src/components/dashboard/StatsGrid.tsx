@@ -47,7 +47,7 @@ export default function StatsGrid({
       {showReferral && (
         <Link to="/referral" className={actionLinkClass}>
           <StatCard
-            className="border-0 bg-accent-500/10 transition-[background-color,box-shadow] duration-200 group-active:bg-accent-500/20 motion-reduce:transition-none md:group-hover:bg-accent-500/15 md:group-hover:shadow-md"
+            className="border-0 bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_10%,rgba(var(--color-dark-900),0.80)_90%)] transition-[background-color,box-shadow] duration-200 group-active:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_15%,rgba(var(--color-dark-900),0.80)_85%)] motion-reduce:transition-none md:group-hover:shadow-md lg:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_10%,rgba(var(--color-dark-900),0.85)_90%)] lg:group-hover:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_15%,rgba(var(--color-dark-900),0.85)_85%)]"
             label={t('dashboard.stats.referrals')}
             labelClassName="text-accent-400"
             value={`${referralCount}`}

@@ -5084,6 +5084,8 @@
       "changeLanguage": "Choose language",
       "theme": "Theme",
       "chooseTheme": "Choose theme",
+      "themeLight": "Light",
+      "themeDark": "Dark",
       "information": "Information",
       "informationDescription": "Documents and useful resources",
       "more": "More features",
