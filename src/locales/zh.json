@@ -56,6 +56,46 @@
     "gift": "赠送",
     "navigation": "导航"
   },
+  "instructions": {
+    "eyebrow": "个人中心指南",
+    "title": "使用说明和设置",
+    "subtitle": "VPN 连接和账户管理的分步指南。",
+    "russianContentNote": "指南内容目前仅提供俄语版本。",
+    "backToAll": "返回全部指南",
+    "beforeStart": "开始之前",
+    "interfaceNote": "个人中心或应用更新后，界面可能会略有不同。",
+    "continueInCabinet": "在个人中心继续",
+    "safeActionNote": "此链接只会打开相关页面，任何更改都需要您自行确认。",
+    "related": "相关指南",
+    "actions": {
+      "connection": "打开 VPN 设置",
+      "subscriptions": "打开订阅",
+      "balance": "打开余额",
+      "accounts": "打开关联账户"
+    },
+    "notFound": {
+      "title": "未找到指南",
+      "description": "该指南可能已移动或暂时不可用。"
+    },
+    "categories": {
+      "connection": {
+        "title": "连接 VPN",
+        "description": "选择设备并按照相应步骤完成设置。"
+      },
+      "subscription": {
+        "title": "订阅和设备",
+        "description": "续订、管理设备并安全共享访问权限。"
+      },
+      "balance": {
+        "title": "余额和充值",
+        "description": "查看余额、优惠码和交易记录。"
+      },
+      "account": {
+        "title": "账户和安全",
+        "description": "查看并关联可用的登录方式。"
+      }
+    }
+  },
   "notifications": {
     "ticketNotifications": "工单通知",
     "markAllRead": "全部标记已读",
@@ -4638,9 +4678,11 @@
     "rules": "规则",
     "privacy": "隐私政策",
     "offer": "服务条款",
+    "recurrent": "定期付款",
     "loyalty": "会员等级",
     "noFaq": "暂无常见问题",
     "noContent": "暂无内容",
+    "backToProfile": "返回个人资料",
     "updatedAt": "更新时间",
     "noLoyaltyTiers": "会员计划暂不可用",
     "yourProgress": "您的进度",

@@ -56,6 +56,46 @@
     "gift": "Gift",
     "navigation": "Navigation"
   },
+  "instructions": {
+    "eyebrow": "Cabinet guide",
+    "title": "Instructions and setup",
+    "subtitle": "Step-by-step guides for connecting VPN and managing your account.",
+    "russianContentNote": "The guides are currently available in Russian.",
+    "backToAll": "Back to all instructions",
+    "beforeStart": "Before you begin",
+    "interfaceNote": "The interface may look slightly different after cabinet or application updates.",
+    "continueInCabinet": "Continue in the cabinet",
+    "safeActionNote": "This link only opens the relevant screen. You will confirm any changes there yourself.",
+    "related": "Related instructions",
+    "actions": {
+      "connection": "Open VPN setup",
+      "subscriptions": "Open subscriptions",
+      "balance": "Open balance",
+      "accounts": "Open linked accounts"
+    },
+    "notFound": {
+      "title": "Instruction not found",
+      "description": "This instruction may have moved or is not available yet."
+    },
+    "categories": {
+      "connection": {
+        "title": "Connect VPN",
+        "description": "Choose your device and follow the setup steps."
+      },
+      "subscription": {
+        "title": "Subscription and devices",
+        "description": "Renew, manage devices, and share access safely."
+      },
+      "balance": {
+        "title": "Balance and top-up",
+        "description": "Check balance, promo codes, and transaction history."
+      },
+      "account": {
+        "title": "Account and security",
+        "description": "Review and link available sign-in methods."
+      }
+    }
+  },
   "notifications": {
     "ticketNotifications": "Ticket Notifications",
     "markAllRead": "Mark all read",
@@ -5264,10 +5304,12 @@
     "rules": "Rules",
     "privacy": "Privacy Policy",
     "offer": "Public Offer",
+    "recurrent": "Recurring Payments",
     "loyalty": "Loyalty",
     "noFaq": "No FAQ available",
     "noContent": "No content available",
     "documentUnavailable": "This document is not available yet.",
+    "backToProfile": "Back to Profile",
     "updatedAt": "Updated",
     "noLoyaltyTiers": "Loyalty program is not available yet",
     "yourProgress": "Your Progress",

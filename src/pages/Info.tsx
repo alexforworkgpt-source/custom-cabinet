@@ -9,13 +9,21 @@ import { formatContent } from '../utils/legalContent';
 import { infoPagesApi } from '../api/infoPages';
 import { promoApi, type LoyaltyTierInfo } from '../api/promo';
 import type { FaqItem, ReplacesTab } from '../api/infoPages';
-import { DocumentIcon, InfoIcon, QuestionIcon, ShieldIcon, StarIcon } from '@/components/icons';
+import {
+  CreditCardIcon,
+  DocumentIcon,
+  InfoIcon,
+  QuestionIcon,
+  ShieldIcon,
+  StarIcon,
+} from '@/components/icons';
 
 const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
   <PiCaretDown className={`h-5 w-5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
 );
 
-const BUILTIN_TABS = new Set<string>(['faq', 'rules', 'privacy', 'offer', 'loyalty']);
+const BUILTIN_TABS = new Set<string>(['faq', 'rules', 'privacy', 'offer', 'recurrent', 'loyalty']);
+const REPLACEABLE_TABS = new Set<ReplacesTab>(['faq', 'rules', 'privacy', 'offer']);
 
 // Rich sanitizer for custom InfoPage content (TipTap editor output with media)
 const ALLOWED_IFRAME_HOSTS = new Set([
@@ -147,6 +155,42 @@ const sanitizeRichHtml = (html: string): string => {
   return infoPagePurify.sanitize(html, RICH_SANITIZE_CONFIG);
 };
 
+interface SystemDocumentContentProps {
+  data?: { content: string; updated_at: string | null };
+  isLoading: boolean;
+}
+
+function SystemDocumentContent({ data, isLoading }: SystemDocumentContentProps) {
+  const { t } = useTranslation();
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!data?.content) {
+    return <div className="py-8 text-center text-dark-400">{t('info.noContent')}</div>;
+  }
+
+  return (
+    <div className="bento-card prose prose-invert max-w-none">
+      <div
+        className="overflow-x-auto"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: formatContent sanitizes legal content with a strict DOMPurify allowlist.
+        dangerouslySetInnerHTML={{ __html: formatContent(data.content) }}
+      />
+      {data.updated_at && (
+        <p className="mt-6 border-t border-dark-700 pt-4 text-sm text-dark-400">
+          {t('info.updatedAt')}: {new Date(data.updated_at).toLocaleDateString(uiLocale())}
+        </p>
+      )}
+    </div>
+  );
+}
+
 // --- FAQ Accordion for tab replacements ---
 
 function ReplacementFaqItem({
@@ -266,10 +310,9 @@ export default function Info() {
   const customTabSlug = isCustomTab ? activeTab : null;
 
   // Check if current built-in tab has a replacement
-  const currentTabSlug =
-    !isCustomTab && activeTab !== 'loyalty'
-      ? (tabReplacements?.[activeTab as ReplacesTab] ?? null)
-      : null;
+  const currentTabSlug = REPLACEABLE_TABS.has(activeTab as ReplacesTab)
+    ? (tabReplacements?.[activeTab as ReplacesTab] ?? null)
+    : null;
 
   // Slug to fetch: either a custom page tab or a tab replacement
   const pageSlugToFetch = customTabSlug ?? currentTabSlug;
@@ -339,6 +382,14 @@ export default function Info() {
     refetchOnMount: 'always',
   });
 
+  const { data: recurrent, isLoading: recurrentLoading } = useQuery({
+    queryKey: ['recurrent-payments'],
+    queryFn: infoApi.getRecurrentPayments,
+    enabled: activeTab === 'recurrent' && replacementsLoaded,
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+
   const { data: loyaltyData, isLoading: loyaltyLoading } = useQuery({
     queryKey: ['loyalty-tiers'],
     queryFn: promoApi.getLoyaltyTiers,
@@ -353,6 +404,7 @@ export default function Info() {
       { id: 'rules', label: t('info.rules'), icon: DocumentIcon },
       { id: 'privacy', label: t('info.privacy'), icon: ShieldIcon },
       { id: 'offer', label: t('info.offer'), icon: DocumentIcon },
+      { id: 'recurrent', label: t('info.recurrent'), icon: CreditCardIcon },
       { id: 'loyalty', label: t('info.loyalty'), icon: StarIcon },
     ];
 
@@ -476,90 +528,19 @@ export default function Info() {
     }
 
     if (activeTab === 'rules') {
-      if (rulesLoading) {
-        return (
-          <div className="flex justify-center py-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-          </div>
-        );
-      }
-
-      if (!rules?.content) {
-        return <div className="py-8 text-center text-dark-400">{t('info.noContent')}</div>;
-      }
-
-      return (
-        <div className="bento-card prose prose-invert max-w-none">
-          <div
-            className="overflow-x-auto"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: formatContent sanitizes legal content with a strict DOMPurify allowlist.
-            dangerouslySetInnerHTML={{ __html: formatContent(rules.content) }}
-          />
-          {rules.updated_at && (
-            <p className="mt-6 border-t border-dark-700 pt-4 text-sm text-dark-400">
-              {t('info.updatedAt')}: {new Date(rules.updated_at).toLocaleDateString(uiLocale())}
-            </p>
-          )}
-        </div>
-      );
+      return <SystemDocumentContent data={rules} isLoading={rulesLoading} />;
     }
 
     if (activeTab === 'privacy') {
-      if (privacyLoading) {
-        return (
-          <div className="flex justify-center py-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-          </div>
-        );
-      }
-
-      if (!privacy?.content) {
-        return <div className="py-8 text-center text-dark-400">{t('info.noContent')}</div>;
-      }
-
-      return (
-        <div className="bento-card prose prose-invert max-w-none">
-          <div
-            className="overflow-x-auto"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: formatContent sanitizes legal content with a strict DOMPurify allowlist.
-            dangerouslySetInnerHTML={{ __html: formatContent(privacy.content) }}
-          />
-          {privacy.updated_at && (
-            <p className="mt-6 border-t border-dark-700 pt-4 text-sm text-dark-400">
-              {t('info.updatedAt')}: {new Date(privacy.updated_at).toLocaleDateString(uiLocale())}
-            </p>
-          )}
-        </div>
-      );
+      return <SystemDocumentContent data={privacy} isLoading={privacyLoading} />;
     }
 
     if (activeTab === 'offer') {
-      if (offerLoading) {
-        return (
-          <div className="flex justify-center py-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-          </div>
-        );
-      }
+      return <SystemDocumentContent data={offer} isLoading={offerLoading} />;
+    }
 
-      if (!offer?.content) {
-        return <div className="py-8 text-center text-dark-400">{t('info.noContent')}</div>;
-      }
-
-      return (
-        <div className="bento-card prose prose-invert max-w-none">
-          <div
-            className="overflow-x-auto"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: formatContent sanitizes legal content with a strict DOMPurify allowlist.
-            dangerouslySetInnerHTML={{ __html: formatContent(offer.content) }}
-          />
-          {offer.updated_at && (
-            <p className="mt-6 border-t border-dark-700 pt-4 text-sm text-dark-400">
-              {t('info.updatedAt')}: {new Date(offer.updated_at).toLocaleDateString(uiLocale())}
-            </p>
-          )}
-        </div>
-      );
+    if (activeTab === 'recurrent') {
+      return <SystemDocumentContent data={recurrent} isLoading={recurrentLoading} />;
     }
 
     if (activeTab === 'loyalty') {

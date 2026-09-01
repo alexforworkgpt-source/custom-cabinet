@@ -504,6 +504,7 @@ export default function InstallationGuide({
                 requestAnimationFrame(() => stepHeadingRef.current?.focus({ preventScroll: true }));
               }}
               onContinue={() => setFlowStep('add', currentPlatformKey, selectedApp.name)}
+              getSvgHtml={getSvgHtml}
               renderBlocks={(blocks) =>
                 renderConfiguredBlocks(blocks, {
                   section: 'install',

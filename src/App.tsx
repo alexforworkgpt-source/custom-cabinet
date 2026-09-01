@@ -59,6 +59,8 @@ const ProfileNotifications = lazyWithRetry(() => import('./pages/ProfileNotifica
 const Contests = lazyWithRetry(() => import('./pages/Contests'));
 const Polls = lazyWithRetry(() => import('./pages/Polls'));
 const Info = lazyWithRetry(() => import('./pages/Info'));
+const Instructions = lazyWithRetry(() => import('./pages/Instructions'));
+const InstructionArticle = lazyWithRetry(() => import('./pages/InstructionArticle'));
 const Wheel = lazyWithRetry(() => import('./pages/Wheel'));
 const GiftSubscription = lazyWithRetry(() => import('./pages/GiftSubscription'));
 const GiftResult = lazyWithRetry(() => import('./pages/GiftResult'));
@@ -549,6 +551,26 @@ function App() {
             <ProtectedRoute>
               <LazyPage>
                 <Info />
+              </LazyPage>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/instructions"
+          element={
+            <ProtectedRoute>
+              <LazyPage>
+                <Instructions />
+              </LazyPage>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/instructions/:slug"
+          element={
+            <ProtectedRoute>
+              <LazyPage>
+                <InstructionArticle />
               </LazyPage>
             </ProtectedRoute>
           }

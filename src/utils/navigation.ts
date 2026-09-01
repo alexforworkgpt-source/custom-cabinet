@@ -32,6 +32,8 @@ export function hasInAppHistory(): boolean {
  * so the user is never left stuck.
  */
 export function getFallbackParentPath(pathname: string): string {
+  if (pathname.replace(/\/+$/, '') === '/instructions') return '/profile';
+
   const segments = pathname.replace(/\/+$/, '').split('/').filter(Boolean);
   const parent = segments.slice(0, -1);
   return parent.length ? `/${parent.join('/')}` : '/';

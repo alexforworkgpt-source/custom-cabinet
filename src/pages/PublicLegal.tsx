@@ -5,6 +5,7 @@ import { Link } from 'react-router';
 import { infoApi } from '../api/info';
 import { formatContent } from '../utils/legalContent';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { useAuthStore } from '../store/auth';
 
 export type PublicLegalDoc = 'offer' | 'privacy' | 'recurrent';
 
@@ -46,6 +47,7 @@ const DOC_CONFIG: Record<
 // uses, so the pages are reachable before login instead of bouncing to /login.
 export default function PublicLegal({ doc }: PublicLegalProps) {
   const { t } = useTranslation();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const config = DOC_CONFIG[doc];
 
   const { data, isLoading, isError } = useQuery({
@@ -89,8 +91,10 @@ export default function PublicLegal({ doc }: PublicLegalProps) {
         )}
 
         <div className="mt-6">
-          <Link to="/login" className="btn-secondary">
-            {t('auth.backToLogin', 'Вернуться ко входу')}
+          <Link to={isAuthenticated ? '/profile' : '/login'} className="btn-secondary">
+            {isAuthenticated
+              ? t('info.backToProfile', 'Вернуться в профиль')
+              : t('auth.backToLogin', 'Вернуться ко входу')}
           </Link>
         </div>
       </div>

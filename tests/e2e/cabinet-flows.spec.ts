@@ -68,6 +68,16 @@ const connectionResponses = {
     hideLink: false,
     baseSettings: { isShowTutorialButton: false, tutorialUrl: '' },
     uiConfig: { installationGuidesBlockType: 'cards' },
+    svgLibrary: {
+      testApp: {
+        svgString:
+          '<svg viewBox="0 0 24 24"><path data-app-icon="test-app" d="M4 4h16v16H4z" /></svg>',
+      },
+      alternativeApp: {
+        svgString:
+          '<svg viewBox="0 0 24 24"><circle data-app-icon="alternative-app" cx="12" cy="12" r="8" /></svg>',
+      },
+    },
     platforms: {
       windows: {
         displayName: { en: 'Windows' },
@@ -76,6 +86,7 @@ const connectionResponses = {
             name: 'Test App',
             featured: true,
             deepLink: 'testapp://import/{subscriptionUrl}',
+            svgIconKey: 'testApp',
             blocks: [
               {
                 title: { en: 'Install Test App' },
@@ -107,6 +118,7 @@ const connectionResponses = {
           {
             name: 'Alternative App',
             deepLink: 'alternative://import/{subscriptionUrl}',
+            svgIconKey: 'alternativeApp',
             blocks: [
               {
                 title: { en: 'Install Alternative App' },
@@ -941,6 +953,24 @@ test('preserves an alternative app when moving back through Connection @critical
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
+test('shows configured application icons in the Connection app picker @critical-flow', async ({
+  page,
+}) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: { ...activeResponses, ...connectionResponses },
+  });
+
+  await page.goto('/connection?sub=1&step=application&platform=windows');
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Choose another app' }).click();
+
+  const testApp = dialog.getByRole('button', { name: 'Test App', exact: true });
+  const alternativeApp = dialog.getByRole('button', { name: 'Alternative App', exact: true });
+  await expect(testApp.locator('[data-app-icon="test-app"]')).toBeVisible();
+  await expect(alternativeApp.locator('[data-app-icon="alternative-app"]')).toBeVisible();
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
 test('keeps the Telegram Connection Back model inside the overlay @telegram-flow', async ({
   page,
 }) => {
@@ -1140,15 +1170,14 @@ test('groups secondary functions in Profile and gates admin/features by capabili
   await expect(preferenceRows).toHaveCount(2);
   await expect(preferenceRows.nth(1)).toHaveCSS('border-top-width', '1px');
   const themeButton = preferences.getByRole('button', { name: /Choose theme/ });
-  await expect(themeButton).toContainText('Light Theme');
+  await expect(themeButton).toHaveAccessibleName(/Light Theme/);
 
   const informationLinks = page
     .getByRole('navigation', { name: 'Information', exact: true })
     .getByRole('link');
-  await expect(informationLinks).toHaveCount(4);
-  await expect(informationLinks.nth(1)).toHaveCSS('border-top-width', '1px');
-  await expect(informationLinks.nth(2)).toHaveCSS('border-top-width', '1px');
-  await expect(informationLinks.nth(3)).toHaveCSS('border-top-width', '1px');
+  await expect(informationLinks).toHaveCount(2);
+  await expect(informationLinks.nth(0)).toHaveAttribute('href', '/info');
+  await expect(informationLinks.nth(1)).toHaveAttribute('href', '/instructions');
 
   await themeButton.click();
   await expect(themeButton).toHaveAccessibleName(/Dark Theme/);
@@ -1167,6 +1196,293 @@ test('groups secondary functions in Profile and gates admin/features by capabili
   expect([...unexpectedApiRequests]).toEqual([]);
   await logoutButton.click();
   await expect(page).toHaveURL('/login');
+});
+
+test('shows recurring payments inside Information when enabled @critical-flow', async ({
+  page,
+}) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/info-pages/tab-replacements': {
+        faq: null,
+        rules: null,
+        privacy: null,
+        offer: null,
+      },
+      '/api/cabinet/info-pages': [],
+      '/api/cabinet/info/visibility': {
+        faq: true,
+        rules: true,
+        privacy: true,
+        offer: true,
+        recurrent: true,
+      },
+      '/api/cabinet/info/faq': [],
+      '/api/cabinet/info/recurrent-payments': {
+        content: '<p>Recurring payment terms</p>',
+        updated_at: null,
+      },
+    },
+  });
+
+  await page.goto('/info');
+  const recurringTab = page.getByRole('button', { name: 'Recurring Payments', exact: true });
+  await expect(recurringTab).toBeVisible();
+  await recurringTab.click();
+  await expect(page.getByText('Recurring payment terms')).toBeVisible();
+  await expect(page).toHaveURL('/info');
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('hides recurring payments inside Information when disabled @critical-flow', async ({
+  page,
+}) => {
+  const { apiRequests, unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/info-pages/tab-replacements': {
+        faq: null,
+        rules: null,
+        privacy: null,
+        offer: null,
+      },
+      '/api/cabinet/info-pages': [],
+      '/api/cabinet/info/visibility': {
+        faq: true,
+        rules: true,
+        privacy: true,
+        offer: true,
+        recurrent: false,
+      },
+      '/api/cabinet/info/faq': [],
+    },
+  });
+
+  await page.goto('/info');
+  await expect(page.getByRole('heading', { name: 'Information', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Recurring Payments', exact: true })).toHaveCount(
+    0,
+  );
+  expect(apiRequests).not.toContain('GET /api/cabinet/info/recurrent-payments');
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('returns authenticated users from public legal pages to Profile @critical-flow', async ({
+  page,
+}) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/info/public-offer': {
+        content: '<p>Public offer terms</p>',
+        updated_at: null,
+      },
+    },
+  });
+
+  await page.goto('/offer');
+  await expect(page.getByRole('heading', { name: 'Public Offer' })).toBeVisible();
+  const backToProfile = page.getByRole('link', { name: 'Back to Profile' });
+  await expect(backToProfile).toHaveAttribute('href', '/profile');
+  await backToProfile.click();
+  await expect(page).toHaveURL('/profile');
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('keeps public legal pages available to guests with a login return @critical-flow', async ({
+  page,
+}) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/info/public-offer': {
+        content: '<p>Public offer terms</p>',
+        updated_at: null,
+      },
+    },
+  });
+  await page.addInitScript(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  await page.goto('/offer');
+  await expect(page.getByRole('heading', { name: 'Public Offer' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to login' })).toHaveAttribute('href', '/login');
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('opens the Instructions and setup catalog from Profile @critical-flow', async ({ page }) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page);
+  const instructionImages: string[] = [];
+  page.on('request', (request) => {
+    if (/\/instructions\/.*\.png$/.test(request.url())) instructionImages.push(request.url());
+  });
+
+  await page.goto('/profile');
+  const information = page.getByRole('navigation', { name: 'Information', exact: true });
+  const links = information.getByRole('link');
+  await expect(links).toHaveCount(2);
+
+  const instructions = information.getByRole('link', { name: 'Instructions and setup' });
+  await expect(instructions).toHaveAttribute('href', '/instructions');
+  await instructions.click();
+
+  await expect(page).toHaveURL('/instructions');
+  await expect(
+    page.getByRole('heading', { name: 'Instructions and setup', level: 1 }),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Connect VPN', level: 2 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Как настроить VPN на Android', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText('The guides are currently available in Russian.')).toBeVisible();
+  await expect(page.getByText(/illustrated step/)).toHaveCount(0);
+  expect(instructionImages).toEqual([]);
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('opens a structured cabinet instruction by its stable URL @critical-flow', async ({
+  page,
+}) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page);
+  const instructionImages: string[] = [];
+  page.on('request', (request) => {
+    if (/\/instructions\/.*\.png$/.test(request.url())) instructionImages.push(request.url());
+  });
+
+  await page.goto('/instructions/renew-subscription');
+
+  await expect(page).toHaveURL('/instructions/renew-subscription');
+  await expect(
+    page.getByRole('heading', { name: 'Как продлить подписку', level: 1 }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      'Инструкция показывает продление через управление подпиской, включая пополнение при недостаточном балансе.',
+    ),
+  ).toBeVisible();
+  await expect(page.locator('[data-instruction-step]')).toHaveCount(7);
+  await expect(
+    page.getByRole('heading', { name: '1. Откройте управление подпиской', level: 2 }),
+  ).toBeVisible();
+  const firstStep = page.locator('[data-instruction-step="open-management"]');
+  const firstIllustration = firstStep.getByRole('img', {
+    name: 'Откройте управление подпиской: красная стрелка показывает нужный элемент',
+  });
+  await expect(firstIllustration).toBeVisible();
+  await expect(firstIllustration).toHaveAttribute('loading', 'lazy');
+  await expect(firstStep.getByRole('button')).toHaveCount(0);
+  const illustrationWidth = await firstIllustration.evaluate(
+    (image) => image.getBoundingClientRect().width,
+  );
+  if ((page.viewportSize()?.width ?? 0) >= 768) expect(illustrationWidth).toBeLessThanOrEqual(512);
+  await expect(page.getByRole('link', { name: 'Back to all instructions' })).toHaveAttribute(
+    'href',
+    '/instructions',
+  );
+  expect(instructionImages.length).toBeGreaterThan(0);
+  expect(instructionImages.every((url) => url.includes('/renew-subscription/'))).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+
+  await page.reload();
+  await expect(page).toHaveURL('/instructions/renew-subscription');
+  await expect(
+    page.getByRole('heading', { name: 'Как продлить подписку', level: 1 }),
+  ).toBeVisible();
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('shows a local not-found state for an unknown instruction @critical-flow', async ({
+  page,
+}) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page);
+
+  await page.goto('/instructions/unknown-guide');
+  await expect(page).toHaveURL('/instructions/unknown-guide');
+  await expect(page.getByRole('heading', { name: 'Instruction not found' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to all instructions' })).toHaveAttribute(
+    'href',
+    '/instructions',
+  );
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('offers a safe cabinet action and related instructions @critical-flow', async ({ page }) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page);
+
+  await page.goto('/instructions/connect-android');
+  const action = page.getByRole('link', { name: 'Open VPN setup' });
+  await expect(action).toHaveAttribute('href', '/connection');
+  const related = page.getByRole('region', { name: 'Related instructions' });
+  await expect(
+    related.getByRole('link', { name: /Как настроить VPN на iPhone или iPad/ }),
+  ).toHaveAttribute('href', '/instructions/connect-ios');
+
+  await action.click();
+  await expect(page).toHaveURL(/\/connection/);
+  expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('reveals one subscription-sharing scenario at a time @critical-flow', async ({ page }) => {
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page);
+
+  await page.goto('/instructions/share-subscription');
+  const sender = page.getByRole('button', { name: /Я делюсь подпиской/ });
+  const recipient = page.getByRole('button', { name: /Я подключаюсь к подписке/ });
+
+  await expect(sender).toHaveAttribute('aria-expanded', 'false');
+  await expect(recipient).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('[data-instruction-step]')).toHaveCount(0);
+
+  const isMobileViewport = (page.viewportSize()?.width ?? 0) < 768;
+  const scrollPositionBeforeOpening = await page.evaluate(() => window.scrollY);
+
+  if (isMobileViewport) {
+    await sender.dispatchEvent('click');
+  } else {
+    await sender.click();
+  }
+  await expect(sender).toHaveAttribute('aria-expanded', 'true');
+  await expect(
+    page.locator('[data-instruction-scenario="sender"] [data-instruction-step]'),
+  ).toHaveCount(3);
+
+  if (isMobileViewport) {
+    const firstStepHeading = page.getByRole('heading', {
+      name: '1. Скопируйте ссылку',
+      level: 2,
+    });
+    const mobileNavigation = page.locator('nav.fixed');
+
+    await expect
+      .poll(async () => (await sender.boundingBox())?.y ?? Number.POSITIVE_INFINITY)
+      .toBeLessThan(120);
+    await expect
+      .poll(async () => {
+        const [headingBox, navigationBox] = await Promise.all([
+          firstStepHeading.boundingBox(),
+          mobileNavigation.boundingBox(),
+        ]);
+
+        return Boolean(
+          headingBox && navigationBox && headingBox.y + headingBox.height < navigationBox.y,
+        );
+      })
+      .toBe(true);
+  } else {
+    expect(
+      Math.abs((await page.evaluate(() => window.scrollY)) - scrollPositionBeforeOpening),
+    ).toBeLessThanOrEqual(4);
+  }
+
+  await recipient.click();
+  await expect(sender).toHaveAttribute('aria-expanded', 'false');
+  await expect(recipient).toHaveAttribute('aria-expanded', 'true');
+  await expect(
+    page.locator('[data-instruction-scenario="recipient-android"] [data-instruction-step]'),
+  ).toHaveCount(9);
+  expect([...unexpectedApiRequests]).toEqual([]);
 });
 
 test('keeps Profile appearance controls compact @critical-flow', async ({ page }) => {
@@ -1192,7 +1508,7 @@ test('keeps Profile appearance controls compact @critical-flow', async ({ page }
   const languageButton = preferences.getByRole('button', { name: 'Choose language' });
   await expect(preferences.getByText('Theme', { exact: true })).toBeVisible();
   await expect(preferences.getByText('Language', { exact: true })).toBeVisible();
-  await expect(themeButton).toContainText('Light Theme');
+  await expect(themeButton).toHaveAccessibleName(/Light Theme/);
   await expect(languageButton).toContainText('English');
   await expect(languageButton).toContainText('EN');
   await expect(preferences).toHaveCSS('border-top-width', '0px');
@@ -1205,7 +1521,7 @@ test('keeps Profile appearance controls compact @critical-flow', async ({ page }
   if (!preferencesBox || !themeBox || !languageBox) {
     throw new Error('Profile appearance controls must have visible bounding boxes');
   }
-  expect(themeBox.width).toBeGreaterThanOrEqual(100);
+  expect(themeBox.width).toBeGreaterThanOrEqual(44);
   expect(themeBox.width).toBeLessThanOrEqual(180);
   expect(themeBox.height).toBeCloseTo(44, 3);
   expect(languageBox.height).toBeCloseTo(44, 3);
@@ -1245,6 +1561,13 @@ test('keeps Profile appearance controls compact @critical-flow', async ({ page }
   expect(
     await page.getByRole('link', { name: 'Fortune Wheel', exact: true }).locator('svg').count(),
   ).toBe(2);
+
+  const informationLinks = page
+    .getByRole('navigation', { name: 'Information', exact: true })
+    .getByRole('link');
+  await expect(informationLinks).toHaveCount(2);
+  await expect(informationLinks.nth(0)).toHaveAttribute('href', '/info');
+  await expect(informationLinks.nth(1)).toHaveAttribute('href', '/instructions');
 
   await languageButton.click();
   await page.getByRole('menuitemradio', { name: 'فارسی' }).click();

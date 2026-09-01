@@ -6,13 +6,11 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { cn } from '@/lib/utils';
 import {
   ChevronRightIcon,
+  BookOpenIcon,
   ClipboardIcon,
-  CreditCardIcon,
-  DocumentIcon,
   GiftIcon,
   GlobeIcon,
   InfoIcon,
-  LockIcon,
   MoonIcon,
   PaletteIcon,
   ShieldIcon,
@@ -161,14 +159,8 @@ export default function ProfileHubSections({
           <HubLink to="/info" icon={InfoIcon}>
             {t('nav.info')}
           </HubLink>
-          <HubLink to="/offer" icon={DocumentIcon}>
-            {t('footer.offer')}
-          </HubLink>
-          <HubLink to="/privacy" icon={LockIcon}>
-            {t('footer.privacy')}
-          </HubLink>
-          <HubLink to="/recurrent-payments" icon={CreditCardIcon}>
-            {t('footer.recurrent')}
+          <HubLink to="/instructions" icon={BookOpenIcon}>
+            {t('instructions.title')}
           </HubLink>
         </nav>
       </Card>

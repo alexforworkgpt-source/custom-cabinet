@@ -12,6 +12,7 @@ interface ApplicationStepProps {
   onToggleOtherApps: () => void;
   onSelectApp: (app: RemnawaveAppClient) => void;
   onContinue: () => void;
+  getSvgHtml: (key: string | undefined) => string;
   renderBlocks: (blocks: RenderBlock[]) => ReactNode;
 }
 
@@ -23,6 +24,7 @@ export function ApplicationStep({
   onToggleOtherApps,
   onSelectApp,
   onContinue,
+  getSvgHtml,
   renderBlocks,
 }: ApplicationStepProps) {
   const { t } = useTranslation();
@@ -52,21 +54,32 @@ export function ApplicationStep({
           </button>
           {showOtherApps && (
             <div className="grid gap-2 sm:grid-cols-2">
-              {availableApps.map((app) => (
-                <button
-                  key={app.name}
-                  type="button"
-                  onClick={() => onSelectApp(app)}
-                  aria-pressed={app.name === selectedApp.name}
-                  className={`min-h-12 rounded-xl border px-4 py-2 text-sm font-medium transition-colors ${
-                    app.name === selectedApp.name
-                      ? 'border-accent-500/50 bg-accent-500/10 text-accent-400'
-                      : 'border-dark-700/50 bg-dark-800/70 text-dark-200 hover:border-dark-600'
-                  }`}
-                >
-                  {app.name}
-                </button>
-              ))}
+              {availableApps.map((app) => {
+                const icon = getSvgHtml(app.svgIconKey);
+                return (
+                  <button
+                    key={app.name}
+                    type="button"
+                    onClick={() => onSelectApp(app)}
+                    aria-pressed={app.name === selectedApp.name}
+                    className={`flex min-h-12 items-center gap-3 rounded-xl border px-4 py-2 text-start text-sm font-medium transition-colors ${
+                      app.name === selectedApp.name
+                        ? 'border-accent-500/50 bg-accent-500/10 text-accent-400'
+                        : 'border-dark-700/50 bg-dark-800/70 text-dark-200 hover:border-dark-600'
+                    }`}
+                  >
+                    {icon && (
+                      <span
+                        aria-hidden="true"
+                        className="h-7 w-7 shrink-0 [&>svg]:h-full [&>svg]:w-full"
+                        // biome-ignore lint/security/noDangerouslySetInnerHtml: The parent sanitizes configured SVG with DOMPurify.
+                        dangerouslySetInnerHTML={{ __html: icon }}
+                      />
+                    )}
+                    <span>{app.name}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
