@@ -1337,6 +1337,13 @@ test('opens the Instructions and setup catalog from Profile @critical-flow', asy
   await expect(page.getByText('The guides are currently available in Russian.')).toBeVisible();
   await expect(page.getByText(/illustrated step/)).toHaveCount(0);
   expect(instructionImages).toEqual([]);
+
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await page.getByRole('link', { name: /Как привязать аккаунт/ }).click();
+  await expect(page).toHaveURL('/instructions/secure-account');
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 

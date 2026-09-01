@@ -16,11 +16,14 @@ export function useScrollRestoration() {
     }
   }, []);
 
-  // Save/restore scroll for admin pages
+  // Start regular pages at the top; save/restore scroll for admin pages.
   useEffect(() => {
     const currentPath = location.pathname;
 
-    if (!currentPath.startsWith('/admin')) return;
+    if (!currentPath.startsWith('/admin')) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      return;
+    }
 
     const handleScroll = () => {
       scrollPositions.current[currentPath] = window.scrollY;
