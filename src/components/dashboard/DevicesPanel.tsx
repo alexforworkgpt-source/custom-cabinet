@@ -108,8 +108,10 @@ export default function DevicesPanel({ subscriptionId }: DevicesPanelProps) {
       )}
       <div className="flex items-center justify-between gap-3 px-0.5">
         <p className="font-mono text-[11px] text-dark-500">
-          {data.device_limit === 0 ? `${data.total} / ∞` : `${data.total} / ${data.device_limit}`}{' '}
-          {t('subscription.devices', { count: data.device_limit || data.total })}
+          {t('dashboard.devicesUsed', {
+            used: data.total,
+            total: data.device_limit === 0 ? '∞' : data.device_limit,
+          })}
         </p>
         <Button
           variant="ghost"

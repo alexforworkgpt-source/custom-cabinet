@@ -9,6 +9,7 @@ export type UserCabinetOverlay =
 export interface UserCabinetRouteState {
   overlay: UserCabinetOverlay;
   subscriptionId?: number;
+  subscriptionSection?: 'additional-options';
   closePath?: string;
 }
 
@@ -56,6 +57,8 @@ export function getUserCabinetRouteState(pathname: string, search: string): User
     return {
       overlay: 'subscription',
       subscriptionId,
+      subscriptionSection:
+        params.get('section') === 'additional-options' ? 'additional-options' : undefined,
     };
   }
 

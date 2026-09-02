@@ -222,7 +222,8 @@ test('uses restrained accent states for key secondary actions', async ({ page })
 
     const manageSubscription = page.getByRole('button', { name: 'Manage subscription' });
     await expect(manageSubscription).toHaveCSS('border-top-width', '1px');
-    await expect(manageSubscription).toHaveClass(/bg-accent-500\/15/);
+    await expect(manageSubscription).toHaveClass(/bg-\[color-mix/);
+    await expect(manageSubscription).toHaveClass(/text-accent-400/);
     await expect(manageSubscription.locator('svg')).toHaveCount(1);
 
     const copyLink = page.getByRole('button', { name: 'Copy link' });

@@ -444,6 +444,7 @@ export default function Dashboard() {
           key={overlaySubscriptionId}
           embedded
           selectedSubscriptionId={overlaySubscriptionId}
+          initiallyOpenAdditionalOptions={routeState.subscriptionSection === 'additional-options'}
         />
       );
     }
@@ -457,7 +458,7 @@ export default function Dashboard() {
           connectedDevices={devicesData?.total}
           isTrial={overlaySubscription?.is_trial ?? false}
           onAddSlots={() =>
-            navigate(`/subscriptions/${overlaySubscriptionId}`, {
+            navigate(`/subscriptions/${overlaySubscriptionId}?section=additional-options`, {
               replace: true,
               state: { cabinetOverlayParent: true },
             })

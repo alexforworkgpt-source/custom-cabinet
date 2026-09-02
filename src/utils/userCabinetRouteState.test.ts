@@ -36,6 +36,14 @@ describe('getUserCabinetRouteState', () => {
     });
   });
 
+  it('opens additional subscription options from an explicit section link', () => {
+    expect(getUserCabinetRouteState('/subscriptions/7', '?section=additional-options')).toEqual({
+      overlay: 'subscription',
+      subscriptionId: 7,
+      subscriptionSection: 'additional-options',
+    });
+  });
+
   it('opens devices without losing the selected subscription', () => {
     expect(getUserCabinetRouteState('/', '?sub=7&overlay=devices')).toEqual({
       overlay: 'devices',

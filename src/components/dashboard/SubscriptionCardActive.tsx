@@ -237,7 +237,7 @@ export default function SubscriptionCardActive({
         </div>
 
         {/* ─── Stats row: Tariff + Days Left ─── */}
-        <div className="flex gap-2.5 border-t pt-4" style={{ borderColor: contrast.innerBorder }}>
+        <div className="flex gap-2.5 pt-4">
           {/* Tariff badge. Neutral chrome: the tariff name has
             no traffic-zone semantics, so tinting it by the traffic zone
             (DESIGN.md Status-Hue Lockout) was wrong. */}

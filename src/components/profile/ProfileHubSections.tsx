@@ -44,22 +44,19 @@ function HubLink({ to, icon: Icon, children, highlighted = false }: HubLinkProps
       className={cn(
         'group flex min-h-12 items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium text-dark-200 transition-colors hover:bg-dark-800/70 hover:text-dark-100',
         highlighted &&
-          'border border-accent-400/25 bg-accent-500/10 px-3 text-accent-300 shadow-[inset_0_1px_0_rgba(var(--color-accent-300),0.08)] hover:border-accent-400/40 hover:bg-accent-500/15 hover:text-accent-200',
+          'gap-1.5 rounded-full px-3 py-1.5 text-[13px] text-warning-500/70 duration-200 hover:bg-warning-500/10 hover:text-warning-300',
       )}
     >
       <Icon
         className={cn(
           'h-5 w-5 shrink-0 text-dark-400 transition-colors group-hover:text-accent-400',
-          highlighted && 'text-accent-400 group-hover:text-accent-300',
+          highlighted && 'h-4 w-4 text-warning-500/70 group-hover:text-warning-300',
         )}
       />
       <span className="min-w-0 flex-1 break-words">{children}</span>
-      <ChevronRightIcon
-        className={cn(
-          'h-4 w-4 shrink-0 text-dark-500 transition-colors group-hover:text-dark-300 rtl:rotate-180',
-          highlighted && 'text-accent-400/70 group-hover:text-accent-300',
-        )}
-      />
+      {!highlighted && (
+        <ChevronRightIcon className="h-4 w-4 shrink-0 text-dark-500 transition-colors group-hover:text-dark-300 rtl:rotate-180" />
+      )}
     </Link>
   );
 }

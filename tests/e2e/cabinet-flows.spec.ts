@@ -706,7 +706,7 @@ test('manages Devices from subscription management and returns to it @critical-f
       document.querySelector('[role="dialog"]')?.contains(document.activeElement),
     ),
   ).toBe(true);
-  await expect(dialog.getByText('1 / 3')).toBeVisible();
+  await expect(dialog.getByText('Devices: 1 of 3', { exact: true })).toBeVisible();
   await expect(dialog.getByText('Home laptop')).toBeVisible();
   const renameButton = dialog.getByRole('button', { name: 'Rename' });
   const deleteButton = dialog.getByRole('button', { name: 'Delete device' });
@@ -1097,7 +1097,7 @@ test('runs top-up method, amount, validation, cancellation, handoff, and result 
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('groups secondary functions in Profile and gates admin/features by capability @desktop-flow', async ({
+test('groups secondary functions in Profile and gates admin/features by capability @critical-flow', async ({
   page,
 }) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
@@ -1133,6 +1133,9 @@ test('groups secondary functions in Profile and gates admin/features by capabili
   ).toHaveAttribute('href', '/profile/notifications');
   const adminLink = page.getByRole('link', { name: 'Admin', exact: true });
   await expect(adminLink).toBeVisible();
+  await expect(adminLink).toHaveClass(/rounded-full/);
+  await expect(adminLink).toHaveClass(/text-warning-500\/70/);
+  expect((await adminLink.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
   await expect(page.getByRole('link', { name: 'Fortune Wheel', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Contests', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Polls', exact: true })).toBeVisible();
@@ -1151,7 +1154,7 @@ test('groups secondary functions in Profile and gates admin/features by capabili
   expect(preferencesHeadingBox.y).toBeLessThanOrEqual(moreBox.y);
   expect(moreBox.y).toBeLessThan(informationBox.y);
   expect(informationBox.y).toBeLessThan(managementBox.y);
-  expect(await adminLink.locator('svg').count()).toBeGreaterThanOrEqual(2);
+  await expect(adminLink.locator('svg')).toHaveCount(1);
 
   const accountContent = accountHeading.locator('xpath=following-sibling::div[1]');
   const accountRows = accountContent.locator(':scope > div:first-child > div');

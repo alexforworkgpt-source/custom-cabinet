@@ -1,6 +1,7 @@
 import { uiLocale } from '@/utils/uiLocale';
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import { subscriptionApi } from '../api/subscription';
@@ -48,6 +49,9 @@ import { DeviceReductionSheet } from '../components/subscription/sheets/DeviceRe
 import { TrafficTopupSheet } from '../components/subscription/sheets/TrafficTopupSheet';
 import { ServerManagementSheet } from '../components/subscription/sheets/ServerManagementSheet';
 import { DeleteSubscriptionSheet } from '../components/subscription/sheets/DeleteSubscriptionSheet';
+
+// Keep the location-management implementation ready for a possible future return.
+const SHOW_SERVER_MANAGEMENT_OPTION = false;
 
 /** Isolated countdown so 1s interval doesn't re-render the whole page */
 const CountdownTimer = memo(function CountdownTimer({
@@ -194,11 +198,13 @@ const CountdownTimer = memo(function CountdownTimer({
 interface SubscriptionProps {
   embedded?: boolean;
   selectedSubscriptionId?: number;
+  initiallyOpenAdditionalOptions?: boolean;
 }
 
 export default function Subscription({
   embedded = false,
   selectedSubscriptionId,
+  initiallyOpenAdditionalOptions = false,
 }: SubscriptionProps = {}) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -211,6 +217,7 @@ export default function Subscription({
   const g = getGlassColors(isDark);
   const haptic = useHaptic();
   const { openLink, platform } = usePlatform();
+  const reducedMotion = useReducedMotion();
   const { showToast } = useToast();
   const [showDeleteSheet, setShowDeleteSheet] = useState(false);
   const destructiveConfirm = useDestructiveConfirm();
@@ -230,7 +237,11 @@ export default function Subscription({
   const [selectedTrafficPackage, setSelectedTrafficPackage] = useState<number | null>(null);
   const [showServerManagement, setShowServerManagement] = useState(false);
   const [selectedServersToUpdate, setSelectedServersToUpdate] = useState<string[]>([]);
-  const [showAdditionalOptions, setShowAdditionalOptions] = useState(false);
+  const [showAdditionalOptions, setShowAdditionalOptions] = useState(
+    initiallyOpenAdditionalOptions,
+  );
+  const additionalOptionsSectionRef = useRef<HTMLDivElement>(null);
+  const didRevealInitialAdditionalOptions = useRef(false);
 
   // Traffic refresh state
   const [trafficRefreshCooldown, setTrafficRefreshCooldown] = useState(0);
@@ -1611,6 +1622,7 @@ export default function Subscription({
         (subscription.is_active || subscription.is_limited) &&
         !subscription.is_trial && (
           <div
+            ref={additionalOptionsSectionRef}
             className="relative overflow-hidden rounded-3xl"
             style={{
               background: g.cardBg,
@@ -1633,6 +1645,7 @@ export default function Subscription({
               }}
               className="flex min-h-11 w-full items-center justify-between gap-3 text-left"
               aria-expanded={showAdditionalOptions}
+              aria-controls="subscription-additional-options-panel"
             >
               <span className="text-sm font-semibold tracking-tight text-dark-50">
                 {t('subscription.additionalOptions.title')}
@@ -1642,128 +1655,155 @@ export default function Subscription({
               />
             </button>
 
-            {showAdditionalOptions && (
-              <div className="mt-3 space-y-3">
-                {subscription.device_limit !== 0 && (
-                  <>
-                    <DeviceTopupSheet
-                      open={showDeviceTopup}
-                      onOpen={() => {
-                        setShowDeviceTopup(true);
-                        setShowDeviceReduction(false);
-                        setShowTrafficTopup(false);
-                        setShowServerManagement(false);
-                      }}
-                      onClose={() => setShowDeviceTopup(false)}
-                      subscription={subscription}
-                      subscriptionId={subscriptionId}
-                      devicesToAdd={devicesToAdd}
-                      onDevicesToAddChange={setDevicesToAdd}
-                      purchaseOptions={purchaseOptions}
-                      isDark={isDark}
-                    />
-
-                    <DeviceReductionSheet
-                      open={showDeviceReduction}
-                      onOpen={() => {
-                        setShowDeviceTopup(false);
-                        setShowDeviceReduction(true);
-                        setShowTrafficTopup(false);
-                        setShowServerManagement(false);
-                      }}
-                      onClose={() => setShowDeviceReduction(false)}
-                      subscriptionPresent={!!subscription}
-                      subscriptionId={subscriptionId}
-                      targetDeviceLimit={targetDeviceLimit}
-                      onTargetDeviceLimitChange={setTargetDeviceLimit}
-                      isDark={isDark}
-                    />
-
-                    {subscription.traffic_limit_gb > 0 && (
-                      <TrafficTopupSheet
-                        open={showTrafficTopup}
-                        onOpen={() => {
-                          setShowDeviceTopup(false);
-                          setShowDeviceReduction(false);
-                          setShowTrafficTopup(true);
-                          setShowServerManagement(false);
-                        }}
-                        onClose={() => setShowTrafficTopup(false)}
-                        subscription={subscription}
-                        subscriptionId={subscriptionId}
-                        selectedTrafficPackage={selectedTrafficPackage}
-                        onSelectedTrafficPackageChange={setSelectedTrafficPackage}
-                        purchaseOptions={purchaseOptions}
-                        isDark={isDark}
-                      />
-                    )}
-
-                    {!isTariffsMode && (
-                      <ServerManagementSheet
-                        open={showServerManagement}
-                        onOpen={() => {
-                          setShowDeviceTopup(false);
-                          setShowDeviceReduction(false);
-                          setShowTrafficTopup(false);
-                          setShowServerManagement(true);
-                        }}
-                        onClose={() => setShowServerManagement(false)}
-                        subscription={subscription}
-                        subscriptionId={subscriptionId}
-                        selectedServers={selectedServersToUpdate}
-                        onSelectedServersChange={setSelectedServersToUpdate}
-                        purchaseOptions={purchaseOptions}
-                        isDark={isDark}
-                      />
-                    )}
-                  </>
-                )}
-
-                <button
-                  onClick={handleRevoke}
-                  disabled={revokeMutation.isPending || revokeCooldown > 0}
-                  className="w-full rounded-xl border border-warning-500/30 bg-warning-500/10 p-3 text-left transition-colors hover:bg-warning-500/20 disabled:opacity-50"
+            <AnimatePresence>
+              {showAdditionalOptions && (
+                <motion.div
+                  id="subscription-additional-options-panel"
+                  initial={reducedMotion ? false : { height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={reducedMotion ? undefined : { height: 0, opacity: 0 }}
+                  transition={{ duration: reducedMotion ? 0 : 0.2 }}
+                  className="overflow-hidden"
+                  onAnimationComplete={() => {
+                    if (
+                      !initiallyOpenAdditionalOptions ||
+                      didRevealInitialAdditionalOptions.current ||
+                      !window.matchMedia('(max-width: 767px)').matches
+                    ) {
+                      return;
+                    }
+                    didRevealInitialAdditionalOptions.current = true;
+                    additionalOptionsSectionRef.current?.scrollIntoView({
+                      behavior: reducedMotion ? 'auto' : 'smooth',
+                      block: 'start',
+                    });
+                  }}
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-medium text-warning-400">
-                        {t('subscription.revoke.button')}
-                      </div>
-                      <div className="mt-0.5 text-xs text-dark-400">
-                        {revokeCooldown > 0
-                          ? t('subscription.revoke.cooldown', {
-                              minutes: Math.floor(revokeCooldown / 60),
-                              seconds: revokeCooldown % 60,
-                            })
-                          : t('subscription.revoke.description')}
-                      </div>
-                    </div>
-                    <div className="shrink-0 text-warning-400">
-                      {revokeMutation.isPending ? (
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-warning-400/30 border-t-amber-400" />
-                      ) : (
-                        <svg
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={1.5}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"
+                  <div className="mt-3 space-y-3">
+                    {subscription.device_limit !== 0 && (
+                      <>
+                        <DeviceTopupSheet
+                          open={showDeviceTopup}
+                          onOpen={() => {
+                            setShowDeviceTopup(true);
+                            setShowDeviceReduction(false);
+                            setShowTrafficTopup(false);
+                            setShowServerManagement(false);
+                          }}
+                          onClose={() => setShowDeviceTopup(false)}
+                          subscription={subscription}
+                          subscriptionId={subscriptionId}
+                          devicesToAdd={devicesToAdd}
+                          onDevicesToAddChange={setDevicesToAdd}
+                          purchaseOptions={purchaseOptions}
+                          isDark={isDark}
+                        />
+
+                        <DeviceReductionSheet
+                          open={showDeviceReduction}
+                          onOpen={() => {
+                            setShowDeviceTopup(false);
+                            setShowDeviceReduction(true);
+                            setShowTrafficTopup(false);
+                            setShowServerManagement(false);
+                          }}
+                          onClose={() => setShowDeviceReduction(false)}
+                          subscriptionPresent={!!subscription}
+                          subscriptionId={subscriptionId}
+                          targetDeviceLimit={targetDeviceLimit}
+                          onTargetDeviceLimitChange={setTargetDeviceLimit}
+                          isDark={isDark}
+                        />
+
+                        {subscription.traffic_limit_gb > 0 && (
+                          <TrafficTopupSheet
+                            open={showTrafficTopup}
+                            onOpen={() => {
+                              setShowDeviceTopup(false);
+                              setShowDeviceReduction(false);
+                              setShowTrafficTopup(true);
+                              setShowServerManagement(false);
+                            }}
+                            onClose={() => setShowTrafficTopup(false)}
+                            subscription={subscription}
+                            subscriptionId={subscriptionId}
+                            selectedTrafficPackage={selectedTrafficPackage}
+                            onSelectedTrafficPackageChange={setSelectedTrafficPackage}
+                            purchaseOptions={purchaseOptions}
+                            isDark={isDark}
                           />
-                        </svg>
-                      )}
-                    </div>
+                        )}
+
+                        {SHOW_SERVER_MANAGEMENT_OPTION && !isTariffsMode && (
+                          <ServerManagementSheet
+                            open={showServerManagement}
+                            onOpen={() => {
+                              setShowDeviceTopup(false);
+                              setShowDeviceReduction(false);
+                              setShowTrafficTopup(false);
+                              setShowServerManagement(true);
+                            }}
+                            onClose={() => setShowServerManagement(false)}
+                            subscription={subscription}
+                            subscriptionId={subscriptionId}
+                            selectedServers={selectedServersToUpdate}
+                            onSelectedServersChange={setSelectedServersToUpdate}
+                            purchaseOptions={purchaseOptions}
+                            isDark={isDark}
+                          />
+                        )}
+                      </>
+                    )}
+
+                    <button
+                      onClick={handleRevoke}
+                      disabled={revokeMutation.isPending || revokeCooldown > 0}
+                      className="w-full rounded-xl border border-warning-500/30 bg-warning-500/10 p-3 text-left transition-colors hover:bg-warning-500/20 disabled:opacity-50"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-medium text-warning-400">
+                            {t('subscription.revoke.button')}
+                          </div>
+                          <div className="mt-0.5 text-xs text-dark-400">
+                            {revokeCooldown > 0
+                              ? t('subscription.revoke.cooldown', {
+                                  minutes: Math.floor(revokeCooldown / 60),
+                                  seconds: revokeCooldown % 60,
+                                })
+                              : t('subscription.revoke.description')}
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-warning-400">
+                          {revokeMutation.isPending ? (
+                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-warning-400/30 border-t-amber-400" />
+                          ) : (
+                            <svg
+                              className="h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={1.5}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                    {revokeMutation.error && (
+                      <p className="text-sm text-error-400">
+                        {getErrorMessage(revokeMutation.error)}
+                      </p>
+                    )}
                   </div>
-                </button>
-                {revokeMutation.error && (
-                  <p className="text-sm text-error-400">{getErrorMessage(revokeMutation.error)}</p>
-                )}
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
     </div>

@@ -1,8 +1,8 @@
 # Карта интерфейса Custom Cabinet
 
-Дата фиксации: 1 сентября 2026 года<br>
-Исходная точка: `e873a42` (`Improve classic purchase order summary`) и текущая локальная реализация<br>
-Версия проекта: `1.65.0`
+Дата фиксации: 2 сентября 2026 года<br>
+Исходная точка: `4638234` (`Reset scroll on regular route changes`) и текущая локальная реализация<br>
+Версия проекта: `1.66.0`
 
 ## 1. Назначение документа
 
@@ -215,6 +215,7 @@ Unread tickets показываются badge на пункте Поддержк
 |---|---|---|
 | `/subscriptions` | Unified Dashboard | Compatibility entry на единый центр подписки |
 | `/subscriptions/:subscriptionId` | Unified Dashboard + management overlay | Выбранная подписка и вторичные действия |
+| `/subscriptions/:subscriptionId?section=additional-options` | Unified Dashboard + management overlay | Управление подпиской с раскрытыми «Дополнительными опциями» для перехода из управления устройствами |
 | `/subscriptions/:subscriptionId/renew` | RenewSubscription | Продление подписки |
 | `/subscription/purchase` | SubscriptionPurchase | Покупка или смена тарифа |
 | `/subscription/:subscriptionId` | Legacy redirect | Переход на `/subscriptions/:subscriptionId` |
@@ -232,7 +233,7 @@ flowchart LR
   LIST --> PURCHASE
 ```
 
-Экран деталей использует sheets без собственного URL для добавления и уменьшения числа устройств, покупки трафика, управления сервером и удаления подписки.
+Экран деталей использует sheets без собственного URL для добавления и уменьшения числа устройств, покупки трафика, управления сервером и удаления подписки. Параметр `section=additional-options` восстанавливает раскрытый раздел дополнительных действий, но не открывает конкретный sheet покупки.
 
 ### 7.3. Подключение устройства
 

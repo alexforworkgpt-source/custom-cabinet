@@ -689,7 +689,7 @@
       "buy": "Купить",
       "reduceDevices": "Уменьшить устройства",
       "reduceDevicesTitle": "Уменьшить лимит устройств",
-      "reduceDevicesDescription": "Вы можете уменьшить количество устройств до минимального на тарифе",
+      "reduceDevicesDescription": "Вы можете уменьшить количество устройств.",
       "minDeviceLimit_one": "Минимум на тарифе: {{count}} устройство",
       "minDeviceLimit_few": "Минимум на тарифе: {{count}} устройства",
       "minDeviceLimit_many": "Минимум на тарифе: {{count}} устройств",

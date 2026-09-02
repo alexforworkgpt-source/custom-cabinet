@@ -202,12 +202,15 @@ test('opens device management for a full limit and keeps delete, add-slots, Back
 
   await manageDevices.click();
   await dialog.getByRole('button', { name: 'Buy more devices' }).click();
-  await expect(page).toHaveURL('/subscriptions/7');
+  await expect(page).toHaveURL('/subscriptions/7?section=additional-options');
   const managementDialog = page.getByRole('dialog');
   await expect(
     managementDialog.getByRole('heading', { name: 'Manage subscription' }),
   ).toBeVisible();
-  await expect(managementDialog.getByRole('button', { name: 'Additional Options' })).toBeVisible();
+  const additionalOptions = managementDialog.getByRole('button', { name: 'Additional Options' });
+  await expect(additionalOptions).toHaveAttribute('aria-expanded', 'true');
+  await expect(managementDialog.getByRole('button', { name: 'Buy more devices' })).toBeInViewport();
+  await expect(managementDialog.getByRole('button', { name: /Squad management/ })).toHaveCount(0);
 
   await page.keyboard.press('Escape');
   await expect(page).toHaveURL('/?sub=7');
@@ -239,6 +242,6 @@ test('opens device management for a full limit and keeps delete, add-slots, Back
   expect(new URL(deleteResponse.url()).searchParams.get('subscription_id')).toBe('7');
   await expect(dialog.getByText('Laptop 1', { exact: true })).toHaveCount(0);
   await expect(dialog.getByRole('button', { name: 'Delete device' })).toHaveCount(2);
-  await expect(dialog.getByText('2 / 3')).toBeVisible();
+  await expect(dialog.getByText('Devices: 2 of 3', { exact: true })).toBeVisible();
   expect([...unexpectedApiRequests]).toEqual([]);
 });
