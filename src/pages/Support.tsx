@@ -361,11 +361,9 @@ export default function Support() {
       animate="animate"
     >
       <motion.div variants={staggerItem} className="space-y-4">
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('support.title')}</h1>
-        {!showCreateForm && !selectedTicket && <SupportInstructionsCard />}
-        <div className="flex sm:justify-end">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('support.title')}</h1>
           <Button
-            className="w-full sm:w-auto"
             onClick={() => {
               setShowCreateForm(true);
               setSelectedTicket(null);
@@ -377,6 +375,7 @@ export default function Support() {
             <span className="ml-2">{t('support.newTicket')}</span>
           </Button>
         </div>
+        {!showCreateForm && !selectedTicket && <SupportInstructionsCard />}
       </motion.div>
 
       {/* Contact support card for "both" mode — self-animated: mounts after the

@@ -13,7 +13,7 @@ const responses = {
   '/api/cabinet/tickets': { items: [], total: 0, page: 1, per_page: 20, pages: 0 },
 };
 
-test('offers instructions before a new ticket and returns from an article to Support', async ({
+test('places instructions below New Ticket and returns from an article to Support', async ({
   page,
 }) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, { responses });
@@ -21,10 +21,25 @@ test('offers instructions before a new ticket and returns from an article to Sup
   const instructions = page.getByRole('link', { name: 'Open instructions', exact: true });
   const newTicket = page.getByRole('button', { name: 'New Ticket', exact: true });
   await expect(instructions).toHaveAttribute('href', '/instructions');
-  const instructionsBox = await instructions.boundingBox();
+  // Wait for stable layout after the entrance animation without opening the form.
+  await newTicket.click({ trial: true });
+  const instructionsBox = await page
+    .getByRole('region', { name: 'Instructions and setup', exact: true })
+    .boundingBox();
   const newTicketBox = await newTicket.boundingBox();
   if (!instructionsBox || !newTicketBox) throw new Error('Both support actions must be visible');
-  expect(instructionsBox.y + instructionsBox.height).toBeLessThanOrEqual(newTicketBox.y);
+  expect(newTicketBox.y + newTicketBox.height).toBeLessThanOrEqual(instructionsBox.y);
+  const headingBox = await page.getByRole('heading', { name: 'Support', level: 1 }).boundingBox();
+  if (!headingBox) throw new Error('The support heading must be visible');
+  if ((page.viewportSize()?.width ?? 0) >= 640) {
+    expect(newTicketBox.x).toBeGreaterThanOrEqual(headingBox.x + headingBox.width);
+    expect(
+      Math.abs(newTicketBox.y + newTicketBox.height / 2 - (headingBox.y + headingBox.height / 2)),
+    ).toBeLessThanOrEqual(1);
+  } else {
+    expect(newTicketBox.y).toBeGreaterThanOrEqual(headingBox.y + headingBox.height);
+    expect(Math.abs(newTicketBox.width - instructionsBox.width)).toBeLessThanOrEqual(1);
+  }
 
   await instructions.click();
   await expect(page).toHaveURL('/instructions');
