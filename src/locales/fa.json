@@ -57,6 +57,7 @@
     "navigation": "ناوبری"
   },
   "instructions": {
+    "backToSupport": "بازگشت به پشتیبانی",
     "eyebrow": "راهنمای پنل",
     "title": "راهنما و راه‌اندازی",
     "subtitle": "راهنمای گام‌به‌گام اتصال VPN و مدیریت حساب.",
@@ -1057,6 +1058,8 @@
     }
   },
   "support": {
+    "instructionsDescription": "پیش از تماس با پشتیبانی، راهنماها را ببینید؛ شاید پاسخ پرسشتان آنجا باشد.",
+    "openInstructions": "مشاهده راهنماها",
     "title": "پشتیبانی",
     "newTicket": "تیکت جدید",
     "yourTickets": "تیکت‌های شما",

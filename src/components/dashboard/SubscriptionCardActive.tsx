@@ -25,6 +25,7 @@ interface SubscriptionCardActiveProps {
   connectionUrl?: string | null;
   connectionUrlCopied?: boolean;
   onCopyConnectionUrl?: () => void;
+  onOpenConnectionQr: () => void;
   onConnectDevice: () => void;
   onManageDevices: () => void;
   onRetryDevices: () => void;
@@ -43,6 +44,7 @@ export default function SubscriptionCardActive({
   connectionUrl,
   connectionUrlCopied = false,
   onCopyConnectionUrl,
+  onOpenConnectionQr,
   onConnectDevice,
   onManageDevices,
   onRetryDevices,
@@ -364,6 +366,7 @@ export default function SubscriptionCardActive({
         connectionUrl={connectionUrl}
         connectionUrlCopied={connectionUrlCopied}
         onCopyConnectionUrl={onCopyConnectionUrl}
+        onOpenConnectionQr={onOpenConnectionQr}
         onConnectDevice={onConnectDevice}
         onManageDevices={onManageDevices}
         onRetryDevices={onRetryDevices}

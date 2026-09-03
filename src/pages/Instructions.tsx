@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
+import { InstructionSupportReturn } from '@/components/instructions/InstructionSupportReturn';
 import {
   BookOpenIcon,
   ChevronRightIcon,
@@ -24,6 +25,7 @@ const categoryIcons = {
 
 export default function Instructions() {
   const { t, i18n } = useTranslation();
+  const fromSupport = useLocation().state?.instructionsOrigin === 'support';
   const isRussian = i18n.language.split('-')[0] === 'ru';
 
   return (
@@ -34,6 +36,7 @@ export default function Instructions() {
       animate="animate"
     >
       <motion.header variants={staggerItem} className="max-w-2xl space-y-2">
+        <InstructionSupportReturn fromSupport={fromSupport} />
         <div className="flex items-center gap-3 text-accent-400">
           <BookOpenIcon className="h-6 w-6" />
           <span className="text-sm font-semibold uppercase tracking-[0.14em]">
@@ -81,6 +84,7 @@ export default function Instructions() {
                   <Link
                     key={article.slug}
                     to={`/instructions/${article.slug}`}
+                    state={fromSupport ? { instructionsOrigin: 'support' } : undefined}
                     className="group flex min-h-24 items-start gap-3 rounded-2xl border border-dark-700/70 bg-dark-800/50 p-4 transition-colors hover:border-accent-500/40 hover:bg-dark-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400"
                   >
                     <div className="min-w-0 flex-1">

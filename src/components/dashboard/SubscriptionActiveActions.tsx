@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { CheckIcon, CopyIcon, SettingsIcon } from '@/components/icons';
+import { CheckIcon, CopyIcon, QrCodeIcon, SettingsIcon } from '@/components/icons';
+import { Button } from '@/components/primitives/Button';
 import { useTheme } from '@/hooks/useTheme';
 import { getGlassColors } from '@/utils/glassTheme';
 import type { Subscription } from '@/types';
@@ -13,6 +14,7 @@ interface SubscriptionActiveActionsProps {
   connectionUrl?: string | null;
   connectionUrlCopied?: boolean;
   onCopyConnectionUrl?: () => void;
+  onOpenConnectionQr: () => void;
   onConnectDevice: () => void;
   onManageDevices: () => void;
   onRetryDevices: () => void;
@@ -28,6 +30,7 @@ export function SubscriptionActiveActions({
   connectionUrl,
   connectionUrlCopied = false,
   onCopyConnectionUrl,
+  onOpenConnectionQr,
   onConnectDevice,
   onManageDevices,
   onRetryDevices,
@@ -38,6 +41,8 @@ export function SubscriptionActiveActions({
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const g = getGlassColors(isDark);
+  const connectionActionClassName =
+    'group flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-[14px] bg-dark-900/95 px-3 transition-colors duration-300 lg:bg-dark-900/90';
   const connectState = connectFooterState({
     status: subscription.status,
     subscriptionUrl: subscription.subscription_url,
@@ -73,7 +78,7 @@ export function SubscriptionActiveActions({
           <button
             type="button"
             onClick={onCopyConnectionUrl}
-            className="group flex min-h-11 min-w-11 items-center justify-center rounded-[14px] bg-dark-900/95 px-3 transition-colors duration-300 lg:bg-dark-900/90"
+            className={connectionActionClassName}
             style={{
               background: connectionUrlCopied ? 'rgba(var(--color-accent-400), 0.12)' : undefined,
               border: connectionUrlCopied
@@ -91,6 +96,22 @@ export function SubscriptionActiveActions({
               <CopyIcon className="transition-colors duration-200 group-hover:text-accent-400" />
             )}
           </button>
+          <Button
+            type="button"
+            variant="ghost"
+            size={null}
+            onClick={onOpenConnectionQr}
+            className={connectionActionClassName}
+            style={{
+              border: `1px solid ${g.cardBorder}`,
+              boxShadow: g.shadow,
+              color: g.textMuted,
+            }}
+            aria-label={t('subscription.connection.openQr')}
+            title={t('subscription.connection.openQr')}
+          >
+            <QrCodeIcon className="transition-colors duration-200 group-hover:text-accent-400" />
+          </Button>
         </div>
       )}
 

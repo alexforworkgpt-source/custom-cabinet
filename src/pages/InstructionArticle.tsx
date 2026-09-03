@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Link, useParams } from 'react-router';
+import { Link, useLocation, useParams } from 'react-router';
 import {
   BackIcon,
   BookOpenIcon,
@@ -10,6 +10,7 @@ import {
   InfoIcon,
 } from '@/components/icons';
 import { InstructionImage } from '@/components/instructions/InstructionImage';
+import { InstructionSupportReturn } from '@/components/instructions/InstructionSupportReturn';
 import { staggerContainer, staggerItem } from '@/components/motion/transitions';
 import { getInstructionArticle, type InstructionStep } from '@/content/instructionArticles';
 import { getInstructionImageAlt, getInstructionImageData } from '@/content/instructionImages';
@@ -64,6 +65,8 @@ function InstructionSteps({
 export default function InstructionArticlePage() {
   const { t } = useTranslation();
   const { slug } = useParams();
+  const fromSupport = useLocation().state?.instructionsOrigin === 'support';
+  const instructionState = fromSupport ? { instructionsOrigin: 'support' } : undefined;
   const article = getInstructionArticle(slug);
   const [openScenario, setOpenScenario] = useState<string | null>(null);
   const reducedMotion = useReducedMotion();
@@ -76,7 +79,7 @@ export default function InstructionArticlePage() {
         <p className="mt-2 max-w-md text-sm leading-relaxed text-dark-400">
           {t('instructions.notFound.description')}
         </p>
-        <Link to="/instructions" className="btn-primary mt-6">
+        <Link to="/instructions" state={instructionState} className="btn-primary mt-6">
           {t('instructions.backToAll')}
         </Link>
       </main>
@@ -97,13 +100,17 @@ export default function InstructionArticlePage() {
       animate="animate"
     >
       <motion.div variants={staggerItem}>
-        <Link
-          to="/instructions"
-          className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-800/70 hover:text-dark-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400"
-        >
-          <BackIcon className="h-5 w-5 rtl:rotate-180" />
-          {t('instructions.backToAll')}
-        </Link>
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          <Link
+            to="/instructions"
+            state={instructionState}
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-800/70 hover:text-dark-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400"
+          >
+            <BackIcon className="h-5 w-5 rtl:rotate-180" />
+            {t('instructions.backToAll')}
+          </Link>
+          <InstructionSupportReturn fromSupport={fromSupport} />
+        </div>
 
         <header className="space-y-3">
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-accent-400">
@@ -232,6 +239,7 @@ export default function InstructionArticlePage() {
                 <Link
                   key={related.slug}
                   to={`/instructions/${related.slug}`}
+                  state={instructionState}
                   className="group flex min-h-14 items-center gap-3 rounded-xl border border-dark-700 bg-dark-800/50 px-4 py-3 text-sm font-semibold text-dark-200 transition-colors hover:border-accent-500/40 hover:text-accent-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400"
                 >
                   <span className="min-w-0 flex-1">{related.title}</span>

@@ -57,6 +57,7 @@
     "navigation": "导航"
   },
   "instructions": {
+    "backToSupport": "返回支持页面",
     "eyebrow": "个人中心指南",
     "title": "使用说明和设置",
     "subtitle": "VPN 连接和账户管理的分步指南。",
@@ -1057,6 +1058,8 @@
     }
   },
   "support": {
+    "instructionsDescription": "联系客服前，请先查看使用指南，也许其中已有您需要的答案。",
+    "openInstructions": "查看指南",
     "title": "支持",
     "newTicket": "新工单",
     "yourTickets": "您的工单",

@@ -639,6 +639,17 @@ export default function Dashboard() {
           devicesError={devicesError}
           connectionUrl={shouldHideConnectionLink ? null : displayedConnectionUrl}
           connectionUrlCopied={subscriptionLinkCopied}
+          onOpenConnectionQr={() => {
+            if (!displayedConnectionUrl || shouldHideConnectionLink) return;
+            navigate('/connection/qr', {
+              state: {
+                url: displayedConnectionUrl,
+                hideLink: false,
+                subscriptionId: subscription.id,
+                returnPath: getCabinetClosePath(subscription.id),
+              },
+            });
+          }}
           onCopyConnectionUrl={() => {
             if (!displayedConnectionUrl) return;
             void copyToClipboard(displayedConnectionUrl);

@@ -31,6 +31,7 @@ import {
   PiPencilSimple,
   PiPlay,
   PiPlus,
+  PiQrCode,
   PiShield,
   PiSignOut,
   PiSparkle,
@@ -98,6 +99,10 @@ export const ArrowRightIcon = ({ className }: IconProps) => (
 );
 
 // Actions
+export const QrCodeIcon = ({ className }: IconProps) => (
+  <PiQrCode className={cn('h-5 w-5', className)} aria-hidden="true" />
+);
+
 export const SearchIcon = ({ className }: IconProps) => (
   <PiMagnifyingGlass className={cn('h-5 w-5', className)} />
 );

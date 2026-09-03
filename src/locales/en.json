@@ -57,6 +57,7 @@
     "navigation": "Navigation"
   },
   "instructions": {
+    "backToSupport": "Back to support",
     "eyebrow": "Cabinet guide",
     "title": "Instructions and setup",
     "subtitle": "Step-by-step guides for connecting VPN and managing your account.",
@@ -1184,6 +1185,8 @@
     }
   },
   "support": {
+    "instructionsDescription": "Before contacting support, check the instructions — your answer may already be there.",
+    "openInstructions": "Open instructions",
     "title": "Support",
     "newTicket": "New Ticket",
     "yourTickets": "Your Tickets",

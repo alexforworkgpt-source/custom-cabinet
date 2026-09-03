@@ -21,7 +21,10 @@ function isValidState(state: unknown): state is ConnectionQRState {
     typeof s.hideLink === 'boolean' &&
     (s.returnPath === undefined ||
       (typeof s.returnPath === 'string' &&
-        (s.returnPath === '/connection' || s.returnPath.startsWith('/connection?'))))
+        (s.returnPath === '/' ||
+          /^\/\?sub=[1-9]\d*$/.test(s.returnPath) ||
+          s.returnPath === '/connection' ||
+          s.returnPath.startsWith('/connection?'))))
   );
 }
 

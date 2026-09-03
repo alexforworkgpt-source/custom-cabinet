@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ticketsApi } from '../api/tickets';
 import { MessageMediaGrid } from '../components/tickets/MessageMediaGrid';
+import { SupportInstructionsCard } from '../components/tickets/SupportInstructionsCard';
 import { infoApi } from '../api/info';
 import { useAuthStore } from '../store/auth';
 import { logger } from '../utils/logger';
@@ -288,12 +289,13 @@ export default function Support() {
     const supportMessage = getSupportMessage();
 
     return (
-      <div className="mx-auto mt-12 max-w-md">
+      <div className="mx-auto max-w-3xl space-y-6">
+        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{supportMessage.title}</h1>
+        <SupportInstructionsCard />
         <Card size="lg" className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800">
             <ChatIcon className="h-8 w-8 text-dark-400" />
           </div>
-          <h2 className="mb-2 text-xl font-semibold text-dark-100">{supportMessage.title}</h2>
           <p className="mb-6 text-dark-400">{supportMessage.message}</p>
           {contact && (
             <Button onClick={() => openSupportContact(supportConfig)} fullWidth>
@@ -358,22 +360,23 @@ export default function Support() {
       initial="initial"
       animate="animate"
     >
-      <motion.div
-        variants={staggerItem}
-        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
+      <motion.div variants={staggerItem} className="space-y-4">
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('support.title')}</h1>
-        <Button
-          onClick={() => {
-            setShowCreateForm(true);
-            setSelectedTicket(null);
-            setFormError(null);
-            clearCreateAttachments();
-          }}
-        >
-          <PlusIcon />
-          <span className="ml-2">{t('support.newTicket')}</span>
-        </Button>
+        {!showCreateForm && !selectedTicket && <SupportInstructionsCard />}
+        <div className="flex sm:justify-end">
+          <Button
+            className="w-full sm:w-auto"
+            onClick={() => {
+              setShowCreateForm(true);
+              setSelectedTicket(null);
+              setFormError(null);
+              clearCreateAttachments();
+            }}
+          >
+            <PlusIcon />
+            <span className="ml-2">{t('support.newTicket')}</span>
+          </Button>
+        </div>
       </motion.div>
 
       {/* Contact support card for "both" mode — self-animated: mounts after the
