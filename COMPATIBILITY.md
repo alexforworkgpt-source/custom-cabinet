@@ -8,24 +8,57 @@ identifiers, not public branding.
 
 | Component | Version or reference | Exact source |
 | --- | --- | --- |
-| Custom Cabinet | `1.66.0`; latest published candidate `cabinet-v2026.08.28.1` through Release Bundle `v2026.08.28`; production remains on `cabinet-v2026.08.24.4` through `v2026.08.24` | Latest released source `2a49b1350ab98e177c0d62d26462381aeca97648`; immutable tags point to their recorded commits |
+| Custom Cabinet | `1.66.0`; source reference for the owner-reported production update from `main`, not a new Release Bundle | `7c88d7bc0839608e3a652a9ee0d338922c5b7713`; latest recorded released source `2a49b1350ab98e177c0d62d26462381aeca97648` through `cabinet-v2026.08.28.1` / `v2026.08.28` |
 | Upstream Cabinet baseline | `v1.66.0` | `2192484b011068d8cb75c61a6aeaada1d06115aa` |
 | Upstream Cabinet source | Repository | <https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git> |
-| Upstream Bot | `v4.1.0` | `49b05d5ab79dd9bb92f0404bb0066cda8a175649` |
+| Upstream Bot | Last verified Bundle baseline `v4.1.0`; production identity not rechecked in September | `49b05d5ab79dd9bb92f0404bb0066cda8a175649` |
 | Node.js development baseline | 20+ | Declared in `README.md` |
 
 The current upstream source identity is also recorded in
 [`UPSTREAM.md`](UPSTREAM.md). If this table and `UPSTREAM.md` disagree, stop and
 resolve the provenance mismatch before synchronization or release.
 
-## Current Release Verification
+## Post-Bundle Custom Cabinet Update
 
-Production has separate management and runtime reference points. The management
-Installer is `v2026.08.25`, while the running Release Bundle remains
-`v2026.08.24`. The management-only update did not run Protected Update and did
-not change the runtime identities below. The newer `v2026.08.28` Bundle was
-published and passed a fresh targeted installation on the disposable integration
-VPS, but it was not deployed to production. Physical-device and staging product
+The source reference for the production update recorded on `2026-09-03` is
+`7c88d7bc0839608e3a652a9ee0d338922c5b7713`. The owner reported deploying Custom
+Cabinet directly from `main` and confirmed it works. This is a source update,
+not a newly published or verified Release Bundle. Existing immutable tags and
+Bundle records below are unchanged.
+
+Later commits on `main` are development changes, not evidence of a subsequent
+production update or a new verified Bundle combination.
+
+The authenticated production browser smoke on `2026-09-02` passed for
+Dashboard, subscription management, devices, Connection, Balance, Profile and
+Support. It checked the device counter, automatic expansion of additional
+options, hidden location management, shortened copy, session persistence after
+reload and narrow layout, with no observed console errors or warnings. The
+owner separately confirmed the Admin button, not the complete administrative
+console. No payment, settings mutation or device deletion was performed.
+
+Pre-publication source checks passed: Biome, 286 unit tests, TypeScript,
+production build and Playwright (299 passed, 6 configured skips). These source
+checks and the browser smoke do not establish an exact new Bot/Bundle
+compatibility record. The VPS Git SHA, Installer, Upstream Bot, image digests,
+database schema, Bundle metadata, server logs and complete network status were
+not rechecked. VPS diagnostics were excluded by the owner; physical-device and
+staging checks remain unverified.
+
+Previous owner-confirmed working source:
+`4638234f8bb9de8816263fe69df8709f66041513`. This is not evidence of a prepared
+rollback artifact on the VPS.
+
+## Historical Release Verification (through 2026-08-28)
+
+Production had separate management and runtime reference points at the recorded
+verification date. The management Installer was `v2026.08.25`, while the running
+Release Bundle was `v2026.08.24`. That management-only update did not run
+Protected Update and did not change the runtime identities below. The newer
+`v2026.08.28` Bundle was published and passed a fresh targeted installation on
+the disposable integration VPS, but it was not deployed to production at that
+date. These identities are a historical baseline, not the complete current
+runtime after the source update above. Physical-device and staging product
 gates remain `BLOCKED`; they are not implied by publication or infrastructure
 smoke results.
 

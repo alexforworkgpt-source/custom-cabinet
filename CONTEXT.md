@@ -11,20 +11,49 @@ The product has three interface modes:
 2. User Cabinet for subscriptions, connection, payments and account management.
 3. Administrative console protected by roles and permissions.
 
-## Current Release Reference
+## Current Source and Production Reference
 
-As of `2026-08-28`, `main` contains the released Upstream Cabinet `v1.66.0`
-integration through `92906d0e9a128d0a6cdf0f056996e4db44d72d94`.
+The source reference for the owner-reported production update recorded on
+`2026-09-03` is
+`7c88d7bc0839608e3a652a9ee0d338922c5b7713` (`Improve subscription management
+clarity`). This source retains the Upstream Cabinet `v1.66.0` integration
+through `92906d0e9a128d0a6cdf0f056996e4db44d72d94`.
 
-- Latest published candidate: Custom Cabinet `cabinet-v2026.08.28.1`, commit
+Later commits on `main` do not imply another production deployment. Inspect
+Git for the current development source; keep this production reference until
+the owner confirms a subsequent update.
+
+- The owner reported updating production Custom Cabinet directly from `main`
+  to this source reference, without creating a new Release or Release Bundle.
+  An authenticated browser smoke on `2026-09-02` confirmed the updated user
+  flows. The owner separately confirmed the Admin button; this is not a full
+  administrative-console verification.
+- The smoke covered Dashboard, subscription management, devices, Connection,
+  Balance, Profile and Support, session persistence after reload and narrow
+  layout. No console errors or warnings were observed. Payments, settings
+  changes and device deletion were not performed.
+- The exact Git SHA on the VPS and current Installer, Upstream Bot, image,
+  database and Bundle metadata identities were not inspected during this
+  browser smoke. VPS diagnostics were excluded by the owner. Do not infer a
+  fully verified Release Bundle combination from this UI check.
+- Previous owner-confirmed working Custom Cabinet source:
+  `4638234f8bb9de8816263fe69df8709f66041513`. This source reference does not
+  establish that a ready-to-apply rollback artifact exists on the VPS.
+
+## Historical Release Reference
+
+The following references retain the result recorded through `2026-08-28`;
+they do not describe the September Custom Cabinet source update above.
+
+- Latest recorded published candidate: Custom Cabinet `cabinet-v2026.08.28.1`, commit
   `2a49b1350ab98e177c0d62d26462381aeca97648`, through Release Bundle
   `v2026.08.28`. Public assets and a fresh disposable-VPS smoke passed; this
-  candidate has not been deployed to production.
-- Production management Installer: `v2026.08.25`, commit
+  candidate had not been deployed to production at that verification date.
+- Last verified production management Installer: `v2026.08.25`, commit
   `27e73f662297bbfe459af86cbe00b2a132d8ac0e`.
-- Running production Release Bundle: `v2026.08.24`, policy
+- Last fully verified production Release Bundle baseline: `v2026.08.24`, policy
   `rollback-compatible`.
-- Production Custom Cabinet: `cabinet-v2026.08.24.4`, commit
+- Custom Cabinet in that historical Bundle: `cabinet-v2026.08.24.4`, commit
   `3250e3a7f31fc2dc6f2c7779a42d86cf99a03210`.
 - Production baseline, transition, Status, Diagnostics, health, exact runtime
   identities and authorized browser smoke passed. The later Installer update
