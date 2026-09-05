@@ -19,17 +19,26 @@ The source reference for the latest owner-reported production update on
 support instructions entry`). This source retains the Upstream Cabinet
 `v1.66.0` integration through `92906d0e9a128d0a6cdf0f056996e4db44d72d94`.
 
-The release-preparation source is
-`13ec9332f49a276f6afdce8b698b78eb0902293c` (`Restore support header layout
-above instructions`). Its production deployment has not been confirmed. Later
-commits on `main` do not imply another production deployment; inspect Git for
-the current development source.
+The latest immutable release is Custom Cabinet `cabinet-v2026.09.05.1` at
+`5cf81e74dcacad02336e57af6f71d490688cdf88` through Release Bundle
+`v2026.09.05`. Its functional application source is
+`13ec9332f49a276f6afdce8b698b78eb0902293c`; the tagged commit adds release
+documentation. Deployment of this exact tagged source has not been confirmed.
+Later commits on `main` do not imply another production deployment; inspect Git
+for the current development source.
 
 The full browser matrix reproduced untranslated labels in Telegram login and
 Dashboard recommendations. On `2026-09-05`, the owner explicitly accepted this
 known limitation for the current release and deferred the translation-loading
 fix to a later task. See the dated preparation gate in `COMPATIBILITY.md`; do
 not reinterpret the release decision as a browser-gate pass.
+
+The release workflow and independent public-asset verification passed on
+`2026-09-05`. The owner skipped a separate disposable-VPS installation because
+Custom Cabinet had already been updated from `main`. The earlier owner-reported
+VPS update points to `2346ea3`, not the release commit `5cf81e7`; therefore it
+must not be treated as proof of the exact Release Bundle combination. See
+`LIVE_CHECK_REPORT_2026.09.05.md`.
 
 - The owner supplied an Installer update log showing a fast-forward from
   `7c88d7bc` to `2346ea32`, a completed frontend build and a successful Cabinet
@@ -54,13 +63,14 @@ not reinterpret the release decision as a browser-gate pass.
 
 ## Historical Release Reference
 
-The following references retain the result recorded through `2026-08-28`;
-they do not describe the September Custom Cabinet source update above.
+The following references distinguish the current published candidate from the
+last fully verified production baseline.
 
-- Latest recorded published candidate: Custom Cabinet `cabinet-v2026.08.28.1`, commit
-  `2a49b1350ab98e177c0d62d26462381aeca97648`, through Release Bundle
-  `v2026.08.28`. Public assets and a fresh disposable-VPS smoke passed; this
-  candidate had not been deployed to production at that verification date.
+- Latest published candidate: Custom Cabinet `cabinet-v2026.09.05.1`, commit
+  `5cf81e74dcacad02336e57af6f71d490688cdf88`, through Release Bundle
+  `v2026.09.05`. Publication and independent public-asset verification passed.
+  The translation-loading limitation was accepted by the owner; a separate
+  disposable-VPS installation was skipped by owner decision.
 - Last verified production management Installer: `v2026.08.25`, commit
   `27e73f662297bbfe459af86cbe00b2a132d8ac0e`.
 - Last fully verified production Release Bundle baseline: `v2026.08.24`, policy

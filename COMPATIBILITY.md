@@ -8,8 +8,8 @@ identifiers, not public branding.
 
 | Component | Version or reference | Exact source |
 | --- | --- | --- |
-| Custom Cabinet | `1.66.0`; source reference for the latest owner-reported production update from `main`, not a new Release Bundle | `2346ea323030e2330fff90dcf01756db68cdbbcf`; latest recorded released source `2a49b1350ab98e177c0d62d26462381aeca97648` through `cabinet-v2026.08.28.1` / `v2026.08.28` |
-| Custom Cabinet release-preparation source | Development source; production deployment not confirmed | `13ec9332f49a276f6afdce8b698b78eb0902293c` |
+| Custom Cabinet | `1.66.0`; latest immutable release | `cabinet-v2026.09.05.1` / `5cf81e74dcacad02336e57af6f71d490688cdf88`; latest owner-reported production update from `main`: `2346ea323030e2330fff90dcf01756db68cdbbcf` |
+| Custom Cabinet functional release source | Application source below the release documentation commit | `13ec9332f49a276f6afdce8b698b78eb0902293c` |
 | Upstream Cabinet baseline | `v1.66.0` | `2192484b011068d8cb75c61a6aeaada1d06115aa` |
 | Upstream Cabinet source | Repository | <https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git> |
 | Upstream Bot | Last verified Bundle baseline `v4.1.0`; production identity not rechecked in September | `49b05d5ab79dd9bb92f0404bb0066cda8a175649` |
@@ -28,9 +28,12 @@ frontend build and a successful update, then confirmed the buttons work.
 This is a source update directly from `main`, not a newly published or verified
 Release Bundle. Existing immutable tags and Bundle records below are unchanged.
 
-Later commits on `main` are development changes, not evidence of a subsequent
-production update or a new verified Bundle combination. This includes the
-support-header layout change in `13ec9332f49a276f6afdce8b698b78eb0902293c`.
+The later support-header layout change in
+`13ec9332f49a276f6afdce8b698b78eb0902293c` was included in Custom Cabinet
+release `cabinet-v2026.09.05.1`; release commit
+`5cf81e74dcacad02336e57af6f71d490688cdf88` adds only release documentation.
+Neither commit is evidence that the exact tagged source was installed on the
+VPS.
 
 The earlier authenticated production browser smoke on `2026-09-02`, for source
 `7c88d7bc0839608e3a652a9ee0d338922c5b7713`, passed for
@@ -56,11 +59,12 @@ Previous owner-confirmed working source:
 `4638234f8bb9de8816263fe69df8709f66041513`. These are not evidence of a prepared
 rollback artifact on the VPS.
 
-## Release Preparation Gate (2026-09-03)
+## Release Publication Gate (2026-09-05)
 
-Source under test: `13ec9332f49a276f6afdce8b698b78eb0902293c`. This preparation
-changes documentation only; source code, tests and dependencies remain at that
-commit. No new Release or Release Bundle has been published.
+Functional source under test:
+`13ec9332f49a276f6afdce8b698b78eb0902293c`. The immutable release tag points to
+`5cf81e74dcacad02336e57af6f71d490688cdf88`, which adds only documentation to
+the tested application source.
 
 - PASS: 286 unit tests in 39 files, Biome (600 files), TypeScript and production
   build. All 69 instruction PNGs decoded with CRC checks; working-tree and built
@@ -81,9 +85,23 @@ regression test and a fix are still needed. Passing isolated reruns does not
 establish that this defect is fixed. On `2026-09-05`, the owner explicitly
 accepted this known limitation for the current release and deferred its fix to
 a later task. This decision authorizes continuing publication but does not turn
-the browser failures into `PASS`. Release publication and disposable-VPS Bundle
-verification have not started, and the historical manual gates below remain
-`BLOCKED`.
+the browser failures into `PASS`.
+
+- PASS: Custom Cabinet `cabinet-v2026.09.05.1` and Release Bundle
+  `v2026.09.05` were published from exact immutable sources. The Bundle workflow
+  passed contract tests, two deterministic builds, manifest validation, draft
+  re-download verification and public promotion.
+- PASS: all six public assets were downloaded without authentication. Both
+  checksum sidecars, source identities, manifest and provenance, archive
+  safety and byte-identical Installer archive verification passed.
+- SKIPPED BY OWNER: the separate targeted disposable-VPS installation. The
+  owner had already updated Custom Cabinet from `main` and considered another
+  installation unnecessary. That earlier update was reported at `2346ea3`, so
+  it does not prove installation of the exact release commit `5cf81e7` or the
+  exact Release Bundle combination.
+
+Historical manual gates remain `BLOCKED`; see
+`LIVE_CHECK_REPORT_2026.09.05.md`.
 
 ## Historical Release Verification (through 2026-08-28)
 
@@ -138,6 +156,7 @@ live sign-off remains `BLOCKED` as recorded in the linked reports.
 | `v2026.08.25` | `27e73f662297bbfe459af86cbe00b2a132d8ac0e` | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` | `cabinet-v2026.08.24.4` / `3250e3a7f31fc2dc6f2c7779a42d86cf99a03210` | `2192484b011068d8cb75c61a6aeaada1d06115aa` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-08-25 | Exact Installer commit passed local gates, a clean full disposable Ubuntu 24.04 lifecycle, final postflight, immutable publication and independent public asset verification. Production received only the management Installer and launcher; Protected Update was not run, so the running runtime Release Bundle remains `v2026.08.24`. Physical-device and staging product gates remain `BLOCKED`. |
 | `v2026.08.26` | `27e73f662297bbfe459af86cbe00b2a132d8ac0e` | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` | `cabinet-v2026.08.26.1` / `e4002ebe225ea32a047d86ce311f26d4071a61bc` | `2192484b011068d8cb75c61a6aeaada1d06115aa` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-08-26 | Exact Installer lifecycle proof reused because the Installer commit, Bot SHA, image digests, Bundle contract and Ubuntu target are unchanged. Custom Cabinet gates, deterministic publication and independent public asset verification passed. A fresh targeted installation committed on the disposable integration VPS; doctor, exact source identities, three containers, Cabinet HTTP `200`, webhook default `404` and complete cleanup passed. Production was not accessed; see `LIVE_CHECK_REPORT_2026.08.26.md`. |
 | `v2026.08.28` | `27e73f662297bbfe459af86cbe00b2a132d8ac0e` | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` | `cabinet-v2026.08.28.1` / `2a49b1350ab98e177c0d62d26462381aeca97648` | `2192484b011068d8cb75c61a6aeaada1d06115aa` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-08-28 | Exact Installer lifecycle proof reused because the Installer commit, Bot SHA, image digests, Bundle contract and Ubuntu target are unchanged. Custom Cabinet and GitHub gates, deterministic publication and independent public asset verification passed. A fresh targeted installation committed on the disposable integration VPS; doctor, exact source identities, three containers, Cabinet and branding HTTP `200`, unified health `ok`, webhook default `404` and complete cleanup passed. Production was not accessed; see `LIVE_CHECK_REPORT_2026.08.28.md`. |
+| `v2026.09.05` | `27e73f662297bbfe459af86cbe00b2a132d8ac0e` | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` | `cabinet-v2026.09.05.1` / `5cf81e74dcacad02336e57af6f71d490688cdf88` | `2192484b011068d8cb75c61a6aeaada1d06115aa` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-09-05 | Exact Installer lifecycle proof reused because the Installer commit, Bot SHA, image digests, Bundle contract and Ubuntu target are unchanged. Custom Cabinet checks, GitHub gates, deterministic publication and independent verification of six public assets passed. The owner accepted the known asynchronous translation-loading defect and skipped a separate disposable-VPS installation because Custom Cabinet had already been updated from `main`; that earlier update does not prove the exact tagged source or Bundle combination. Full product live sign-off remains `BLOCKED`; see `LIVE_CHECK_REPORT_2026.09.05.md`. |
 
 Use this format for every released combination:
 
