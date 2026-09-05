@@ -13,31 +13,43 @@ The product has three interface modes:
 
 ## Current Source and Production Reference
 
-The source reference for the owner-reported production update recorded on
+The source reference for the latest owner-reported production update on
 `2026-09-03` is
-`7c88d7bc0839608e3a652a9ee0d338922c5b7713` (`Improve subscription management
-clarity`). This source retains the Upstream Cabinet `v1.66.0` integration
-through `92906d0e9a128d0a6cdf0f056996e4db44d72d94`.
+`2346ea323030e2330fff90dcf01756db68cdbbcf` (`Add quick subscription QR and
+support instructions entry`). This source retains the Upstream Cabinet
+`v1.66.0` integration through `92906d0e9a128d0a6cdf0f056996e4db44d72d94`.
 
-Later commits on `main` do not imply another production deployment. Inspect
-Git for the current development source; keep this production reference until
-the owner confirms a subsequent update.
+The release-preparation source is
+`13ec9332f49a276f6afdce8b698b78eb0902293c` (`Restore support header layout
+above instructions`). Its production deployment has not been confirmed. Later
+commits on `main` do not imply another production deployment; inspect Git for
+the current development source.
 
-- The owner reported updating production Custom Cabinet directly from `main`
-  to this source reference, without creating a new Release or Release Bundle.
-  An authenticated browser smoke on `2026-09-02` confirmed the updated user
-  flows. The owner separately confirmed the Admin button; this is not a full
-  administrative-console verification.
-- The smoke covered Dashboard, subscription management, devices, Connection,
-  Balance, Profile and Support, session persistence after reload and narrow
+The full browser matrix reproduced untranslated labels in Telegram login and
+Dashboard recommendations. On `2026-09-05`, the owner explicitly accepted this
+known limitation for the current release and deferred the translation-loading
+fix to a later task. See the dated preparation gate in `COMPATIBILITY.md`; do
+not reinterpret the release decision as a browser-gate pass.
+
+- The owner supplied an Installer update log showing a fast-forward from
+  `7c88d7bc` to `2346ea32`, a completed frontend build and a successful Cabinet
+  update. The owner then confirmed the buttons work. This is an update directly
+  from `main`, without a new Release or Release Bundle, not an independent
+  post-update inspection of the VPS Git SHA or runtime identities.
+- The earlier authenticated browser smoke on `2026-09-02` covered the working
+  source `7c88d7bc0839608e3a652a9ee0d338922c5b7713`: Dashboard, subscription
+  management, devices, Connection, Balance, Profile and Support, session
+  persistence after reload and narrow
   layout. No console errors or warnings were observed. Payments, settings
-  changes and device deletion were not performed.
+  changes and device deletion were not performed. The owner separately
+  confirmed the Admin button, not the complete administrative console.
 - The exact Git SHA on the VPS and current Installer, Upstream Bot, image,
   database and Bundle metadata identities were not inspected during this
   browser smoke. VPS diagnostics were excluded by the owner. Do not infer a
   fully verified Release Bundle combination from this UI check.
 - Previous owner-confirmed working Custom Cabinet source:
-  `4638234f8bb9de8816263fe69df8709f66041513`. This source reference does not
+  `7c88d7bc0839608e3a652a9ee0d338922c5b7713`; the earlier confirmed source was
+  `4638234f8bb9de8816263fe69df8709f66041513`. These source references do not
   establish that a ready-to-apply rollback artifact exists on the VPS.
 
 ## Historical Release Reference

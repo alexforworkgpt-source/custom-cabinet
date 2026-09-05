@@ -8,7 +8,8 @@ identifiers, not public branding.
 
 | Component | Version or reference | Exact source |
 | --- | --- | --- |
-| Custom Cabinet | `1.66.0`; source reference for the owner-reported production update from `main`, not a new Release Bundle | `7c88d7bc0839608e3a652a9ee0d338922c5b7713`; latest recorded released source `2a49b1350ab98e177c0d62d26462381aeca97648` through `cabinet-v2026.08.28.1` / `v2026.08.28` |
+| Custom Cabinet | `1.66.0`; source reference for the latest owner-reported production update from `main`, not a new Release Bundle | `2346ea323030e2330fff90dcf01756db68cdbbcf`; latest recorded released source `2a49b1350ab98e177c0d62d26462381aeca97648` through `cabinet-v2026.08.28.1` / `v2026.08.28` |
+| Custom Cabinet release-preparation source | Development source; production deployment not confirmed | `13ec9332f49a276f6afdce8b698b78eb0902293c` |
 | Upstream Cabinet baseline | `v1.66.0` | `2192484b011068d8cb75c61a6aeaada1d06115aa` |
 | Upstream Cabinet source | Repository | <https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git> |
 | Upstream Bot | Last verified Bundle baseline `v4.1.0`; production identity not rechecked in September | `49b05d5ab79dd9bb92f0404bb0066cda8a175649` |
@@ -20,16 +21,19 @@ resolve the provenance mismatch before synchronization or release.
 
 ## Post-Bundle Custom Cabinet Update
 
-The source reference for the production update recorded on `2026-09-03` is
-`7c88d7bc0839608e3a652a9ee0d338922c5b7713`. The owner reported deploying Custom
-Cabinet directly from `main` and confirmed it works. This is a source update,
-not a newly published or verified Release Bundle. Existing immutable tags and
-Bundle records below are unchanged.
+The source reference for the latest production update on `2026-09-03` is
+`2346ea323030e2330fff90dcf01756db68cdbbcf`. The owner supplied an Installer
+update log showing a fast-forward from `7c88d7bc` to `2346ea32`, a completed
+frontend build and a successful update, then confirmed the buttons work.
+This is a source update directly from `main`, not a newly published or verified
+Release Bundle. Existing immutable tags and Bundle records below are unchanged.
 
 Later commits on `main` are development changes, not evidence of a subsequent
-production update or a new verified Bundle combination.
+production update or a new verified Bundle combination. This includes the
+support-header layout change in `13ec9332f49a276f6afdce8b698b78eb0902293c`.
 
-The authenticated production browser smoke on `2026-09-02` passed for
+The earlier authenticated production browser smoke on `2026-09-02`, for source
+`7c88d7bc0839608e3a652a9ee0d338922c5b7713`, passed for
 Dashboard, subscription management, devices, Connection, Balance, Profile and
 Support. It checked the device counter, automatic expansion of additional
 options, hidden location management, shortened copy, session persistence after
@@ -37,17 +41,49 @@ reload and narrow layout, with no observed console errors or warnings. The
 owner separately confirmed the Admin button, not the complete administrative
 console. No payment, settings mutation or device deletion was performed.
 
-Pre-publication source checks passed: Biome, 286 unit tests, TypeScript,
-production build and Playwright (299 passed, 6 configured skips). These source
-checks and the browser smoke do not establish an exact new Bot/Bundle
-compatibility record. The VPS Git SHA, Installer, Upstream Bot, image digests,
-database schema, Bundle metadata, server logs and complete network status were
-not rechecked. VPS diagnostics were excluded by the owner; physical-device and
+For `7c88d7b`, pre-publication source checks passed: Biome, 286 unit tests,
+TypeScript, production build and Playwright (299 passed, 6 configured skips).
+These are historical results, not a full browser-gate result for `13ec933`.
+The source checks and the browser smoke do not establish an exact new Bot/Bundle
+compatibility record. The owner-supplied update log was not followed by an
+independent inspection of the VPS Git SHA, Installer, Upstream Bot, image digests,
+database schema, Bundle metadata, server logs or complete network status.
+VPS diagnostics were excluded by the owner; physical-device and
 staging checks remain unverified.
 
 Previous owner-confirmed working source:
-`4638234f8bb9de8816263fe69df8709f66041513`. This is not evidence of a prepared
+`7c88d7bc0839608e3a652a9ee0d338922c5b7713`; the earlier confirmed source was
+`4638234f8bb9de8816263fe69df8709f66041513`. These are not evidence of a prepared
 rollback artifact on the VPS.
+
+## Release Preparation Gate (2026-09-03)
+
+Source under test: `13ec9332f49a276f6afdce8b698b78eb0902293c`. This preparation
+changes documentation only; source code, tests and dependencies remain at that
+commit. No new Release or Release Bundle has been published.
+
+- PASS: 286 unit tests in 39 files, Biome (600 files), TypeScript and production
+  build. All 69 instruction PNGs decoded with CRC checks; working-tree and built
+  copies match the source commit.
+- PASS: release-delta checks for secret patterns, private paths and public
+  branding; no findings in the checked changes. These checks do not certify
+  every possible secret format.
+- GitHub CI, Security Audit and CodeQL passed for the exact source commit.
+- Browser gate is not passed: the initial full matrix returned 382 passed,
+  6 configured skips and 2 failures. Twelve isolated repeats passed unchanged,
+  but the second full matrix without a concurrent build also returned
+  382 passed, 6 configured skips and 2 failures: untranslated-key rendering in
+  Telegram login and Dashboard recommendations on mobile-320.
+
+The UI can retain translation keys instead of labels while locale resources
+load asynchronously. The symptom is confirmed; a controlled loading-order
+regression test and a fix are still needed. Passing isolated reruns does not
+establish that this defect is fixed. On `2026-09-05`, the owner explicitly
+accepted this known limitation for the current release and deferred its fix to
+a later task. This decision authorizes continuing publication but does not turn
+the browser failures into `PASS`. Release publication and disposable-VPS Bundle
+verification have not started, and the historical manual gates below remain
+`BLOCKED`.
 
 ## Historical Release Verification (through 2026-08-28)
 
