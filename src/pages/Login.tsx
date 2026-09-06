@@ -23,13 +23,16 @@ import LanguageSwitcher from '../components/LanguageSwitcher';
 import TelegramLoginButton from '../components/TelegramLoginButton';
 import OAuthProviderIcon from '../components/OAuthProviderIcon';
 import { saveOAuthState } from '../utils/oauth';
+import { safeLocal, safeSession } from '../utils/safeStorage';
 import { getPendingReferralCode } from '../utils/referral';
 import { UsersIcon, EmailIcon, RefreshIcon, ChevronDownIcon } from '@/components/icons';
 import LegalFooter from '../components/LegalFooter';
 import LegalConsent from '../components/LegalConsent';
+import LegalConsentGate from '../components/LegalConsentGate';
 import { infoApi } from '../api/info';
 import type { LegalConsentConfig } from '../types';
 import { Card } from '@/components/data-display/Card';
+import { useLegalConsentGate } from '../hooks/useLegalConsentGate';
 
 export default function Login() {
   const { t, i18n } = useTranslation();
@@ -81,61 +84,7 @@ export default function Login() {
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
-  const consentDocuments = useMemo(() => legalConsent?.documents ?? [], [legalConsent]);
-  const [acceptedDocuments, setAcceptedDocuments] = useState<Record<string, boolean>>({});
-  // Telegram-вход происходит сам собой, поэтому чекбоксы показываем только когда
-  // бэк ответил 428: пользователь новый и без согласия аккаунт не создастся.
-  // Замыкание помнит, какой именно вход повторить после простановки галочек.
-  const [pendingConsentRetry, setPendingConsentRetry] = useState<
-    ((accepted: string[]) => Promise<void>) | null
-  >(null);
-
-  useEffect(() => {
-    if (!legalConsent?.prechecked || consentDocuments.length === 0) return;
-    setAcceptedDocuments((prev) => {
-      const next = { ...prev };
-      for (const document of consentDocuments) {
-        if (next[document] === undefined) next[document] = true;
-      }
-      return next;
-    });
-  }, [legalConsent?.prechecked, consentDocuments]);
-
-  const acceptedDocumentKeys = useMemo(
-    () => consentDocuments.filter((document) => acceptedDocuments[document]),
-    [consentDocuments, acceptedDocuments],
-  );
-  const allDocumentsAccepted =
-    consentDocuments.length === 0 || acceptedDocumentKeys.length === consentDocuments.length;
-
-  const toggleDocument = useCallback((document: string, value: boolean) => {
-    setAcceptedDocuments((prev) => ({ ...prev, [document]: value }));
-  }, []);
-
-  // 428 = бэк требует согласие. Запоминаем, что повторить, и рисуем чекбоксы.
-  const captureConsentRequirement = useCallback(
-    (err: unknown, retry: (accepted: string[]) => Promise<void>): boolean => {
-      const error = err as { response?: { status?: number; data?: { detail?: unknown } } };
-      if (error.response?.status !== 428) return false;
-
-      const detail = error.response?.data?.detail as
-        | { documents?: string[]; prechecked?: boolean }
-        | undefined;
-      if (detail?.documents?.length) {
-        const documents = detail.documents;
-        setAcceptedDocuments((prev) => {
-          const next = { ...prev };
-          for (const document of documents) {
-            if (next[document] === undefined) next[document] = Boolean(detail.prechecked);
-          }
-          return next;
-        });
-      }
-      setPendingConsentRetry(() => retry);
-      return true;
-    },
-    [],
-  );
+  const consent = useLegalConsentGate(legalConsent);
 
   // Telegram safe area insets
   const { safeAreaInset, contentSafeAreaInset } = useTelegramSDK();
@@ -215,7 +164,9 @@ export default function Login() {
         throw new Error('Invalid OAuth redirect URL');
       }
 
-      saveOAuthState(state, provider);
+      if (!saveOAuthState(state, provider)) {
+        throw new Error('OAuth state is not persistable');
+      }
       window.location.href = authorize_url;
     } catch {
       setError(t('auth.oauthError', 'Authorization was denied or failed'));
@@ -226,11 +177,6 @@ export default function Login() {
   const appName = branding ? branding.name : import.meta.env.VITE_APP_NAME || 'VPN';
   const appLogo = branding?.logo_letter || import.meta.env.VITE_APP_LOGO || 'V';
   const logoUrl = branding ? brandingApi.getLogoUrl(branding) : null;
-
-  // Set document title
-  useEffect(() => {
-    document.title = appName || 'VPN';
-  }, [appName]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -266,7 +212,7 @@ export default function Login() {
             console.warn(`Telegram auth attempt ${attempt + 1} failed:`, status, detail);
 
           // Не ошибка входа, а недостающее согласие: показываем чекбоксы.
-          const needsConsent = captureConsentRequirement(err, async (accepted) => {
+          const needsConsent = consent.capture(err, async (accepted) => {
             await loginWithTelegram(initData, accepted);
             navigate(getReturnUrl(), { replace: true });
           });
@@ -289,15 +235,15 @@ export default function Login() {
     };
 
     tryTelegramAuth();
-  }, [isAuthInitializing, loginWithTelegram, navigate, t, getReturnUrl, captureConsentRequirement]);
+  }, [isAuthInitializing, loginWithTelegram, navigate, t, getReturnUrl, consent.capture]);
 
   const handleRetryTelegramAuth = () => {
     // Clear ALL cached auth state to prevent stale token/initData loops
     tokenStorage.clearTokens();
-    sessionStorage.removeItem('tapps/launchParams');
-    sessionStorage.removeItem('telegram_init_data');
-    localStorage.removeItem('cabinet-auth');
-    localStorage.removeItem('tg_user_id');
+    safeSession.removeItem('tapps/launchParams');
+    safeSession.removeItem('telegram_init_data');
+    safeLocal.removeItem('cabinet-auth');
+    safeLocal.removeItem('tg_user_id');
 
     try {
       // Close miniapp — Telegram will provide fresh initData on reopen
@@ -342,7 +288,7 @@ export default function Login() {
           password,
           firstName || undefined,
           referralCode || undefined,
-          acceptedDocumentKeys,
+          consent.acceptedKeys,
         );
         // Show "check your email" screen
         setRegisteredEmail(result.email);
@@ -354,7 +300,7 @@ export default function Login() {
 
       // Конфиг чекбоксов мог протухнуть (админ включил гейт между загрузкой страницы
       // и отправкой формы) — показываем недостающие галочки вместо сырой ошибки.
-      const needsConsent = captureConsentRequirement(err, async (accepted) => {
+      const needsConsent = consent.capture(err, async (accepted) => {
         const retried = await registerWithEmail(
           email,
           password,
@@ -362,7 +308,6 @@ export default function Login() {
           referralCode || undefined,
           accepted,
         );
-        setPendingConsentRetry(null);
         setRegisteredEmail(retried.email);
       });
       if (needsConsent) {
@@ -474,53 +419,8 @@ export default function Login() {
         </div>
 
         {/* Экран согласия: бэк ответил 428 на автоматический Telegram-вход */}
-        {pendingConsentRetry ? (
-          <Card size="md">
-            <h2 className="mb-2 text-lg font-bold text-dark-50">
-              {t('auth.legalConsentTitle', 'Ещё один шаг')}
-            </h2>
-            <p className="mb-4 text-sm text-dark-400">
-              {t(
-                'auth.legalConsentSubtitle',
-                'Чтобы создать аккаунт, подтвердите, что ознакомились с документами.',
-              )}
-            </p>
-
-            <LegalConsent
-              documents={consentDocuments}
-              accepted={acceptedDocuments}
-              onChange={toggleDocument}
-              disabled={isLoading}
-            />
-
-            {error && (
-              <p className="mt-4 text-sm text-error-400" role="alert">
-                {error}
-              </p>
-            )}
-
-            <button
-              type="button"
-              className="btn-primary mt-5 w-full"
-              disabled={!allDocumentsAccepted || isLoading}
-              onClick={async () => {
-                setError('');
-                setIsLoading(true);
-                try {
-                  await pendingConsentRetry(acceptedDocumentKeys);
-                  setPendingConsentRetry(null);
-                } catch (err) {
-                  setError(getApiErrorMessage(err, t('common.error')));
-                } finally {
-                  setIsLoading(false);
-                }
-              }}
-            >
-              {isLoading
-                ? t('common.loading', 'Загрузка...')
-                : t('auth.legalConsentContinue', 'Продолжить')}
-            </button>
-          </Card>
+        {consent.pending ? (
+          <LegalConsentGate gate={consent} />
         ) : /* Check Email Screen */
         registeredEmail ? (
           <Card size="lg" className="text-center">
@@ -843,9 +743,9 @@ export default function Login() {
 
                             {authMode === 'register' && (
                               <LegalConsent
-                                documents={consentDocuments}
-                                accepted={acceptedDocuments}
-                                onChange={toggleDocument}
+                                documents={consent.documents}
+                                accepted={consent.accepted}
+                                onChange={consent.toggle}
                                 disabled={isLoading}
                                 className="pt-1"
                               />
@@ -854,7 +754,7 @@ export default function Login() {
                             <button
                               type="submit"
                               disabled={
-                                isLoading || (authMode === 'register' && !allDocumentsAccepted)
+                                isLoading || (authMode === 'register' && !consent.allAccepted)
                               }
                               className="btn-primary w-full py-2.5"
                             >

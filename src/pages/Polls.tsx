@@ -5,6 +5,7 @@ import { pollsApi, type PollInfo, type PollQuestion } from '../api/polls';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { ClipboardIcon, GiftIcon, CheckIcon, CloseIcon } from '@/components/icons';
 import { Card } from '@/components/data-display/Card';
+import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
 
 export default function Polls() {
   const { t } = useTranslation();
@@ -90,9 +91,9 @@ export default function Polls() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-64 items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-      </div>
+      <PageSkeleton leading={1} titleWidth="w-40">
+        <Skeleton variant="card" count={3} className="h-32" />
+      </PageSkeleton>
     );
   }
 

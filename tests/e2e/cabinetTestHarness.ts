@@ -60,6 +60,7 @@ export const baseApiResponses: Record<string, unknown> = {
   },
   '/api/cabinet/branding/email-auth': { enabled: true, verification_enabled: true },
   '/api/cabinet/branding/fullscreen': { enabled: false },
+  '/api/cabinet/branding/favicon': {},
   '/api/cabinet/branding/gift-enabled': { enabled: false },
   '/api/cabinet/branding/themes': { dark: true, light: true },
   '/api/cabinet/contests/count': { count: 0 },

@@ -11,6 +11,7 @@ import { CheckIcon } from '../../icons';
 import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
 import { PurchaseOrderSummary } from './PurchaseOrderSummary';
 import Twemoji from 'react-twemoji';
+import { Skeleton, SkeletonGroup } from '../../ui/skeleton';
 import type {
   ClassicPurchaseOptions,
   PeriodOption,
@@ -483,7 +484,9 @@ export function ClassicPurchaseWizard({
                 )}
               </div>
               {previewLoading ? (
-                <div className="mt-6 h-32 w-full animate-pulse rounded-xl bg-dark-800/50" />
+                <SkeletonGroup className="mt-6">
+                  <Skeleton variant="card" className="h-32 w-full rounded-xl" />
+                </SkeletonGroup>
               ) : preview ? (
                 <div className="mt-6 w-full">
                   <PurchaseOrderSummary
@@ -504,9 +507,9 @@ export function ClassicPurchaseWizard({
           {currentStep === 'confirm' && (
             <div>
               {previewLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-                </div>
+                <SkeletonGroup className="space-y-3">
+                  <Skeleton variant="card" count={3} className="h-16" />
+                </SkeletonGroup>
               ) : preview ? (
                 <div className="space-y-4">
                   {activeDiscount?.is_active && activeDiscount.discount_percent && (

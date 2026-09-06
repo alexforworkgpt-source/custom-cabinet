@@ -28,7 +28,11 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { initLogoPreload } from './api/branding';
 import { checkBackendOnStartup } from './api/health';
 import { getCachedFullscreenEnabled, isTelegramMobile } from './hooks/useTelegramSDK';
-import { applyTelegramLanguage } from './i18n';
+import { applyTelegramLanguage, i18nReady } from './i18n';
+import { themeColorsQueryOptions } from './api/themeColors';
+import { applyThemeColors } from './hooks/useThemeColors';
+import { readThemeColorsHint } from './utils/themeColorsHint';
+import { UI } from './config/constants';
 import './styles/globals.css';
 
 // Harden the global encoders against lone UTF-16 surrogates (truncated emoji in
@@ -62,6 +66,7 @@ const isTelegramEnv =
 
 const HMR_KEY = '__tg_sdk_initialized';
 const alreadyInitialized = (window as unknown as Record<string, unknown>)[HMR_KEY] === true;
+let telegramLanguageReady = Promise.resolve();
 
 if (isTelegramEnv && !alreadyInitialized) {
   (window as unknown as Record<string, unknown>)[HMR_KEY] = true;
@@ -73,7 +78,7 @@ if (isTelegramEnv && !alreadyInitialized) {
     clearStaleSessionIfNeeded(getTelegramInitData());
 
     // Adopt the user's Telegram client language on first run (no explicit choice yet).
-    applyTelegramLanguage();
+    telegramLanguageReady = applyTelegramLanguage();
 
     // Each mount in its own try/catch so one failure doesn't block others.
     // mountMiniApp() internally mounts themeParams in SDK v3,
@@ -147,12 +152,26 @@ if (!rootElement) {
   throw new Error('Application root element #root was not found');
 }
 
-ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode>
-    <ErrorBoundary level="app">
-      <QueryClientProvider client={queryClient}>
-        <AppWithNavigator />
-      </QueryClientProvider>
-    </ErrorBoundary>
-  </React.StrictMode>,
-);
+// On the first visit, give the operator palette a bounded chance to arrive.
+// Later visits already have the validated inline hint from index.html.
+const themeColorsReady = readThemeColorsHint()
+  ? Promise.resolve()
+  : Promise.race([
+      queryClient
+        .fetchQuery(themeColorsQueryOptions())
+        .then((colors) => applyThemeColors(colors))
+        .catch(() => undefined),
+      new Promise<void>((resolve) => setTimeout(resolve, UI.THEME_COLORS_FIRST_PAINT_TIMEOUT_MS)),
+    ]);
+
+void Promise.all([i18nReady, telegramLanguageReady, themeColorsReady]).then(() => {
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      <ErrorBoundary level="app">
+        <QueryClientProvider client={queryClient}>
+          <AppWithNavigator />
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </React.StrictMode>,
+  );
+});

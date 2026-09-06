@@ -1,3 +1,4 @@
+import { Skeleton } from '@/components/ui/skeleton';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReducedMotion } from 'framer-motion';
@@ -49,11 +50,16 @@ export function GeoCheckImageViewer({ src, alt, fullscreen }: GeoCheckImageViewe
   return (
     <div ref={hostRef} className="relative h-full">
       {!loaded && !failed && (
-        <div className="absolute inset-0 z-10 space-y-2 p-4" aria-busy="true">
+        <div
+          className="absolute inset-0 z-10 space-y-2 p-4"
+          role="status"
+          aria-label={t('common.loading')}
+          aria-busy="true"
+        >
           {SKELETON_ROWS.map((rowWidth, index) => (
-            <div
+            <Skeleton
               key={`${rowWidth}-${index}`}
-              className="h-3 animate-pulse rounded bg-dark-700/50"
+              className="h-3"
               style={{ width: `${rowWidth}%` }}
             />
           ))}

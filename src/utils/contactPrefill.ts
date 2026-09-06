@@ -1,5 +1,11 @@
 const CONTACT_PARAM = 'contact';
+const EARLY_CONTACT_PREFILL_KEY = '__cabinetEarlyContactPrefill';
 const transientContacts = new Map<string, string>();
+
+interface EarlyContactPrefill {
+  pathname: string;
+  value: string | null;
+}
 
 /** Reads the URL contact first, then the value remembered for this landing. */
 export function readContactPrefill(storageKey: string): string {
@@ -9,16 +15,18 @@ export function readContactPrefill(storageKey: string): string {
   } catch {}
 
   const transient = transientContacts.get(storageKey);
-  if (transient) {
-    transientContacts.delete(storageKey);
-    return transient;
-  }
+  if (transient) return transient;
 
   try {
     return localStorage.getItem(storageKey) || '';
   } catch {}
 
   return '';
+}
+
+/** Clears the memory fallback after the consuming component has committed. */
+export function clearTransientContactPrefill(storageKey: string): void {
+  transientContacts.delete(storageKey);
 }
 
 /**
@@ -30,31 +38,50 @@ export function readContactPrefill(storageKey: string): string {
  */
 export function captureContactPrefillFromUrl(): void {
   let contact: string | null = null;
+  let hasContact = false;
 
   try {
     const params = new URLSearchParams(window.location.search);
-    if (!params.has(CONTACT_PARAM)) return;
-    contact = params.get(CONTACT_PARAM);
+    if (params.has(CONTACT_PARAM)) {
+      hasContact = true;
+      contact = params.get(CONTACT_PARAM);
+    }
   } catch {
     return;
   }
 
-  if (contact) {
-    const storageKey = contactStorageKey(window.location.pathname);
-    if (!storageKey) return;
+  if (!hasContact) {
+    const page = window as unknown as Record<string, unknown>;
+    const early = page[EARLY_CONTACT_PREFILL_KEY];
+    delete page[EARLY_CONTACT_PREFILL_KEY];
+    if (!isEarlyContactPrefill(early) || early.pathname !== window.location.pathname) return;
+    hasContact = true;
+    contact = early.value;
+  }
 
+  const storageKey = contactStorageKey(window.location.pathname);
+  if (!storageKey) return;
+
+  if (contact) {
     try {
       localStorage.setItem(storageKey, contact);
       transientContacts.delete(storageKey);
     } catch {
       transientContacts.set(storageKey, contact);
     }
-  } else if (!contactStorageKey(window.location.pathname)) {
-    return;
   }
 
   // Privacy cleanup must still run when storage is blocked.
   stripContactFromUrl();
+}
+
+function isEarlyContactPrefill(value: unknown): value is EarlyContactPrefill {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.pathname === 'string' &&
+    (typeof candidate.value === 'string' || candidate.value === null)
+  );
 }
 
 /** Removes only contact from the address bar, preserving other query and hash values. */

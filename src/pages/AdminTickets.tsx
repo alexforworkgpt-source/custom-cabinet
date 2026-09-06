@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import logger from '../utils/logger';
 import { linkifyText } from '../utils/linkify';
 import { MessageMediaGrid } from '../components/tickets/MessageMediaGrid';
-import { useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { adminApi, type AdminTicket, type AdminTicketDetail } from '../api/admin';
@@ -20,6 +20,7 @@ import {
   XIcon,
 } from '@/components/icons';
 import { StatCard } from '@/components/stats';
+import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
 interface MediaAttachment {
   id: string;
@@ -367,9 +368,9 @@ export default function AdminTickets() {
           </div>
 
           {ticketsLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-            </div>
+            <SkeletonGroup className="space-y-3">
+              <Skeleton variant="card" count={3} className="h-16" />
+            </SkeletonGroup>
           ) : ticketsData?.items.length === 0 ? (
             <div className="py-12 text-center text-dark-500">{t('admin.tickets.noTickets')}</div>
           ) : (
@@ -490,7 +491,18 @@ export default function AdminTickets() {
                 </div>
                 <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-dark-500">
                   <span>
-                    {t('admin.tickets.from')}: {formatUser(selectedTicket)}
+                    {t('admin.tickets.from')}:{' '}
+                    {selectedTicket.user?.id != null ? (
+                      <Link
+                        to={`/admin/users/${selectedTicket.user.id}`}
+                        title={t('admin.tickets.viewUser')}
+                        className="font-medium text-accent-400 underline decoration-accent-400/40 underline-offset-2 transition-colors hover:text-accent-300 hover:decoration-accent-300"
+                      >
+                        {formatUser(selectedTicket)}
+                      </Link>
+                    ) : (
+                      formatUser(selectedTicket)
+                    )}
                     {selectedTicket.user?.telegram_id && (
                       <button
                         onClick={() => {
@@ -506,17 +518,6 @@ export default function AdminTickets() {
                     | {t('admin.tickets.created')}:{' '}
                     {new Date(selectedTicket.created_at).toLocaleString()}
                   </span>
-                  {selectedTicket.user && (
-                    <button
-                      onClick={() => {
-                        const userId = selectedTicket.user?.id;
-                        if (userId != null) navigate(`/admin/users/${userId}`);
-                      }}
-                      className="shrink-0 rounded-lg border border-accent-500/30 bg-accent-500/10 px-2 py-0.5 text-xs text-accent-400 transition-colors hover:bg-accent-500/20"
-                    >
-                      {t('admin.tickets.viewUser')}
-                    </button>
-                  )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {['open', 'pending', 'answered', 'closed'].map((s) => (

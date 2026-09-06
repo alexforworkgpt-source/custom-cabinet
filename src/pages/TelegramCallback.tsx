@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/auth';
+import { useLegalConsentGate } from '../hooks/useLegalConsentGate';
+import LegalConsentGate from '../components/LegalConsentGate';
+import { getApiErrorMessage } from '../utils/api-error';
 
 export default function TelegramCallback() {
   const { t } = useTranslation();
@@ -10,12 +13,20 @@ export default function TelegramCallback() {
   const [error, setError] = useState('');
   const loginWithTelegramWidget = useAuthStore((state) => state.loginWithTelegramWidget);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const consent = useLegalConsentGate();
+  const attemptedSearchRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/');
       return;
     }
+
+    // Locale and consent updates re-render this route. The signed callback data
+    // must be submitted only once; the gate owns the one permitted retry.
+    const attemptKey = searchParams.toString();
+    if (attemptedSearchRef.current === attemptKey) return;
+    attemptedSearchRef.current = attemptKey;
 
     const authenticate = async () => {
       // Get auth data from URL params
@@ -42,25 +53,41 @@ export default function TelegramCallback() {
         return;
       }
 
+      const widgetData = {
+        id: parsedId,
+        first_name: firstName,
+        last_name: lastName || undefined,
+        username: username || undefined,
+        photo_url: photoUrl || undefined,
+        auth_date: parsedAuthDate,
+        hash,
+      };
+
       try {
-        await loginWithTelegramWidget({
-          id: parsedId,
-          first_name: firstName,
-          last_name: lastName || undefined,
-          username: username || undefined,
-          photo_url: photoUrl || undefined,
-          auth_date: parsedAuthDate,
-          hash: hash,
-        });
+        await loginWithTelegramWidget(widgetData);
         navigate('/');
       } catch (err: unknown) {
-        const error = err as { response?: { data?: { detail?: string } } };
-        setError(error.response?.data?.detail || t('common.error'));
+        const needsConsent = consent.capture(err, async (accepted) => {
+          await loginWithTelegramWidget(widgetData, accepted);
+          navigate('/');
+        });
+        if (needsConsent) return;
+        setError(getApiErrorMessage(err, t('common.error')));
       }
     };
 
     authenticate();
-  }, [searchParams, loginWithTelegramWidget, navigate, isAuthenticated, t]);
+  }, [searchParams, loginWithTelegramWidget, navigate, isAuthenticated, t, consent.capture]);
+
+  if (consent.pending) {
+    return (
+      <div className="min-h-viewport flex items-center justify-center bg-dark-950 px-4 py-8">
+        <div className="w-full max-w-md">
+          <LegalConsentGate gate={consent} />
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (

@@ -7,6 +7,7 @@ import { ServerIcon, UsersIcon, CheckIcon, XIcon, BanknotesIcon } from '../compo
 import { StatCard } from '@/components/stats';
 import Twemoji from 'react-twemoji';
 import { getFlagEmoji } from '../utils/subscriptionHelpers';
+import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
 
 // Country flag helper. Алгоритмический ISO 3166-1 alpha-2 → regional indicator,
 // чтобы не плодить хардкод-словари (исторически у каждого экрана был свой
@@ -34,9 +35,9 @@ export default function AdminRemnawaveSquadDetail() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-      </div>
+      <PageSkeleton variant="admin" leading={2} titleWidth="w-56" className="space-y-6">
+        <Skeleton variant="card" count={2} className="h-40" />
+      </PageSkeleton>
     );
   }
 

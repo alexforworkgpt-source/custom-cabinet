@@ -80,6 +80,7 @@ const apiResponses: Record<string, unknown> = {
     logo_letter: 'B',
     has_custom_logo: false,
   },
+  '/api/cabinet/branding/favicon': {},
   '/api/cabinet/branding/analytics': {
     yandex_metrika_id: '',
     google_ads_id: '',

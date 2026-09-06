@@ -12,6 +12,7 @@ import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PlatformProvider } from './platform/PlatformProvider';
 import { ThemeColorsProvider } from './providers/ThemeColorsProvider';
+import { DocumentBranding } from './components/DocumentBranding';
 import { WebSocketProvider } from './providers/WebSocketProvider';
 import { ToastProvider } from './components/Toast';
 import { TooltipProvider } from './components/primitives/Tooltip';
@@ -19,6 +20,10 @@ import { isInTelegramWebApp, closeTelegramApp } from './hooks/useTelegramSDK';
 import { getFallbackParentPath } from './utils/navigation';
 import { useBlockingStore } from './store/blocking';
 import { getDirectCabinetBackPath, getUserCabinetRouteState } from './utils/userCabinetRouteState';
+import {
+  TransientOverlayBackProvider,
+  useTransientOverlayBackDispatcher,
+} from './providers/TransientOverlayBackProvider';
 
 const TWEMOJI_OPTIONS = { className: 'twemoji', folder: 'svg', ext: '.svg' } as const;
 
@@ -73,6 +78,7 @@ function TelegramBackButton() {
   const searchRef = useRef(location.search);
   searchRef.current = location.search;
   const hasHistoryOverlayRef = useRef(false);
+  const dispatchTransientOverlayBack = useTransientOverlayBackDispatcher();
   hasHistoryOverlayRef.current = Boolean(
     (location.state as { cabinetOverlayParent?: unknown } | null)?.cabinetOverlayParent,
   );
@@ -137,6 +143,7 @@ function TelegramBackButton() {
       closeTelegramApp();
       return;
     }
+    if (dispatchTransientOverlayBack()) return;
     const currentHistoryState = window.history.state?.usr;
     const hasCurrentHistoryOverlay = Boolean(
       currentHistoryState &&
@@ -161,7 +168,7 @@ function TelegramBackButton() {
     }
     const fallback = getFallbackParentPath(pathnameRef.current);
     navigateRef.current(fallback, { replace: true });
-  }, []);
+  }, [dispatchTransientOverlayBack]);
 
   useEffect(() => {
     try {
@@ -232,24 +239,27 @@ export function AppWithNavigator() {
 
   return (
     <BrowserRouter>
-      <TransientOverlayHistoryRecovery />
-      {isTelegram && <TelegramBackButton />}
-      {isTelegram && <StartParamNavigator />}
-      <ErrorBoundary level="page">
-        <PlatformProvider>
-          <ThemeColorsProvider>
-            <TooltipProvider>
-              <ToastProvider>
-                <WebSocketProvider>
-                  <Twemoji options={TWEMOJI_OPTIONS}>
-                    <App />
-                  </Twemoji>
-                </WebSocketProvider>
-              </ToastProvider>
-            </TooltipProvider>
-          </ThemeColorsProvider>
-        </PlatformProvider>
-      </ErrorBoundary>
+      <TransientOverlayBackProvider>
+        <TransientOverlayHistoryRecovery />
+        {isTelegram && <TelegramBackButton />}
+        {isTelegram && <StartParamNavigator />}
+        <ErrorBoundary level="page">
+          <PlatformProvider>
+            <ThemeColorsProvider>
+              <DocumentBranding />
+              <TooltipProvider>
+                <ToastProvider>
+                  <WebSocketProvider>
+                    <Twemoji options={TWEMOJI_OPTIONS}>
+                      <App />
+                    </Twemoji>
+                  </WebSocketProvider>
+                </ToastProvider>
+              </TooltipProvider>
+            </ThemeColorsProvider>
+          </PlatformProvider>
+        </ErrorBoundary>
+      </TransientOverlayBackProvider>
     </BrowserRouter>
   );
 }

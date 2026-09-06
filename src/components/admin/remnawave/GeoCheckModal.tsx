@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import type { NodeInfo } from '@/api/adminRemnawave';
@@ -7,6 +7,7 @@ import { Button } from '@/components/primitives/Button';
 import { ResponsiveOverlay } from '@/components/primitives/ResponsiveOverlay';
 import { Spinner } from '@/components/ui/Spinner';
 import { useIsTelegram, usePlatform } from '@/platform/hooks/usePlatform';
+import { useTransientOverlayBackHandler } from '@/providers/TransientOverlayBackProvider';
 import {
   buildGeoCheckRequest,
   isRouteReady,
@@ -53,6 +54,7 @@ export function GeoCheckModal({
   const [fullscreen, setFullscreen] = useState(false);
   const historyRegistered = useRef(false);
   const historyEntryPending = useRef(false);
+  const historyCloseRequested = useRef(false);
   const job = useGeoCheckJob(node.uuid);
   const isRunning = job.phase === 'running';
 
@@ -66,6 +68,13 @@ export function GeoCheckModal({
   // before leaving the Remnawave page. While a job runs, the entry is restored.
   useEffect(() => {
     if (!open) {
+      if (historyCloseRequested.current) {
+        if (ownsHistoryEntry) return;
+        historyCloseRequested.current = false;
+        historyRegistered.current = false;
+        historyEntryPending.current = false;
+        return;
+      }
       if (ownsHistoryEntry) {
         historyRegistered.current = true;
         historyEntryPending.current = false;
@@ -169,6 +178,17 @@ export function GeoCheckModal({
       onClose();
     }
   };
+
+  const handleTransientOverlayBack = useCallback(() => {
+    if (isRunning) return;
+    historyCloseRequested.current = true;
+    onClose();
+    if (ownsHistoryEntry || ownsGeoCheckHistoryEntry(window.history.state?.usr, node.uuid)) {
+      navigate(-1);
+    }
+  }, [isRunning, navigate, node.uuid, onClose, ownsHistoryEntry]);
+
+  useTransientOverlayBackHandler(open && isTelegram, handleTransientOverlayBack);
 
   const canStart = isRouteReady(mode, value);
   const suggestions =

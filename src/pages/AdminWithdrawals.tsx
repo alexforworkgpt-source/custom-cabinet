@@ -8,6 +8,7 @@ import { ChevronRightIcon, ClockIcon, WalletIcon } from '@/components/icons';
 import { StatCard } from '@/components/stats';
 import { useCurrency } from '../hooks/useCurrency';
 import { formatDate, getWithdrawalStatusBadge, getRiskColor } from '../utils/withdrawalUtils';
+import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
 // Status filter tabs
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
@@ -92,9 +93,9 @@ export default function AdminWithdrawals() {
 
       {/* Withdrawal Cards List */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-        </div>
+        <SkeletonGroup className="space-y-3">
+          <Skeleton variant="card" count={3} className="h-16" />
+        </SkeletonGroup>
       ) : items.length === 0 ? (
         <div className="py-12 text-center">
           <p className="text-dark-400">{t('admin.withdrawals.noData')}</p>

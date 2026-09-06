@@ -1,3 +1,4 @@
+import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -54,9 +55,9 @@ export default function ProfileNotifications() {
       <motion.div variants={staggerItem}>
         <Card size="md">
           {isLoading ? (
-            <div className="flex justify-center py-4">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-            </div>
+            <SkeletonGroup className="space-y-3">
+              <Skeleton variant="card" count={3} className="h-16" />
+            </SkeletonGroup>
           ) : isError ? (
             <div className="flex items-center justify-between gap-3 py-2">
               <p role="alert" className="text-sm text-error-400">

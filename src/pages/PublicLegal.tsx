@@ -6,6 +6,7 @@ import { infoApi } from '../api/info';
 import { formatContent } from '../utils/legalContent';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useAuthStore } from '../store/auth';
+import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
 export type PublicLegalDoc = 'offer' | 'privacy' | 'recurrent';
 
@@ -68,9 +69,9 @@ export default function PublicLegal({ doc }: PublicLegalProps) {
         <h1 className="mb-6 text-2xl font-semibold text-dark-100">{title}</h1>
 
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-          </div>
+          <SkeletonGroup className="space-y-3">
+            <Skeleton variant="card" count={3} className="h-16" />
+          </SkeletonGroup>
         ) : isError || !data?.content ? (
           <div className="bento-card text-dark-400">
             {t('info.documentUnavailable', 'Документ пока недоступен.')}

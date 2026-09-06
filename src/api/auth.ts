@@ -11,6 +11,7 @@ import type {
   ServerCompleteResponse,
   TokenResponse,
   User,
+  UserAvatarResponse,
 } from '../types';
 
 export const authApi = {
@@ -171,6 +172,11 @@ export const authApi = {
 
   getMe: async (): Promise<User> => {
     const response = await apiClient.get<User>('/cabinet/auth/me');
+    return response.data;
+  },
+
+  getMyAvatar: async (): Promise<UserAvatarResponse> => {
+    const response = await apiClient.get<UserAvatarResponse>('/cabinet/auth/me/avatar');
     return response.data;
   },
 

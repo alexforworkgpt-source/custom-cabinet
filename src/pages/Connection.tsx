@@ -14,6 +14,7 @@ import { useAuthStore } from '../store/auth';
 import { getCabinetClosePath } from '../utils/userCabinetRouteState';
 import type { AppConfig, RemnawavePlatformData } from '../types';
 import InstallationGuide from '../components/connection/InstallationGuide';
+import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
 export default function Connection() {
   const { t, i18n } = useTranslation();
@@ -173,9 +174,15 @@ export default function Connection() {
 
   if (isLoading || isConnectionLinkLoading) {
     return (
-      <div className="flex flex-1 items-center justify-center py-20">
-        <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-accent-500/30 border-t-accent-500" />
-      </div>
+      <SkeletonGroup className="space-y-6 pb-6">
+        {/* Повторяет шапку InstallationGuide: кнопка «назад», заголовок, выбор платформы. */}
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
+          <Skeleton className="h-6 flex-1" />
+          <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
+        </div>
+        <Skeleton variant="card" count={3} className="h-24" />
+      </SkeletonGroup>
     );
   }
 

@@ -302,7 +302,9 @@ test('closes a reopened GeoCheck after the page reloads with its history marker 
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('Telegram Back closes a reopened GeoCheck after reload @telegram-flow', async ({ page }) => {
+test('Telegram Back closes a reopened GeoCheck before a slow history transition @telegram-flow', async ({
+  page,
+}) => {
   const { unexpectedApiRequests } = await prepareAdmin(page);
   await openNodesPage(page, SUPPORTED_NODE.name, true);
   await openGeoCheck(page);
@@ -317,6 +319,14 @@ test('Telegram Back closes a reopened GeoCheck after reload @telegram-flow', asy
   await openGeoCheck(page);
 
   await page.evaluate(() => {
+    const originalGo = window.history.go.bind(window.history);
+    Object.defineProperty(window.history, 'go', {
+      configurable: true,
+      value: (delta?: number) => window.setTimeout(() => originalGo(delta), 4_000),
+    });
+  });
+
+  await page.evaluate(() => {
     const host = window as typeof window & {
       Telegram?: { WebView?: { receiveEvent: (event: string) => void } };
     };
@@ -324,7 +334,7 @@ test('Telegram Back closes a reopened GeoCheck after reload @telegram-flow', asy
   });
 
   await expect(page).toHaveURL(/\/admin\/remnawave(?:#|$)/);
-  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 2_000 });
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 

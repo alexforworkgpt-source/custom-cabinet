@@ -11,6 +11,7 @@ import { useCurrency } from '../hooks/useCurrency';
 import { copyToClipboard } from '../utils/clipboard';
 import { useHaptic } from '../platform';
 import { ChartIcon, ChevronDownIcon, CopyIcon, LinkIcon, UsersIcon } from '@/components/icons';
+import { PageSkeleton, Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
 // Bonus type config
 const bonusTypeConfig: Record<
@@ -142,9 +143,12 @@ export default function AdminCampaignStats() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-      </div>
+      <PageSkeleton variant="admin" leading={2} titleWidth="w-56" className="space-y-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Skeleton variant="card" count={4} className="h-20" />
+        </div>
+        <Skeleton variant="card" className="h-64" />
+      </PageSkeleton>
     );
   }
 
@@ -370,13 +374,12 @@ export default function AdminCampaignStats() {
         {/* Analytics Charts */}
         <div className="space-y-4">
           {chartLoading ? (
-            <div className="space-y-3">
-              <div className="h-52 animate-pulse rounded-xl bg-dark-800/30" />
+            <SkeletonGroup className="space-y-3">
+              <Skeleton variant="card" className="h-52 rounded-xl" />
               <div className="grid grid-cols-2 gap-3">
-                <div className="h-24 animate-pulse rounded-xl bg-dark-800/30" />
-                <div className="h-24 animate-pulse rounded-xl bg-dark-800/30" />
+                <Skeleton variant="card" count={2} className="h-24 rounded-xl" />
               </div>
-            </div>
+            </SkeletonGroup>
           ) : chartData ? (
             <>
               {/* Deposits vs Spending */}
@@ -475,9 +478,9 @@ export default function AdminCampaignStats() {
           {showUsers && (
             <div className="border-t border-dark-700 p-4">
               {usersLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-                </div>
+                <SkeletonGroup className="space-y-3">
+                  <Skeleton variant="card" count={3} className="h-16" />
+                </SkeletonGroup>
               ) : registrationsData?.registrations.length === 0 ? (
                 <div className="py-8 text-center text-dark-500">
                   {t('admin.campaigns.stats.noUsers')}

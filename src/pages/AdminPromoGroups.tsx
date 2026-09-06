@@ -15,6 +15,7 @@ import {
   BoltIcon,
 } from '@/components/icons';
 import { StatCard } from '@/components/stats';
+import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
 export default function AdminPromoGroups() {
   const { t } = useTranslation();
@@ -98,9 +99,9 @@ export default function AdminPromoGroups() {
 
       {/* List */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-        </div>
+        <SkeletonGroup className="space-y-3">
+          <Skeleton variant="card" count={3} className="h-16" />
+        </SkeletonGroup>
       ) : groups.length === 0 ? (
         <div className="py-12 text-center">
           <p className="text-dark-400">{t('admin.promoGroups.noGroups')}</p>

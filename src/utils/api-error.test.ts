@@ -56,4 +56,22 @@ describe('getApiErrorMessage', () => {
     expect(getApiErrorMessage(new Error('boom'), 'fb')).toBe('fb');
     expect(getApiErrorMessage(axiosErrorWithStatus(500), 'fb')).toBe('fb');
   });
+
+  it('takes message from a structured detail object', () => {
+    const err = axiosErrorWithStatus(428, {
+      code: 'legal_consent_required',
+      message: 'Consent to the legal documents is required to create an account',
+      documents: ['public_offer'],
+      missing: ['public_offer'],
+      prechecked: false,
+    });
+    expect(getApiErrorMessage(err, 'fb')).toBe(
+      'Consent to the legal documents is required to create an account',
+    );
+  });
+
+  it('falls back for a structured detail without a string message', () => {
+    expect(getApiErrorMessage(axiosErrorWithStatus(400, { code: 'x' }), 'fb')).toBe('fb');
+    expect(getApiErrorMessage(axiosErrorWithStatus(400, { message: 7 }), 'fb')).toBe('fb');
+  });
 });

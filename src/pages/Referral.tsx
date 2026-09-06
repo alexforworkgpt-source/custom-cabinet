@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { RewardSettings } from '@/components/referral/RewardSettings';
+import { ProgrammeTerms } from '@/components/referral/ProgrammeTerms';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { referralApi } from '../api/referral';
+import { referralApi, type ReferralEarning } from '../api/referral';
 import { usePlatform } from '../platform';
 import { copyToClipboard } from '../utils/clipboard';
 import { brandingApi } from '../api/branding';
@@ -11,6 +13,7 @@ import { withdrawalApi } from '../api/withdrawals';
 import { CampaignCard } from '../components/partner/CampaignCard';
 import { useCurrency } from '../hooks/useCurrency';
 import { StatCard } from '@/components/stats';
+import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -56,6 +59,8 @@ export default function Referral() {
   const [copiedLink, setCopiedLink] = useState<'cabinet' | 'bot' | null>(null);
   const [partnerOpen, setPartnerOpen] = useState(false);
   const [withdrawalOpen, setWithdrawalOpen] = useState(false);
+  const [rewardChoiceError, setRewardChoiceError] = useState<string | null>(null);
+
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -74,6 +79,14 @@ export default function Referral() {
     ? `${window.location.origin}/login?ref=${info.referral_code}`
     : '';
   const botReferralLink = info?.bot_referral_link || '';
+
+  const rewardChoiceMutation = useMutation({
+    mutationFn: referralApi.updateRewardChoice,
+    // Ответ эндпоинта — те же условия целиком, поэтому кладём их в кэш сразу:
+    // повторный запрос показал бы прежний выбор на долю секунды.
+    onSuccess: (updated) => queryClient.setQueryData(['referral-terms'], updated),
+    onError: () => setRewardChoiceError(t('referral.rewardSettings.saveError')),
+  });
 
   const { data: terms } = useQuery({
     queryKey: ['referral-terms'],
@@ -130,8 +143,43 @@ export default function Referral() {
     },
   });
 
+  const isLevelsScheme = terms?.scheme === 'levels';
+  const isTiersScheme = isLevelsScheme && terms?.levels_mode === 'tiers';
+
+  /**
+   * A reward can be money, subscription days, or both. Days carry
+   * amount_kopeks = 0 by design, so formatting by the money amount alone renders
+   * a real "+7 days" reward as "+0.00 ₽". Zero money is omitted next to days for
+   * the same reason it is on the bot side: it reports the absence of something
+   * this programme never promised.
+   */
+  const formatEarning = useCallback(
+    (earning: ReferralEarning) => {
+      const days = earning.days_granted ?? 0;
+      const money = earning.amount_rubles ?? 0;
+      const daysLabel = days
+        ? earning.tariff_name
+          ? t('referral.daysWithTariff', { count: days, tariff: earning.tariff_name })
+          : t('referral.days', { count: days })
+        : '';
+
+      if (days && !money) return `+${daysLabel}`;
+      if (days) return `${formatPositive(money)} + ${daysLabel}`;
+      return formatPositive(money);
+    },
+    [formatPositive, t],
+  );
+
   const programTerms = useMemo(() => {
     if (!terms) return null;
+
+    // Под схемой `levels` плоские поля ниже не управляют ни одним начислением:
+    // выплаты идут по таблице уровней. Показывать их как «условия программы»
+    // значило бы обещать пользователю то, чего бот не платит.
+    if (terms.scheme === 'levels') {
+      return <ProgrammeTerms terms={terms} />;
+    }
+
     const showNewUserBonus = terms.first_topup_bonus_kopeks > 0;
     const showInviterBonus = terms.inviter_bonus_kopeks > 0;
     const cardCount = 2 + (showNewUserBonus ? 1 : 0) + (showInviterBonus ? 1 : 0);
@@ -195,10 +243,16 @@ export default function Referral() {
 
   const shareLink = () => {
     if (!referralLink) return;
-    const shareText = t('referral.shareMessage', {
-      percent: info?.commission_percent || 0,
-      botName: branding?.name || import.meta.env.VITE_APP_NAME || 'Cabinet',
-    });
+    // Under the levels scheme commission_percent governs nothing — payouts come
+    // from the level table — so the invite must not name a rate. This text is what
+    // the user forwards to a friend; a wrong number here is a promise made in their
+    // name. The bot's own invite was fixed the same way.
+    const botName = branding?.name || import.meta.env.VITE_APP_NAME || 'Cabinet';
+    const shareText = isLevelsScheme
+      ? terms?.referee_bonus_description
+        ? t('referral.shareMessageBonus', { bonus: terms.referee_bonus_description, botName })
+        : t('referral.shareMessagePlain', { botName })
+      : t('referral.shareMessage', { percent: info?.commission_percent || 0, botName });
 
     if (navigator.share) {
       navigator
@@ -219,9 +273,16 @@ export default function Referral() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-64 items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-      </div>
+      <PageSkeleton titleWidth="w-40">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+          <div className="col-span-2 md:col-span-1">
+            <StatCard loading />
+          </div>
+          <StatCard loading />
+          <StatCard loading />
+        </div>
+        <Skeleton variant="card" className="h-48" />
+      </PageSkeleton>
     );
   }
 
@@ -266,10 +327,32 @@ export default function Referral() {
           value={formatPositive(info?.total_earnings_rubles || 0)}
           icon={<BanknotesIcon className="h-5 w-5" />}
           tone="success"
+          subValue={
+            info?.total_earnings_days
+              ? t('referral.stats.earnedDays', { count: info.total_earnings_days })
+              : undefined
+          }
         />
         <StatCard
-          label={t('referral.stats.commissionRate')}
-          value={`${info?.commission_percent || 0}%`}
+          label={
+            // В режиме «за приглашённых» глубины сети не существует — цепочка не
+            // обходится вовсе. Показывать её там значит обещать выплаты за
+            // приглашённых чужими приглашёнными, которых в этом режиме не бывает.
+            isTiersScheme
+              ? t('referral.stats.yourLevel')
+              : isLevelsScheme
+                ? t('referral.stats.chainDepth')
+                : t('referral.stats.commissionRate')
+          }
+          value={
+            isTiersScheme
+              ? (terms?.tier_current_level ?? null) === null
+                ? t('referral.stats.levelNotReached')
+                : String(terms?.tier_current_level)
+              : isLevelsScheme
+                ? t('referral.stats.levelsValue', { count: terms?.max_level_depth || 1 })
+                : `${info?.commission_percent || 0}%`
+          }
           icon={<PercentIcon className="h-5 w-5" />}
           tone="accent"
         />
@@ -343,12 +426,35 @@ export default function Referral() {
           </div>
         </div>
         <p className="mt-3 text-sm text-dark-500">
-          {t('referral.shareHint', { percent: info?.commission_percent || 0 })}
+          {isLevelsScheme
+            ? t('referral.shareHintLevels')
+            : t('referral.shareHint', { percent: info?.commission_percent || 0 })}
         </p>
       </div>
 
       {/* Program Terms */}
       {programTerms}
+
+      {/* Reward Settings */}
+      {terms && (
+        <div className="mt-6">
+          <RewardSettings
+            terms={terms}
+            pending={rewardChoiceMutation.isPending}
+            onChange={(payload) => {
+              setRewardChoiceError(null);
+              rewardChoiceMutation.mutate(payload);
+            }}
+          />
+          {/* Ошибка сохранения обязана быть видна: без неё нажатие выглядит
+              принятым, а выбор остаётся прежним. */}
+          {rewardChoiceError && (
+            <p className="mt-2 rounded-xl border border-error-500/30 bg-error-500/10 p-3 text-sm text-error-400">
+              {rewardChoiceError}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Referrals List */}
       <div className="bento-card">
@@ -405,13 +511,13 @@ export default function Referral() {
                       t('referral.anonymousReferral')}
                   </div>
                   <div className="mt-0.5 text-xs text-dark-500">
-                    {t(`referral.reasons.${earning.reason}`, earning.reason)} •{' '}
-                    {new Date(earning.created_at).toLocaleDateString(i18n.language)}
+                    {t(`referral.reasons.${earning.reason}`, earning.reason)}
+                    {(earning.level ?? 1) > 1 &&
+                      ` • ${t('referral.levelBadge', { count: earning.level ?? 1 })}`}{' '}
+                    • {new Date(earning.created_at).toLocaleDateString(i18n.language)}
                   </div>
                 </div>
-                <div className="font-semibold text-success-400">
-                  {formatPositive(earning.amount_rubles)}
-                </div>
+                <div className="font-semibold text-success-400">{formatEarning(earning)}</div>
               </div>
             ))}
           </div>

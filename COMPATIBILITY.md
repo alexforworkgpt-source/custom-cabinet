@@ -19,6 +19,29 @@ The current upstream source identity is also recorded in
 [`UPSTREAM.md`](UPSTREAM.md). If this table and `UPSTREAM.md` disagree, stop and
 resolve the provenance mismatch before synchronization or release.
 
+## Unverified v1.69.1 Local Candidate (2026-09-06)
+
+This section records research and local gates only. It does not replace the
+verified baseline above and is not a Release Bundle compatibility claim.
+
+| Component | Candidate identity | Status |
+| --- | --- | --- |
+| Custom Cabinet | Uncommitted working tree on `sync/upstream-v1.69.0`; unchanged HEAD/base `96c34492fdbd1cc96feaab10d12494dd780d876d`; package version `1.69.1` | Local source/unit/types/build/target-browser gates complete; not published or installed |
+| Upstream Cabinet target | `v1.69.1` / `3da34239d1c1c7b87a0184e74d49bde43ea88b89` | Remote tag/SHA and 12-commit / 45-file increment verified |
+| Upstream Bot required candidate | `v4.5.0` / `07f3c6081233f5517200e62ad7be70aaa58ef27c` | Source contract present; runtime not tested and selected Bot not changed |
+| Installer candidate | `support/cabinet-node24` / `27e73f662297bbfe459af86cbe00b2a132d8ac0e` plus the existing uncommitted Node 20/24 builder work | Unchanged by v1.69.1; previous 100-test Windows gate retained |
+| Release Bundle | None | Not scheduled or published |
+
+Upstream Bot v4.4.0 is not compatible with the complete v1.69.1 frontend:
+v4.5.0 first supplies web Telegram new-user consent payloads, authenticated
+`GET /cabinet/auth/me/avatar`, and `GET /cabinet/branding/favicon`. Exact Bot
+v4.5.0 source commits are `58e9050c8d34a6ec7ae725b8706be46be1536448`,
+`17b382532f94a4c89220124f1dde25a88b5c454f`, and
+`46a7590c34ba778efbbcfcb4c1a617bc1a175c40`.
+Do not promote this row to a verified combination until a disposable Ubuntu
+24.04 lifecycle covers Bot, PostgreSQL/Redis, migrations 0107–0114, image
+digests, recovery, the exact Release Bundle and targeted smoke installation.
+
 ## Post-Bundle Custom Cabinet Update
 
 The source reference for the latest production update on `2026-09-03` is

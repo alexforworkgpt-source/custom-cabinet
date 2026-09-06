@@ -1,3 +1,6 @@
+import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { safeLocal } from '../utils/safeStorage';
+import { getApiErrorMessage } from '../utils/api-error';
 import { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
@@ -236,8 +239,8 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ['purchase-options'] });
       refreshUser();
     },
-    onError: (error: { response?: { data?: { detail?: string } } }) => {
-      setTrialError(error.response?.data?.detail || t('common.error'));
+    onError: (error: unknown) => {
+      setTrialError(getApiErrorMessage(error, t('common.error')));
     },
   });
 
@@ -265,10 +268,7 @@ export default function Dashboard() {
         traffic_used_percent: data.traffic_used_percent,
         is_unlimited: data.is_unlimited,
       });
-      localStorage.setItem(
-        `traffic_refresh_ts_${subscriptionId ?? 'default'}`,
-        Date.now().toString(),
-      );
+      safeLocal.setItem(`traffic_refresh_ts_${subscriptionId ?? 'default'}`, Date.now().toString());
       if (data.rate_limited && data.retry_after_seconds) {
         setTrafficRefreshCooldown(data.retry_after_seconds);
       } else {
@@ -303,7 +303,7 @@ export default function Dashboard() {
     if (autoRefreshedSubscriptionId.current === subscription.id) return;
     autoRefreshedSubscriptionId.current = subscription.id;
 
-    const lastRefresh = localStorage.getItem(`traffic_refresh_ts_${subscription?.id ?? 'default'}`);
+    const lastRefresh = safeLocal.getItem(`traffic_refresh_ts_${subscription?.id ?? 'default'}`);
     const now = Date.now();
     const cacheMs = API.TRAFFIC_CACHE_MS;
 
@@ -585,18 +585,18 @@ export default function Dashboard() {
       )}
 
       {!subscriptionsError && !subscriptionError && (subLoading || subscriptionsLoading) ? (
-        <div className="bento-card">
+        <SkeletonGroup className="bento-card">
           <div className="mb-4 flex items-center justify-between">
-            <div className="skeleton h-5 w-20" />
-            <div className="skeleton h-6 w-16 rounded-full" />
+            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-6 w-16 rounded-full" />
           </div>
-          <div className="skeleton mb-3 h-10 w-32" />
-          <div className="skeleton mb-3 h-4 w-40" />
-          <div className="skeleton h-3 w-full rounded-full" />
+          <Skeleton className="mb-3 h-10 w-32" />
+          <Skeleton className="mb-3 h-4 w-40" />
+          <Skeleton className="h-3 w-full rounded-full" />
           <div className="mt-5">
-            <div className="skeleton h-12 w-full rounded-xl" />
+            <Skeleton className="h-12 w-full rounded-xl" />
           </div>
-        </div>
+        </SkeletonGroup>
       ) : !subscriptionsError &&
         !subscriptionError &&
         (subscription?.is_expired ||

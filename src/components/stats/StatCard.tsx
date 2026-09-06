@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import { cn } from '@/lib/utils';
 import { TREND_STYLES } from './constants';
+import { Skeleton } from '../ui/skeleton';
 
 export interface StatCardDelta {
   /** Signed percent change vs the comparison period. */
@@ -20,9 +21,10 @@ const TONE = {
 
 interface StatCardProps {
   className?: string;
-  label: string;
+  label?: string;
   labelClassName?: string;
-  value: string | number;
+  value?: string | number;
+
   icon?: ReactNode;
   /** Tints the icon chip and (unless valueClassName is set) the value colour. */
   tone?: keyof typeof TONE;
@@ -62,14 +64,19 @@ export function StatCard({
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <span
-          className={cn(
-            'line-clamp-2 text-xs leading-tight text-dark-500 sm:text-sm',
-            labelClassName,
-          )}
-        >
-          {label}
-        </span>
+        {loading && !label ? (
+          <Skeleton className="h-[15px] w-24 sm:h-5" />
+        ) : (
+          <span
+            className={cn(
+              'line-clamp-2 text-xs leading-tight text-dark-500 sm:text-sm',
+              labelClassName,
+            )}
+          >
+            {label}
+          </span>
+        )}
+
         {trailing}
       </div>
       {/* Chip is centred against the value line only (delta sits below the whole
@@ -85,7 +92,7 @@ export function StatCard({
         )}
         <div className="min-w-0 flex-1">
           {loading ? (
-            <div className="skeleton h-7 w-20 rounded" />
+            <Skeleton className="h-7 w-20 rounded" />
           ) : (
             <>
               <div className={`truncate text-lg font-semibold sm:text-xl ${valueClass}`}>

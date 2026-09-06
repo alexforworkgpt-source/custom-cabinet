@@ -23,6 +23,12 @@ export function getApiErrorMessage(err: unknown, fallback: string): string {
         })
         .join('; ');
     }
+    // Структурные ошибки бэка ({code, message, ...}) должны превращаться в
+    // строку: сырой объект в состоянии ошибки роняет React.
+    if (detail && typeof detail === 'object') {
+      const message = (detail as { message?: unknown }).message;
+      if (typeof message === 'string') return message;
+    }
     return fallback;
   }
   return fallback;

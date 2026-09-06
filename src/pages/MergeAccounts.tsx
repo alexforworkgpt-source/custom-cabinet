@@ -1,3 +1,4 @@
+import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import { uiLocale } from '@/utils/uiLocale';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
@@ -207,40 +208,42 @@ function AccountCard({ account, label, isSelected, onSelect, showRadio }: Accoun
 
 function LoadingSkeleton() {
   return (
-    <motion.div
-      className="space-y-6"
-      variants={staggerContainer}
-      initial="initial"
-      animate="animate"
-    >
-      <motion.div variants={staggerItem}>
-        <div className="flex items-center gap-3">
-          <div className="h-7 w-7 animate-pulse rounded bg-dark-700" />
-          <div className="h-7 w-48 animate-pulse rounded bg-dark-700" />
-        </div>
-      </motion.div>
-
-      {Array.from({ length: 3 }).map((_, i) => (
-        <motion.div key={i} variants={staggerItem}>
-          <Card size="md">
-            <div className="space-y-4">
-              <div className="h-5 w-40 animate-pulse rounded bg-dark-700" />
-              <div className="h-4 w-64 animate-pulse rounded bg-dark-700" />
-              <div className="h-4 w-48 animate-pulse rounded bg-dark-700" />
-              <div className="h-4 w-32 animate-pulse rounded bg-dark-700" />
-            </div>
-          </Card>
+    <SkeletonGroup>
+      <motion.div
+        className="space-y-6"
+        variants={staggerContainer}
+        initial="initial"
+        animate="animate"
+      >
+        <motion.div variants={staggerItem}>
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-7 w-7 shrink-0" />
+            <Skeleton className="h-7 w-48" />
+          </div>
         </motion.div>
-      ))}
 
-      <motion.div variants={staggerItem}>
-        <div className="h-12 w-full animate-pulse rounded-xl bg-dark-700" />
-      </motion.div>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <motion.div key={i} variants={staggerItem}>
+            <Card size="md">
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-64" />
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </Card>
+          </motion.div>
+        ))}
 
-      <motion.div variants={staggerItem} className="flex justify-center">
-        <div className="h-4 w-32 animate-pulse rounded bg-dark-700" />
+        <motion.div variants={staggerItem}>
+          <Skeleton className="h-12 w-full rounded-xl" />
+        </motion.div>
+
+        <motion.div variants={staggerItem} className="flex justify-center">
+          <Skeleton className="h-4 w-32" />
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </SkeletonGroup>
   );
 }
 

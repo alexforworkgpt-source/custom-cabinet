@@ -48,7 +48,7 @@ export function AppShell({ children }: AppShellProps) {
   const logout = useAuthStore((state) => state.logout);
   const { isFullscreen, safeAreaInset, contentSafeAreaInset, platform, isMobile } =
     useTelegramSDK();
-  const { mobile: headerHeight } = useHeaderHeight();
+  const { mobileCss: headerHeight } = useHeaderHeight();
   const haptic = useHaptic();
   const { toggleTheme, isDark } = useTheme();
   const isAdminRoute = location.pathname.startsWith('/admin');
@@ -300,16 +300,20 @@ export function AppShell({ children }: AppShellProps) {
       {/* Mobile spacer */}
       <div
         className="lg:hidden"
-        style={{ height: isAdminRoute ? headerHeight : Math.max(0, headerHeight - 64) }}
+        style={{ height: isAdminRoute ? headerHeight : `max(0px, calc(${headerHeight} - 64px))` }}
       />
 
       {/* Main content */}
-      <main className="mx-auto max-w-6xl px-4 py-6 pb-[calc(9.5rem+var(--safe-area-inset-bottom))] lg:px-6 lg:pb-8">
+      <main className="mx-auto max-w-6xl pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] py-6 pb-[calc(9.5rem+var(--safe-area-inset-bottom))] lg:px-6 lg:pb-8">
         {children}
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <MobileBottomNav isKeyboardOpen={isKeyboardOpen} supportUnreadCount={supportUnreadCount} />
+      <MobileBottomNav
+        isKeyboardOpen={isKeyboardOpen}
+        isMenuOpen={mobileMenuOpen}
+        supportUnreadCount={supportUnreadCount}
+      />
     </div>
   );
 }

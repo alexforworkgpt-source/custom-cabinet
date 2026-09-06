@@ -15,6 +15,7 @@ const FALLBACK_LNG = 'ru';
 const LANGUAGE_STORAGE_KEY = 'cabinet_language';
 
 const loadedLanguages = new Set<string>();
+const pendingLanguages = new Map<string, Promise<void>>();
 
 async function loadLanguage(lng: string): Promise<void> {
   if (loadedLanguages.has(lng)) return;
@@ -22,12 +23,19 @@ async function loadLanguage(lng: string): Promise<void> {
   const loader = localeLoaders[lng];
   if (!loader) return;
 
-  const mod = await loader();
-  i18n.addResourceBundle(lng, 'translation', mod.default, true, true);
-  loadedLanguages.add(lng);
+  const pending = pendingLanguages.get(lng);
+  if (pending) return pending;
+  const loading = loader()
+    .then((mod) => {
+      i18n.addResourceBundle(lng, 'translation', mod.default, true, true);
+      loadedLanguages.add(lng);
+    })
+    .finally(() => pendingLanguages.delete(lng));
+  pendingLanguages.set(lng, loading);
+  return loading;
 }
 
-i18n
+const i18nInitialization = i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
@@ -52,10 +60,46 @@ i18n
     showSupportNotice: false,
   });
 
-// Load detected language + fallback on startup
-const detectedLng = i18n.language?.split('-')[0] || FALLBACK_LNG;
-const langsToLoad = [FALLBACK_LNG, ...(detectedLng !== FALLBACK_LNG ? [detectedLng] : [])];
-Promise.all(langsToLoad.map(loadLanguage));
+// Сколько ждать словари, прежде чем рисовать без них. Белый экран хуже
+// непереведённого текста: если чанк локали не приехал (сеть отвалилась, прокси
+// отдал 502), приложение обязано появиться.
+const READY_TIMEOUT_MS = 5000;
+
+function waitForDictionary(loading: Promise<unknown>): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, READY_TIMEOUT_MS);
+    void loading
+      .catch(() => undefined)
+      .then(() => {
+        clearTimeout(timer);
+        resolve();
+      });
+  });
+}
+
+async function loadStartupLanguages(): Promise<void> {
+  // LanguageDetector finishes as part of async init. Reading i18n.language
+  // before this promise resolves can incorrectly select only the fallback and
+  // let the detected dictionary load after React has already rendered.
+  await i18nInitialization;
+  const detectedLng = i18n.language?.split('-')[0] || FALLBACK_LNG;
+  const langsToLoad = [FALLBACK_LNG, ...(detectedLng !== FALLBACK_LNG ? [detectedLng] : [])];
+  syncHtmlLang(detectedLng);
+  await Promise.all(langsToLoad.map(loadLanguage));
+}
+
+/**
+ * Резолвится, когда словари активного языка зарегистрированы в i18next.
+ *
+ * Локали лежат в отдельных ленивых чанках (~75 КБ gzip), а `useSuspense`
+ * выключен — значит react-i18next не приостановит отрисовку и `t('auth.login')`
+ * вернёт сам ключ. С прогретым кэшем чанк приходил раньше первой отрисовки и
+ * этого не было видно; на холодном интерфейс успевал нарисоваться с сырыми
+ * ключами. Точка входа ждёт этот промис перед `createRoot().render()`.
+ *
+ * Никогда не реджектится и не висит дольше READY_TIMEOUT_MS.
+ */
+export const i18nReady = waitForDictionary(loadStartupLanguages());
 
 // Keep <html lang> + dir in sync with i18n so screen readers pronounce
 // content correctly, browsers don't offer to translate it, and RTL
@@ -73,12 +117,11 @@ function syncHtmlLang(lng: string): void {
     document.documentElement.dir = dir;
   }
 }
-syncHtmlLang(detectedLng);
 
 // Lazy-load on language change
 i18n.on('languageChanged', (lng: string) => {
   const code = lng.split('-')[0];
-  loadLanguage(code);
+  void loadLanguage(code).catch(() => undefined);
   syncHtmlLang(code);
 });
 
@@ -87,15 +130,20 @@ i18n.on('languageChanged', (lng: string) => {
  * Telegram client language. Must be called after the Telegram SDK is initialised
  * (e.g. from main.tsx), since launch params are unavailable before init().
  */
-export function applyTelegramLanguage(): void {
+export async function applyTelegramLanguage(): Promise<void> {
   try {
     if (localStorage.getItem(LANGUAGE_STORAGE_KEY)) return; // explicit choice wins
   } catch {
     return;
   }
+  await waitForDictionary(i18nInitialization);
   const code = getTelegramLanguageCode();
   if (code && SUPPORTED_LANGS.includes(code) && i18n.language?.split('-')[0] !== code) {
-    i18n.changeLanguage(code);
+    void i18n.changeLanguage(code).catch(() => undefined);
+    // Возвращаем именно загрузку словаря, а не changeLanguage: обработчик
+    // languageChanged тянет чанк отдельно, и без этого ожидания точка входа
+    // нарисовала бы новый язык до его словаря — те же сырые ключи.
+    await waitForDictionary(loadLanguage(code));
   }
 }
 

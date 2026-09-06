@@ -1,3 +1,4 @@
+import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -52,18 +53,18 @@ export default function DevicesPanel({ subscriptionId }: DevicesPanelProps) {
 
   if (isLoading) {
     return (
-      <div className="space-y-2" role="status" aria-label={t('common.loading')}>
-        <div className="skeleton mb-3 h-4 w-24 rounded" />
+      <SkeletonGroup className="space-y-2">
+        <Skeleton className="mb-3 h-4 w-24 rounded" />
         {[0, 1, 2].map((item) => (
           <div key={item} className="flex min-h-[72px] items-center gap-3 rounded-2xl p-3">
-            <div className="skeleton h-10 w-10 shrink-0 rounded-xl" />
+            <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
             <div className="min-w-0 flex-1 space-y-2">
-              <div className="skeleton h-4 w-40 max-w-full rounded" />
-              <div className="skeleton h-3 w-28 max-w-full rounded" />
+              <Skeleton className="h-4 w-40 max-w-full rounded" />
+              <Skeleton className="h-3 w-28 max-w-full rounded" />
             </div>
           </div>
         ))}
-      </div>
+      </SkeletonGroup>
     );
   }
 

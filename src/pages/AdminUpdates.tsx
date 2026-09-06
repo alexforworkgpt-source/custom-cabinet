@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
+import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import { adminUpdatesApi, type ReleaseItem, type ProjectReleasesInfo } from '../api/adminUpdates';
 import {
   BackIcon,
@@ -264,14 +265,9 @@ export default function AdminUpdates() {
 
       {/* Loading skeleton */}
       {isLoading && (
-        <div className="space-y-4">
-          {[0, 1].map((i) => (
-            <div
-              key={i}
-              className="h-64 animate-pulse rounded-xl border border-dark-700/50 bg-dark-800/40"
-            />
-          ))}
-        </div>
+        <SkeletonGroup className="space-y-4">
+          <Skeleton variant="card" count={2} className="h-64 rounded-xl" />
+        </SkeletonGroup>
       )}
 
       {/* Content */}

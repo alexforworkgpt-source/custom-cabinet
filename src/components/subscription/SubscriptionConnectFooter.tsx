@@ -1,3 +1,4 @@
+import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from 'react-i18next';
 import { ChevronRightIcon, KeyIcon, RefreshIcon, WarningIcon } from '@/components/icons';
 import { Button } from '@/components/primitives/Button';
@@ -44,13 +45,14 @@ export function SubscriptionConnectFooter({
         )}
         style={prominent ? undefined : { borderColor }}
         role="status"
+        aria-busy="true"
         aria-label={t('common.loading')}
         data-onboarding={prominent ? 'connect-devices' : undefined}
       >
-        <div className="skeleton h-9 w-9 shrink-0 rounded-[10px]" />
+        <Skeleton className="h-9 w-9 shrink-0 rounded-[10px]" />
         <div className="min-w-0 flex-1 space-y-2">
-          <div className="skeleton h-3.5 w-36 rounded" />
-          <div className="skeleton h-3 w-24 rounded" />
+          <Skeleton className="h-3.5 w-36 rounded" />
+          <Skeleton className="h-3 w-24 rounded" />
         </div>
       </div>
     );

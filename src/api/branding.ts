@@ -1,6 +1,7 @@
 import apiClient from './client';
 import { isEndpointMissingError } from '../utils/api-error';
 import type { AnimationConfig } from '@/components/ui/backgrounds/types';
+import { safeSession } from '../utils/safeStorage';
 
 export type { AnimationConfig };
 
@@ -61,6 +62,7 @@ const LOGO_PRELOADED_KEY = 'cabinet_logo_preloaded';
 
 // In-memory blob URL cache to avoid exposing backend URL
 let _logoBlobUrl: string | null = null;
+let _logoInFlight: Promise<void> | null = null;
 
 // Check if logo was already preloaded in this session
 export const isLogoPreloaded = (): boolean => {
@@ -70,7 +72,7 @@ export const isLogoPreloaded = (): boolean => {
     if (!cached?.has_custom_logo || !cached?.logo_url) {
       return false;
     }
-    const preloaded = sessionStorage.getItem(LOGO_PRELOADED_KEY);
+    const preloaded = safeSession.getItem(LOGO_PRELOADED_KEY);
     return preloaded === cached.logo_url;
   } catch {
     return false;
@@ -104,37 +106,41 @@ export const setCachedBranding = (branding: BrandingInfo) => {
   } catch {}
 };
 
-// Preload logo image as blob to hide backend URL
-export const preloadLogo = async (branding: BrandingInfo): Promise<void> => {
-  if (!branding.has_custom_logo || !branding.logo_url) {
-    return;
-  }
-
-  // Check if already preloaded in this session
-  if (_logoBlobUrl) {
-    return;
-  }
-
-  const preloaded = sessionStorage.getItem(LOGO_PRELOADED_KEY);
-  if (preloaded === branding.logo_url && _logoBlobUrl) {
-    return;
-  }
-
+const fetchLogo = async (logoUrl: string): Promise<Response> => {
   try {
-    const logoUrl = `${import.meta.env.VITE_API_URL || ''}${branding.logo_url}`;
-    const response = await fetch(logoUrl);
+    return await fetch(logoUrl);
+  } catch {
+    return fetch(logoUrl, { cache: 'reload' });
+  }
+};
+
+const loadLogoBlob = async (logoPath: string): Promise<void> => {
+  try {
+    const logoUrl = `${import.meta.env.VITE_API_URL || ''}${logoPath}`;
+    const response = await fetchLogo(logoUrl);
     if (!response.ok) return;
 
     const blob = await response.blob();
-    // Revoke previous blob URL if exists
-    if (_logoBlobUrl) {
-      URL.revokeObjectURL(_logoBlobUrl);
-    }
     _logoBlobUrl = URL.createObjectURL(blob);
-    sessionStorage.setItem(LOGO_PRELOADED_KEY, branding.logo_url);
+    safeSession.setItem(LOGO_PRELOADED_KEY, logoPath);
   } catch {
     // Fetch failed, logo will use letter fallback
   }
+};
+
+// Preload logo image as blob to hide backend URL
+export const preloadLogo = async (branding: BrandingInfo): Promise<void> => {
+  if (!branding.has_custom_logo || !branding.logo_url || _logoBlobUrl) {
+    return;
+  }
+
+  if (!_logoInFlight) {
+    _logoInFlight = loadLogoBlob(branding.logo_url).finally(() => {
+      _logoInFlight = null;
+    });
+  }
+
+  return _logoInFlight;
 };
 
 // Get the blob URL for the logo (safe, doesn't expose backend)
@@ -176,7 +182,7 @@ export const brandingApi = {
       URL.revokeObjectURL(_logoBlobUrl);
       _logoBlobUrl = null;
     }
-    sessionStorage.removeItem(LOGO_PRELOADED_KEY);
+    safeSession.removeItem(LOGO_PRELOADED_KEY);
     return response.data;
   },
 
@@ -210,7 +216,7 @@ export const brandingApi = {
       URL.revokeObjectURL(_logoBlobUrl);
       _logoBlobUrl = null;
     }
-    sessionStorage.removeItem(LOGO_PRELOADED_KEY);
+    safeSession.removeItem(LOGO_PRELOADED_KEY);
     return response.data;
   },
 

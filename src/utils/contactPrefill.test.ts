@@ -2,11 +2,22 @@ import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   captureContactPrefillFromUrl,
+  clearTransientContactPrefill,
   readContactPrefill,
   stripContactFromUrl,
 } from './contactPrefill';
 
 const STORAGE_KEY = 'lp_contact_promo';
+const indexSource = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+
+function earlyContactScript(): string {
+  const marker = '<script data-hint="contact-prefill">';
+  const start = indexSource.indexOf(marker);
+  if (start < 0) return '';
+  const contentStart = start + marker.length;
+  const end = indexSource.indexOf('</script>', contentStart);
+  return end < 0 ? '' : indexSource.slice(contentStart, end);
+}
 
 let replaced: string[] = [];
 
@@ -44,6 +55,43 @@ afterEach(() => {
 });
 
 describe('captureContactPrefillFromUrl', () => {
+  it('cleans the first document URL before favicon requests and preserves blocked-storage prefill', () => {
+    const script = earlyContactScript();
+    const iconIndex = indexSource.indexOf('<link rel="icon"');
+    const scriptIndex = indexSource.indexOf('<script data-hint="contact-prefill">');
+    const location = {
+      search: '?campaign=summer&contact=client%40example.com&subid=42',
+      pathname: '/buy/promo',
+      hash: '#tariffs',
+    };
+    const history = {
+      replaceState: (_state: unknown, _title: string, url: string) => {
+        replaced.push(url);
+        const parsed = new URL(url, 'https://cabinet.example');
+        location.search = parsed.search;
+      },
+    };
+    const windowWithEarlyContact = { location, history };
+    vi.stubGlobal('window', windowWithEarlyContact);
+    vi.stubGlobal('location', location);
+    vi.stubGlobal('history', history);
+    vi.stubGlobal('localStorage', {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error('storage blocked');
+      },
+    });
+
+    expect(script).not.toBe('');
+    expect(scriptIndex).toBeLessThan(iconIndex);
+    new Function(script)();
+    captureContactPrefillFromUrl();
+
+    expect(replaced).toEqual(['/buy/promo?campaign=summer&subid=42#tariffs']);
+    expect(readContactPrefill(STORAGE_KEY)).toBe('client@example.com');
+    clearTransientContactPrefill(STORAGE_KEY);
+  });
+
   it('stores an email under the current landing key before cleaning the URL', () => {
     stubLocation('?contact=client%40example.com');
 
@@ -92,7 +140,7 @@ describe('captureContactPrefillFromUrl', () => {
     expect(replaced).toEqual(['/buy/promo?campaign=summer&subid=42#tariffs']);
   });
 
-  it('keeps the captured contact available after cleanup when storage is unavailable', () => {
+  it('keeps the captured contact available through repeated pre-commit reads', () => {
     vi.stubGlobal('localStorage', {
       getItem: () => null,
       setItem: () => {
@@ -106,6 +154,9 @@ describe('captureContactPrefillFromUrl', () => {
 
     expect(replaced).toEqual(['/buy/promo?subid=42']);
     expect(readContactPrefill(STORAGE_KEY)).toBe('client@example.com');
+    expect(readContactPrefill(STORAGE_KEY)).toBe('client@example.com');
+    clearTransientContactPrefill(STORAGE_KEY);
+    expect(readContactPrefill(STORAGE_KEY)).toBe('');
   });
 
   it('does not remove contact outside a quick-purchase route', () => {

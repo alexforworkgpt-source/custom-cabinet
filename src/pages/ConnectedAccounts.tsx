@@ -1,3 +1,4 @@
+import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
@@ -10,7 +11,7 @@ import { Card } from '@/components/data-display/Card';
 import { Button } from '@/components/primitives/Button';
 import { staggerContainer, staggerItem } from '@/components/motion/transitions';
 import ProviderIcon from '../components/ProviderIcon';
-import { LINK_OAUTH_STATE_KEY, LINK_OAUTH_PROVIDER_KEY, getErrorDetail } from '../utils/oauth';
+import { getErrorDetail, saveLinkOAuthState } from '../utils/oauth';
 import { getApiErrorMessage } from '../utils/api-error';
 import { getTelegramInitData } from '../hooks/useTelegramSDK';
 import { usePlatform, useIsTelegram } from '@/platform/hooks/usePlatform';
@@ -284,22 +285,22 @@ function TelegramLinkWidget() {
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-3">
+    <SkeletonGroup className="space-y-3">
       {Array.from({ length: 4 }).map((_, i) => (
         <Card key={i} size="sm">
-          <div className="flex animate-pulse items-center justify-between">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-6 w-6 rounded-full bg-dark-700" />
+              <Skeleton circle className="h-6 w-6 shrink-0" />
               <div className="space-y-2">
-                <div className="h-4 w-24 rounded bg-dark-700" />
-                <div className="h-3 w-32 rounded bg-dark-700" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-32" />
               </div>
             </div>
-            <div className="h-8 w-20 rounded bg-dark-700" />
+            <Skeleton className="h-8 w-20 shrink-0" />
           </div>
         </Card>
       ))}
-    </div>
+    </SkeletonGroup>
   );
 }
 
@@ -451,8 +452,8 @@ export default function ConnectedAccounts() {
         navigate(`/merge/${response.merge_token}`, { replace: true });
       }
     },
-    onError: (err: { response?: { data?: { detail?: string } } }) => {
-      setEmailError(err.response?.data?.detail || t('profile.emailMergeCodeInvalid'));
+    onError: (err: unknown) => {
+      setEmailError(getApiErrorMessage(err, t('profile.emailMergeCodeInvalid')));
     },
   });
 
@@ -537,8 +538,9 @@ export default function ConnectedAccounts() {
       } else {
         // Regular browser: navigate within the same tab.
         // Save state in sessionStorage for the callback page to verify.
-        sessionStorage.setItem(LINK_OAUTH_STATE_KEY, state);
-        sessionStorage.setItem(LINK_OAUTH_PROVIDER_KEY, provider);
+        if (!saveLinkOAuthState(state, provider)) {
+          throw new Error('OAuth state is not persistable');
+        }
         window.location.href = authorize_url;
       }
     } catch (err: unknown) {
