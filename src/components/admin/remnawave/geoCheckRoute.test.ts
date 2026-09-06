@@ -68,16 +68,13 @@ describe('isValidIpAddress', () => {
 
 describe('isValidInterfaceName', () => {
   it.each(['eth0', 'ens3', 'wg0', 'br-lan', 'enp0s31f6'])('accepts %s', (value) =>
-    expect(isValidInterfaceName(value)).toBe(true));
+    expect(isValidInterfaceName(value)).toBe(true),
+  );
 
-  it.each([
-    '',
-    'bad iface',
-    'eth0;reboot',
-    '../etc',
-    '-eth0',
-    'a'.repeat(33),
-  ])('rejects %s', (value) => expect(isValidInterfaceName(value)).toBe(false));
+  it.each(['', 'bad iface', 'eth0;reboot', '../etc', '-eth0', 'a'.repeat(33)])(
+    'rejects %s',
+    (value) => expect(isValidInterfaceName(value)).toBe(false),
+  );
 });
 
 describe('isRouteReady', () => {
