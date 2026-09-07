@@ -9,7 +9,7 @@ and visual product customization intentionally belong to the next workstream.
 
 ## Development
 
-Requirements: Node.js 20+ and npm.
+Requirements: Node.js 24.15+ and npm.
 
 ```bash
 npm ci

@@ -1,7 +1,7 @@
 # Upstream Synchronization Report: v1.69.1
 
-Status: local candidate implemented and verified; runtime/Release not verified
-Date: 2026-09-06
+Status: published, deployed and production-verified
+Date: 2026-09-07
 
 ## Source identity
 
@@ -10,12 +10,17 @@ Date: 2026-09-06
 - Target Upstream Cabinet: v1.69.1 / 3da34239d1c1c7b87a0184e74d49bde43ea88b89
 - The remote `v1.69.1` tag resolves directly to the recorded target SHA.
 - Receiving Custom Cabinet base: 96c34492fdbd1cc96feaab10d12494dd780d876d
-- Candidate branch: sync/upstream-v1.69.0 (uncommitted working tree)
-- Required Upstream Bot candidate for the full v1.69.1 contract: v4.5.0 /
-  07f3c6081233f5517200e62ad7be70aaa58ef27c. No Bot selection was changed.
-- Source API evidence and local Cabinet/Installer gates pass; Bot runtime
-  compatibility, migrations and release remain unverified.
-- Release Bundle: not scheduled or published.
+- Adapted Custom Cabinet source:
+  bb6f56f050267d6d6aaa38793d2b288f4f186565.
+- Final release commit/tag: 27f94c818435044ef7b58fcd0ed7de119331cfb8 /
+  cabinet-v2026.09.07.1. The follow-up from the adapted source is test formatting
+  only.
+- Selected Upstream Bot: v4.5.0 /
+  07f3c6081233f5517200e62ad7be70aaa58ef27c.
+- Release Bundle: v2026.09.07.1, deployed and verified on production.
+- Local source/API gates, public asset verification, the full disposable Ubuntu
+  24.04 Installer lifecycle, migrations 0107-0114, Protected Update, recovery
+  proof and production postflight passed. See LIVE_CHECK_REPORT_2026.09.07.md.
 
 The extended adaptive plan is UPSTREAM_V1.69.0_INTEGRATION_PLAN.md.
 The initial 233-file and incremental 45-file inventory is

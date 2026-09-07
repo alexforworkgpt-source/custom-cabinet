@@ -13,67 +13,48 @@ The product has three interface modes:
 
 ## Current Source and Production Reference
 
-The source reference for the latest owner-reported production update on
-`2026-09-03` is
-`2346ea323030e2330fff90dcf01756db68cdbbcf` (`Add quick subscription QR and
-support instructions entry`). This source retains the Upstream Cabinet
-`v1.66.0` integration through `92906d0e9a128d0a6cdf0f056996e4db44d72d94`.
+The current production reference, verified on `2026-09-07`, is Custom Cabinet
+`cabinet-v2026.09.07.1` at
+`27f94c818435044ef7b58fcd0ed7de119331cfb8`, package `v1.69.1`, through Release
+Bundle `v2026.09.07.1`. It integrates Upstream Cabinet `v1.69.1` at
+`3da34239d1c1c7b87a0184e74d49bde43ea88b89` and runs with Upstream Bot
+`v4.5.0` at `07f3c6081233f5517200e62ad7be70aaa58ef27c`.
 
-The latest immutable release is Custom Cabinet `cabinet-v2026.09.05.1` at
-`5cf81e74dcacad02336e57af6f71d490688cdf88` through Release Bundle
-`v2026.09.05`. Its functional application source is
-`13ec9332f49a276f6afdce8b698b78eb0902293c`; the tagged commit adds release
-documentation. Deployment of this exact tagged source has not been confirmed.
-Later commits on `main` do not imply another production deployment; inspect Git
-for the current development source.
+The adaptive integration source is
+`bb6f56f050267d6d6aaa38793d2b288f4f186565`; the final tagged commit adds a
+formatting-only test change. Release publication, independent verification of
+all six public assets, a full disposable Ubuntu 24.04 Installer lifecycle and
+the production Protected Update passed. The database migrated from Alembic
+`0106` to `0114`; production Status, Diagnostics, exact runtime identities,
+three healthy services and final postflight passed.
 
-The full browser matrix reproduced untranslated labels in Telegram login and
-Dashboard recommendations. On `2026-09-05`, the owner explicitly accepted this
-known limitation for the current release and deferred the translation-loading
-fix to a later task. See the dated preparation gate in `COMPATIBILITY.md`; do
-not reinterpret the release decision as a browser-gate pass.
+Authenticated production browser smoke through the Upstream Bot covered
+Dashboard, tariff/subscription purchase without payment, Support, Profile and
+the administrative Grace Access, Referral Levels and System Errors routes. No
+form was saved and no payment, ticket, synchronization or Remnawave mutation
+was performed. The Remnawave API was read-only. Two persisted System Errors at
+the rollout timestamp were diagnosed as transient startup events; no recurrence
+or traceback was found in the final observation window. See
+[`LIVE_CHECK_REPORT_2026.09.07.md`](LIVE_CHECK_REPORT_2026.09.07.md).
 
-The release workflow and independent public-asset verification passed on
-`2026-09-05`. The owner skipped a separate disposable-VPS installation because
-Custom Cabinet had already been updated from `main`. The earlier owner-reported
-VPS update points to `2346ea3`, not the release commit `5cf81e7`; therefore it
-must not be treated as proof of the exact Release Bundle combination. See
-`LIVE_CHECK_REPORT_2026.09.05.md`.
-
-- The owner supplied an Installer update log showing a fast-forward from
-  `7c88d7bc` to `2346ea32`, a completed frontend build and a successful Cabinet
-  update. The owner then confirmed the buttons work. This is an update directly
-  from `main`, without a new Release or Release Bundle, not an independent
-  post-update inspection of the VPS Git SHA or runtime identities.
-- The earlier authenticated browser smoke on `2026-09-02` covered the working
-  source `7c88d7bc0839608e3a652a9ee0d338922c5b7713`: Dashboard, subscription
-  management, devices, Connection, Balance, Profile and Support, session
-  persistence after reload and narrow
-  layout. No console errors or warnings were observed. Payments, settings
-  changes and device deletion were not performed. The owner separately
-  confirmed the Admin button, not the complete administrative console.
-- The exact Git SHA on the VPS and current Installer, Upstream Bot, image,
-  database and Bundle metadata identities were not inspected during this
-  browser smoke. VPS diagnostics were excluded by the owner. Do not infer a
-  fully verified Release Bundle combination from this UI check.
-- Previous owner-confirmed working Custom Cabinet source:
-  `7c88d7bc0839608e3a652a9ee0d338922c5b7713`; the earlier confirmed source was
-  `4638234f8bb9de8816263fe69df8709f66041513`. These source references do not
-  establish that a ready-to-apply rollback artifact exists on the VPS.
+Release Bundle `v2026.09.07` is an immutable, superseded publication and was
+not deployed. A migration-export race was found after publication; the fix was
+published and deployed only as `v2026.09.07.1`. Never replace assets under the
+older tag.
 
 ## Historical Release Reference
 
-The following references distinguish the current published candidate from the
-last fully verified production baseline.
+The following references are retained as historical evidence and must not be
+used as the current production baseline.
 
-- Latest published candidate: Custom Cabinet `cabinet-v2026.09.05.1`, commit
+- Previous published candidate: Custom Cabinet `cabinet-v2026.09.05.1`, commit
   `5cf81e74dcacad02336e57af6f71d490688cdf88`, through Release Bundle
   `v2026.09.05`. Publication and independent public-asset verification passed.
   The translation-loading limitation was accepted by the owner; a separate
   disposable-VPS installation was skipped by owner decision.
-- Last verified production management Installer: `v2026.08.25`, commit
+- Previous production management Installer: `v2026.08.25`, commit
   `27e73f662297bbfe459af86cbe00b2a132d8ac0e`.
-- Last fully verified production Release Bundle baseline: `v2026.08.24`, policy
+- Previous fully verified production Release Bundle: `v2026.08.24`, policy
   `rollback-compatible`.
 - Custom Cabinet in that historical Bundle: `cabinet-v2026.08.24.4`, commit
   `3250e3a7f31fc2dc6f2c7779a42d86cf99a03210`.

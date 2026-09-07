@@ -8,41 +8,49 @@ identifiers, not public branding.
 
 | Component | Version or reference | Exact source |
 | --- | --- | --- |
-| Custom Cabinet | `1.66.0`; latest immutable release | `cabinet-v2026.09.05.1` / `5cf81e74dcacad02336e57af6f71d490688cdf88`; latest owner-reported production update from `main`: `2346ea323030e2330fff90dcf01756db68cdbbcf` |
-| Custom Cabinet functional release source | Application source below the release documentation commit | `13ec9332f49a276f6afdce8b698b78eb0902293c` |
-| Upstream Cabinet baseline | `v1.66.0` | `2192484b011068d8cb75c61a6aeaada1d06115aa` |
+| Custom Cabinet | `v1.69.1`; latest immutable production release | `cabinet-v2026.09.07.1` / `27f94c818435044ef7b58fcd0ed7de119331cfb8` |
+| Custom Cabinet integrated application source | Adaptive upstream integration source below the formatting-only release follow-up | `bb6f56f050267d6d6aaa38793d2b288f4f186565` |
+| Upstream Cabinet baseline | `v1.69.1` | `3da34239d1c1c7b87a0184e74d49bde43ea88b89` |
 | Upstream Cabinet source | Repository | <https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git> |
-| Upstream Bot | Last verified Bundle baseline `v4.1.0`; production identity not rechecked in September | `49b05d5ab79dd9bb92f0404bb0066cda8a175649` |
-| Node.js development baseline | 20+ | Declared in `README.md` |
+| Upstream Bot | `v4.5.0`; verified production runtime | `07f3c6081233f5517200e62ad7be70aaa58ef27c` |
+| Installer | `v2026.09.07.1`; verified management and runtime source | `b54219d34a582e393f397a4441c6aacc52f274a8` |
+| Release Bundle | `v2026.09.07.1`; `rollback-compatible` | `7f234e7672be8fe68be2102ab0655e6a3735c07b2169a14c76c30491e7f99629` |
+| Node.js development baseline | 24.15+ | Declared in `README.md` |
 
 The current upstream source identity is also recorded in
 [`UPSTREAM.md`](UPSTREAM.md). If this table and `UPSTREAM.md` disagree, stop and
 resolve the provenance mismatch before synchronization or release.
 
-## Unverified v1.69.1 Local Candidate (2026-09-06)
+## Verified v1.69.1 Release and Production Gate (2026-09-07)
 
-This section records research and local gates only. It does not replace the
-verified baseline above and is not a Release Bundle compatibility claim.
+This combination passed the complete applicable release and production gate.
 
-| Component | Candidate identity | Status |
+| Component | Exact identity | Status |
 | --- | --- | --- |
-| Custom Cabinet | Uncommitted working tree on `sync/upstream-v1.69.0`; unchanged HEAD/base `96c34492fdbd1cc96feaab10d12494dd780d876d`; package version `1.69.1` | Local source/unit/types/build/target-browser gates complete; not published or installed |
-| Upstream Cabinet target | `v1.69.1` / `3da34239d1c1c7b87a0184e74d49bde43ea88b89` | Remote tag/SHA and 12-commit / 45-file increment verified |
-| Upstream Bot required candidate | `v4.5.0` / `07f3c6081233f5517200e62ad7be70aaa58ef27c` | Source contract present; runtime not tested and selected Bot not changed |
-| Installer candidate | `support/cabinet-node24` / `27e73f662297bbfe459af86cbe00b2a132d8ac0e` plus the existing uncommitted Node 20/24 builder work | Unchanged by v1.69.1; previous 100-test Windows gate retained |
-| Release Bundle | None | Not scheduled or published |
+| Custom Cabinet | `cabinet-v2026.09.07.1` / `27f94c818435044ef7b58fcd0ed7de119331cfb8`; package `1.69.1` | Published, deployed and browser-smoked |
+| Upstream Cabinet target | `v1.69.1` / `3da34239d1c1c7b87a0184e74d49bde43ea88b89` | Remote tag/SHA and complete integration inventory verified |
+| Upstream Bot | `v4.5.0` / `07f3c6081233f5517200e62ad7be70aaa58ef27c` | Exact production runtime verified |
+| Installer | `v2026.09.07.1` / `b54219d34a582e393f397a4441c6aacc52f274a8` | Full disposable Ubuntu 24.04 lifecycle and production management/runtime verification passed |
+| Release Bundle | `v2026.09.07.1` / `7f234e7672be8fe68be2102ab0655e6a3735c07b2169a14c76c30491e7f99629` | Published assets independently verified; Protected Update committed in production |
 
-Upstream Bot v4.4.0 is not compatible with the complete v1.69.1 frontend:
+Upstream Bot v4.4.0 is not compatible with the complete v1.69.1 frontend.
 v4.5.0 first supplies web Telegram new-user consent payloads, authenticated
 `GET /cabinet/auth/me/avatar`, and `GET /cabinet/branding/favicon`. Exact Bot
 v4.5.0 source commits are `58e9050c8d34a6ec7ae725b8706be46be1536448`,
 `17b382532f94a4c89220124f1dde25a88b5c454f`, and
 `46a7590c34ba778efbbcfcb4c1a617bc1a175c40`.
-Do not promote this row to a verified combination until a disposable Ubuntu
-24.04 lifecycle covers Bot, PostgreSQL/Redis, migrations 0107–0114, image
-digests, recovery, the exact Release Bundle and targeted smoke installation.
 
-## Post-Bundle Custom Cabinet Update
+The full lifecycle covered Bot, PostgreSQL/Redis, migrations 0107-0114, pinned
+image digests, injected rollback/recovery, the exact Release Bundle and a clean
+uninstall. Production then passed the protected migration from `0106` to
+`0114`, exact identity checks, Status, Diagnostics, service/public health and
+authenticated browser smoke. See `LIVE_CHECK_REPORT_2026.09.07.md`.
+
+The separately published `v2026.09.07` Bundle was never deployed and is
+superseded because a migration-export race was found after publication. Its
+immutable assets remain unchanged; use `v2026.09.07.1`.
+
+## Historical Post-Bundle Custom Cabinet Update (2026-09-03)
 
 The source reference for the latest production update on `2026-09-03` is
 `2346ea323030e2330fff90dcf01756db68cdbbcf`. The owner supplied an Installer
@@ -82,7 +90,7 @@ Previous owner-confirmed working source:
 `4638234f8bb9de8816263fe69df8709f66041513`. These are not evidence of a prepared
 rollback artifact on the VPS.
 
-## Release Publication Gate (2026-09-05)
+## Historical Release Publication Gate (2026-09-05)
 
 Functional source under test:
 `13ec9332f49a276f6afdce8b698b78eb0902293c`. The immutable release tag points to
@@ -161,8 +169,8 @@ smoke results.
 The following rows passed the Release Bundle contract and deterministic artifact
 gate. The Installer identity passed the full disposable Ubuntu lifecycle;
 Cabinet-only bundles may reuse that exact proof when all protected identities and
-contracts remain unchanged, followed by a targeted smoke installation. Product
-live sign-off remains `BLOCKED` as recorded in the linked reports.
+contracts remain unchanged, followed by a targeted smoke installation. Each
+row retains its own dated product sign-off and residual risks.
 
 | Release Bundle | Installer commit | Upstream Bot tag/SHA | Custom Cabinet tag/commit | Upstream Cabinet baseline SHA | Runtime images | Verification date | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -180,6 +188,7 @@ live sign-off remains `BLOCKED` as recorded in the linked reports.
 | `v2026.08.26` | `27e73f662297bbfe459af86cbe00b2a132d8ac0e` | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` | `cabinet-v2026.08.26.1` / `e4002ebe225ea32a047d86ce311f26d4071a61bc` | `2192484b011068d8cb75c61a6aeaada1d06115aa` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-08-26 | Exact Installer lifecycle proof reused because the Installer commit, Bot SHA, image digests, Bundle contract and Ubuntu target are unchanged. Custom Cabinet gates, deterministic publication and independent public asset verification passed. A fresh targeted installation committed on the disposable integration VPS; doctor, exact source identities, three containers, Cabinet HTTP `200`, webhook default `404` and complete cleanup passed. Production was not accessed; see `LIVE_CHECK_REPORT_2026.08.26.md`. |
 | `v2026.08.28` | `27e73f662297bbfe459af86cbe00b2a132d8ac0e` | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` | `cabinet-v2026.08.28.1` / `2a49b1350ab98e177c0d62d26462381aeca97648` | `2192484b011068d8cb75c61a6aeaada1d06115aa` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-08-28 | Exact Installer lifecycle proof reused because the Installer commit, Bot SHA, image digests, Bundle contract and Ubuntu target are unchanged. Custom Cabinet and GitHub gates, deterministic publication and independent public asset verification passed. A fresh targeted installation committed on the disposable integration VPS; doctor, exact source identities, three containers, Cabinet and branding HTTP `200`, unified health `ok`, webhook default `404` and complete cleanup passed. Production was not accessed; see `LIVE_CHECK_REPORT_2026.08.28.md`. |
 | `v2026.09.05` | `27e73f662297bbfe459af86cbe00b2a132d8ac0e` | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` | `cabinet-v2026.09.05.1` / `5cf81e74dcacad02336e57af6f71d490688cdf88` | `2192484b011068d8cb75c61a6aeaada1d06115aa` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-09-05 | Exact Installer lifecycle proof reused because the Installer commit, Bot SHA, image digests, Bundle contract and Ubuntu target are unchanged. Custom Cabinet checks, GitHub gates, deterministic publication and independent verification of six public assets passed. The owner accepted the known asynchronous translation-loading defect and skipped a separate disposable-VPS installation because Custom Cabinet had already been updated from `main`; that earlier update does not prove the exact tagged source or Bundle combination. Full product live sign-off remains `BLOCKED`; see `LIVE_CHECK_REPORT_2026.09.05.md`. |
+| `v2026.09.07.1` | `b54219d34a582e393f397a4441c6aacc52f274a8` | `v4.5.0` / `07f3c6081233f5517200e62ad7be70aaa58ef27c` | `cabinet-v2026.09.07.1` / `27f94c818435044ef7b58fcd0ed7de119331cfb8` | `3da34239d1c1c7b87a0184e74d49bde43ea88b89` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-09-07 | Full disposable Ubuntu 24.04 Installer lifecycle, rollback injection/recovery, deterministic publication and independent verification of six public assets passed. Production management update preserved runtime identities; a full migration package was copied off-host and checksum-verified; Protected Update migrated Alembic `0106` to `0114` with `outcome=committed`. Exact identities, Status, Diagnostics, three healthy services, public health, Telegram webhook and authenticated read-only browser smoke passed. The prior `v2026.09.07` publication was never deployed and is superseded. See `LIVE_CHECK_REPORT_2026.09.07.md`. |
 
 Use this format for every released combination:
 
