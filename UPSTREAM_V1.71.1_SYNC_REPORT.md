@@ -1,13 +1,12 @@
 # Upstream Synchronization Report: v1.71.1
 
-Status: integration candidate verified; Issues 01-10 complete, Issue 11 exact
-commit record pending<br>
+Status: source integration complete; Issues 01-11 complete<br>
 Date: 2026-09-12<br>
 Receiving branch: `sync/upstream-v1.71.1-contract`
 
-Do not mark this report completed or update `UPSTREAM.md` until the selected
-range is integrated and the applicable source, browser, Bot and Installer gates
-pass.
+This report closes the source integration. It does not declare a Release Bundle
+or production deployment; those require their own applicable Installer,
+publication and live gates.
 
 ## Source Identity
 
@@ -19,9 +18,9 @@ pass.
 | Target release | <https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/releases/tag/v1.71.1> |
 | Target tag / SHA | `v1.71.1` / `5ade78f506fd0e102d70e2d59af4aa97ef9c164b` |
 | Receiving Custom Cabinet base commit | `e0b623e1cbe83b1697c24325ccb98c27ba6cdd46` from current `origin/main` |
-| Integrated Custom Cabinet candidate | Combined uncommitted Issues 01-11 working tree based on `e0b623e1cbe83b1697c24325ccb98c27ba6cdd46`; immutable commit SHA pending |
-| Intended Upstream Bot release | <https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot/releases/tag/v4.7.1> |
-| Intended Upstream Bot tag / SHA | `v4.7.1` / `cd903b7cfd3bac6e08e571904662c88e8c151d1d` |
+| Integrated Custom Cabinet application source | `743cf0c69d49806354daa89fb8075fe7d2cef363` |
+| Verified Upstream Bot release | <https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot/releases/tag/v4.7.1> |
+| Verified Upstream Bot tag / SHA | `v4.7.1` / `cd903b7cfd3bac6e08e571904662c88e8c151d1d` |
 | Production reference point | Release Bundle `v2026.09.07.1` |
 
 Both Cabinet tags resolve to the exact SHAs above. The target range is a direct
@@ -44,9 +43,9 @@ descendant of the previous tag.
   the exact official Upstream Bot `v4.7.1` source and isolated test runtime.
 - Merge/release metadata commits: 9; recorded but not copied as application
   behavior.
-- Dependency changes: none. `package.json` changes only the upstream package
-  version from `1.69.1` to `1.71.1`; Custom Cabinet release metadata remains
-  Custom-owned.
+- Dependency changes: none. Custom Cabinet updates only its source version in
+  `package.json` and `package-lock.json` from `1.69.1` to `1.71.1` after the
+  verified integration commit; Release Bundle metadata remains Custom-owned.
 - Upstream Bot commit
   [`7448af74`](https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot/commit/7448af743f6142e57f6f3ca2908a6ef163c42c03)
   acknowledges a quick-top-up tap before the provider call and is included in
@@ -183,13 +182,13 @@ and Release decision.
 ## Provenance and Compatibility State
 
 - `LICENSE`, copyright and the exact upstream repository URL are unchanged.
-- `UPSTREAM.md` deliberately remains at the last integrated `v1.69.1` identity.
-- `COMPATIBILITY.md` records this exact pending contract without claiming that
-  `v1.71.1` or Bot `v4.7.1` is already verified.
-- The combined source candidate has passed the available Issue 11 gates, but it
-  is not an immutable Custom Cabinet commit. Promoting the canonical baseline,
-  package/changelog or compatibility record before that commit exists would
-  create false provenance.
+- `UPSTREAM.md` records Upstream Cabinet `v1.71.1` / `5ade78f5...` and the
+  integrated Custom Cabinet application source `743cf0c6...`.
+- `COMPATIBILITY.md` records verified source compatibility with Upstream Bot
+  `v4.7.1` / `cd903b7c...` while retaining the older immutable Release Bundle
+  and production baseline as a separate historical truth.
+- `CHANGELOG.md`, `package.json` and `package-lock.json` record source version
+  `1.71.1`; no dependency version changed.
 - No Release Bundle, tag, publication or production operation is part of this
   integration worktree.
 
@@ -482,23 +481,24 @@ SQLite and service test harnesses instead of a containerized live stack.
 
 ## Issue 11 Verification
 
-Issue 11 closes every source, browser and release-delta gate that can be tied
-to the current working-tree candidate. The receiving base remains
-`e0b623e1cbe83b1697c24325ccb98c27ba6cdd46`; no commit, tag, push, Release
-Bundle or production operation was performed.
+Issue 11 closes every source, browser and release-delta gate against integrated
+Custom Cabinet application source
+`743cf0c69d49806354daa89fb8075fe7d2cef363`. The receiving base remains
+`e0b623e1cbe83b1697c24325ccb98c27ba6cdd46`; no tag, push, Release Bundle or
+production operation was performed.
 
 | Gate | Result | Evidence or limitation |
 | --- | --- | --- |
 | Range and decision inventory | Pass | `v1.69.1..v1.71.1` resolves to 80 commits and 264 changed paths; the matrix contains exactly 80 unique SHAs with zero missing or extra rows |
-| Final Custom Cabinet source gate | Pass on candidate | Node 24.19.0: 106/106 test files and 757/757 unit/component/API/contract tests pass; the normal suite includes the executable no-BSCHEKER guard |
-| Type and production build | Pass on candidate | both TypeScript projects pass; Vite builds 2,913 modules |
-| Biome and whitespace | Pass on candidate | 721 files checked with zero errors; 40 warnings and 5 infos remain only in the pre-existing inline-compatible `index.html`; `git diff --check` passes |
-| Full local browser matrix | Pass on candidate | system Chrome: 464 passed and 24 intentionally skipped by project filters across 320, 375, 768, 1024 and 1280 widths; all browser API traffic used local fixtures |
-| Theme, locale and accessibility coverage | Pass on candidate | the full matrix exercises dark/light and operator accent colors, Russian/English, RTL containment, keyboard/focus and accessible names; reduced-motion GeoCheck coverage passes |
+| Final Custom Cabinet source gate | Pass | Node 24.19.0: 106/106 test files and 757/757 unit/component/API/contract tests pass; the normal suite includes the executable no-BSCHEKER guard |
+| Type and production build | Pass | both TypeScript projects pass; Vite builds 2,913 modules |
+| Biome and whitespace | Pass | 721 files checked with zero errors; 40 warnings and 5 infos remain only in the pre-existing inline-compatible `index.html`; `git diff --check` passes |
+| Full local browser matrix | Pass | system Chrome: 464 passed and 24 intentionally skipped by project filters across 320, 375, 768, 1024 and 1280 widths; all browser API traffic used local fixtures |
+| Theme, locale and accessibility coverage | Pass | the full matrix exercises dark/light and operator accent colors, Russian/English, RTL containment, keyboard/focus and accessible names; reduced-motion GeoCheck coverage passes |
 | Mobile navigation regression | Pass | the first diagnostic matrix exposed one real Dashboard overlap and stale pre-Issue-02 expectations on action/admin routes; the content clearance was restored, tests now assert the approved route boundary and safe-area visibility, and the unchanged full matrix rerun has zero failures |
 | BSCHEKER exclusion | Pass | the normal source guard passes and local browser harnesses reject unexpected Cabinet requests; no route, menu, permission, setting, API, locale, fixture or operator asset entered the frontend |
-| Release-delta hygiene | Pass on candidate | 123 changed or untracked source/documentation files; zero private paths, `.env` files, accidental build/Playwright output, license files or high-confidence secret shapes. BSCHEKER/reachability text occurs only in the sync report, exclusion ADR, guard implementation/test and the pending contract/context records |
-| Canonical provenance promotion | **BLOCKED** | the candidate is deliberately uncommitted, so no exact Custom Cabinet commit exists to record. `UPSTREAM.md`, the verified `COMPATIBILITY.md` baseline and release changelog/version remain unchanged until an authorized commit is created and the relevant gates are tied to that SHA |
+| Release-delta hygiene | Pass | integration commit `743cf0c6...` contains 123 source/documentation files relative to the receiving base; zero private paths, `.env` files, accidental build/Playwright output, license files or high-confidence secret shapes. BSCHEKER/reachability text occurs only in the sync report, exclusion ADR, guard implementation/test and the contract/context records |
+| Canonical provenance promotion | Pass | `UPSTREAM.md`, source compatibility, changelog and package/lock version now point to the exact verified identities; the released/production matrix remains unchanged because no Release operation occurred |
 | Live/manual integrations | **BLOCKED** | physical Telegram Android/iOS, physical screen readers, authenticated staging, live payment/email/Remnawave operations and production remain unverified; the exact Bot full-suite native-Windows limitation is recorded under Issue 10 |
 
 The initial full browser diagnostic returned 442 passed, 24 configured skips
@@ -511,13 +511,16 @@ waived or converted to a configured skip.
 
 ## Residual Risks and Next Boundary
 
-The matrix now contains a final decision and evidence for every incoming
-commit. Issues 01-11 prove the integration boundary, all selected Custom
-Cabinet feature ports, the exact Upstream Bot API seam, isolated backend rules
-and the complete local source/browser candidate. The remaining provenance step
-requires an owner-authorized Custom Cabinet commit; after the gates are tied to
-that immutable SHA, `UPSTREAM.md`, the verified compatibility baseline and
-release-owned version/changelog can be promoted without ambiguity.
+The matrix contains a final decision and evidence for every incoming commit.
+Issues 01-11 prove the integration boundary, all selected Custom Cabinet
+feature ports, the exact Upstream Bot API seam, isolated backend rules and the
+complete local source/browser result. Source integration is complete at
+`743cf0c69d49806354daa89fb8075fe7d2cef363`.
+
+Any later Release Bundle still requires immutable publication evidence and the
+applicable Installer smoke. Physical-device, staging and live integration gates
+remain `BLOCKED` as recorded above and must not be inferred from source
+completion.
 
 Rollback reference remains the unmodified receiving commit
 `e0b623e1cbe83b1697c24325ccb98c27ba6cdd46`; no Release or production rollback

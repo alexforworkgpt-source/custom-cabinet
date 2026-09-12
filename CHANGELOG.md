@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.71.1](https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/compare/v1.69.1...v1.71.1) (2026-09-12)
+
+### Custom Cabinet Integration
+
+* **platform:** route-aware mobile navigation, virtual-keyboard handling, touch Done behavior and safe-area-aware sheets
+* **auth:** recoverable email-registration confirmation and localized backend compatibility errors
+* **tariffs:** shared discounted daily pricing, operator-controlled best-value choices and backend-owned renewal/switch quotes
+* **payments:** visible pending state, repeat-submit protection and safe recovery for quick top-ups
+* **devices:** localized reason codes and readable mobile subscription terms
+* **admin:** email retry-queue controls plus source-aware partner and ticket settings locked by `.env`
+* **referral:** hide disabled withdrawal actions while preserving existing request history
+* **accessibility:** restored mobile content clearance, semantic contrast, focus and reduced-motion coverage
+
+### Compatibility
+
+* Adapted application source: `743cf0c69d49806354daa89fb8075fe7d2cef363`.
+* Upstream Cabinet baseline: `v1.71.1` / `5ade78f506fd0e102d70e2d59af4aa97ef9c164b`.
+* Verified source contracts target Upstream Bot `v4.7.1` / `cd903b7cfd3bac6e08e571904662c88e8c151d1d`.
+* BSCHEKER remains intentionally absent from the Custom Cabinet frontend; the official Upstream Bot backend is unchanged.
+* This source-only entry does not declare a Release Bundle or production deployment.
+
 ## [1.66.0](https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/compare/v1.65.0...v1.66.0) (2026-08-23)
 
 ### Custom Cabinet Integration
