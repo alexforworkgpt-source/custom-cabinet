@@ -133,3 +133,18 @@ Bot contracts, Telegram navigation and Installer-based deployment.
 - Preserve callback routes and deep links when simplifying visible navigation.
 - Test user-facing changes through whole browser scenarios and the live-check
   process after installation through Installer.
+
+## Excluded Frontend Capability
+
+BSCHEKER is intentionally unsupported in Custom Cabinet. No route, navigation
+item, permission, setting, API client or request, polling, locale, fixture or
+feature-specific asset may expose it. This is an executable product boundary,
+not a temporary feature flag; `src/noBscheker.guard.test.ts` enforces it during
+the normal unit-test gate.
+
+The official Upstream Bot `v4.7.1` still contains its BSCHEKER backend and
+migrations. Custom Cabinet's frontend exclusion does not authorize a backend
+fork or a claim that the upstream capability is absent. General platform and
+accessibility fixes may be adapted from adjacent upstream commits only after
+they are separated from reachability contracts. See
+[`docs/adr/0001-no-bscheker-frontend.md`](docs/adr/0001-no-bscheker-frontend.md).

@@ -122,7 +122,11 @@ export default function Referral() {
   // section is gated only by the admin visibility flag.
   const withdrawalVisible = terms?.partner_section_visible !== false;
 
-  const { data: withdrawalBalance } = useQuery({
+  const {
+    data: withdrawalBalance,
+    isPending: withdrawalBalancePending,
+    isError: withdrawalBalanceFailed,
+  } = useQuery({
     queryKey: ['withdrawal-balance'],
     queryFn: withdrawalApi.getBalance,
     enabled: withdrawalVisible,
@@ -133,6 +137,11 @@ export default function Referral() {
     queryFn: withdrawalApi.getHistory,
     enabled: withdrawalVisible,
   });
+  const withdrawalEnabled = withdrawalBalance?.is_withdrawal_enabled ?? withdrawalBalanceFailed;
+  const withdrawalTurnedOff = withdrawalBalance?.is_withdrawal_enabled === false;
+  const hasWithdrawalHistory = (withdrawalHistory?.items?.length ?? 0) > 0;
+  const withdrawalSectionVisible =
+    withdrawalVisible && !withdrawalBalancePending && (withdrawalEnabled || hasWithdrawalHistory);
 
   // Withdrawal cancel mutation
   const cancelWithdrawalMutation = useMutation({
@@ -560,7 +569,11 @@ export default function Referral() {
                   {t('referral.partner.becomePartner')}
                 </h2>
                 <p className="mt-1 text-sm text-dark-400">
-                  {t('referral.partner.becomePartnerDesc')}
+                  {t(
+                    withdrawalTurnedOff
+                      ? 'referral.partner.becomePartnerDescNoWithdrawal'
+                      : 'referral.partner.becomePartnerDesc',
+                  )}
                 </p>
                 <button
                   onClick={() => navigate('/referral/partner/apply')}
@@ -621,9 +634,11 @@ export default function Referral() {
                   })}
                 </p>
               </div>
-              <a href="#withdrawal-section" className="btn-secondary hidden px-4 sm:flex">
-                {t('referral.withdrawal.goToWithdrawal')}
-              </a>
+              {withdrawalSectionVisible && (
+                <a href="#withdrawal-section" className="btn-secondary hidden px-4 sm:flex">
+                  {t('referral.withdrawal.goToWithdrawal')}
+                </a>
+              )}
             </div>
           </div>
         )}
@@ -680,7 +695,7 @@ export default function Referral() {
 
       {/* ==================== Withdrawal Section ==================== */}
 
-      {withdrawalVisible && (
+      {withdrawalSectionVisible && (
         <>
           <button
             type="button"
@@ -704,7 +719,7 @@ export default function Referral() {
             className={`space-y-6 ${withdrawalOpen ? 'block' : 'hidden md:block'}`}
           >
             {/* Withdrawal Balance Card */}
-            {withdrawalBalance && (
+            {withdrawalEnabled && withdrawalBalance && (
               <div className="bento-card">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-500/10 text-accent-400">

@@ -17,9 +17,9 @@ import { WebSocketProvider } from './providers/WebSocketProvider';
 import { ToastProvider } from './components/Toast';
 import { TooltipProvider } from './components/primitives/Tooltip';
 import { isInTelegramWebApp, closeTelegramApp } from './hooks/useTelegramSDK';
-import { getFallbackParentPath } from './utils/navigation';
 import { useBlockingStore } from './store/blocking';
-import { getDirectCabinetBackPath, getUserCabinetRouteState } from './utils/userCabinetRouteState';
+import { getUserCabinetRouteState } from './utils/userCabinetRouteState';
+import { resolveNativeBackAction } from './utils/backNavigation';
 import {
   TransientOverlayBackProvider,
   useTransientOverlayBackDispatcher,
@@ -77,6 +77,8 @@ function TelegramBackButton() {
   pathnameRef.current = location.pathname;
   const searchRef = useRef(location.search);
   searchRef.current = location.search;
+  const stateRef = useRef(location.state);
+  stateRef.current = location.state;
   const hasHistoryOverlayRef = useRef(false);
   const dispatchTransientOverlayBack = useTransientOverlayBackDispatcher();
   hasHistoryOverlayRef.current = Boolean(
@@ -154,20 +156,17 @@ function TelegramBackButton() {
       navigateRef.current(-1);
       return;
     }
-    // Real in-app history (depth > 0): a normal back. Otherwise we were opened
-    // directly on this route via a deep-link — navigate(-1) is a no-op, so fall
-    // back to a sensible parent route instead.
-    if (depthRef.current > 0) {
+    const action = resolveNativeBackAction({
+      depth: depthRef.current,
+      pathname: pathnameRef.current,
+      search: searchRef.current,
+      state: stateRef.current,
+    });
+    if (action.kind === 'history') {
       navigateRef.current(-1);
       return;
     }
-    const directBackPath = getDirectCabinetBackPath(pathnameRef.current, searchRef.current);
-    if (directBackPath) {
-      navigateRef.current(directBackPath, { replace: true });
-      return;
-    }
-    const fallback = getFallbackParentPath(pathnameRef.current);
-    navigateRef.current(fallback, { replace: true });
+    navigateRef.current(action.to, { replace: true });
   }, [dispatchTransientOverlayBack]);
 
   useEffect(() => {

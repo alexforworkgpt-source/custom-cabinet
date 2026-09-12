@@ -189,6 +189,7 @@ export interface PartnerSettings {
   withdrawal_requisites_text: string;
   partner_section_visible: boolean;
   referral_program_enabled: boolean;
+  env_locked: (keyof PartnerSettingsUpdate)[];
 }
 
 export interface PartnerSettingsUpdate {

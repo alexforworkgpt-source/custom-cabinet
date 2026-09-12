@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { headerHeightCss } from './useHeaderHeight';
+import { headerHeightCss, telegramSafeAreas } from './useHeaderHeight';
 
 /**
  * В standalone-режиме iOS («На экран Домой») страница начинается под
@@ -14,5 +14,42 @@ describe('headerHeightCss', () => {
 
   it('в fullscreen Telegram оставляет высоту из SDK как есть', () => {
     expect(headerHeightCss(157, true)).toBe('157px');
+  });
+});
+
+describe('telegramSafeAreas', () => {
+  const insets = (top: number, bottom: number) => ({ top, bottom, left: 0, right: 0 });
+
+  it('учитывает больший SDK inset и системную шапку iOS', () => {
+    expect(
+      telegramSafeAreas({
+        isMobileFullscreen: true,
+        platform: 'ios',
+        safeAreaInset: insets(59, 34),
+        contentSafeAreaInset: insets(46, 0),
+      }),
+    ).toEqual({ top: 104, bottom: 34 });
+  });
+
+  it('использует высоту системной шапки Android', () => {
+    expect(
+      telegramSafeAreas({
+        isMobileFullscreen: true,
+        platform: 'android',
+        safeAreaInset: insets(24, 0),
+        contentSafeAreaInset: insets(0, 16),
+      }),
+    ).toEqual({ top: 72, bottom: 16 });
+  });
+
+  it('вне fullscreen возвращает нулевые SDK-отступы', () => {
+    expect(
+      telegramSafeAreas({
+        isMobileFullscreen: false,
+        platform: 'ios',
+        safeAreaInset: insets(59, 34),
+        contentSafeAreaInset: insets(46, 0),
+      }),
+    ).toEqual({ top: 0, bottom: 0 });
   });
 });

@@ -5,6 +5,7 @@ import { getErrorMessage } from '../../../utils/subscriptionHelpers';
 import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
 import { ChevronRightIcon } from '../../icons';
 import type { PurchaseOptions, Subscription } from '../../../types';
+import { deviceUnavailableText } from '../deviceReasons';
 
 // ──────────────────────────────────────────────────────────────────
 // Buy-devices sheet. Self-owns its devicePrice query + purchase mutation;
@@ -105,7 +106,11 @@ export function DeviceTopupSheet({
 
       {devicePriceData?.available === false ? (
         <div className="py-4 text-center text-sm text-dark-400">
-          {devicePriceData.reason || t('subscription.additionalOptions.devicesUnavailable')}
+          {deviceUnavailableText(
+            t,
+            devicePriceData,
+            'subscription.additionalOptions.devicesUnavailable',
+          )}
         </div>
       ) : (
         <div className="space-y-4">

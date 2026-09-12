@@ -93,7 +93,7 @@ export default function SubscriptionCardExpired({
   const handleQuickRenew = async () => {
     if (!isDaily) {
       haptic.buttonPressHeavy();
-      onManageSubscription();
+      navigate(`/subscriptions/${subscription.id}/renew`);
       return;
     }
 
@@ -233,9 +233,7 @@ export default function SubscriptionCardExpired({
 
       {/* Limited description */}
       {isLimited && (
-        <p className="mb-4 text-sm text-dark-50/60">
-          {t('subscription.trafficLimitedDescription')}
-        </p>
+        <p className="mb-4 text-sm text-dark-300">{t('subscription.trafficLimitedDescription')}</p>
       )}
 
       {/* Expired date + Balance row */}
@@ -247,24 +245,24 @@ export default function SubscriptionCardExpired({
           padding: '12px 14px',
         }}
       >
-        <div className="flex items-center">
-          <div className="mb-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-dark-50/30">
+        <div className="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-center">
+          <div className="mb-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-dark-500">
             {isLimited
               ? t('dashboard.expired.activeUntil')
               : t('dashboard.expired.expiredDate', {
                   context: subscription.is_trial ? 'trial' : '',
                 })}
           </div>
-          <div className="ml-3 text-base font-bold tracking-tight text-dark-50/50">
+          <div className="mt-0.5 whitespace-nowrap text-base font-bold tracking-tight text-dark-400 sm:ml-3 sm:mt-0">
             {formattedDate}
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-dark-50/30">
+        <div className="ml-3 flex shrink-0 items-center gap-1.5">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-dark-500">
             {t('dashboard.expired.balance')}
           </span>
           <span
-            className={`text-sm font-semibold ${hasBalance ? 'text-success-400' : 'text-dark-50/30'}`}
+            className={`text-sm font-semibold ${hasBalance ? 'text-success-400' : 'text-dark-500'}`}
           >
             {balanceRubles === null
               ? t('dashboard.dataUnavailable')
@@ -302,7 +300,20 @@ export default function SubscriptionCardExpired({
             {t('subscription.buyTraffic')}
           </button>
         ) : !subscription.is_trial ? (
-          balanceKopeks === null ? (
+          !isDaily ? (
+            <button
+              type="button"
+              onClick={handleQuickRenew}
+              className="flex flex-1 items-center justify-center gap-2 rounded-[14px] py-3.5 text-[15px] font-semibold tracking-tight text-white transition-all duration-300"
+              style={{
+                background: accent.gradient,
+                boxShadow: `0 4px 20px rgba(${accent.r},${accent.g},${accent.b},0.2)`,
+              }}
+            >
+              <SubscriptionIcon className="h-4 w-4" />
+              {t('dashboard.expired.quickRenew')}
+            </button>
+          ) : balanceKopeks === null ? (
             <button
               type="button"
               disabled

@@ -11,6 +11,8 @@ import {
 import { CloseIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { usePlatform } from '@/platform';
+import { useHeaderHeight } from '@/hooks/useHeaderHeight';
+import { sheetInsets } from './sheetInsets';
 import {
   backdrop,
   backdropTransition,
@@ -103,6 +105,7 @@ export interface SheetContentProps
   showCloseButton?: boolean;
   enableDragToClose?: boolean;
   closeThreshold?: number;
+  fullHeight?: boolean;
 }
 
 export const SheetContent = forwardRef<HTMLDivElement, SheetContentProps>(
@@ -114,12 +117,20 @@ export const SheetContent = forwardRef<HTMLDivElement, SheetContentProps>(
       showCloseButton = false,
       enableDragToClose = true,
       closeThreshold = 0.3,
+      fullHeight = false,
+      style,
       ...props
     },
     ref,
   ) => {
     const { open, onClose } = useContext(SheetContext);
     const { haptic } = usePlatform();
+    const { topSafeArea, bottomSafeArea } = useHeaderHeight();
+    const insets = sheetInsets({
+      requestedMaxHeight: fullHeight ? '100dvh' : '85vh',
+      topSafeArea,
+      bottomSafeArea,
+    });
     const dragControls = useDragControls();
     const handleDragEnd = useCallback(
       (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -154,6 +165,11 @@ export const SheetContent = forwardRef<HTMLDivElement, SheetContentProps>(
                   'pb-[env(safe-area-inset-bottom,0px)]',
                   className,
                 )}
+                style={{
+                  maxHeight: insets.maxHeight,
+                  paddingBottom: insets.paddingBottom,
+                  ...style,
+                }}
                 asChild
                 {...props}
               >

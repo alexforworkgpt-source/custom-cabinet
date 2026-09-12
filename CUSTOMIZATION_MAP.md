@@ -164,8 +164,14 @@ rendered states separately from presentation.
   advisory inherited from the target v1.69.0 lockfile.
 - `LegalConsentGate` uses the canonical Custom Cabinet `Card`/`Button` surface;
   do not restore a duplicate upstream `.card` presentation class.
-- `AppHeader` keeps the Custom four-item navigation and safe-area behavior while
-  accepting the Upstream Bot avatar fallback.
+- `AppShell` and `MobileBottomNav` keep the Custom four-item navigation while
+  adapting upstream route visibility, keyboard and safe-area behavior.
+- `AppHeader` keeps the Custom safe-area behavior while accepting the Upstream
+  Bot avatar fallback.
+- `src/components/auth/CheckEmailCard.tsx` owns the canonical Custom Cabinet
+  presentation for the upstream guest resend flow; `src/utils/emailAuthError.ts`
+  owns the safe response-to-state boundary. Bot rate thresholds and disposable
+  domain data must never be copied into either frontend seam.
 - `vite-plugins/brandMonogram.ts` keeps black/white Custom output; the v1.69.1
   Safari size and radius changes do not transfer upstream accent ownership.
 - `index.html` removes quick-purchase `contact` before the static favicon and

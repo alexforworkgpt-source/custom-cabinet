@@ -4,36 +4,40 @@ import { motion } from 'framer-motion';
 
 import { cn } from '@/lib/utils';
 import { usePlatform } from '@/platform';
+import { HIDDEN_UNDER_KEYBOARD, useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 
-// Icons
 import { HomeIcon, TariffsIcon, ChatIcon, UserIcon } from './icons';
+import type { MobileNavItem, MobileNavKey } from './mobileNavRoutes';
+
+type NavIcon = React.ComponentType<{ className?: string }>;
+
+const ICONS: Record<MobileNavKey, NavIcon> = {
+  dashboard: HomeIcon,
+  tariffs: TariffsIcon,
+  support: ChatIcon,
+  profile: UserIcon,
+};
 
 interface MobileBottomNavProps {
-  isKeyboardOpen: boolean;
+  items: readonly MobileNavItem[];
   isMenuOpen?: boolean;
   supportUnreadCount?: number;
 }
 
 export function MobileBottomNav({
-  isKeyboardOpen,
+  items,
   isMenuOpen = false,
   supportUnreadCount = 0,
 }: MobileBottomNavProps) {
   const { t } = useTranslation();
   const location = useLocation();
   const { haptic } = usePlatform();
+  const isKeyboardOpen = useVirtualKeyboard();
 
   const isActive = (path: string) =>
     path === '/'
       ? location.pathname === '/' || location.pathname.startsWith('/subscriptions')
       : location.pathname.startsWith(path);
-
-  const coreItems = [
-    { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
-    { path: '/subscription/purchase', label: t('nav.tariffs'), icon: TariffsIcon },
-    { path: '/support', label: t('nav.support'), icon: ChatIcon },
-    { path: '/profile', label: t('nav.profile'), icon: UserIcon },
-  ];
 
   const handleNavClick = () => {
     haptic.impact('light');
@@ -45,7 +49,7 @@ export function MobileBottomNav({
         'fixed z-50 transition-all duration-200 lg:hidden',
         'bg-dark-900/95 backdrop-blur-linear',
         'border border-dark-700/30',
-        isKeyboardOpen || isMenuOpen ? 'pointer-events-none opacity-0' : 'opacity-100',
+        isKeyboardOpen || isMenuOpen ? HIDDEN_UNDER_KEYBOARD : 'opacity-100',
       )}
       style={{
         bottom: 'var(--mobile-nav-offset)',
@@ -57,33 +61,38 @@ export function MobileBottomNav({
       }}
     >
       <div className="flex justify-around">
-        {coreItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            onClick={handleNavClick}
-            aria-current={isActive(item.path) ? 'page' : undefined}
-            className={cn(
-              'relative flex min-w-[56px] flex-1 shrink-0 flex-col items-center justify-center rounded-2xl px-3 py-2.5 transition-all duration-200',
-              isActive(item.path) ? 'text-accent-400' : 'text-dark-400 hover:text-dark-200',
-            )}
-          >
-            {isActive(item.path) && (
-              <motion.div
-                layoutId="bottom-nav-active"
-                className="absolute inset-0 rounded-2xl bg-accent-500/15"
-                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-              />
-            )}
-            <item.icon className="relative z-10 h-5 w-5" />
-            {item.path === '/support' && supportUnreadCount > 0 && (
-              <span className="absolute right-[28%] top-1.5 z-20 min-w-4 rounded-full bg-error-500 px-1 text-center text-[10px] font-bold leading-4 text-white">
-                {Math.min(supportUnreadCount, 99)}
+        {items.map((item) => {
+          const Icon = ICONS[item.key];
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              onClick={handleNavClick}
+              aria-current={isActive(item.path) ? 'page' : undefined}
+              className={cn(
+                'relative flex min-w-[56px] flex-1 shrink-0 flex-col items-center justify-center rounded-2xl px-3 py-2.5 transition-all duration-200',
+                isActive(item.path) ? 'text-accent-400' : 'text-dark-400 hover:text-dark-200',
+              )}
+            >
+              {isActive(item.path) && (
+                <motion.div
+                  layoutId="bottom-nav-active"
+                  className="absolute inset-0 rounded-2xl bg-accent-500/15"
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              )}
+              <Icon className="relative z-10 h-5 w-5" />
+              {item.path === '/support' && supportUnreadCount > 0 && (
+                <span className="absolute right-[28%] top-1.5 z-20 min-w-4 rounded-full bg-error-500 px-1 text-center text-[10px] font-bold leading-4 text-white">
+                  {Math.min(supportUnreadCount, 99)}
+                </span>
+              )}
+              <span className="relative z-10 mt-1 whitespace-nowrap text-xs">
+                {t(`nav.${item.key}`)}
               </span>
-            )}
-            <span className="relative z-10 mt-1 whitespace-nowrap text-xs">{item.label}</span>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

@@ -27,6 +27,7 @@ import {
 import { formatPrice } from '../utils/format';
 import { useCurrency } from '../hooks/useCurrency';
 import { safeSession } from '../utils/safeStorage';
+import { HIDDEN_UNDER_KEYBOARD, useVirtualKeyboard } from '../hooks/useVirtualKeyboard';
 
 function detectContactType(value: string): 'email' | 'telegram' {
   return value.startsWith('@') ? 'telegram' : 'email';
@@ -467,6 +468,7 @@ function SummaryCard({
   onSubmit: () => void;
 }) {
   const { t } = useTranslation();
+  const keyboardOpen = useVirtualKeyboard();
 
   // Responsive: track mobile for sticky pay button
   const [isMobile, setIsMobile] = useState(
@@ -558,7 +560,10 @@ function SummaryCard({
       {stickyPayButton && isMobile && !stickyPayButtonBlocked ? (
         createPortal(
           <div
-            className="fixed bottom-0 left-0 right-0 z-50 px-3 pb-[calc(0.75rem+var(--safe-area-inset-bottom))] pt-3"
+            className={cn(
+              'fixed bottom-0 left-0 right-0 z-50 px-3 pb-[calc(0.75rem+var(--safe-area-inset-bottom))] pt-3 transition-opacity duration-200',
+              keyboardOpen && HIDDEN_UNDER_KEYBOARD,
+            )}
             style={{
               // Ярлык iOS: под кнопкой ещё индикатор «Домой» (safe-area снизу).
               paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',

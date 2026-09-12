@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { prepareAuthenticatedPage } from './cabinetTestHarness';
 
-test('keeps the Wheel spin action above mobile navigation with a bottom safe area', async ({
+test('keeps the Wheel spin action above the bottom safe area without global navigation', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 568 });
@@ -52,17 +52,14 @@ test('keeps the Wheel spin action above mobile navigation with a bottom safe are
     has: page.locator('a[href="/"]'),
   });
   await expect(spinButton).toBeVisible();
-  await expect(bottomNavigation).toBeVisible();
+  await expect(bottomNavigation).toHaveCount(0);
 
-  const [spinBox, navigationBox] = await Promise.all([
-    spinButton.boundingBox(),
-    bottomNavigation.boundingBox(),
-  ]);
-  if (!spinBox || !navigationBox) {
-    throw new Error('Wheel spin action and mobile navigation must be measurable');
+  const spinBox = await spinButton.boundingBox();
+  if (!spinBox) {
+    throw new Error('Wheel spin action must be measurable');
   }
 
-  expect(spinBox.y + spinBox.height).toBeLessThanOrEqual(navigationBox.y - 8);
+  expect(spinBox.y + spinBox.height).toBeLessThanOrEqual((page.viewportSize()?.height ?? 0) - 34);
   expect(spinBox.height).toBeGreaterThanOrEqual(44);
 
   await spinButton.click();
@@ -195,7 +192,9 @@ test('shows one empty state on mobile Support when there are no tickets', async 
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('keeps Gift payment context and action above mobile navigation', async ({ page }) => {
+test('keeps Gift payment context and action above the safe area without global navigation', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 320, height: 568 });
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
     featureFlags: { giftEnabled: true },
@@ -246,18 +245,19 @@ test('keeps Gift payment context and action above mobile navigation', async ({ p
   });
   await expect(paymentContext).toHaveAttribute('aria-pressed', 'true');
   await expect(sendGift).toBeVisible();
+  await expect(bottomNavigation).toHaveCount(0);
 
-  const [paymentBox, sendGiftBox, navigationBox] = await Promise.all([
+  const [paymentBox, sendGiftBox] = await Promise.all([
     paymentContext.boundingBox(),
     sendGift.boundingBox(),
-    bottomNavigation.boundingBox(),
   ]);
-  if (!paymentBox || !sendGiftBox || !navigationBox) {
-    throw new Error('Gift payment context, action and mobile navigation must be measurable');
+  if (!paymentBox || !sendGiftBox) {
+    throw new Error('Gift payment context and action must be measurable');
   }
 
-  expect(paymentBox.y + paymentBox.height).toBeLessThanOrEqual(navigationBox.y - 8);
-  expect(sendGiftBox.y + sendGiftBox.height).toBeLessThanOrEqual(navigationBox.y - 8);
+  const safeBottom = (page.viewportSize()?.height ?? 0) - 34;
+  expect(paymentBox.y + paymentBox.height).toBeLessThanOrEqual(safeBottom);
+  expect(sendGiftBox.y + sendGiftBox.height).toBeLessThanOrEqual(safeBottom);
   expect(sendGiftBox.height).toBeGreaterThanOrEqual(44);
   expect([...unexpectedApiRequests]).toEqual([]);
 });

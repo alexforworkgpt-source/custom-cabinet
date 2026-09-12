@@ -239,5 +239,9 @@ export function createWebAdapter(): PlatformContext {
         window.onbeforeunload = null;
       }
     },
+
+    hideKeyboard() {
+      // In a browser, blurring the field is sufficient.
+    },
   };
 }

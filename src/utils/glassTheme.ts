@@ -25,7 +25,7 @@ export function getGlassColors(isDark: boolean) {
     text: `rgb(${primaryText})`,
     textSecondary: isDark ? 'rgb(var(--color-dark-400))' : 'rgb(var(--color-champagne-600))',
     textMuted: isDark ? 'rgb(var(--color-dark-500))' : 'rgb(var(--color-champagne-500))',
-    textFaint: `rgba(${primaryText},0.25)`,
+    textFaint: 'rgb(var(--color-dark-500))',
     textGhost: `rgba(${primaryText},${isDark ? '0.08' : '0.06'})`,
 
     // Progress bar track

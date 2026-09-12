@@ -110,4 +110,7 @@ export interface PlatformContext {
 
   // Closing confirmation
   setClosingConfirmation: (enabled: boolean) => void;
+
+  // Close the on-screen keyboard through the host when the API is available.
+  hideKeyboard: () => void;
 }

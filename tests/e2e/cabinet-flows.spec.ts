@@ -1468,15 +1468,12 @@ test('reveals one subscription-sharing scenario at a time @critical-flow', async
     await expect
       .poll(async () => (await sender.boundingBox())?.y ?? Number.POSITIVE_INFINITY)
       .toBeLessThan(120);
+    await expect(mobileNavigation).toHaveCount(0);
     await expect
       .poll(async () => {
-        const [headingBox, navigationBox] = await Promise.all([
-          firstStepHeading.boundingBox(),
-          mobileNavigation.boundingBox(),
-        ]);
-
+        const headingBox = await firstStepHeading.boundingBox();
         return Boolean(
-          headingBox && navigationBox && headingBox.y + headingBox.height < navigationBox.y,
+          headingBox && headingBox.y + headingBox.height < (page.viewportSize()?.height ?? 0) - 24,
         );
       })
       .toBe(true);

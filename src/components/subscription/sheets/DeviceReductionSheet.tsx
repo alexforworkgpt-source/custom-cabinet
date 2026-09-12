@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subscriptionApi } from '../../../api/subscription';
 import { getErrorMessage } from '../../../utils/subscriptionHelpers';
 import { ChevronRightIcon } from '../../icons';
+import { deviceUnavailableText } from '../deviceReasons';
 
 // ──────────────────────────────────────────────────────────────────
 // Reduce-devices sheet. Self-owns the reduction-info query + mutation;
@@ -106,7 +107,11 @@ export function DeviceReductionSheet({
 
       {deviceReductionInfo?.available === false ? (
         <div className="py-4 text-center text-sm text-dark-400">
-          {deviceReductionInfo.reason || t('subscription.additionalOptions.reduceUnavailable')}
+          {deviceUnavailableText(
+            t,
+            deviceReductionInfo,
+            'subscription.additionalOptions.reduceUnavailable',
+          )}
         </div>
       ) : deviceReductionInfo ? (
         <div className="space-y-4">

@@ -164,9 +164,10 @@ export function readableTextOnHex(hex: string): string {
 
 type ThemeSurfaces = { surface: Rgb; text: Rgb };
 const TEXT_SHADE_MIN_RATIO = 4.5;
+const LIGHT_TEXT_SHADE_MIN_RATIO = 5.5;
 
 // Текстовые шейды статусных палитр: 300/400 — текст в тёмной теме (ссылки,
-// суммы, бейджи), 700 — их замена в светлой (.light ремапит *-300/400 -> *-700).
+// суммы, бейджи), 800 — их замена в светлой (.light ремапит *-300/400 -> *-800).
 // Лестница привязана к базовому цвету, поэтому у тёмного акцента светлые шейды
 // сжимаются, у светлого — тёмные; здесь им гарантируется AA на поверхности
 // своей темы. Палитры, которые и так читаются, остаются нетронутыми.
@@ -175,13 +176,14 @@ function withReadableTextShades(
   dark: ThemeSurfaces,
   light: ThemeSurfaces,
 ): ColorPalette {
-  const readable = (shade: ShadeLevel, towards: Rgb, bg: Rgb) =>
-    tripletOf(ensureReadable(parseTriplet(palette[shade]), towards, bg, TEXT_SHADE_MIN_RATIO));
+  const readable = (shade: ShadeLevel, towards: Rgb, bg: Rgb, minRatio: number) =>
+    tripletOf(ensureReadable(parseTriplet(palette[shade]), towards, bg, minRatio));
   return {
     ...palette,
-    300: readable(300, dark.text, dark.surface),
-    400: readable(400, dark.text, dark.surface),
-    700: readable(700, light.text, light.surface),
+    300: readable(300, dark.text, dark.surface, TEXT_SHADE_MIN_RATIO),
+    400: readable(400, dark.text, dark.surface, TEXT_SHADE_MIN_RATIO),
+    700: readable(700, light.text, light.surface, LIGHT_TEXT_SHADE_MIN_RATIO),
+    800: readable(800, light.text, light.surface, LIGHT_TEXT_SHADE_MIN_RATIO),
   };
 }
 
@@ -208,14 +210,14 @@ export function computeThemeCssVars(themeColors: ThemeColors): Record<string, st
   const darkTextSecRgb = hexToRgb(colors.darkTextSecondary);
 
   // Contrast floors: secondary text must stay readable on the card surface
-  // regardless of the operator-chosen palette (AA 4.5 for dark-400, a softer
-  // 3.5 floor for the blended hint token dark-500).
+  // regardless of the operator-chosen palette (5:1 for dark-400 and AA 4.5:1
+  // for the blended hint token dark-500).
   const darkTextSecReadable = ensureReadable(darkTextSecRgb, darkTextRgb, darkSurfaceRgb, 5.0);
   const darkHintReadable = ensureReadable(
     mixRgb(darkTextSecRgb, darkSurfaceRgb, 0.4),
     darkTextRgb,
     darkSurfaceRgb,
-    3.8,
+    4.5,
   );
 
   // Dark palette with actual user colors:
@@ -242,13 +244,13 @@ export function computeThemeCssVars(themeColors: ThemeColors): Record<string, st
   const lightTextRgb = hexToRgb(colors.lightText);
   const lightTextSecRgb = hexToRgb(colors.lightTextSecondary);
 
-  // Same contrast floors as the dark palette: champagne-600 backs dark-400
-  // (secondary text) in the light theme, champagne-500 backs dark-500 (hints).
+  // Light surfaces use a 5:1 floor: champagne-600 backs dark-400
+  // (secondary text) and champagne-500 backs dark-500 (hints).
   const lightHintReadable = ensureReadable(
     mixRgb(lightBgRgb, lightTextSecRgb, 0.6),
     lightTextRgb,
     lightSurfaceRgb,
-    3.8,
+    5.0,
   );
   const lightTextSecReadable = ensureReadable(lightTextSecRgb, lightTextRgb, lightSurfaceRgb, 5.0);
 

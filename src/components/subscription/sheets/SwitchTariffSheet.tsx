@@ -6,6 +6,8 @@ import { AxiosError } from 'axios';
 import { subscriptionApi } from '../../../api/subscription';
 import { getErrorMessage } from '../../../utils/subscriptionHelpers';
 import { useCurrency } from '../../../hooks/useCurrency';
+import { usePromoDiscount } from '../../../hooks/usePromoDiscount';
+import { getDailyPriceQuote } from '../../../utils/pricing';
 import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
 import type { Tariff } from '../../../types';
 import { Skeleton, SkeletonGroup } from '../../ui/skeleton';
@@ -71,6 +73,7 @@ export function SwitchTariffSheet({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { formatAmount, currencySymbol } = useCurrency();
+  const { activeDiscount } = usePromoDiscount();
   const ref = useRef<HTMLDivElement>(null);
 
   const formatPrice = (kopeks: number) =>
@@ -143,8 +146,9 @@ export function SwitchTariffSheet({
         switchPreview &&
         (() => {
           const targetTariff = tariffs.find((tariff) => tariff.id === tariffId);
-          const dailyPrice =
-            targetTariff?.daily_price_kopeks ?? targetTariff?.price_per_day_kopeks ?? 0;
+          const dailyPrice = targetTariff
+            ? (getDailyPriceQuote(targetTariff, activeDiscount)?.price ?? 0)
+            : 0;
           const isDailyTariff = dailyPrice > 0;
 
           return (

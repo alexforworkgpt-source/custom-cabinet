@@ -8,6 +8,7 @@ import {
   type EmailTemplateLanguageData,
 } from '../api/adminEmailTemplates';
 import { AdminBackButton, BackIcon } from '../components/admin';
+import { EmailQueueCard } from '../components/admin/EmailQueueCard';
 import { Toggle } from '../components/admin/Toggle';
 import { useNativeDialog } from '../platform/hooks/useNativeDialog';
 import { useNotify } from '@/platform';
@@ -617,6 +618,8 @@ export default function AdminEmailTemplates() {
         />
       ) : (
         <>
+          <EmailQueueCard />
+
           {/* Template List */}
           {typesLoading ? (
             <SkeletonGroup className="space-y-3">
