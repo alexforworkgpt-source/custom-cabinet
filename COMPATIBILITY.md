@@ -4,6 +4,25 @@ This document records verified source compatibility for each Custom Cabinet
 baseline and Release Bundle. Tags and commit SHAs are immutable technical
 identifiers, not public branding.
 
+## Verified v1.74.0 Source Compatibility (2026-09-13)
+
+This is a verified source-integration contract, not a Release Bundle or
+production row. The application source is still an uncommitted local candidate.
+
+| Item | Exact identity or decision |
+| --- | --- |
+| Receiving Custom Cabinet checkpoint | `bff2f9434d38fe1d69050d25fb53337fb7c204eb` |
+| Previous Upstream Cabinet | `v1.71.1` / `5ade78f506fd0e102d70e2d59af4aa97ef9c164b` |
+| Target Upstream Cabinet | `v1.74.0` / `57810c7da24b5c142371ed83a6ad5e43a591d454` |
+| Verified Upstream Bot source | `v4.10.0` / `9fcebfd7bc075dcca1bb9d1514740039208b906a` |
+| BSCHEKER/reachability/GEO | Present in the official Upstream Bot backend; intentionally unsupported and absent in Custom Cabinet frontend |
+
+The 44 incoming Upstream Cabinet commits and 129 changed paths, plus all 110
+incoming Upstream Bot commits and 238 changed paths, are classified in
+[`UPSTREAM_V1.74.0_SYNC_REPORT.md`](UPSTREAM_V1.74.0_SYNC_REPORT.md). The
+released and production baseline below deliberately remains unchanged until a
+new immutable Release Bundle is separately authorized, published and deployed.
+
 ## Verified v1.71.1 Source Compatibility (2026-09-12)
 
 This is a verified source-integration contract, not a new Release Bundle or

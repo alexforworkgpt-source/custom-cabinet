@@ -244,7 +244,7 @@ export default function SubscriptionCardActive({
             no traffic-zone semantics, so tinting it by the traffic zone
             (DESIGN.md Status-Hue Lockout) was wrong. */}
           <div
-            className="flex-1 p-3 transition-colors"
+            className="min-w-0 flex-1 p-3 transition-colors"
             style={{
               borderTop: `1px solid ${contrast.innerBorder}`,
               borderRight: 'none',
@@ -267,7 +267,7 @@ export default function SubscriptionCardActive({
               {t('dashboard.tariff')}
             </div>
             <div
-              className="min-w-0 truncate text-base font-bold leading-tight tracking-tight"
+              className="line-clamp-2 min-w-0 break-words text-base font-bold leading-tight tracking-tight"
               style={{ color: contrast.primary }}
             >
               {subscription.tariff_name || t('subscription.currentPlan')}
@@ -285,7 +285,7 @@ export default function SubscriptionCardActive({
 
           {/* Days remaining */}
           <div
-            className="flex-1 p-3 transition-colors duration-300"
+            className="min-w-0 flex-1 p-3 transition-colors duration-300"
             style={{
               borderTop:
                 daysLeft <= 3

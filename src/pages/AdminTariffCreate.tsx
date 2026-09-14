@@ -54,6 +54,8 @@ export default function AdminTariffCreate() {
   const [selectedPromoGroups, setSelectedPromoGroups] = useState<number[]>([]);
   const [dailyPriceKopeks, setDailyPriceKopeks] = useState<number | ''>(0);
   const [lavaProductId, setLavaProductId] = useState('');
+  const [panelTag, setPanelTag] = useState('');
+  const [trialDurationDays, setTrialDurationDays] = useState<number | ''>('');
 
   // Traffic topup
   const [trafficTopupEnabled, setTrafficTopupEnabled] = useState(false);
@@ -129,6 +131,8 @@ export default function AdminTariffCreate() {
       );
       setDailyPriceKopeks(data.daily_price_kopeks || 0);
       setLavaProductId(data.lava_product_id || '');
+      setPanelTag(data.panel_tag || '');
+      setTrialDurationDays(data.trial_duration_days ?? '');
       setTrafficTopupEnabled(data.traffic_topup_enabled || false);
       setMaxTopupTrafficGb(data.max_topup_traffic_gb || 0);
       setTrafficTopupPackages(data.traffic_topup_packages || {});
@@ -160,6 +164,7 @@ export default function AdminTariffCreate() {
 
   const handleSubmit = () => {
     const isDaily = tariffType === 'daily';
+    const highlightPayload = isDaily ? null : highlightPeriodDays;
 
     // PATCH applies a field only when it is present in the payload, so empty
     // values ('' / []) must still be sent when editing — omitting them makes
@@ -177,7 +182,7 @@ export default function AdminTariffCreate() {
       max_device_limit: toNumber(maxDeviceLimit) > 0 ? toNumber(maxDeviceLimit) : undefined,
       tier_level: toNumber(tierLevel, 1),
       period_prices: isDaily ? [] : periodPrices.filter((p) => p.price_kopeks >= 0),
-      highlight_period_days: isDaily ? 0 : (highlightPeriodDays ?? 0),
+      highlight_period_days: isEdit ? (highlightPayload ?? 0) : (highlightPayload ?? undefined),
       allowed_squads: selectedSquads,
       external_squad_uuid: selectedExternalSquad || null,
       promo_group_ids: selectedPromoGroups,
@@ -188,6 +193,8 @@ export default function AdminTariffCreate() {
       daily_price_kopeks: isDaily ? toNumber(dailyPriceKopeks) : 0,
       // Пустая строка отвязывает тариф от продукта Lava
       lava_product_id: lavaProductId.trim(),
+      panel_tag: panelTag.trim(),
+      trial_duration_days: toNumber(trialDurationDays) > 0 ? toNumber(trialDurationDays) : null,
       traffic_reset_mode: trafficResetMode,
     };
 
@@ -213,7 +220,7 @@ export default function AdminTariffCreate() {
   const addPeriod = () => {
     const days = toNumber(newPeriodDays, 0);
     const price = toNumber(newPeriodPrice, 0);
-    if (days > 0 && price > 0) {
+    if (days > 0 && price >= 0) {
       const exists = periodPrices.some((p) => p.days === days);
       if (!exists) {
         setPeriodPrices((prev) =>
@@ -499,6 +506,45 @@ export default function AdminTariffCreate() {
             <p className="mt-2 text-xs text-dark-500">{t('admin.tariffs.lavaProductDesc')}</p>
           </div>
 
+          <div>
+            <label
+              htmlFor="tariff-panel-tag"
+              className="mb-2 block text-sm font-medium text-dark-300"
+            >
+              {t('admin.tariffs.panelTagLabel')}
+            </label>
+            <input
+              id="tariff-panel-tag"
+              type="text"
+              value={panelTag}
+              onChange={(event) => setPanelTag(event.target.value)}
+              className="input w-full uppercase"
+              maxLength={16}
+              placeholder="PAID_PRO"
+            />
+            <p className="mt-2 text-xs text-dark-500">{t('admin.tariffs.panelTagDesc')}</p>
+          </div>
+
+          <div>
+            <label
+              htmlFor="tariff-trial-days"
+              className="mb-2 block text-sm font-medium text-dark-300"
+            >
+              {t('admin.tariffs.trialDaysLabel')}
+            </label>
+            <input
+              id="tariff-trial-days"
+              type="number"
+              min={1}
+              value={trialDurationDays}
+              onChange={(event) =>
+                setTrialDurationDays(event.target.value === '' ? '' : Number(event.target.value))
+              }
+              className="input w-full"
+            />
+            <p className="mt-2 text-xs text-dark-500">{t('admin.tariffs.trialDaysDesc')}</p>
+          </div>
+
           {/* Traffic Limit */}
           <div>
             <label
@@ -601,7 +647,7 @@ export default function AdminTariffCreate() {
                 <input
                   type="number"
                   value={newPeriodPrice}
-                  onChange={createNumberInputHandler(setNewPeriodPrice, 1)}
+                  onChange={createNumberInputHandler(setNewPeriodPrice, 0)}
                   className="input w-28"
                   placeholder="300"
                 />

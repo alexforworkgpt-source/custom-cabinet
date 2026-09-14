@@ -90,6 +90,18 @@ function providers(children: React.ReactNode) {
 }
 
 describe('best-value tariff contract', () => {
+  it('selects the operator-highlighted purchase period by default', async () => {
+    const harness = await import('./purchase/tariffPurchaseHarness');
+    harness.render([
+      harness.period({ days: 30, label: '1 месяц' }),
+      harness.period({ days: 360, label: '12 месяцев', is_highlighted: true }),
+    ]);
+
+    expect(harness.cardFor('12 месяцев').className).toContain('bg-accent-500/10');
+    expect(harness.cardFor('12 месяцев').className).toContain('border-urgent-400');
+    expect(harness.cardFor('1 месяц').className).not.toContain('bg-accent-500/10');
+  });
+
   it('marks the operator-selected renewal period and keeps selection visually dominant', async () => {
     state.options = [
       renewalOption({ period_days: 30 }),
@@ -113,7 +125,7 @@ describe('best-value tariff contract', () => {
     expect(highlightedCard?.className).toContain('border-2');
 
     fireEvent.click(highlightedCard as HTMLButtonElement);
-    expect(highlightedCard?.className).not.toContain('border-2');
+    expect(highlightedCard?.className).toContain('border-2');
   });
 
   it('marks the recommended tariff, but the current tariff remains the stronger state', async () => {

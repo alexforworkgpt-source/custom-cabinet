@@ -208,7 +208,8 @@ test('opens renewal period choice without charging the default month @critical-f
   await expect(bestPeriod).toHaveCSS('border-top-width', '2px');
   await bestPeriod.click();
   await expect(page.getByRole('button', { name: 'Продлить подписку' })).toBeVisible();
-  await expect(bestPeriod).toHaveCSS('border-top-width', '1px');
+  await expect(bestPeriod).toHaveCSS('border-top-width', '2px');
+  await expect(bestPeriod).toHaveCSS('box-shadow', /rgb\(.*\) 0px 0px 0px 2px inset/);
 
   expectNoMoneyMutation(apiRequests);
   expect([...unexpectedApiRequests]).toEqual([]);

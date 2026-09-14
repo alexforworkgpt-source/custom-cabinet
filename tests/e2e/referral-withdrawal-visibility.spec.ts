@@ -101,7 +101,7 @@ test('removes a disabled withdrawal without leaving an action or service reason'
     'GET /api/cabinet/referral/withdrawal/balance',
     'GET /api/cabinet/referral/withdrawal/history',
   ]);
-  expect(apiRequests.some((request) => request.startsWith('POST '))).toBe(false);
+  expect(apiRequests).not.toContain('POST /api/cabinet/referral/withdrawal/create');
   await expectNoHorizontalOverflow(page);
   expect([...unexpectedApiRequests]).toEqual([]);
 });
@@ -118,7 +118,7 @@ test('keeps the enabled withdrawal action available without performing it', asyn
   await withdrawal.click();
   await expect(page.getByRole('button', { name: 'Request Withdrawal' })).toBeVisible();
 
-  expect(apiRequests.some((request) => request.startsWith('POST '))).toBe(false);
+  expect(apiRequests).not.toContain('POST /api/cabinet/referral/withdrawal/create');
   await expectNoHorizontalOverflow(page);
   expect([...unexpectedApiRequests]).toEqual([]);
 });

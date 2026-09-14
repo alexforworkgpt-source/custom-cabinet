@@ -46,6 +46,7 @@ import {
   lavaUiState,
   type LavaUiState,
 } from '../utils/lavaRecurring';
+import { isRecurringFeatureOff } from '../utils/recurringFeature';
 import { DeviceTopupSheet } from '../components/subscription/sheets/DeviceTopupSheet';
 import { DeviceReductionSheet } from '../components/subscription/sheets/DeviceReductionSheet';
 import { TrafficTopupSheet } from '../components/subscription/sheets/TrafficTopupSheet';
@@ -279,13 +280,18 @@ export default function Subscription({
   const zone = useTrafficZone(usedPercent);
 
   // Purchase options (needed for balance_kopeks in device/traffic/server management)
-  const { data: purchaseOptions } = useQuery({
+  const purchaseOptionsQuery = useQuery({
     queryKey: ['purchase-options', subscriptionId],
     queryFn: () => subscriptionApi.getPurchaseOptions(subscriptionId),
     enabled: Boolean(subscription),
     staleTime: 0,
     refetchOnMount: 'always',
   });
+  const purchaseOptions = purchaseOptionsQuery.data;
+
+  const featureFlagsSettled = purchaseOptionsQuery.isSuccess || purchaseOptionsQuery.isError;
+  const sbpFeatureOff = isRecurringFeatureOff(purchaseOptions, 'platega_recurrent_enabled');
+  const lavaFeatureOff = isRecurringFeatureOff(purchaseOptions, 'lava_recurrent_enabled');
 
   const isTariffsMode = purchaseOptions?.sales_mode === 'tariffs';
 
@@ -295,7 +301,7 @@ export default function Subscription({
   const sbpQuery = useQuery({
     queryKey: ['sbp-recurring', subscriptionId],
     queryFn: () => subscriptionApi.getSbpRecurring(subscriptionId),
-    enabled: !!subscription && !subscription.is_trial,
+    enabled: !!subscription && !subscription.is_trial && featureFlagsSettled && !sbpFeatureOff,
     retry: false,
     refetchInterval: (query) => (query.state.data?.status === 'PENDING' ? 8000 : false),
   });
@@ -303,7 +309,7 @@ export default function Subscription({
   // 403 with a specific detail means the feature itself is disabled on the
   // backend — distinct from "not resolved yet" or "other error", both of
   // which must fail quiet (render nothing) rather than flash the 'off' state.
-  const sbpFeatureDisabled = isSbpFeatureDisabledError(sbpQuery.error);
+  const sbpFeatureDisabled = sbpFeatureOff || isSbpFeatureDisabledError(sbpQuery.error);
   const sbpUiStateValue: SbpUiState =
     sbpInfo !== undefined || sbpFeatureDisabled
       ? sbpUiState(sbpInfo, sbpFeatureDisabled)
@@ -370,12 +376,12 @@ export default function Subscription({
   const lavaQuery = useQuery({
     queryKey: ['lava-recurring', subscriptionId],
     queryFn: () => subscriptionApi.getLavaRecurring(subscriptionId),
-    enabled: !!subscription && !subscription.is_trial,
+    enabled: !!subscription && !subscription.is_trial && featureFlagsSettled && !lavaFeatureOff,
     retry: false,
     refetchInterval: (query) => (query.state.data?.status === 'PENDING' ? 8000 : false),
   });
   const lavaInfo = lavaQuery.data;
-  const lavaFeatureDisabled = isLavaFeatureDisabledError(lavaQuery.error);
+  const lavaFeatureDisabled = lavaFeatureOff || isLavaFeatureDisabledError(lavaQuery.error);
   const lavaUiStateValue: LavaUiState =
     lavaInfo !== undefined || lavaFeatureDisabled
       ? lavaUiState(lavaInfo, lavaFeatureDisabled)
@@ -993,7 +999,7 @@ export default function Subscription({
                     >
                       ∞
                     </div>
-                  ) : subscription.device_limit <= 10 ? (
+                  ) : subscription.device_limit <= 5 ? (
                     <div className="flex flex-shrink-0 gap-1.5" aria-hidden="true">
                       {Array.from({ length: subscription.device_limit }, (_, i) => (
                         <div
