@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, useParams } from 'react-router';
@@ -6,10 +6,12 @@ import { subscriptionApi } from '../api/subscription';
 import { useTheme } from '../hooks/useTheme';
 import { getGlassColors } from '../utils/glassTheme';
 import { getMonthlyPriceKopeks } from '../utils/pricing';
+import { pickBestValue } from '../utils/bestValue';
 import { useCurrency } from '../hooks/useCurrency';
 import { useHaptic } from '../platform';
 import InsufficientBalancePrompt from '../components/InsufficientBalancePrompt';
 import { WebBackButton } from '../components/WebBackButton';
+import { BEST_VALUE_BORDER, BestValueBadge } from '../components/subscription/BestValueBadge';
 import { PageSkeleton, Skeleton } from '../components/ui/skeleton';
 
 export default function RenewSubscription() {
@@ -44,6 +46,12 @@ export default function RenewSubscription() {
     staleTime: 0,
     refetchOnMount: 'always',
   });
+
+  useEffect(() => {
+    if (selectedPeriod !== null) return;
+    const best = pickBestValue(options);
+    if (best) setSelectedPeriod(best.period_days);
+  }, [options, selectedPeriod]);
 
   // Load balance
   const { data: purchaseOptions } = useQuery({
@@ -149,6 +157,7 @@ export default function RenewSubscription() {
             const isSelected = selectedPeriod === option.period_days;
             const canAfford = balanceKopeks >= option.price_kopeks;
             const perMonth = getMonthlyPriceKopeks(option.price_kopeks, option.period_days);
+            const isBestValue = Boolean(option.is_highlighted);
 
             return (
               <button
@@ -158,16 +167,27 @@ export default function RenewSubscription() {
                   setSelectedPeriod(option.period_days);
                   setError(null);
                 }}
-                className="w-full rounded-2xl border p-4 text-left transition-all duration-200"
+                className={`w-full rounded-2xl p-4 text-left transition-all duration-200 ${
+                  isBestValue ? 'border-2' : 'border'
+                }`}
                 style={{
                   background: isSelected
                     ? isDark
                       ? 'rgba(var(--color-accent-400), 0.08)'
                       : 'rgba(var(--color-accent-400), 0.05)'
                     : g.cardBg,
-                  borderColor: isSelected ? 'rgb(var(--color-accent-400))' : g.cardBorder,
+                  borderColor: isBestValue
+                    ? BEST_VALUE_BORDER
+                    : isSelected
+                      ? 'rgb(var(--color-accent-400))'
+                      : g.cardBorder,
+                  boxShadow:
+                    isSelected && isBestValue
+                      ? 'inset 0 0 0 2px rgb(var(--color-accent-400))'
+                      : undefined,
                 }}
               >
+                {isBestValue && <BestValueBadge className="mb-2" />}
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-base font-semibold" style={{ color: g.text }}>

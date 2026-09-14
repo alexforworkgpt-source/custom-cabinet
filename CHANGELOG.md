@@ -1,5 +1,44 @@
 # Changelog
 
+## [1.74.0](https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/compare/v1.71.1...v1.74.0) (2026-09-13)
+
+### Custom Cabinet Integration
+
+* **tariffs:** highlighted best-value tariff and period are selected by default across purchase, renewal, gift and landing flows; free period prices remain valid
+* **subscriptions:** disabled recurring providers are no longer probed, while older Bot responses without capability flags preserve compatibility
+* **activity:** authenticated non-admin screens and safe click labels are batched into the Bot activity timeline without query strings or typed values
+* **admin:** tariff `panel_tag`, trial duration, deleted-user totals, readable activity labels, Full Sync naming and route-parameter remounts
+* **mobile:** long tariff names stay inside active-subscription cards and large device sets use the compact progress bar
+
+### Compatibility
+
+* Receiving Custom Cabinet checkpoint: `bff2f9434d38fe1d69050d25fb53337fb7c204eb`.
+* Upstream Cabinet baseline: `v1.74.0` / `57810c7da24b5c142371ed83a6ad5e43a591d454`.
+* Verified source contracts target Upstream Bot `v4.10.0` / `9fcebfd7bc075dcca1bb9d1514740039208b906a`.
+* BSCHEKER/reachability/GEO remains intentionally absent from Custom Cabinet; the official Upstream Bot backend is unchanged.
+* This source-only entry does not declare a commit, tag, Release Bundle or production deployment.
+
+## [1.71.1](https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/compare/v1.69.1...v1.71.1) (2026-09-12)
+
+### Custom Cabinet Integration
+
+* **platform:** route-aware mobile navigation, virtual-keyboard handling, touch Done behavior and safe-area-aware sheets
+* **auth:** recoverable email-registration confirmation and localized backend compatibility errors
+* **tariffs:** shared discounted daily pricing, operator-controlled best-value choices and backend-owned renewal/switch quotes
+* **payments:** visible pending state, repeat-submit protection and safe recovery for quick top-ups
+* **devices:** localized reason codes and readable mobile subscription terms
+* **admin:** email retry-queue controls plus source-aware partner and ticket settings locked by `.env`
+* **referral:** hide disabled withdrawal actions while preserving existing request history
+* **accessibility:** restored mobile content clearance, semantic contrast, focus and reduced-motion coverage
+
+### Compatibility
+
+* Adapted application source: `743cf0c69d49806354daa89fb8075fe7d2cef363`.
+* Upstream Cabinet baseline: `v1.71.1` / `5ade78f506fd0e102d70e2d59af4aa97ef9c164b`.
+* Verified source contracts target Upstream Bot `v4.7.1` / `cd903b7cfd3bac6e08e571904662c88e8c151d1d`.
+* BSCHEKER remains intentionally absent from the Custom Cabinet frontend; the official Upstream Bot backend is unchanged.
+* This source-only entry does not declare a Release Bundle or production deployment.
+
 ## [1.66.0](https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/compare/v1.65.0...v1.66.0) (2026-08-23)
 
 ### Custom Cabinet Integration

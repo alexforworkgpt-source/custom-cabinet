@@ -1,6 +1,30 @@
 import { useTelegramSDK } from '@/hooks/useTelegramSDK';
 import { UI } from '@/config/constants';
 
+interface Insets {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
+
+export interface TelegramSafeAreaInput {
+  isMobileFullscreen: boolean;
+  platform: string | undefined;
+  safeAreaInset: Insets;
+  contentSafeAreaInset: Insets;
+}
+
+export function telegramSafeAreas(input: TelegramSafeAreaInput): { top: number; bottom: number } {
+  if (!input.isMobileFullscreen) return { top: 0, bottom: 0 };
+  const telegramHeaderHeight =
+    input.platform === 'android' ? UI.TELEGRAM_HEADER_ANDROID_PX : UI.TELEGRAM_HEADER_IOS_PX;
+  return {
+    top: Math.max(input.safeAreaInset.top, input.contentSafeAreaInset.top) + telegramHeaderHeight,
+    bottom: Math.max(input.safeAreaInset.bottom, input.contentSafeAreaInset.bottom),
+  };
+}
+
 /**
  * Computes the app header height in pixels, accounting for
  * Telegram MiniApp safe area insets in fullscreen mode.
@@ -25,31 +49,27 @@ export function useHeaderHeight(): {
   mobile: number;
   mobileCss: string;
   desktop: number;
+  topSafeArea: number;
   bottomSafeArea: number;
   isMobileFullscreen: boolean;
 } {
   const { isFullscreen, safeAreaInset, contentSafeAreaInset, platform, isMobile } =
     useTelegramSDK();
   const isMobileFullscreen = isFullscreen && isMobile;
-
-  const telegramHeaderHeight =
-    platform === 'android' ? UI.TELEGRAM_HEADER_ANDROID_PX : UI.TELEGRAM_HEADER_IOS_PX;
-
-  const mobile = isMobileFullscreen
-    ? UI.MOBILE_HEADER_HEIGHT_PX +
-      Math.max(safeAreaInset.top, contentSafeAreaInset.top) +
-      telegramHeaderHeight
-    : UI.MOBILE_HEADER_HEIGHT_PX;
-
-  const bottomSafeArea = isMobileFullscreen
-    ? Math.max(safeAreaInset.bottom, contentSafeAreaInset.bottom)
-    : 0;
+  const safe = telegramSafeAreas({
+    isMobileFullscreen,
+    platform,
+    safeAreaInset,
+    contentSafeAreaInset,
+  });
+  const mobile = UI.MOBILE_HEADER_HEIGHT_PX + safe.top;
 
   return {
     mobile,
     mobileCss: headerHeightCss(mobile, isMobileFullscreen),
     desktop: UI.DESKTOP_HEADER_HEIGHT_PX,
-    bottomSafeArea,
+    topSafeArea: safe.top,
+    bottomSafeArea: safe.bottom,
     isMobileFullscreen,
   };
 }

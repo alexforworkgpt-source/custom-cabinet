@@ -104,10 +104,38 @@ describe('applyThemeColors: статусные палитры', () => {
       contrast(parseTriplet(readVar('--color-accent-300')), darkSurface),
     ).toBeGreaterThanOrEqual(4.5);
 
-    // Светлый акцент: .light подменяет 300/400 на 700.
+    // Светлый акцент: .light подменяет 300/400 на проверенный шейд 800.
     applyThemeColors({ ...DEFAULT_THEME_COLORS, accent: PASTEL_ACCENT });
     expect(
-      contrast(parseTriplet(readVar('--color-accent-700')), lightSurface),
+      contrast(parseTriplet(readVar('--color-accent-800')), lightSurface),
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('secondary и hint токены проходят AA на operator-defined поверхностях', () => {
+    const custom = {
+      ...DEFAULT_THEME_COLORS,
+      darkSurface: '#191919',
+      darkText: '#f7f7f7',
+      darkTextSecondary: '#555555',
+      lightSurface: '#f4f0e8',
+      lightText: '#171717',
+      lightTextSecondary: '#c7c1b6',
+    };
+    applyThemeColors(custom);
+
+    const darkSurface = parseTriplet(hexToTriplet(custom.darkSurface));
+    const lightSurface = parseTriplet(hexToTriplet(custom.lightSurface));
+    expect(contrast(parseTriplet(readVar('--color-dark-400')), darkSurface)).toBeGreaterThanOrEqual(
+      4.5,
+    );
+    expect(contrast(parseTriplet(readVar('--color-dark-500')), darkSurface)).toBeGreaterThanOrEqual(
+      4.5,
+    );
+    expect(
+      contrast(parseTriplet(readVar('--color-champagne-600')), lightSurface),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrast(parseTriplet(readVar('--color-champagne-500')), lightSurface),
     ).toBeGreaterThanOrEqual(4.5);
   });
 

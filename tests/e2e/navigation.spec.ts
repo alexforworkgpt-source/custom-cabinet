@@ -361,8 +361,7 @@ test('does not restore legacy user navigation on admin routes', async ({ page })
   await page.goto('/admin/apps');
   const isMobile = (page.viewportSize()?.width ?? 1280) < 1024;
   if (isMobile) {
-    const bottomNavigation = page.locator('nav:visible').last();
-    await expect(bottomNavigation.getByRole('link')).toHaveCount(4);
+    await expect(page.locator('nav.fixed')).toHaveCount(0);
     await page.getByRole('button', { name: 'Open menu' }).click();
   }
   const navigation = isMobile

@@ -11,6 +11,7 @@ import { useHeaderHeight } from '@/hooks/useHeaderHeight';
 import { useTheme } from '@/hooks/useTheme';
 import { useBranding } from '@/hooks/useBranding';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import { resetVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import { themeColorsApi } from '@/api/themeColors';
 import { useSupportUnreadCount } from '@/hooks/useSupportUnreadCount';
 import { isLogoPreloaded } from '@/api/branding';
@@ -34,6 +35,7 @@ import {
 } from '@/components/icons';
 
 import { MobileBottomNav } from './MobileBottomNav';
+import { isMobileNavScreen, mobileNavItems } from './mobileNavRoutes';
 import { AppHeader } from './AppHeader';
 import { useBackgroundConsumer } from '@/components/backgrounds/BackgroundHost';
 
@@ -70,7 +72,6 @@ export function AppShell({ children }: AppShellProps) {
   const isMobileFullscreen = isFullscreen && isMobile;
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [isDesktopViewport, setIsDesktopViewport] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
   );
@@ -82,38 +83,14 @@ export function AppShell({ children }: AppShellProps) {
     return () => media.removeEventListener('change', handleChange);
   }, []);
 
-  // Reset keyboard state on route change — prevents bottom nav staying hidden after navigation
-  // biome-ignore lint/correctness/useExhaustiveDependencies(location.pathname): Navigation intentionally resets keyboard-derived UI state.
+  // A focused field can unmount without blur during navigation.
+  // biome-ignore lint/correctness/useExhaustiveDependencies(location.pathname): The route is intentionally the reset trigger.
   useEffect(() => {
-    setIsKeyboardOpen(false);
+    resetVirtualKeyboard();
   }, [location.pathname]);
 
-  // Keyboard detection for hiding bottom nav
-  useEffect(() => {
-    const handleFocusIn = (e: FocusEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        setIsKeyboardOpen(true);
-      }
-    };
-
-    const handleFocusOut = (e: FocusEvent) => {
-      const relatedTarget = e.relatedTarget as HTMLElement | null;
-      // Keep the nav hidden while focus moves to the control being tapped. Showing it
-      // during pointerdown can place it over that control and steal pointerup.
-      if (!relatedTarget) {
-        setIsKeyboardOpen(false);
-      }
-    };
-
-    document.addEventListener('focusin', handleFocusIn);
-    document.addEventListener('focusout', handleFocusOut);
-
-    return () => {
-      document.removeEventListener('focusin', handleFocusIn);
-      document.removeEventListener('focusout', handleFocusOut);
-    };
-  }, []);
+  const navItems = mobileNavItems();
+  const showMobileNav = isMobileNavScreen(location.pathname, navItems);
 
   // Desktop navigation — labels always visible (no hover-reveal gimmick)
   const desktopNav = [
@@ -183,7 +160,7 @@ export function AppShell({ children }: AppShellProps) {
   // headerHeight comes from useHeaderHeight() — accounts for TG safe area in fullscreen
 
   return (
-    <div className="min-h-viewport">
+    <div className="min-h-viewport" data-mobile-nav={showMobileNav ? 'on' : 'off'}>
       {/* Global components */}
       <WebSocketNotifications />
       <CampaignBonusNotifier />
@@ -304,16 +281,18 @@ export function AppShell({ children }: AppShellProps) {
       />
 
       {/* Main content */}
-      <main className="mx-auto max-w-6xl pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] py-6 pb-[calc(9.5rem+var(--safe-area-inset-bottom))] lg:px-6 lg:pb-8">
+      <main className="mx-auto max-w-6xl py-6 pb-[calc(var(--mobile-nav-clearance)+3rem)] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] lg:px-6 lg:pb-8">
         {children}
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <MobileBottomNav
-        isKeyboardOpen={isKeyboardOpen}
-        isMenuOpen={mobileMenuOpen}
-        supportUnreadCount={supportUnreadCount}
-      />
+      {showMobileNav && (
+        <MobileBottomNav
+          items={navItems}
+          isMenuOpen={mobileMenuOpen}
+          supportUnreadCount={supportUnreadCount}
+        />
+      )}
     </div>
   );
 }

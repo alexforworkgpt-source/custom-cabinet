@@ -160,6 +160,8 @@ export interface RenewalOption {
   price_rubles: number;
   discount_percent: number;
   original_price_kopeks: number | null;
+  /** Period marked by the operator as the best value. */
+  is_highlighted?: boolean;
 }
 
 export interface TrafficPackage {
@@ -276,6 +278,8 @@ export interface TariffPeriod {
   extra_devices_cost_label?: string;
   base_tariff_price_kopeks?: number;
   base_tariff_price_label?: string;
+  /** Period marked by the operator as the best value. */
+  is_highlighted?: boolean;
 }
 
 export interface TariffServer {
@@ -287,6 +291,8 @@ export interface Tariff {
   id: number;
   name: string;
   description: string | null;
+  /** Tariff marked by the operator as the best value. */
+  is_highlighted?: boolean;
   tier_level: number;
   traffic_limit_gb: number;
   traffic_limit_label: string;
@@ -839,6 +845,7 @@ export interface TicketSettings {
   support_system_mode: string;
   cabinet_user_notifications_enabled: boolean;
   cabinet_admin_notifications_enabled: boolean;
+  env_locked: string[];
 }
 
 // Payment method config types (admin)

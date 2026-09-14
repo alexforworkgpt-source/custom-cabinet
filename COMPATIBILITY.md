@@ -4,7 +4,50 @@ This document records verified source compatibility for each Custom Cabinet
 baseline and Release Bundle. Tags and commit SHAs are immutable technical
 identifiers, not public branding.
 
-## Current Source Baseline
+## Verified v1.74.0 Source Compatibility (2026-09-13)
+
+This is a verified source-integration contract, not a Release Bundle or
+production row. The application source is still an uncommitted local candidate.
+
+| Item | Exact identity or decision |
+| --- | --- |
+| Receiving Custom Cabinet checkpoint | `bff2f9434d38fe1d69050d25fb53337fb7c204eb` |
+| Previous Upstream Cabinet | `v1.71.1` / `5ade78f506fd0e102d70e2d59af4aa97ef9c164b` |
+| Target Upstream Cabinet | `v1.74.0` / `57810c7da24b5c142371ed83a6ad5e43a591d454` |
+| Verified Upstream Bot source | `v4.10.0` / `9fcebfd7bc075dcca1bb9d1514740039208b906a` |
+| BSCHEKER/reachability/GEO | Present in the official Upstream Bot backend; intentionally unsupported and absent in Custom Cabinet frontend |
+
+The 44 incoming Upstream Cabinet commits and 129 changed paths, plus all 110
+incoming Upstream Bot commits and 238 changed paths, are classified in
+[`UPSTREAM_V1.74.0_SYNC_REPORT.md`](UPSTREAM_V1.74.0_SYNC_REPORT.md). The
+released and production baseline below deliberately remains unchanged until a
+new immutable Release Bundle is separately authorized, published and deployed.
+
+## Verified v1.71.1 Source Compatibility (2026-09-12)
+
+This is a verified source-integration contract, not a new Release Bundle or
+production row.
+
+| Item | Exact identity or decision |
+| --- | --- |
+| Receiving Custom Cabinet base | `e0b623e1cbe83b1697c24325ccb98c27ba6cdd46` from `origin/main` |
+| Integrated Custom Cabinet application source | `743cf0c69d49806354daa89fb8075fe7d2cef363` |
+| Previous Upstream Cabinet | `v1.69.1` / `3da34239d1c1c7b87a0184e74d49bde43ea88b89` |
+| Target Upstream Cabinet | `v1.71.1` / `5ade78f506fd0e102d70e2d59af4aa97ef9c164b` |
+| Verified Upstream Bot source | `v4.7.1` / `cd903b7cfd3bac6e08e571904662c88e8c151d1d` |
+| BSCHEKER | Present in the official Upstream Bot backend; intentionally unsupported and absent in Custom Cabinet frontend |
+
+The 80 incoming Upstream Cabinet commits and 264 changed files are classified
+in [`UPSTREAM_V1.71.1_SYNC_REPORT.md`](UPSTREAM_V1.71.1_SYNC_REPORT.md).
+`src/noBscheker.guard.test.ts` protects the frontend exclusion during the normal
+unit-test gate. The exact Custom Cabinet commit passed 757 unit/component/API
+tests, type-check, production build, Biome with zero errors and a full local
+system-Chrome matrix with 464 passes plus 24 configured skips. Exact Bot
+contract suites passed; eight full-suite repository-policy checks remain
+`BLOCKED` only by their native-Windows path/order assumptions. See the sync
+report for the exact test inventory and limitations.
+
+## Current Released and Production Baseline
 
 | Component | Version or reference | Exact source |
 | --- | --- | --- |
@@ -17,9 +60,10 @@ identifiers, not public branding.
 | Release Bundle | `v2026.09.07.1`; `rollback-compatible` | `7f234e7672be8fe68be2102ab0655e6a3735c07b2169a14c76c30491e7f99629` |
 | Node.js development baseline | 24.15+ | Declared in `README.md` |
 
-The current upstream source identity is also recorded in
-[`UPSTREAM.md`](UPSTREAM.md). If this table and `UPSTREAM.md` disagree, stop and
-resolve the provenance mismatch before synchronization or release.
+The integrated upstream source identity is recorded in
+[`UPSTREAM.md`](UPSTREAM.md). The released and production baseline below
+deliberately remains on the last immutable Release Bundle until a new Bundle is
+published and deployed. Do not treat source compatibility as deployment proof.
 
 ## Verified v1.69.1 Release and Production Gate (2026-09-07)
 

@@ -88,6 +88,7 @@ export function ResponsiveOverlay({
         showDragHandle={!fullscreen}
         showCloseButton={showCloseButton}
         enableDragToClose={false}
+        fullHeight={fullscreen}
       >
         <SheetHeader className={centerHeader ? 'px-10 text-center sm:text-center' : 'pr-10'}>
           <SheetTitle>{title}</SheetTitle>

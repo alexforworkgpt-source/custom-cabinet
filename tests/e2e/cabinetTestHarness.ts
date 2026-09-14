@@ -229,6 +229,10 @@ export async function prepareAuthenticatedPage(
     const path = new URL(route.request().url()).pathname;
     const requestKey = `${route.request().method()} ${path}`;
     apiRequests.push(requestKey);
+    if (requestKey === 'POST /api/cabinet/activity/events') {
+      await route.fulfill({ status: 204, body: '' });
+      return;
+    }
     if (!Object.hasOwn(responses, path)) {
       unexpectedApiRequests.add(requestKey);
       await route.fulfill({ status: 500, json: { detail: `Missing browser-test mock: ${path}` } });

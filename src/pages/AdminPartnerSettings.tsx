@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { partnerApi } from '../api/partners';
-import { AdminBackButton } from '../components/admin';
+import { partnerApi, type PartnerSettingsUpdate } from '../api/partners';
+import { AdminBackButton, backTo } from '../components/admin';
 import { toNumber } from '../utils/inputHelpers';
+import { omitEnvLocked } from '../utils/envLockedSettings';
 import { SettingsIcon } from '@/components/icons';
+import { EnvLockedBadge } from '@/components/admin/EnvLockedBadge';
 import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
 
 type NumberOrEmpty = number | '';
@@ -13,6 +15,7 @@ type NumberOrEmpty = number | '';
 export default function AdminPartnerSettings() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
 
   const {
@@ -23,6 +26,7 @@ export default function AdminPartnerSettings() {
     queryKey: ['partner-settings'],
     queryFn: partnerApi.getPartnerSettings,
   });
+  const envLocked = new Set(settings?.env_locked ?? []);
 
   const [formData, setFormData] = useState<{
     referral_program_enabled: boolean;
@@ -54,9 +58,12 @@ export default function AdminPartnerSettings() {
   }, [settings]);
 
   const updateMutation = useMutation({
-    mutationFn: partnerApi.updatePartnerSettings,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['partner-settings'] });
+    mutationFn: async (update: PartnerSettingsUpdate) => {
+      await partnerApi.updatePartnerSettings(update);
+      return partnerApi.getPartnerSettings();
+    },
+    onSuccess: (confirmedSettings) => {
+      queryClient.setQueryData(['partner-settings'], confirmedSettings);
       queryClient.invalidateQueries({ queryKey: ['referral-terms'] });
       navigate('/admin/partners');
     },
@@ -76,11 +83,12 @@ export default function AdminPartnerSettings() {
   const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!isValid) return;
-    updateMutation.mutate({
+    const update: PartnerSettingsUpdate = {
       ...formData,
       withdrawal_min_amount_kopeks: toNumber(formData.withdrawal_min_amount_kopeks, 100000),
       withdrawal_cooldown_days: toNumber(formData.withdrawal_cooldown_days, 30),
-    });
+    };
+    updateMutation.mutate(omitEnvLocked(update, envLocked));
   };
 
   if (isLoading) {
@@ -129,7 +137,7 @@ export default function AdminPartnerSettings() {
           настройка — отдельный экран с собственной моделью данных. */}
       <button
         type="button"
-        onClick={() => navigate('/admin/partners/referral-levels')}
+        onClick={() => navigate('/admin/partners/referral-levels', backTo(location))}
         className="card mb-6 flex w-full items-center justify-between text-left transition-colors hover:border-accent-500/40"
       >
         <div>
@@ -154,14 +162,16 @@ export default function AdminPartnerSettings() {
               <input
                 type="checkbox"
                 checked={formData.referral_program_enabled}
+                disabled={envLocked.has('referral_program_enabled')}
                 onChange={(e) =>
                   setFormData({ ...formData, referral_program_enabled: e.target.checked })
                 }
                 className="h-5 w-5 rounded border-dark-700 bg-dark-800 text-accent-500 focus:ring-2 focus:ring-accent-500 focus:ring-offset-0"
               />
               <div>
-                <div className="font-medium text-dark-100">
+                <div className="flex flex-wrap items-center gap-2 font-medium text-dark-100">
                   {t('admin.partners.settingsFields.programEnabled')}
+                  {envLocked.has('referral_program_enabled') && <EnvLockedBadge />}
                 </div>
                 <div className="text-sm text-dark-500">
                   {t('admin.partners.settingsFields.programEnabledDesc')}
@@ -176,14 +186,16 @@ export default function AdminPartnerSettings() {
               <input
                 type="checkbox"
                 checked={formData.partner_section_visible}
+                disabled={envLocked.has('partner_section_visible')}
                 onChange={(e) =>
                   setFormData({ ...formData, partner_section_visible: e.target.checked })
                 }
                 className="h-5 w-5 rounded border-dark-700 bg-dark-800 text-accent-500 focus:ring-2 focus:ring-accent-500 focus:ring-offset-0"
               />
               <div>
-                <div className="font-medium text-dark-100">
+                <div className="flex flex-wrap items-center gap-2 font-medium text-dark-100">
                   {t('admin.partners.settingsFields.partnerVisible')}
+                  {envLocked.has('partner_section_visible') && <EnvLockedBadge />}
                 </div>
                 <div className="text-sm text-dark-500">
                   {t('admin.partners.settingsFields.partnerVisibleDesc')}
@@ -205,12 +217,14 @@ export default function AdminPartnerSettings() {
               <input
                 type="checkbox"
                 checked={formData.withdrawal_enabled}
+                disabled={envLocked.has('withdrawal_enabled')}
                 onChange={(e) => setFormData({ ...formData, withdrawal_enabled: e.target.checked })}
                 className="h-5 w-5 rounded border-dark-700 bg-dark-800 text-accent-500 focus:ring-2 focus:ring-accent-500 focus:ring-offset-0"
               />
               <div>
-                <div className="font-medium text-dark-100">
+                <div className="flex flex-wrap items-center gap-2 font-medium text-dark-100">
                   {t('admin.partners.settingsFields.withdrawalEnabled')}
+                  {envLocked.has('withdrawal_enabled') && <EnvLockedBadge />}
                 </div>
                 <div className="text-sm text-dark-500">
                   {t('admin.partners.settingsFields.withdrawalEnabledDesc')}
@@ -221,8 +235,9 @@ export default function AdminPartnerSettings() {
 
           {/* Min Amount */}
           <div className="mb-4">
-            <label className="mb-2 block text-sm font-medium text-dark-300">
+            <label className="mb-2 flex flex-wrap items-center gap-2 text-sm font-medium text-dark-300">
               {t('admin.partners.settingsFields.minAmount')}
+              {envLocked.has('withdrawal_min_amount_kopeks') && <EnvLockedBadge />}
             </label>
             <input
               type="number"
@@ -238,7 +253,9 @@ export default function AdminPartnerSettings() {
                   setFormData({ ...formData, withdrawal_min_amount_kopeks: num });
               }}
               className="input"
-              disabled={!formData.withdrawal_enabled}
+              disabled={
+                !formData.withdrawal_enabled || envLocked.has('withdrawal_min_amount_kopeks')
+              }
             />
             <p className="mt-1 text-xs text-dark-500">
               {t('admin.partners.settingsFields.minAmountDesc')}
@@ -247,8 +264,9 @@ export default function AdminPartnerSettings() {
 
           {/* Cooldown Days */}
           <div className="mb-4">
-            <label className="mb-2 block text-sm font-medium text-dark-300">
+            <label className="mb-2 flex flex-wrap items-center gap-2 text-sm font-medium text-dark-300">
               {t('admin.partners.settingsFields.cooldownDays')}
+              {envLocked.has('withdrawal_cooldown_days') && <EnvLockedBadge />}
             </label>
             <input
               type="number"
@@ -262,7 +280,7 @@ export default function AdminPartnerSettings() {
                 if (!Number.isNaN(num)) setFormData({ ...formData, withdrawal_cooldown_days: num });
               }}
               className="input"
-              disabled={!formData.withdrawal_enabled}
+              disabled={!formData.withdrawal_enabled || envLocked.has('withdrawal_cooldown_days')}
             />
             <p className="mt-1 text-xs text-dark-500">
               {t('admin.partners.settingsFields.cooldownDaysDesc')}
@@ -271,8 +289,9 @@ export default function AdminPartnerSettings() {
 
           {/* Requisites Text */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-dark-300">
+            <label className="mb-2 flex flex-wrap items-center gap-2 text-sm font-medium text-dark-300">
               {t('admin.partners.settingsFields.requisitesText')}
+              {envLocked.has('withdrawal_requisites_text') && <EnvLockedBadge />}
             </label>
             <textarea
               value={formData.withdrawal_requisites_text}
@@ -281,7 +300,7 @@ export default function AdminPartnerSettings() {
               }
               className="input min-h-[80px] w-full"
               maxLength={2000}
-              disabled={!formData.withdrawal_enabled}
+              disabled={!formData.withdrawal_enabled || envLocked.has('withdrawal_requisites_text')}
               placeholder={t('admin.partners.settingsFields.requisitesTextPlaceholder')}
             />
             <p className="mt-1 text-xs text-dark-500">

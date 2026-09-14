@@ -113,6 +113,21 @@ const V166_KEYS = [
   'admin.remnawave.geoCheck.zoomReset',
 ] as const;
 
+const ISSUE_03_EMAIL_AUTH_KEYS = [
+  'auth.spamHint',
+  'auth.resendVerification',
+  'auth.resendIn',
+  'auth.resendSent',
+  'auth.resendError',
+  'auth.resendTooOften',
+  'auth.useAnotherEmail',
+  'auth.emailAuthDisabled',
+  'auth.disposableEmail',
+  'auth.registrationHourlyLimit',
+  'auth.registrationDailyLimit',
+  'auth.registrationFailed',
+] as const;
+
 function baseKeys(flat: Map<string, string>): Set<string> {
   return new Set([...flat.keys()].map((k) => k.replace(PLURAL_SUFFIX, '')));
 }
@@ -170,6 +185,30 @@ describe('локализация функций Upstream Cabinet v1.66.0', () =>
   it('сохраняет одинаковые плейсхолдеры во всех новых переводах', () => {
     const placeholderPattern = /\{\{[^}]+\}\}/g;
     for (const key of V166_KEYS) {
+      const placeholders = [enFlat, faFlat, ruFlat, zhFlat].map((flat) =>
+        (flat.get(key)?.match(placeholderPattern) ?? []).sort().join(','),
+      );
+      expect(new Set(placeholders).size, key).toBe(1);
+    }
+  });
+});
+
+describe('локализация email-регистрации из Issue 03', () => {
+  it('содержит пользовательские состояния во всех поддерживаемых локалях', () => {
+    for (const [locale, flat] of Object.entries({
+      en: enFlat,
+      fa: faFlat,
+      ru: ruFlat,
+      zh: zhFlat,
+    })) {
+      const missing = ISSUE_03_EMAIL_AUTH_KEYS.filter((key) => !flat.has(key));
+      expect(missing, locale).toEqual([]);
+    }
+  });
+
+  it('сохраняет одинаковые плейсхолдеры во всех новых переводах', () => {
+    const placeholderPattern = /\{\{[^}]+\}\}/g;
+    for (const key of ISSUE_03_EMAIL_AUTH_KEYS) {
       const placeholders = [enFlat, faFlat, ruFlat, zhFlat].map((flat) =>
         (flat.get(key)?.match(placeholderPattern) ?? []).sort().join(','),
       );

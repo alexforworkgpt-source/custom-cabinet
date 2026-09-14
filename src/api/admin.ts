@@ -68,6 +68,7 @@ export interface TicketSettings {
   support_system_mode: string; // tickets, contact, both
   cabinet_user_notifications_enabled: boolean;
   cabinet_admin_notifications_enabled: boolean;
+  env_locked: (keyof TicketSettingsUpdate)[];
 }
 
 export interface TicketSettingsUpdate {

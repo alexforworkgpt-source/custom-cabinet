@@ -261,10 +261,8 @@ export default function TopUpAmount() {
       }
     },
     onError: (err: unknown) => {
-      const detail = getApiErrorMessage(err, '');
-      setError(
-        detail.includes('not yet implemented') ? t('balance.useBot') : detail || t('common.error'),
-      );
+      const detail = getApiErrorMessage(err, t('balance.errors.paymentFailed'));
+      setError(detail.includes('not yet implemented') ? t('balance.useBot') : detail);
       submissionLockRef.current = false;
     },
   });
@@ -502,6 +500,7 @@ export default function TopUpAmount() {
             type="button"
             onClick={handleSubmit}
             disabled={isPending || paymentCreated || !amount || parseFloat(amount) <= 0}
+            aria-busy={isPending || undefined}
             className={`flex h-14 shrink-0 items-center justify-center gap-2 overflow-hidden rounded-2xl px-6 text-base font-bold transition-colors duration-200 ${
               isPending || paymentCreated || !amount || parseFloat(amount) <= 0
                 ? 'cursor-not-allowed bg-dark-700 text-dark-500'
@@ -511,7 +510,13 @@ export default function TopUpAmount() {
             }`}
           >
             {isPending ? (
-              <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              <>
+                <span
+                  aria-hidden="true"
+                  className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                />
+                <span>{t('common.processing')}</span>
+              </>
             ) : (
               <>
                 <SparklesIcon className="h-4 w-4" />

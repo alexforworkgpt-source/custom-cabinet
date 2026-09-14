@@ -33,6 +33,8 @@ import { infoApi } from '../api/info';
 import type { LegalConsentConfig } from '../types';
 import { Card } from '@/components/data-display/Card';
 import { useLegalConsentGate } from '../hooks/useLegalConsentGate';
+import { CheckEmailCard } from '@/components/auth/CheckEmailCard';
+import { getEmailAuthErrorTranslationKey } from '@/utils/emailAuthError';
 
 export default function Login() {
   const { t, i18n } = useTranslation();
@@ -129,7 +131,7 @@ export default function Login() {
     queryFn: brandingApi.getEmailAuthEnabled,
     staleTime: 60000,
   });
-  const isEmailAuthEnabled = emailAuthConfig?.enabled ?? true;
+  const isEmailAuthEnabled = emailAuthConfig?.enabled === true;
 
   const { data: footerEnabled } = useQuery({
     queryKey: ['footer-enabled'],
@@ -294,10 +296,6 @@ export default function Login() {
         setRegisteredEmail(result.email);
       }
     } catch (err: unknown) {
-      const error = err as { response?: { status?: number } };
-      const status = error.response?.status;
-      const detail = getApiErrorMessage(err, '');
-
       // Конфиг чекбоксов мог протухнуть (админ включил гейт между загрузкой страницы
       // и отправкой формы) — показываем недостающие галочки вместо сырой ошибки.
       const needsConsent = consent.capture(err, async (accepted) => {
@@ -315,19 +313,7 @@ export default function Login() {
         return;
       }
 
-      if (status === 400 && detail.includes('already registered')) {
-        setError(t('auth.emailAlreadyRegistered', 'This email is already registered'));
-      } else if (status === 401 || status === 403) {
-        if (detail.includes('verify your email')) {
-          setError(t('auth.emailNotVerified', 'Please verify your email first'));
-        } else {
-          setError(t('auth.invalidCredentials', 'Invalid email or password'));
-        }
-      } else if (status === 429) {
-        setError(t('auth.tooManyAttempts', 'Too many attempts. Please try again later'));
-      } else {
-        setError(detail || t('common.error'));
-      }
+      setError(t(getEmailAuthErrorTranslationKey(err, authMode)));
     } finally {
       setIsLoading(false);
     }
@@ -423,33 +409,21 @@ export default function Login() {
           <LegalConsentGate gate={consent} />
         ) : /* Check Email Screen */
         registeredEmail ? (
-          <Card size="lg" className="text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-success-500/20">
-              <EmailIcon className="h-7 w-7 text-success-400" />
-            </div>
-            <h2 className="mb-2 text-lg font-bold text-dark-50">
-              {t('auth.checkEmail', 'Check your email')}
-            </h2>
-            <p className="mb-3 text-sm text-dark-400">
-              {t('auth.verificationSent', 'We sent a verification link to:')}
-            </p>
-            <p className="mb-4 text-sm font-medium text-accent-400">{registeredEmail}</p>
-            <p className="mb-5 text-xs text-dark-500">
-              {t(
-                'auth.clickLinkToVerify',
-                'Click the link in the email to verify your account and log in.',
-              )}
-            </p>
-            <button
-              onClick={() => {
-                setRegisteredEmail(null);
-                setAuthMode('login');
-              }}
-              className="btn-secondary w-full"
-            >
-              {t('auth.backToLogin', 'Back to login')}
-            </button>
-          </Card>
+          <CheckEmailCard
+            email={registeredEmail}
+            onChangeEmail={() => {
+              setRegisteredEmail(null);
+              setAuthMode('register');
+              setShowEmailForm(true);
+              setError('');
+            }}
+            onBackToLogin={() => {
+              setRegisteredEmail(null);
+              setAuthMode('login');
+              setShowEmailForm(true);
+              setError('');
+            }}
+          />
         ) : (
           /* Main auth card */
           <Card size="md">
@@ -566,6 +540,7 @@ export default function Login() {
                                 'If an account exists with this email, we sent password reset instructions.',
                               )}
                             </p>
+                            <p className="text-start text-xs text-dark-500">{t('auth.spamHint')}</p>
                             <button
                               type="button"
                               onClick={closeForgotPasswordModal}

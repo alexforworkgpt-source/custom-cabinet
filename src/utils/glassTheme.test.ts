@@ -20,4 +20,11 @@ describe('getGlassColors', () => {
     expect(colors.text).toBe('rgb(var(--color-champagne-950))');
     expect(colors.textSecondary).toBe('rgb(var(--color-champagne-600))');
   });
+
+  it.each([true, false])('не делает вторичный текст полупрозрачным (isDark=%s)', (isDark) => {
+    const colors = getGlassColors(isDark);
+    expect(colors.textSecondary).not.toContain('rgba(');
+    expect(colors.textMuted).not.toContain('rgba(');
+    expect(colors.textFaint).not.toContain('rgba(');
+  });
 });

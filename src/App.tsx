@@ -37,9 +37,12 @@ import {
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { BackgroundHost } from './components/backgrounds/BackgroundHost';
 import { PermissionRoute } from '@/components/auth/PermissionRoute';
+import { RemountOnParam } from '@/components/RemountOnParam';
 import { saveReturnUrl } from './utils/token';
+import { ScreenViewReporter } from './components/ScreenViewReporter';
 import { useAnalyticsCounters } from './hooks/useAnalyticsCounters';
 import { useSiteVerification } from './hooks/useSiteVerification';
+import { useDoneKey } from './hooks/useDoneKey';
 // Auth pages - load immediately (small)
 import Login from './pages/Login';
 import TelegramCallback from './pages/TelegramCallback';
@@ -187,7 +190,17 @@ function ProtectedRoute({
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  return withLayout ? <Layout>{children}</Layout> : children;
+  return withLayout ? (
+    <Layout>
+      <ScreenViewReporter />
+      {children}
+    </Layout>
+  ) : (
+    <>
+      <ScreenViewReporter />
+      {children}
+    </>
+  );
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
@@ -261,6 +274,7 @@ function App() {
   // Pulls site-verification tokens (Antilopay apay-tag etc.) from the bot
   // backend and injects matching <meta> tags into document.head.
   useSiteVerification();
+  useDoneKey();
 
   return (
     <>
@@ -1085,7 +1099,9 @@ function App() {
           element={
             <PermissionRoute permission="partners:read">
               <LazyPage>
-                <AdminPartnerDetail />
+                <RemountOnParam name="userId">
+                  <AdminPartnerDetail />
+                </RemountOnParam>
               </LazyPage>
             </PermissionRoute>
           }
@@ -1275,7 +1291,9 @@ function App() {
           element={
             <PermissionRoute permission="users:read">
               <LazyPage>
-                <AdminUserDetail />
+                <RemountOnParam name="id">
+                  <AdminUserDetail />
+                </RemountOnParam>
               </LazyPage>
             </PermissionRoute>
           }
