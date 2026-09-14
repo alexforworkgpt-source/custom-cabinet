@@ -12,8 +12,9 @@ Custom Cabinet starts from Upstream Cabinet:
 - Integration verification: all 44 commits / 129 changed paths in
   `v1.71.1..v1.74.0` were classified. The receiving checkpoint is
   `bff2f9434d38fe1d69050d25fb53337fb7c204eb`; the adapted Custom Cabinet
-  application source remains local on `sync/upstream-v1.74.0-contract` until
-  separately authorized for commit or push. It is verified against Upstream
+  application source is
+  `4b84e749cd797deb852b1cd8d92b70acb9d8b951`, merged to `main` by
+  `33f122cdc5d6bc9e15fad4853a9451b91935ab45`. It is verified against Upstream
   Bot `v4.10.0` / `9fcebfd7bc075dcca1bb9d1514740039208b906a`.
   BSCHEKER/reachability/GEO remains backend-only and is intentionally absent
   from Custom Cabinet. This is a source-integration identity, not a Release
