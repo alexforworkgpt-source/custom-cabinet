@@ -5,14 +5,16 @@ Date: 2026-09-13
 ## Scope and exact identities
 
 This report covers the source-only Custom Cabinet integration after the verified
-checkpoint `bff2f9434d38fe1d69050d25fb53337fb7c204eb`. It does not declare a
-commit, tag, Release Bundle, publication or production deployment.
+checkpoint `bff2f9434d38fe1d69050d25fb53337fb7c204eb`. The adapted application
+source is `4b84e749cd797deb852b1cd8d92b70acb9d8b951`, merged to `main` by
+`33f122cdc5d6bc9e15fad4853a9451b91935ab45`. This report does not by itself
+declare a tag, Release Bundle, publication or production deployment.
 
 | Component | Previous verified identity | Target identity | Incoming range |
 | --- | --- | --- | --- |
 | Upstream Cabinet | `v1.71.1` / `5ade78f506fd0e102d70e2d59af4aa97ef9c164b` | `v1.74.0` / `57810c7da24b5c142371ed83a6ad5e43a591d454` | 44 unique commits, 129 changed paths |
 | Upstream Bot | `v4.7.1` / `cd903b7cfd3bac6e08e571904662c88e8c151d1d` | `v4.10.0` / `9fcebfd7bc075dcca1bb9d1514740039208b906a` | 110 unique commits, 238 changed paths |
-| Custom Cabinet receiver | `bff2f9434d38fe1d69050d25fb53337fb7c204eb` | local branch `sync/upstream-v1.74.0-contract` | uncommitted source candidate |
+| Custom Cabinet receiver | `bff2f9434d38fe1d69050d25fb53337fb7c204eb` | application source `4b84e749cd797deb852b1cd8d92b70acb9d8b951`; `main` merge `33f122cdc5d6bc9e15fad4853a9451b91935ab45` | committed source integration |
 
 ## Product boundary
 
@@ -225,7 +227,8 @@ remain in the official backend and are not copied into Custom Cabinet.
 
 ## Residual boundary
 
-A later Release Bundle requires separate immutable publication and applicable
+A Release Bundle requires separate immutable publication and applicable
 Installer gates. Existing released and production identities in
-`COMPATIBILITY.md` remain unchanged. The rollback/checkpoint source is
+`COMPATIBILITY.md` remain unchanged until that publication and any separately
+authorized deployment. The rollback/checkpoint source is
 `bff2f9434d38fe1d69050d25fb53337fb7c204eb`.

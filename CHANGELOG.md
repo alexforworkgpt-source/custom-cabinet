@@ -16,7 +16,8 @@
 * Upstream Cabinet baseline: `v1.74.0` / `57810c7da24b5c142371ed83a6ad5e43a591d454`.
 * Verified source contracts target Upstream Bot `v4.10.0` / `9fcebfd7bc075dcca1bb9d1514740039208b906a`.
 * BSCHEKER/reachability/GEO remains intentionally absent from Custom Cabinet; the official Upstream Bot backend is unchanged.
-* This source-only entry does not declare a commit, tag, Release Bundle or production deployment.
+* Adapted source commit: `4b84e749cd797deb852b1cd8d92b70acb9d8b951`; `main` merge: `33f122cdc5d6bc9e15fad4853a9451b91935ab45`.
+* This source-integration entry does not declare a tag, Release Bundle or production deployment.
 
 ## [1.71.1](https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/compare/v1.69.1...v1.71.1) (2026-09-12)
 
