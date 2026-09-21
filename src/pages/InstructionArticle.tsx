@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router';
@@ -33,7 +34,23 @@ export default function InstructionArticlePage() {
     ? requestedScenario
     : null;
   const reducedMotion = useReducedMotion();
+  const pendingScrollSection = useRef<HTMLElement | null>(null);
   const isRussian = i18n.language.split('-')[0] === 'ru';
+
+  useEffect(() => {
+    const scenarioSection = pendingScrollSection.current;
+    if (!openScenario || !scenarioSection) return;
+
+    pendingScrollSection.current = null;
+    const frame = requestAnimationFrame(() => {
+      scenarioSection.scrollIntoView({
+        behavior: reducedMotion ? 'auto' : 'smooth',
+        block: 'start',
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [openScenario, reducedMotion]);
 
   if (!article) {
     return (
@@ -135,12 +152,7 @@ export default function InstructionArticlePage() {
                       setSearchParams(nextSearchParams, { replace: true, state: location.state });
 
                       if (shouldOpen && window.matchMedia('(max-width: 1023px)').matches) {
-                        requestAnimationFrame(() => {
-                          scenarioSection?.scrollIntoView({
-                            behavior: reducedMotion ? 'auto' : 'smooth',
-                            block: 'start',
-                          });
-                        });
+                        pendingScrollSection.current = scenarioSection;
                       }
                     }}
                   >

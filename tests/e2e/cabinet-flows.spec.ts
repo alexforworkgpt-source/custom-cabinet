@@ -1372,15 +1372,16 @@ test('opens a structured cabinet instruction by its stable URL @critical-flow', 
   ).toBeVisible();
   await expect(page.locator('[data-instruction-step]')).toHaveCount(7);
   await expect(
-    page.getByRole('heading', { name: '1. Откройте управление подпиской', level: 2 }),
+    page.getByRole('heading', { name: 'Откройте управление подпиской', level: 2 }),
   ).toBeVisible();
+  await expect(page.getByLabel('Step 1 of 7')).toBeVisible();
   const firstStep = page.locator('[data-instruction-step="open-management"]');
   const firstIllustration = firstStep.getByRole('img', {
     name: 'Откройте управление подпиской: красная стрелка показывает нужный элемент',
   });
   await expect(firstIllustration).toBeVisible();
   await expect(firstIllustration).toHaveAttribute('loading', 'lazy');
-  await expect(firstStep.getByRole('button')).toHaveCount(0);
+  await expect(firstStep.getByRole('button', { name: 'Open larger' })).toBeVisible();
   const illustrationWidth = await firstIllustration.evaluate(
     (image) => image.getBoundingClientRect().width,
   );
@@ -1460,7 +1461,7 @@ test('reveals one subscription-sharing scenario at a time @critical-flow', async
 
   if (isMobileViewport) {
     const firstStepHeading = page.getByRole('heading', {
-      name: '1. Скопируйте ссылку',
+      name: 'Скопируйте ссылку',
       level: 2,
     });
     const mobileNavigation = page.locator('nav.fixed');

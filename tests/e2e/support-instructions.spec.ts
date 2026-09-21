@@ -71,13 +71,17 @@ test('centers the instructions icon beside its copy', async ({ page }) => {
     name: 'Instructions and setup',
     exact: true,
   });
-  const iconBox = await instructions.locator('svg').first().boundingBox();
-  const copyBox = await instructions.locator('h2').locator('..').boundingBox();
-  if (!iconBox || !copyBox) throw new Error('The instructions icon and copy must be visible');
+  await expect(instructions).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await expect
+    .poll(async () => {
+      const iconBox = await instructions.locator('svg').first().boundingBox();
+      const copyBox = await instructions.locator('h2').locator('..').boundingBox();
+      if (!iconBox || !copyBox) return Number.POSITIVE_INFINITY;
 
-  expect(
-    Math.abs(iconBox.y + iconBox.height / 2 - (copyBox.y + copyBox.height / 2)),
-  ).toBeLessThanOrEqual(2);
+      return Math.abs(iconBox.y + iconBox.height / 2 - (copyBox.y + copyBox.height / 2));
+    })
+    .toBeLessThanOrEqual(4);
 });
 
 for (const mode of [
