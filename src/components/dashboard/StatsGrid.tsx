@@ -42,6 +42,7 @@ export default function StatsGrid({
               : `${formatAmount(balanceRubles)} ${currencySymbol}`
           }
           loading={balanceLoading}
+          loadingLabel={t('common.loading')}
           icon={<CardIcon className="h-5 w-5" />}
           tone="success"
           trailing={chevron}
@@ -63,6 +64,7 @@ export default function StatsGrid({
             icon={<UsersIcon className="h-5 w-5" />}
             tone="accent"
             loading={refLoading}
+            loadingLabel={t('common.loading')}
             subValueLoading={refLoading}
             trailing={chevron}
           />

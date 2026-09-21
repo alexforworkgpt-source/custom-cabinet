@@ -142,6 +142,25 @@ test('does not add a Support return to a direct instructions visit', async ({ pa
   await expect(page.getByRole('link', { name: 'Back to support', exact: true })).toHaveCount(0);
 });
 
+test('keeps the Support return after selecting an instruction scenario', async ({ page }) => {
+  await prepareAuthenticatedPage(page, { responses });
+  await page.goto('/support');
+  await page.getByRole('link', { name: 'Open instructions', exact: true }).click();
+  await page
+    .getByRole('link')
+    .filter({
+      has: page.getByRole('heading', { name: 'Как поделиться подпиской', exact: true }),
+    })
+    .click();
+
+  await page.getByRole('button', { name: /Я делюсь подпиской/ }).click();
+  await expect(page).toHaveURL('/instructions/share-subscription?scenario=sender');
+  await expect(page.getByRole('link', { name: 'Back to support', exact: true })).toBeVisible();
+
+  await page.getByRole('link', { name: 'Back to all instructions', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Back to support', exact: true })).toBeVisible();
+});
+
 test('shows the Russian content note on a directly opened article', async ({ page }) => {
   await prepareAuthenticatedPage(page, { language: 'en' });
   await page.goto('/instructions/connect-android');

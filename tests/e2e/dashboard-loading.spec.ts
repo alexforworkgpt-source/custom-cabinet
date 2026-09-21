@@ -57,6 +57,8 @@ test('shows independent loading values without false unavailable or zero balance
   const referralCard = page.getByRole('link', { name: /Referrals/ }).first();
   await expect(balanceCard).toBeVisible();
   await expect(referralCard).toBeVisible();
+  await expect(balanceCard.getByRole('status', { name: /^Loading/ })).toBeVisible();
+  await expect(referralCard.getByRole('status', { name: /^Loading/ })).toBeVisible();
   await expect(balanceCard).not.toContainText('Unavailable');
   await expect(referralCard).not.toContainText('0');
 
@@ -90,10 +92,13 @@ const subscription = {
 
 test('reveals subscription details before devices and link without moving balance', async ({
   page,
-}) => {
+}, testInfo) => {
   // The PRD's mobile geometry target is 390px; at 320px the action text wraps.
   if ((page.viewportSize()?.width ?? 0) < 375)
     await page.setViewportSize({ width: 390, height: 844 });
+  if (testInfo.project.name === 'desktop-1280') {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+  }
   const details = deferred();
   const devices = deferred();
   const link = deferred();

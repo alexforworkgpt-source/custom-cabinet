@@ -23,7 +23,8 @@ import { instructionSummaries } from '@/content/instructions';
 export default function InstructionArticlePage() {
   const { t, i18n } = useTranslation();
   const { slug } = useParams();
-  const fromSupport = useLocation().state?.instructionsOrigin === 'support';
+  const location = useLocation();
+  const fromSupport = location.state?.instructionsOrigin === 'support';
   const instructionState = fromSupport ? { instructionsOrigin: 'support' } : undefined;
   const article = getInstructionArticle(slug);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -131,7 +132,7 @@ export default function InstructionArticlePage() {
                       } else {
                         nextSearchParams.delete('scenario');
                       }
-                      setSearchParams(nextSearchParams, { replace: true });
+                      setSearchParams(nextSearchParams, { replace: true, state: location.state });
 
                       if (shouldOpen && window.matchMedia('(max-width: 1023px)').matches) {
                         requestAnimationFrame(() => {

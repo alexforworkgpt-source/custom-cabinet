@@ -33,6 +33,8 @@ interface StatCardProps {
   subValue?: string;
   /** When true, shows a skeleton placeholder instead of the value. */
   loading?: boolean;
+  /** Accessible name announced while either value is loading. */
+  loadingLabel?: string;
   /** Reserve the secondary value while it is being fetched. */
   subValueLoading?: boolean;
   /** Optional node rendered at the right edge of the label row (e.g. a chevron for nav cards). */
@@ -51,6 +53,7 @@ export function StatCard({
   valueClassName,
   subValue,
   loading,
+  loadingLabel,
   subValueLoading,
   trailing,
   delta,
@@ -96,7 +99,7 @@ export function StatCard({
         <div
           className="min-w-0 flex-1"
           role={loading || subValueLoading ? 'status' : undefined}
-          aria-label={loading || subValueLoading ? label : undefined}
+          aria-label={loading || subValueLoading ? (loadingLabel ?? label) : undefined}
         >
           {loading ? (
             <Skeleton className="h-7 w-20 rounded" />
