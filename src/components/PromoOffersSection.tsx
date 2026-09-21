@@ -7,7 +7,6 @@ import { getApiErrorMessage } from '../utils/api-error';
 import { ClockIcon, CheckIcon, XCircleIcon } from './icons';
 import { useDestructiveConfirm } from '@/platform/hooks/useNativeDialog';
 import { Card } from '@/components/data-display/Card';
-import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
 // Helper functions
 const formatTimeLeft = (
@@ -86,7 +85,7 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Fetch available offers
-  const { data: offers = [], isLoading: offersLoading } = useQuery({
+  const { data: offers = [] } = useQuery({
     queryKey: ['promo-offers'],
     queryFn: promoApi.getOffers,
     staleTime: 30000,
@@ -189,7 +188,12 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
   const availableOffers = offers.filter((o) => o.is_active && !o.is_claimed);
 
   // Don't render if no offers and no active discount
-  if (!offersLoading && availableOffers.length === 0 && !activeDiscount?.is_active) {
+  if (
+    availableOffers.length === 0 &&
+    !activeDiscount?.is_active &&
+    !successMessage &&
+    !errorMessage
+  ) {
     return null;
   }
 
@@ -322,19 +326,6 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
             </Card>
           ))}
         </div>
-      )}
-
-      {/* Loading State */}
-      {offersLoading && (
-        <Card size="lg">
-          <SkeletonGroup className="flex items-center gap-4">
-            <Skeleton className="h-12 w-12 shrink-0 rounded-xl" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-4 w-48" />
-            </div>
-          </SkeletonGroup>
-        </Card>
       )}
     </div>
   );

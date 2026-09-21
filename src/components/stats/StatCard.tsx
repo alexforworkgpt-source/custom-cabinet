@@ -33,6 +33,10 @@ interface StatCardProps {
   subValue?: string;
   /** When true, shows a skeleton placeholder instead of the value. */
   loading?: boolean;
+  /** Accessible name announced while either value is loading. */
+  loadingLabel?: string;
+  /** Reserve the secondary value while it is being fetched. */
+  subValueLoading?: boolean;
   /** Optional node rendered at the right edge of the label row (e.g. a chevron for nav cards). */
   trailing?: ReactNode;
   /** Optional period-over-period change shown under the value. */
@@ -49,6 +53,8 @@ export function StatCard({
   valueClassName,
   subValue,
   loading,
+  loadingLabel,
+  subValueLoading,
   trailing,
   delta,
 }: StatCardProps) {
@@ -90,16 +96,20 @@ export function StatCard({
             {icon}
           </span>
         )}
-        <div className="min-w-0 flex-1">
+        <div
+          className="min-w-0 flex-1"
+          role={loading || subValueLoading ? 'status' : undefined}
+          aria-label={loading || subValueLoading ? (loadingLabel ?? label) : undefined}
+        >
           {loading ? (
             <Skeleton className="h-7 w-20 rounded" />
           ) : (
-            <>
-              <div className={`truncate text-lg font-semibold sm:text-xl ${valueClass}`}>
-                {value}
-              </div>
-              {subValue && <div className="truncate text-xs text-dark-500">{subValue}</div>}
-            </>
+            <div className={`truncate text-lg font-semibold sm:text-xl ${valueClass}`}>{value}</div>
+          )}
+          {subValueLoading ? (
+            <Skeleton className="mt-0.5 h-4 w-24 rounded" />
+          ) : (
+            subValue && <div className="truncate text-xs text-dark-500">{subValue}</div>
           )}
         </div>
       </div>

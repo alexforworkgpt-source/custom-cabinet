@@ -43,6 +43,7 @@ test('places instructions below New Ticket and returns from an article to Suppor
 
   await instructions.click();
   await expect(page).toHaveURL('/instructions');
+  await expect(page.getByRole('main')).toHaveCount(1);
   await expect(page.getByRole('link', { name: 'Back to support', exact: true })).toBeVisible();
   await page
     .getByRole('link')
@@ -51,6 +52,7 @@ test('places instructions below New Ticket and returns from an article to Suppor
     })
     .click();
   await expect(page).toHaveURL('/instructions/connect-android');
+  await expect(page.getByRole('main')).toHaveCount(1);
   await page.reload();
   await expect(page.getByRole('link', { name: 'Back to support', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Back to all instructions', exact: true }).click();
@@ -59,6 +61,23 @@ test('places instructions below New Ticket and returns from an article to Suppor
   await expect(page).toHaveURL('/support');
   await expect(newTicket).toBeVisible();
   expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('centers the instructions icon beside its copy', async ({ page }) => {
+  await prepareAuthenticatedPage(page, { responses });
+  await page.goto('/support');
+
+  const instructions = page.getByRole('region', {
+    name: 'Instructions and setup',
+    exact: true,
+  });
+  const iconBox = await instructions.locator('svg').first().boundingBox();
+  const copyBox = await instructions.locator('h2').locator('..').boundingBox();
+  if (!iconBox || !copyBox) throw new Error('The instructions icon and copy must be visible');
+
+  expect(
+    Math.abs(iconBox.y + iconBox.height / 2 - (copyBox.y + copyBox.height / 2)),
+  ).toBeLessThanOrEqual(2);
 });
 
 for (const mode of [
@@ -116,10 +135,89 @@ test('does not place an instructions exit beside an in-progress ticket draft', a
 test('does not add a Support return to a direct instructions visit', async ({ page }) => {
   await prepareAuthenticatedPage(page);
   await page.goto('/instructions');
+  await expect(page.getByRole('main')).toHaveCount(1);
   await expect(
     page.getByRole('heading', { name: 'Instructions and setup', level: 1 }),
   ).toBeVisible();
   await expect(page.getByRole('link', { name: 'Back to support', exact: true })).toHaveCount(0);
+});
+
+test('keeps the Support return after selecting an instruction scenario', async ({ page }) => {
+  await prepareAuthenticatedPage(page, { responses });
+  await page.goto('/support');
+  await page.getByRole('link', { name: 'Open instructions', exact: true }).click();
+  await page
+    .getByRole('link')
+    .filter({
+      has: page.getByRole('heading', { name: 'Как поделиться подпиской', exact: true }),
+    })
+    .click();
+
+  await page.getByRole('button', { name: /Я делюсь подпиской/ }).click();
+  await expect(page).toHaveURL('/instructions/share-subscription?scenario=sender');
+  await expect(page.getByRole('link', { name: 'Back to support', exact: true })).toBeVisible();
+
+  await page.getByRole('link', { name: 'Back to all instructions', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Back to support', exact: true })).toBeVisible();
+});
+
+test('shows the Russian content note on a directly opened article', async ({ page }) => {
+  await prepareAuthenticatedPage(page, { language: 'en' });
+  await page.goto('/instructions/connect-android');
+
+  await expect(
+    page.getByText('The guides are currently available in Russian.', { exact: true }),
+  ).toBeVisible();
+});
+
+test('shows step screenshots inline and can open one larger', async ({ page }) => {
+  await prepareAuthenticatedPage(page);
+  await page.goto('/instructions/connect-android');
+
+  const instructionImage = page.locator(
+    'main img[src$="/instructions/connect-android/01-open-connection.png"]',
+  );
+  await expect(instructionImage).toBeVisible();
+  const stepBox = await instructionImage.locator('xpath=ancestor::li').boundingBox();
+  const imageBox = await instructionImage.boundingBox();
+  if (!stepBox || !imageBox) throw new Error('The instruction step and screenshot must be visible');
+  expect(
+    Math.abs(imageBox.x + imageBox.width / 2 - (stepBox.x + stepBox.width / 2)),
+  ).toBeLessThanOrEqual(1);
+
+  await page.getByRole('button', { name: 'Open larger' }).first().click();
+  const dialog = page.getByRole('dialog', { name: /Screenshot:/ });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('img', { name: /Откройте настройку VPN/ })).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+});
+
+test('shows scenario progress and marks optional steps', async ({ page }) => {
+  await prepareAuthenticatedPage(page);
+  await page.goto('/instructions/share-subscription');
+
+  await page.getByRole('button', { name: /Я делюсь подпиской/ }).click();
+  await expect(page.getByLabel('Step 1 of 3')).toBeVisible();
+  await expect(page.getByText('Optional', { exact: true })).toHaveCount(2);
+});
+
+test('keeps the selected instruction scenario in the URL', async ({ page }) => {
+  await prepareAuthenticatedPage(page);
+  await page.goto('/instructions/share-subscription?scenario=sender');
+
+  const sender = page.getByRole('button', { name: /Я делюсь подпиской/ });
+  const recipient = page.getByRole('button', { name: /Я подключаюсь к подписке/ });
+  await expect(sender).toHaveAttribute('aria-expanded', 'true');
+
+  await recipient.click();
+  await expect(page).toHaveURL('/instructions/share-subscription?scenario=recipient-android');
+  await expect(recipient).toHaveAttribute('aria-expanded', 'true');
+  await expect(sender).toHaveAttribute('aria-expanded', 'false');
+
+  await page.reload();
+  await expect(recipient).toHaveAttribute('aria-expanded', 'true');
 });
 
 for (const colorScheme of ['dark', 'light'] as const) {

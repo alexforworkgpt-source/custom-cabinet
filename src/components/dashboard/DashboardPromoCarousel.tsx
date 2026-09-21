@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
+import { Skeleton } from '@/components/ui/skeleton';
 import { usePlatform } from '@/platform';
 import {
   ArrowRightIcon,
@@ -94,9 +95,13 @@ const PRESENTATION: Record<DashboardPromoSlideId, SlidePresentation> = {
 
 interface DashboardPromoCarouselProps {
   slides: DashboardPromoSlide[];
+  loading?: boolean;
 }
 
-export default function DashboardPromoCarousel({ slides }: DashboardPromoCarouselProps) {
+export default function DashboardPromoCarousel({
+  slides,
+  loading = false,
+}: DashboardPromoCarouselProps) {
   const { t } = useTranslation();
   const { openTelegramLink } = usePlatform();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -134,7 +139,22 @@ export default function DashboardPromoCarousel({ slides }: DashboardPromoCarouse
     return () => window.clearTimeout(timer);
   }, [activeIndex, interactionPaused, manualPaused, pageVisible, reducedMotion, slides.length]);
 
-  if (slides.length === 0) return null;
+  if (slides.length === 0) {
+    if (!loading) return null;
+    return (
+      <section role="status" aria-label={t('common.loading')}>
+        <div
+          className="relative min-h-[148px] overflow-hidden rounded-2xl border border-dark-700/60 bg-dark-900 p-5 shadow-card sm:min-h-[160px] sm:p-6"
+          aria-hidden="true"
+        >
+          <Skeleton className="mb-3 h-3 w-20 rounded" />
+          <Skeleton className="mb-2 h-6 w-1/2 rounded" />
+          <Skeleton className="h-4 w-2/3 rounded" />
+          <Skeleton className="absolute right-5 top-1/2 h-16 w-16 -translate-y-1/2 rounded-2xl sm:right-8 sm:h-20 sm:w-20" />
+        </div>
+      </section>
+    );
+  }
 
   const activeSlide = slides[activeIndex] ?? slides[0];
   const presentation = PRESENTATION[activeSlide.id];

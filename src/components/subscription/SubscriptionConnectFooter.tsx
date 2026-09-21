@@ -39,7 +39,7 @@ export function SubscriptionConnectFooter({
       <div
         className={cn(
           prominent
-            ? 'flex min-h-[60px] items-center gap-3 rounded-[14px] p-3'
+            ? 'flex min-h-[72px] items-center gap-3 rounded-[14px] p-3'
             : 'flex min-h-11 items-center gap-2.5 border-t px-4 py-2.5',
           className,
         )}
