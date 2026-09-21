@@ -21,9 +21,36 @@ production row. The application source is committed and merged to `main`.
 
 The 44 incoming Upstream Cabinet commits and 129 changed paths, plus all 110
 incoming Upstream Bot commits and 238 changed paths, are classified in
-[`UPSTREAM_V1.74.0_SYNC_REPORT.md`](UPSTREAM_V1.74.0_SYNC_REPORT.md). The
-released and production baseline below deliberately remains unchanged until a
-new immutable Release Bundle is separately authorized, published and deployed.
+[`UPSTREAM_V1.74.0_SYNC_REPORT.md`](UPSTREAM_V1.74.0_SYNC_REPORT.md). Release
+Bundle `v2026.09.21.1` was subsequently authorized, deployed and verified in
+production as recorded below.
+
+## Verified v1.74.0 Release and Production Gate (2026-09-21)
+
+| Component | Exact identity | Status |
+| --- | --- | --- |
+| Custom Cabinet | `cabinet-v2026.09.21.1` / `aec198424aa0b489db6d07d1af92bd704aa7c518`; package `1.74.0` | Published; local and GitHub gates passed |
+| Upstream Cabinet | `v1.74.0` / `57810c7da24b5c142371ed83a6ad5e43a591d454` | Exact integrated baseline |
+| Upstream Bot | `v4.10.0` / `9fcebfd7bc075dcca1bb9d1514740039208b906a` | Exact targeted-smoke runtime |
+| Installer | `v2026.09.21.1` / `b54219d34a582e393f397a4441c6aacc52f274a8` | Existing exact lifecycle proof reused |
+| Release Bundle | `v2026.09.21.1` / `991c6ec42053876ae6079d82faee14dc7a6e65157fd9d3c8ada3875795b768af` | Public assets, targeted Ubuntu 24.04 install and production rollout passed |
+
+Unit, type, production-build and browser gates passed, including 793 unit tests
+and 554 browser tests with 24 configured skips. All six public assets,
+checksums, provenance, exact source identities and archive safety passed.
+Targeted fresh installation finished with `outcome=committed`, exact runtime
+identities, three containers, Cabinet/instruction/branding HTTP `200`, unified
+health `ok`, app-shell `no-store` and complete cleanup. Full authenticated
+Telegram staging and physical-device gates remain `BLOCKED`; see
+[`LIVE_CHECK_REPORT_2026.09.21.md`](LIVE_CHECK_REPORT_2026.09.21.md).
+Production Protected Update later completed with `outcome=committed`; exact
+runtime identities, preserved volumes/schema, infrastructure checks and an
+owner-authenticated read-only browser smoke passed.
+
+The earlier `v2026.09.21` publication must not be used. It contains a
+nonexistent PostgreSQL digest discovered by targeted fresh-install smoke. Its
+assets remain unchanged for audit history and the corrected Bundle was
+published under `v2026.09.21.1`.
 
 ## Verified v1.71.1 Source Compatibility (2026-09-12)
 
@@ -49,25 +76,26 @@ contract suites passed; eight full-suite repository-policy checks remain
 `BLOCKED` only by their native-Windows path/order assumptions. See the sync
 report for the exact test inventory and limitations.
 
-## Current Released and Production Baseline
+## Current Production Baseline
 
 | Component | Version or reference | Exact source |
 | --- | --- | --- |
-| Custom Cabinet | `v1.69.1`; latest immutable production release | `cabinet-v2026.09.07.1` / `27f94c818435044ef7b58fcd0ed7de119331cfb8` |
-| Custom Cabinet integrated application source | Adaptive upstream integration source below the formatting-only release follow-up | `bb6f56f050267d6d6aaa38793d2b288f4f186565` |
-| Upstream Cabinet baseline | `v1.69.1` | `3da34239d1c1c7b87a0184e74d49bde43ea88b89` |
+| Production Custom Cabinet | `v1.74.0`; current production release | `cabinet-v2026.09.21.1` / `aec198424aa0b489db6d07d1af92bd704aa7c518` |
+| Previous production Custom Cabinet | `v1.74.0`; rollback reference | `cabinet-v2026.09.14.1` / `fd91218cdcdedc38cd4be24b9f5c16ccb9b5caeb` |
+| Upstream Cabinet baseline | `v1.74.0` | `57810c7da24b5c142371ed83a6ad5e43a591d454` |
 | Upstream Cabinet source | Repository | <https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git> |
-| Upstream Bot | `v4.5.0`; verified production runtime | `07f3c6081233f5517200e62ad7be70aaa58ef27c` |
-| Installer | `v2026.09.07.1`; verified management and runtime source | `b54219d34a582e393f397a4441c6aacc52f274a8` |
-| Release Bundle | `v2026.09.07.1`; `rollback-compatible` | `7f234e7672be8fe68be2102ab0655e6a3735c07b2169a14c76c30491e7f99629` |
+| Upstream Bot | `v4.10.0`; production runtime | `9fcebfd7bc075dcca1bb9d1514740039208b906a` |
+| Installer | Production `v2026.09.21.1` | `b54219d34a582e393f397a4441c6aacc52f274a8` |
+| Production Release Bundle | `v2026.09.21.1`; `rollback-compatible` | `991c6ec42053876ae6079d82faee14dc7a6e65157fd9d3c8ada3875795b768af` |
+| Previous production Release Bundle | `v2026.09.14`; `rollback-compatible` | `e9e3710d066644674ab12c83b650ae926985f7efd46b192a610e6452503b823e` |
 | Node.js development baseline | 24.15+ | Declared in `README.md` |
 
 The integrated upstream source identity is recorded in
-[`UPSTREAM.md`](UPSTREAM.md). The released and production baseline below
-deliberately remains on the last immutable Release Bundle until a new Bundle is
-published and deployed. Do not treat source compatibility as deployment proof.
+[`UPSTREAM.md`](UPSTREAM.md). Source compatibility or publication alone is not
+deployment proof; the current baseline above is backed by the recorded
+production transition and independent verifier.
 
-## Verified v1.69.1 Release and Production Gate (2026-09-07)
+## Historical Verified v1.69.1 Release and Production Gate (2026-09-07)
 
 This combination passed the complete applicable release and production gate.
 
@@ -235,6 +263,9 @@ row retains its own dated product sign-off and residual risks.
 | `v2026.08.28` | `27e73f662297bbfe459af86cbe00b2a132d8ac0e` | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` | `cabinet-v2026.08.28.1` / `2a49b1350ab98e177c0d62d26462381aeca97648` | `2192484b011068d8cb75c61a6aeaada1d06115aa` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-08-28 | Exact Installer lifecycle proof reused because the Installer commit, Bot SHA, image digests, Bundle contract and Ubuntu target are unchanged. Custom Cabinet and GitHub gates, deterministic publication and independent public asset verification passed. A fresh targeted installation committed on the disposable integration VPS; doctor, exact source identities, three containers, Cabinet and branding HTTP `200`, unified health `ok`, webhook default `404` and complete cleanup passed. Production was not accessed; see `LIVE_CHECK_REPORT_2026.08.28.md`. |
 | `v2026.09.05` | `27e73f662297bbfe459af86cbe00b2a132d8ac0e` | `v4.1.0` / `49b05d5ab79dd9bb92f0404bb0066cda8a175649` | `cabinet-v2026.09.05.1` / `5cf81e74dcacad02336e57af6f71d490688cdf88` | `2192484b011068d8cb75c61a6aeaada1d06115aa` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-09-05 | Exact Installer lifecycle proof reused because the Installer commit, Bot SHA, image digests, Bundle contract and Ubuntu target are unchanged. Custom Cabinet checks, GitHub gates, deterministic publication and independent verification of six public assets passed. The owner accepted the known asynchronous translation-loading defect and skipped a separate disposable-VPS installation because Custom Cabinet had already been updated from `main`; that earlier update does not prove the exact tagged source or Bundle combination. Full product live sign-off remains `BLOCKED`; see `LIVE_CHECK_REPORT_2026.09.05.md`. |
 | `v2026.09.07.1` | `b54219d34a582e393f397a4441c6aacc52f274a8` | `v4.5.0` / `07f3c6081233f5517200e62ad7be70aaa58ef27c` | `cabinet-v2026.09.07.1` / `27f94c818435044ef7b58fcd0ed7de119331cfb8` | `3da34239d1c1c7b87a0184e74d49bde43ea88b89` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-09-07 | Full disposable Ubuntu 24.04 Installer lifecycle, rollback injection/recovery, deterministic publication and independent verification of six public assets passed. Production management update preserved runtime identities; a full migration package was copied off-host and checksum-verified; Protected Update migrated Alembic `0106` to `0114` with `outcome=committed`. Exact identities, Status, Diagnostics, three healthy services, public health, Telegram webhook and authenticated read-only browser smoke passed. The prior `v2026.09.07` publication was never deployed and is superseded. See `LIVE_CHECK_REPORT_2026.09.07.md`. |
+| `v2026.09.14` | `b54219d34a582e393f397a4441c6aacc52f274a8` | `v4.10.0` / `9fcebfd7bc075dcca1bb9d1514740039208b906a` | `cabinet-v2026.09.14.1` / `fd91218cdcdedc38cd4be24b9f5c16ccb9b5caeb` | `57810c7da24b5c142371ed83a6ad5e43a591d454` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-09-14 | Previous production Bundle and rollback reference for the 2026-09-21 transition. |
+| `v2026.09.21` | `b54219d34a582e393f397a4441c6aacc52f274a8` | `v4.10.0` / `9fcebfd7bc075dcca1bb9d1514740039208b906a` | `cabinet-v2026.09.21.1` / `aec198424aa0b489db6d07d1af92bd704aa7c518` | `57810c7da24b5c142371ed83a6ad5e43a591d454` | PostgreSQL digest is invalid in this immutable Bundle; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2` | 2026-09-21 | `DO NOT USE`. Targeted installation failed while resolving the nonexistent PostgreSQL digest. Assets remain unchanged; superseded by `v2026.09.21.1`. |
+| `v2026.09.21.1` | `b54219d34a582e393f397a4441c6aacc52f274a8` | `v4.10.0` / `9fcebfd7bc075dcca1bb9d1514740039208b906a` | `cabinet-v2026.09.21.1` / `aec198424aa0b489db6d07d1af92bd704aa7c518` | `57810c7da24b5c142371ed83a6ad5e43a591d454` | PostgreSQL `postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23`; Redis `redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`; Node `node@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf`; Nginx `nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752` | 2026-09-21 | Current production Bundle. Public verification and targeted fresh installation passed; production Protected Update then committed with preserved schema/volumes, exact identities, full technical verifier and owner-authenticated read-only browser smoke. Full Telegram staging and physical-device gates remain `BLOCKED`; see `LIVE_CHECK_REPORT_2026.09.21.md`. |
 
 Use this format for every released combination:
 
