@@ -14,7 +14,7 @@ export function SupportInstructionsCard() {
       aria-label={t('instructions.title')}
       className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
     >
-      <div className="flex min-w-0 items-start gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         <span className="shrink-0 text-accent-400" aria-hidden="true">
           <BookOpenIcon className="h-6 w-6" />
         </span>

@@ -6,8 +6,9 @@ import { CardIcon, ChevronRightIcon, UsersIcon } from '@/components/icons';
 
 interface StatsGridProps {
   balanceRubles: number | null;
-  referralCount: number;
-  earningsRubles: number;
+  balanceLoading: boolean;
+  referralCount: number | null;
+  earningsRubles: number | null;
   refLoading: boolean;
   showReferral?: boolean;
 }
@@ -17,6 +18,7 @@ const actionLinkClass =
 
 export default function StatsGrid({
   balanceRubles,
+  balanceLoading,
   referralCount,
   earningsRubles,
   refLoading,
@@ -39,6 +41,7 @@ export default function StatsGrid({
               ? t('dashboard.dataUnavailable')
               : `${formatAmount(balanceRubles)} ${currencySymbol}`
           }
+          loading={balanceLoading}
           icon={<CardIcon className="h-5 w-5" />}
           tone="success"
           trailing={chevron}
@@ -50,12 +53,17 @@ export default function StatsGrid({
             className="border-0 bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_10%,rgba(var(--color-dark-900),0.80)_90%)] transition-[background-color,box-shadow] duration-200 group-active:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_15%,rgba(var(--color-dark-900),0.80)_85%)] motion-reduce:transition-none md:group-hover:shadow-md lg:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_10%,rgba(var(--color-dark-900),0.85)_90%)] lg:group-hover:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_15%,rgba(var(--color-dark-900),0.85)_85%)]"
             label={t('dashboard.stats.referrals')}
             labelClassName="text-accent-400"
-            value={`${referralCount}`}
+            value={referralCount === null ? t('dashboard.dataUnavailable') : `${referralCount}`}
             valueClassName="text-dark-100"
-            subValue={`+${formatAmount(earningsRubles)} ${currencySymbol}`}
+            subValue={
+              earningsRubles === null
+                ? undefined
+                : `+${formatAmount(earningsRubles)} ${currencySymbol}`
+            }
             icon={<UsersIcon className="h-5 w-5" />}
             tone="accent"
             loading={refLoading}
+            subValueLoading={refLoading}
             trailing={chevron}
           />
         </Link>

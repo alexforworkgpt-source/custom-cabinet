@@ -18,11 +18,12 @@ interface SubscriptionCardActiveProps {
     traffic_used_percent: number;
     is_unlimited: boolean;
   } | null;
-  refreshTrafficMutation: UseMutationResult<unknown, unknown, void, unknown>;
+  refreshTrafficMutation: UseMutationResult<unknown, unknown, number, unknown>;
   trafficRefreshCooldown: number;
   connectedDevices: number | undefined;
   devicesError: boolean;
   connectionUrl?: string | null;
+  connectionLinkLoading?: boolean;
   connectionUrlCopied?: boolean;
   onCopyConnectionUrl?: () => void;
   onOpenConnectionQr: () => void;
@@ -42,6 +43,7 @@ export default function SubscriptionCardActive({
   connectedDevices,
   devicesError,
   connectionUrl,
+  connectionLinkLoading,
   connectionUrlCopied = false,
   onCopyConnectionUrl,
   onOpenConnectionQr,
@@ -103,10 +105,10 @@ export default function SubscriptionCardActive({
           carried no information and ate visual attention. */}
 
         {/* ─── Header ─── */}
-        <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+        <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-1 sm:gap-3">
           <div className="min-w-0 flex-1">
             {/* Zone indicator */}
-            <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <div className="mb-1 flex flex-wrap items-center gap-x-1 gap-y-1 sm:gap-x-2">
               <div
                 className="h-2 w-2 shrink-0 rounded-full"
                 style={{
@@ -177,8 +179,12 @@ export default function SubscriptionCardActive({
             <div className="flex items-center justify-end gap-1.5">
               <button
                 type="button"
-                onClick={() => refreshTrafficMutation.mutate()}
-                disabled={refreshTrafficMutation.isPending || trafficRefreshCooldown > 0}
+                onClick={() => refreshTrafficMutation.mutate(subscription.id)}
+                disabled={
+                  (refreshTrafficMutation.isPending &&
+                    refreshTrafficMutation.variables === subscription.id) ||
+                  trafficRefreshCooldown > 0
+                }
                 className="flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-full px-2 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 style={{ color: contrast.muted }}
                 aria-label={
@@ -194,7 +200,7 @@ export default function SubscriptionCardActive({
                 data-traffic-refresh
               >
                 <RefreshIcon
-                  className={`h-4 w-4 ${refreshTrafficMutation.isPending ? 'animate-spin' : ''}`}
+                  className={`h-4 w-4 ${refreshTrafficMutation.isPending && refreshTrafficMutation.variables === subscription.id ? 'animate-spin' : ''}`}
                 />
                 {trafficRefreshCooldown > 0 ? `${trafficRefreshCooldown}s` : t('common.refresh')}
               </button>
@@ -207,7 +213,7 @@ export default function SubscriptionCardActive({
                 </div>
               ) : (
                 <div
-                  className="font-display text-[32px] font-extrabold leading-none tracking-tight"
+                  className="font-display text-[26px] font-extrabold leading-none tracking-tight sm:text-[32px]"
                   style={{ color: contrast.primary }}
                   data-traffic-percentage
                 >
@@ -364,6 +370,7 @@ export default function SubscriptionCardActive({
         connectedDevices={connectedDevices}
         devicesError={devicesError}
         connectionUrl={connectionUrl}
+        connectionLinkLoading={connectionLinkLoading}
         connectionUrlCopied={connectionUrlCopied}
         onCopyConnectionUrl={onCopyConnectionUrl}
         onOpenConnectionQr={onOpenConnectionQr}

@@ -1,4 +1,3 @@
-import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import { safeLocal } from '../utils/safeStorage';
 import { getApiErrorMessage } from '../utils/api-error';
 import { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'react';
@@ -15,6 +14,7 @@ import Onboarding, { useOnboarding } from '../components/Onboarding';
 import PromoOffersSection from '../components/PromoOffersSection';
 import NewsSection from '../components/news/NewsSection';
 import SubscriptionCardActive from '../components/dashboard/SubscriptionCardActive';
+import SubscriptionCardSkeleton from '../components/dashboard/SubscriptionCardSkeleton';
 import SubscriptionCardExpired from '../components/dashboard/SubscriptionCardExpired';
 import TrialOfferCard from '../components/dashboard/TrialOfferCard';
 import StatsGrid from '../components/dashboard/StatsGrid';
@@ -85,6 +85,7 @@ export default function Dashboard() {
   // Fetch balance from API
   const {
     data: balanceData,
+    isLoading: balanceLoading,
     isError: balanceError,
     refetch: refetchBalance,
   } = useQuery({
@@ -165,10 +166,10 @@ export default function Dashboard() {
   const shouldHideConnectionLink =
     subscription?.hide_subscription_link || connectionLink?.hide_link;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies(subscription?.id): A different subscription must reset the copied-link state.
+  // biome-ignore lint/correctness/useExhaustiveDependencies(selectedSubscriptionId): Switching subscriptions must reset the copied-link state before the next response.
   useEffect(() => {
     setSubscriptionLinkCopied(false);
-  }, [subscription?.id]);
+  }, [selectedSubscriptionId]);
 
   const { data: purchaseOptions } = useQuery({
     queryKey: ['purchase-options', selectedSubscriptionId],
@@ -180,7 +181,7 @@ export default function Dashboard() {
   const { data: trialInfo, isLoading: trialLoading } = useQuery({
     queryKey: ['trial-info'],
     queryFn: () => subscriptionApi.getTrialInfo(),
-    enabled: !subscription && !subLoading,
+    enabled: !subscription && !subLoading && !subscriptionsError && !subscriptionError,
   });
 
   const {
@@ -245,55 +246,71 @@ export default function Dashboard() {
   });
 
   // Traffic refresh state and mutation
-  const [trafficRefreshCooldown, setTrafficRefreshCooldown] = useState(0);
-  const [trafficData, setTrafficData] = useState<{
-    traffic_used_gb: number;
-    traffic_used_percent: number;
-    is_unlimited: boolean;
-  } | null>(null);
+  const [trafficCooldowns, setTrafficCooldowns] = useState<Record<number, number>>({});
+  const [refreshedTrafficById, setRefreshedTrafficById] = useState<
+    Record<number, { traffic_used_gb: number; traffic_used_percent: number; is_unlimited: boolean }>
+  >({});
   const currentSubscriptionIdRef = useRef<number | undefined>(subscription?.id);
   const overlayTriggerRef = useRef<HTMLElement | null>(null);
   currentSubscriptionIdRef.current = subscription?.id;
+  const trafficData = subscription ? (refreshedTrafficById[subscription.id] ?? null) : null;
+  const trafficRefreshCooldown = subscription ? (trafficCooldowns[subscription.id] ?? 0) : 0;
+  const hasTrafficCooldown = Object.values(trafficCooldowns).some((seconds) => seconds > 0);
 
   const refreshTrafficMutation = useMutation({
-    mutationFn: async () => {
-      const subscriptionId = currentSubscriptionIdRef.current;
+    mutationFn: async (subscriptionId: number) => {
       const data = await subscriptionApi.refreshTraffic(subscriptionId);
       return { data, subscriptionId };
     },
     onSuccess: ({ data, subscriptionId }) => {
-      if (subscriptionId !== currentSubscriptionIdRef.current) return;
-      setTrafficData({
-        traffic_used_gb: data.traffic_used_gb,
-        traffic_used_percent: data.traffic_used_percent,
-        is_unlimited: data.is_unlimited,
-      });
-      safeLocal.setItem(`traffic_refresh_ts_${subscriptionId ?? 'default'}`, Date.now().toString());
-      if (data.rate_limited && data.retry_after_seconds) {
-        setTrafficRefreshCooldown(data.retry_after_seconds);
-      } else {
-        setTrafficRefreshCooldown(30);
+      setRefreshedTrafficById((current) => ({
+        ...current,
+        [subscriptionId]: {
+          traffic_used_gb: data.traffic_used_gb,
+          traffic_used_percent: data.traffic_used_percent,
+          is_unlimited: data.is_unlimited,
+        },
+      }));
+      if (subscriptionId === currentSubscriptionIdRef.current) {
+        queryClient.invalidateQueries({ queryKey: ['subscription'] });
       }
-      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+      safeLocal.setItem(`traffic_refresh_ts_${subscriptionId}`, Date.now().toString());
+      setTrafficCooldowns((current) => ({
+        ...current,
+        [subscriptionId]:
+          data.rate_limited && data.retry_after_seconds ? data.retry_after_seconds : 30,
+      }));
     },
-    onError: (error: {
-      response?: { status?: number; headers?: { get?: (key: string) => string } };
-    }) => {
+    onError: (
+      error: {
+        response?: { status?: number; headers?: { get?: (key: string) => string } };
+      },
+      subscriptionId,
+    ) => {
       if (error.response?.status === 429) {
         const retryAfter = error.response.headers?.get?.('Retry-After');
-        setTrafficRefreshCooldown(retryAfter ? parseInt(retryAfter, 10) : 30);
+        setTrafficCooldowns((current) => ({
+          ...current,
+          [subscriptionId]: retryAfter ? parseInt(retryAfter, 10) : 30,
+        }));
       }
     },
   });
 
   // Cooldown timer
   useEffect(() => {
-    if (trafficRefreshCooldown <= 0) return;
+    if (!hasTrafficCooldown) return;
     const timer = setInterval(() => {
-      setTrafficRefreshCooldown((prev) => Math.max(0, prev - 1));
+      setTrafficCooldowns((current) => {
+        const next = { ...current };
+        for (const id of Object.keys(next)) {
+          next[Number(id)] = Math.max(0, next[Number(id)] - 1);
+        }
+        return next;
+      });
     }, 1000);
     return () => clearInterval(timer);
-  }, [trafficRefreshCooldown]);
+  }, [hasTrafficCooldown]);
 
   // Auto-refresh traffic on mount (with 30s caching)
   const autoRefreshedSubscriptionId = useRef<number | null>(null);
@@ -303,7 +320,7 @@ export default function Dashboard() {
     if (autoRefreshedSubscriptionId.current === subscription.id) return;
     autoRefreshedSubscriptionId.current = subscription.id;
 
-    const lastRefresh = safeLocal.getItem(`traffic_refresh_ts_${subscription?.id ?? 'default'}`);
+    const lastRefresh = safeLocal.getItem(`traffic_refresh_ts_${subscription.id}`);
     const now = Date.now();
     const cacheMs = API.TRAFFIC_CACHE_MS;
 
@@ -311,18 +328,13 @@ export default function Dashboard() {
       const elapsed = now - parseInt(lastRefresh, 10);
       const remaining = Math.ceil((cacheMs - elapsed) / 1000);
       if (remaining > 0) {
-        setTrafficRefreshCooldown(remaining);
+        setTrafficCooldowns((current) => ({ ...current, [subscription.id]: remaining }));
       }
       return;
     }
 
-    refreshTrafficMutation.mutate();
+    refreshTrafficMutation.mutate(subscription.id);
   }, [subscription, refreshTrafficMutation]);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies(subscription?.id): A different subscription must not display cached traffic from the previous one.
-  useEffect(() => {
-    setTrafficData(null);
-  }, [subscription?.id]);
 
   // В multi-tariff /cabinet/subscription отключён, поэтому subscriptionResponse=undefined.
   // Используем список из /cabinet/subscriptions/list — пустой массив означает «нет подписок»,
@@ -331,7 +343,10 @@ export default function Dashboard() {
     ? multiSubData !== undefined && (multiSubData.subscriptions?.length ?? 0) === 0
     : subscriptionResponse?.has_subscription === false && !subLoading;
   const promoSubscriptionState =
-    subLoading || subscriptionsLoading || subscriptionsError || subscriptionError
+    subLoading ||
+    subscriptionsLoading ||
+    (subscriptionsError && !multiSubData) ||
+    (subscriptionError && !subscriptionResponse)
       ? 'unknown'
       : subscription &&
           !subscription.is_expired &&
@@ -585,27 +600,15 @@ export default function Dashboard() {
       )}
 
       {!subscriptionsError && !subscriptionError && (subLoading || subscriptionsLoading) ? (
-        <SkeletonGroup className="bento-card">
-          <div className="mb-4 flex items-center justify-between">
-            <Skeleton className="h-5 w-20" />
-            <Skeleton className="h-6 w-16 rounded-full" />
-          </div>
-          <Skeleton className="mb-3 h-10 w-32" />
-          <Skeleton className="mb-3 h-4 w-40" />
-          <Skeleton className="h-3 w-full rounded-full" />
-          <div className="mt-5">
-            <Skeleton className="h-12 w-full rounded-xl" />
-          </div>
-        </SkeletonGroup>
-      ) : !subscriptionsError &&
-        !subscriptionError &&
-        (subscription?.is_expired ||
+        <SubscriptionCardSkeleton />
+      ) : subscription &&
+        (subscription.is_expired ||
           subscription?.status === 'disabled' ||
           subscription?.is_limited) ? (
         <SubscriptionCardExpired
           subscription={subscription}
-          balanceKopeks={balanceError ? null : (balanceData?.balance_kopeks ?? null)}
-          balanceRubles={balanceError ? null : (balanceData?.balance_rubles ?? null)}
+          balanceKopeks={balanceData?.balance_kopeks ?? null}
+          balanceRubles={balanceData?.balance_rubles ?? null}
           isTrafficTopupOpen={showTrafficTopup}
           trafficTopupTriggerRef={trafficTopupTriggerRef}
           onBuyTraffic={() => {
@@ -613,7 +616,7 @@ export default function Dashboard() {
             setShowTrafficTopup(true);
           }}
           connectedDevices={devicesData?.total}
-          devicesError={devicesError}
+          devicesError={devicesError && !devicesData}
           onConnectDevice={() => navigate(`/connection?sub=${subscription.id}`)}
           onManageDevices={() =>
             navigate(`/?sub=${subscription.id}&overlay=devices`, {
@@ -636,8 +639,9 @@ export default function Dashboard() {
           refreshTrafficMutation={refreshTrafficMutation}
           trafficRefreshCooldown={trafficRefreshCooldown}
           connectedDevices={devicesData?.total}
-          devicesError={devicesError}
+          devicesError={devicesError && !devicesData}
           connectionUrl={shouldHideConnectionLink ? null : displayedConnectionUrl}
+          connectionLinkLoading={!shouldHideConnectionLink && isConnectionLinkLoading}
           connectionUrlCopied={subscriptionLinkCopied}
           onOpenConnectionQr={() => {
             if (!displayedConnectionUrl || shouldHideConnectionLink) return;
@@ -651,7 +655,7 @@ export default function Dashboard() {
             });
           }}
           onCopyConnectionUrl={() => {
-            if (!displayedConnectionUrl) return;
+            if (!displayedConnectionUrl || shouldHideConnectionLink) return;
             void copyToClipboard(displayedConnectionUrl);
             setSubscriptionLinkCopied(true);
             setTimeout(() => setSubscriptionLinkCopied(false), 2000);
@@ -699,8 +703,8 @@ export default function Dashboard() {
           {trialInfo?.is_available && (
             <TrialOfferCard
               trialInfo={trialInfo}
-              balanceKopeks={balanceError ? null : (balanceData?.balance_kopeks ?? null)}
-              balanceRubles={balanceError ? null : (balanceData?.balance_rubles ?? null)}
+              balanceKopeks={balanceData?.balance_kopeks ?? null}
+              balanceRubles={balanceData?.balance_rubles ?? null}
               activateTrialMutation={activateTrialMutation}
               trialError={trialError}
             />
@@ -719,14 +723,15 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <StatsGrid
-        balanceRubles={balanceError ? null : (balanceData?.balance_rubles ?? null)}
-        referralCount={referralInfo?.total_referrals || 0}
-        earningsRubles={referralInfo?.available_balance_rubles || 0}
+        balanceRubles={balanceData?.balance_rubles ?? null}
+        balanceLoading={balanceLoading && !balanceData}
+        referralCount={referralInfo?.total_referrals ?? null}
+        earningsRubles={referralInfo?.available_balance_rubles ?? null}
         refLoading={refLoading}
         showReferral={referralEnabled}
       />
 
-      <DashboardPromoCarousel slides={promoSlides} />
+      <DashboardPromoCarousel slides={promoSlides} loading={!promoDataReady} />
 
       {/* Fortune Wheel Banner */}
       {wheelConfig?.is_enabled && (
