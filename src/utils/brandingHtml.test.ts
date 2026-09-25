@@ -5,6 +5,7 @@ import {
   DEFAULT_API_URL,
   DEFAULT_APP_NAME,
   FAVICON_PATH,
+  MANIFEST_PATH,
   renderBrandingHtml,
 } from '../../vite-plugins/brandingHtml';
 
@@ -20,9 +21,24 @@ describe('brandingHtml', () => {
     expect(htmlSource).toContain(`<title>${BRANDING_PLACEHOLDERS.name}</title>`);
     expect(htmlSource).toContain(`content="${BRANDING_PLACEHOLDERS.name}"`);
     expect(htmlSource).toContain(`href="${BRANDING_PLACEHOLDERS.icon}"`);
+    expect(htmlSource).toContain(
+      `<link rel="manifest" href="${BRANDING_PLACEHOLDERS.manifest}" />`,
+    );
     expect(htmlSource).toContain(`var API = '${BRANDING_PLACEHOLDERS.apiUrl}';`);
     // Значения из сборки не должны оставаться в разметке буквально.
     expect(htmlSource).not.toContain('<title>VPN</title>');
+  });
+
+  it('удаляет contact из адреса раньше manifest, favicon и внешних ресурсов', () => {
+    const privacyScript = htmlSource.indexOf('<script data-hint="contact-prefill">');
+    const manifest = htmlSource.indexOf('<link rel="manifest"');
+    const favicon = htmlSource.indexOf('<link rel="icon"');
+    const firstExternalResource = htmlSource.indexOf('<link rel="preconnect"');
+
+    expect(privacyScript).toBeGreaterThanOrEqual(0);
+    expect(manifest).toBeGreaterThan(privacyScript);
+    expect(favicon).toBeGreaterThan(privacyScript);
+    expect(firstExternalResource).toBeGreaterThan(privacyScript);
   });
 
   it('подставляет экранированное имя', () => {
@@ -56,6 +72,17 @@ describe('brandingHtml', () => {
       '<link rel="icon" href="https://api.example/cabinet/branding/favicon" />',
     );
     expect(html).not.toMatch(/<link rel="icon" href="[^"]*\/cabinet\/branding\/logo"/);
+  });
+
+  it('манифест — ссылка на /cabinet/branding/manifest.webmanifest у бота', () => {
+    const html = renderBrandingHtml(htmlSource, { name: 'ZeroPing' });
+    expect(html).toContain(`<link rel="manifest" href="${DEFAULT_API_URL}${MANIFEST_PATH}" />`);
+    expect(html).not.toContain(BRANDING_PLACEHOLDERS.manifest);
+
+    const external = renderBrandingHtml(htmlSource, { name: 'X', apiUrl: 'https://api.example/' });
+    expect(external).toContain(
+      '<link rel="manifest" href="https://api.example/cabinet/branding/manifest.webmanifest" />',
+    );
   });
 
   it('внешний адрес API с хвостовым слэшем даёт чистую ссылку', () => {

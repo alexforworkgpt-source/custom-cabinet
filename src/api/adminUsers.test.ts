@@ -31,6 +31,36 @@ describe('adminUsersApi v1.66 contracts', () => {
     });
   });
 
+  it('forwards Bot v4.15 list filters and sort direction unchanged', async () => {
+    await adminUsersApi.getUsers({
+      expires_within_days: 7,
+      active_within_minutes: 15,
+      online: true,
+      has_restrictions: true,
+      has_subscription: false,
+      traffic_used_percent_min: 80,
+      purchase_count: 0,
+      in_grace: true,
+      sort_by: 'grace_until',
+      sort_order: 'asc',
+    });
+
+    expect(clientMocks.get).toHaveBeenCalledWith('/cabinet/admin/users', {
+      params: {
+        expires_within_days: 7,
+        active_within_minutes: 15,
+        online: true,
+        has_restrictions: true,
+        has_subscription: false,
+        traffic_used_percent_min: 80,
+        purchase_count: 0,
+        in_grace: true,
+        sort_by: 'grace_until',
+        sort_order: 'asc',
+      },
+    });
+  });
+
   it('deletes a subscription without force after an ordinary confirmation', async () => {
     await adminUsersApi.deleteSubscription(42, 7);
 

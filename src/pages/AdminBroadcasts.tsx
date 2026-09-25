@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -85,6 +85,30 @@ export default function AdminBroadcasts() {
     },
   });
 
+  const { data: telegramFilters } = useQuery({
+    queryKey: ['admin', 'broadcasts', 'filters'],
+    queryFn: adminBroadcastsApi.getFilters,
+  });
+
+  const { data: emailFilters } = useQuery({
+    queryKey: ['admin', 'broadcasts', 'email-filters'],
+    queryFn: adminBroadcastsApi.getEmailFilters,
+  });
+
+  const audienceLabels = useMemo(() => {
+    const labels = new Map<string, string>();
+    for (const filter of [
+      ...(emailFilters?.filters ?? []),
+      ...(emailFilters?.promo_group_filters ?? []),
+      ...(telegramFilters?.filters ?? []),
+      ...(telegramFilters?.tariff_filters ?? []),
+      ...(telegramFilters?.custom_filters ?? []),
+    ]) {
+      labels.set(filter.key, filter.label);
+    }
+    return labels;
+  }, [emailFilters, telegramFilters]);
+
   const broadcasts = data?.items || [];
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / limit);
@@ -158,8 +182,15 @@ export default function AdminBroadcasts() {
                     )}
                   </div>
                   <p className="truncate text-sm text-dark-100">{broadcast.message_text}</p>
-                  <div className="mt-2 flex items-center gap-4 text-xs text-dark-400">
-                    <span>{broadcast.target_type}</span>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-dark-400">
+                    <span className="min-w-0 [overflow-wrap:anywhere]">
+                      {audienceLabels.get(broadcast.target_type) ??
+                        (/^user_\d+$/.test(broadcast.target_type)
+                          ? t('admin.broadcasts.singleUser', {
+                              name: `#${broadcast.target_type.slice('user_'.length)}`,
+                            })
+                          : broadcast.target_type)}
+                    </span>
                     <span>
                       {broadcast.sent_count}/{broadcast.total_count}
                       {broadcast.blocked_count > 0 && (

@@ -302,6 +302,7 @@ export default {
   plugins: [
     ({ addVariant }) => {
       addVariant('light', '.light &');
+      addVariant('tile-wide', '@container stat-tile (min-width: 11rem)');
     },
   ],
 };

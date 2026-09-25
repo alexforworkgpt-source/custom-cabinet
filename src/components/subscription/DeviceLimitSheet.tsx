@@ -9,7 +9,7 @@ interface DeviceLimitPanelProps {
   deviceLimit: number;
   connectedDevices: number | undefined;
   isTrial: boolean;
-  onAddSlots: () => void;
+  onAddSlots?: () => void;
 }
 
 export function DeviceLimitPanel({
@@ -22,7 +22,7 @@ export function DeviceLimitPanel({
 }: DeviceLimitPanelProps) {
   const { t } = useTranslation();
   const full = connectedDevices !== undefined && deviceLimit > 0 && connectedDevices >= deviceLimit;
-  const canAddSlots = !isTrial && deviceLimit !== 0;
+  const canAddSlots = !isTrial && deviceLimit !== 0 && onAddSlots !== undefined;
 
   return (
     <div className="space-y-4">

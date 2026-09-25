@@ -128,12 +128,84 @@ const ISSUE_03_EMAIL_AUTH_KEYS = [
   'auth.registrationFailed',
 ] as const;
 
+const V179_LOCALIZATION_PREFIXES = [
+  'common.relative.',
+  'subscription.legacy.',
+  'admin.broadcasts.filterGroups.',
+  'admin.graceAccess.',
+  'admin.promoGroups.',
+  'admin.reminders.',
+  'admin.users.views.',
+  'admin.users.filterLabels.',
+  'admin.users.filterAny.',
+  'admin.users.subFilters.',
+  'admin.users.sort.',
+  'admin.users.statuses.',
+  'admin.users.detail.salesMode.',
+  'admin.users.detail.sync.rows.',
+] as const;
+
+const V179_LOCALIZATION_KEYS = [
+  'dashboard.reminders.dismiss',
+  'profile.accounts.unlinkForgetsEmail',
+  'subscription.cta.moveToTariff',
+  'subscription.cta.moveToTariffHint',
+  'balance.refund',
+  'balance.failedRefund',
+  'balance.pollReward',
+  'balance.giftPayment',
+  'balance.otherOperation',
+  'admin.nav.reminders',
+  'admin.broadcasts.singleUser',
+  'admin.users.connectedNow',
+  'admin.users.endOfList',
+  'admin.users.filters.remove',
+  'admin.users.loadError',
+  'admin.users.moreTariffs',
+  'admin.users.noneFound',
+  'admin.users.reset',
+  'admin.users.search',
+  'admin.users.shown',
+  'admin.users.subscriptionChips.graceUntil',
+  'admin.users.toTop',
+  'admin.users.viewsLabel',
+  'admin.users.detail.header.writeEmail',
+  'admin.users.detail.sync.byGrace',
+  'admin.users.detail.sync.graceOverlay',
+] as const;
+
+const V179_PLURAL_BASES = [
+  'common.relative.minutes',
+  'common.relative.hours',
+  'common.relative.days',
+  'common.relative.weeks',
+  'common.relative.months',
+  'admin.users.endOfList',
+  'admin.users.detail.salesMode.subscriptionCount',
+] as const;
+
+const EXPECTED_PLURAL_SUFFIXES = {
+  ru: ['one', 'few', 'many'],
+  en: ['one', 'other'],
+  fa: ['one', 'other'],
+  zh: ['other'],
+} as const;
+
 function baseKeys(flat: Map<string, string>): Set<string> {
   return new Set([...flat.keys()].map((k) => k.replace(PLURAL_SUFFIX, '')));
 }
 
 const enBases = baseKeys(enFlat);
 const ruBases = baseKeys(ruFlat);
+
+const locales = { en: enFlat, fa: faFlat, ru: ruFlat, zh: zhFlat } as const;
+
+const v179Bases = new Set([
+  ...[...ruFlat.keys()]
+    .filter((key) => V179_LOCALIZATION_PREFIXES.some((prefix) => key.startsWith(prefix)))
+    .map((key) => key.replace(PLURAL_SUFFIX, '')),
+  ...V179_LOCALIZATION_KEYS,
+]);
 
 describe('синхронность локалей en/ru', () => {
   it('каждый en-ключ существует в ru', () => {
@@ -213,6 +285,47 @@ describe('локализация email-регистрации из Issue 03', ()
         (flat.get(key)?.match(placeholderPattern) ?? []).sort().join(','),
       );
       expect(new Set(placeholders).size, key).toBe(1);
+    }
+  });
+});
+
+describe('локализация адаптации Upstream Cabinet v1.79.0', () => {
+  it('содержит непустые ключи Slice 1–9 во всех поддерживаемых локалях', () => {
+    for (const [locale, flat] of Object.entries(locales)) {
+      const bases = baseKeys(flat);
+      const missing = [...v179Bases].filter((key) => !bases.has(key));
+      const empty = [...flat]
+        .filter(([key, value]) => v179Bases.has(key.replace(PLURAL_SUFFIX, '')) && !value.trim())
+        .map(([key]) => key);
+
+      expect(missing, `${locale}: missing`).toEqual([]);
+      expect(empty, `${locale}: empty`).toEqual([]);
+    }
+  });
+
+  it('сохраняет одинаковые плейсхолдеры в ключах Slice 1–9', () => {
+    const placeholderPattern = /\{\{[^}]+\}\}/g;
+
+    for (const base of v179Bases) {
+      const signatures = Object.entries(locales).map(([locale, flat]) => {
+        const values = [...flat]
+          .filter(([key]) => key.replace(PLURAL_SUFFIX, '') === base)
+          .map(([, value]) => (value.match(placeholderPattern) ?? []).sort().join(','));
+        expect(new Set(values).size, `${locale}: ${base}`).toBe(1);
+        return values[0];
+      });
+
+      expect(new Set(signatures).size, base).toBe(1);
+    }
+  });
+
+  it('содержит нужные i18next-формы множественного числа', () => {
+    for (const base of V179_PLURAL_BASES) {
+      for (const [locale, suffixes] of Object.entries(EXPECTED_PLURAL_SUFFIXES)) {
+        const flat = locales[locale as keyof typeof locales];
+        const missing = suffixes.filter((suffix) => !flat.has(`${base}_${suffix}`));
+        expect(missing, `${locale}: ${base}`).toEqual([]);
+      }
     }
   });
 });

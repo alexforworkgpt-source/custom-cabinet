@@ -19,12 +19,18 @@ export interface GraceAccessConfig {
   limited_squad_uuid: string;
   external_squad_uuid: string;
   traffic_gb: number;
+  /** Reset panel usage when granting grace to an expired unlimited subscription. */
+  reset_traffic_on_start: boolean;
   trial_enabled: boolean;
   daily_enabled: boolean;
   free_enabled: boolean;
   reconcile_interval_seconds: number;
   reconcile_batch_size: number;
   candidate_lookback_minutes: number;
+  /** Operator wording included in user notifications. */
+  allowed_services: string;
+  notify_admins: boolean;
+  notify_user: boolean;
 }
 
 export interface GraceAccessRuntimeState {
@@ -112,8 +118,9 @@ export interface GraceSquadOption {
 }
 
 export interface GraceSquadsResponse {
-  /** False when the panel could not be reached — the UUID stays a manual field. */
+  /** False when no panel or synchronized squad list is available. */
   available: boolean;
+  source?: 'panel' | 'synced';
   items: GraceSquadOption[];
 }
 
@@ -133,6 +140,13 @@ export const adminGraceAccessApi = {
 
   getSquads: async (): Promise<GraceSquadsResponse> => {
     const response = await apiClient.get<GraceSquadsResponse>('/cabinet/admin/grace-access/squads');
+    return response.data;
+  },
+
+  getExternalSquads: async (): Promise<GraceSquadsResponse> => {
+    const response = await apiClient.get<GraceSquadsResponse>(
+      '/cabinet/admin/grace-access/external-squads',
+    );
     return response.data;
   },
 

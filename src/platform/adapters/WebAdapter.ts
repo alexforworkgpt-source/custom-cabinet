@@ -132,6 +132,10 @@ function createThemeController(): ThemeController {
       // No-op in web - no bottom bar to sync
     },
 
+    setBackgroundColor(_color: string) {
+      // В браузере фон под страницей и есть сама страница.
+    },
+
     getThemeParams() {
       return null;
     },

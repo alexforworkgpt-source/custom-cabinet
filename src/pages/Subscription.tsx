@@ -19,6 +19,7 @@ import InsufficientBalancePrompt from '../components/InsufficientBalancePrompt';
 import { useCurrency } from '../hooks/useCurrency';
 import { useCloseOnSuccessNotification } from '../store/successNotification';
 import PurchaseCTAButton from '../components/subscription/PurchaseCTAButton';
+import { planTitle, showsAddonOptions, showsAutopayToggle } from '../utils/legacySubscription';
 import {
   PauseIcon,
   CalendarIcon,
@@ -29,6 +30,9 @@ import {
   TrashIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  ArrowPathIcon,
+  ClockIcon,
+  WarningIcon,
 } from '../components/icons';
 import { useHaptic, usePlatform } from '../platform';
 import { getErrorMessage, getInsufficientBalanceError } from '../utils/subscriptionHelpers';
@@ -740,7 +744,7 @@ export default function Subscription({
 
                     {/* Plan name */}
                     <h2 className="text-lg font-bold tracking-tight text-dark-50">
-                      {subscription.tariff_name || t('subscription.currentPlan')}
+                      {planTitle(subscription, t)}
                     </h2>
                   </div>
 
@@ -793,21 +797,7 @@ export default function Subscription({
                       className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]"
                       style={{ background: 'rgba(255,184,0,0.12)' }}
                     >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="rgb(var(--color-urgent-400))"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                        <line x1="12" y1="9" x2="12" y2="13" />
-                        <line x1="12" y1="17" x2="12.01" y2="17" />
-                      </svg>
+                      <WarningIcon className="h-4 w-4 text-urgent-400" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p
@@ -839,19 +829,7 @@ export default function Subscription({
                       className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]"
                       style={{ background: 'rgba(var(--color-accent-400), 0.12)' }}
                     >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="rgb(var(--color-accent-400))"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <ClockIcon className="h-4 w-4 text-accent-400" />
                     </div>
                     <div className="flex-1">
                       <div
@@ -1124,7 +1102,7 @@ export default function Subscription({
               )}
 
               {/* ─── Autopay Toggle ─── */}
-              {!subscription.is_trial && !subscription.is_daily && (
+              {showsAutopayToggle(subscription) && (
                 <div
                   className="flex items-center justify-between rounded-[14px] p-3.5"
                   style={{
@@ -1686,7 +1664,7 @@ export default function Subscription({
                   }}
                 >
                   <div className="mt-3 space-y-3">
-                    {subscription.device_limit !== 0 && (
+                    {showsAddonOptions(subscription) && (
                       <>
                         <DeviceTopupSheet
                           open={showDeviceTopup}
@@ -1784,19 +1762,7 @@ export default function Subscription({
                           {revokeMutation.isPending ? (
                             <div className="h-5 w-5 animate-spin rounded-full border-2 border-warning-400/30 border-t-amber-400" />
                           ) : (
-                            <svg
-                              className="h-5 w-5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={1.5}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"
-                              />
-                            </svg>
+                            <ArrowPathIcon className="h-5 w-5" />
                           )}
                         </div>
                       </div>

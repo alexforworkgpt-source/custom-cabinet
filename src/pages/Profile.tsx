@@ -8,7 +8,7 @@ import { useAuthStore } from '../store/auth';
 import { displayName } from '../utils/displayName';
 import { brandingApi, type EmailAuthEnabled } from '../api/branding';
 import { Card } from '@/components/data-display/Card';
-import { Button } from '@/components/primitives/Button';
+import { LogoutButton } from '@/components/LogoutButton';
 import { staggerContainer, staggerItem } from '@/components/motion/transitions';
 import { ChevronRightIcon, UsersIcon } from '@/components/icons';
 import ProfileHubSections, { ProfileAdminSection } from '@/components/profile/ProfileHubSections';
@@ -148,16 +148,13 @@ export default function Profile() {
       )}
 
       <motion.div variants={staggerItem} className="pt-2">
-        <Button
-          fullWidth
-          variant="destructive"
-          onClick={() => {
+        <LogoutButton
+          variant="profile"
+          onLogout={() => {
             haptic.impact('light');
             logout();
           }}
-        >
-          {t('nav.logout')}
-        </Button>
+        />
       </motion.div>
     </motion.div>
   );

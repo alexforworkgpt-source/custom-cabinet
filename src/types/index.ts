@@ -107,6 +107,8 @@ export interface Subscription {
   tariff_id?: number;
   tariff_name?: string;
   traffic_reset_mode?: string;
+  /** Bot-owned signal for a pre-tariff subscription that must select a tariff. */
+  requires_tariff_selection?: boolean;
 }
 
 // Response wrapper for subscription status endpoint
@@ -132,6 +134,8 @@ export interface SubscriptionListItem {
   is_daily_paused?: boolean;
   autopay_enabled: boolean;
   connected_squads: string[] | null;
+  /** Bot-owned signal for a pre-tariff subscription that must select a tariff. */
+  requires_tariff_selection?: boolean;
 }
 
 // Response from GET /cabinet/subscriptions (multi-tariff)
@@ -889,6 +893,8 @@ export interface LinkedProvider {
   provider: string;
   linked: boolean;
   identifier: string | null;
+  /** Email removed with this provider when no password makes it an independent sign-in. */
+  forgets_email?: string | null;
 }
 
 export interface LinkedProvidersResponse {

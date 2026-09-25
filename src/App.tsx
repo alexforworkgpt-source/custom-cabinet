@@ -146,6 +146,8 @@ const AdminUserDetail = lazyWithRetry(() => import('./pages/AdminUserDetail'));
 const AdminBroadcastDetail = lazyWithRetry(() => import('./pages/AdminBroadcastDetail'));
 const AdminPinnedMessages = lazyWithRetry(() => import('./pages/AdminPinnedMessages'));
 const AdminPinnedMessageCreate = lazyWithRetry(() => import('./pages/AdminPinnedMessageCreate'));
+const AdminReminders = lazyWithRetry(() => import('./pages/AdminReminders'));
+const AdminReminderEdit = lazyWithRetry(() => import('./pages/AdminReminderEdit'));
 const AdminChannelSubscriptions = lazyWithRetry(() => import('./pages/AdminChannelSubscriptions'));
 const AdminRoles = lazyWithRetry(() => import('./pages/AdminRoles'));
 const AdminRoleEdit = lazyWithRetry(() => import('./pages/AdminRoleEdit'));
@@ -1334,6 +1336,36 @@ function App() {
             <PermissionRoute permission="pinned_messages:read">
               <LazyPage>
                 <AdminPinnedMessageCreate />
+              </LazyPage>
+            </PermissionRoute>
+          }
+        />
+        <Route
+          path="/admin/reminders"
+          element={
+            <PermissionRoute permission="user_reminders:read">
+              <LazyPage>
+                <AdminReminders />
+              </LazyPage>
+            </PermissionRoute>
+          }
+        />
+        <Route
+          path="/admin/reminders/create"
+          element={
+            <PermissionRoute permission="user_reminders:create">
+              <LazyPage>
+                <AdminReminderEdit />
+              </LazyPage>
+            </PermissionRoute>
+          }
+        />
+        <Route
+          path="/admin/reminders/:id/edit"
+          element={
+            <PermissionRoute permission="user_reminders:edit">
+              <LazyPage>
+                <AdminReminderEdit />
               </LazyPage>
             </PermissionRoute>
           }

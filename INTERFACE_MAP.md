@@ -417,6 +417,9 @@ Feature flags управляют прежде всего видимостью с
 | Кампании | `/admin/campaigns`, `/create`, `/:id/stats`, `/:id/edit` | `campaigns:read` |
 | Рассылки | `/admin/broadcasts`, `/create`, `/:id` | `broadcasts:read` |
 | Закрепленные сообщения | `/admin/pinned-messages`, `/create`, `/:id/edit` | `pinned_messages:read` |
+| Напоминания | `/admin/reminders` | `user_reminders:read` |
+| Создание напоминания | `/admin/reminders/create` | `user_reminders:create` |
+| Редактирование напоминания | `/admin/reminders/:id/edit` | `user_reminders:edit` |
 | Колесо | `/admin/wheel` | `wheel:read` |
 | Партнеры | `/admin/partners` | `partners:read` |
 | Настройки партнеров | `/admin/partners/settings` | `partners:read` |
@@ -426,6 +429,20 @@ Feature flags управляют прежде всего видимостью с
 | Отзыв статуса | `/admin/partners/:userId/revoke` | `partners:read` |
 | Назначение кампаний | `/admin/partners/:userId/campaigns/assign` | `partners:read` |
 | Выводы | `/admin/withdrawals`, `/:id`, `/:id/reject` | `withdrawals:read` |
+
+В разделе напоминаний просмотр списка требует `user_reminders:read`, а маршрут
+создания и сохранение новой формы доступны только с
+`user_reminders:create`. Включение, выключение, переход к редактированию,
+сохранение существующего напоминания и test-to-self требуют
+`user_reminders:edit`. Удаление обычного напоминания требует
+`user_reminders:delete`; встроенное напоминание удалить нельзя.
+
+Запуск перерасчёта промогрупп требует `promo_groups:edit`; текущий статус и
+последний результат остаются доступны на странице групп с правом чтения.
+Действие «На почту» в карточке пользователя требует `broadcasts:send` и
+появляется только для подтверждённого email. Оно открывает существующий маршрут
+`/admin/broadcasts/create` с прямым адресатом `user_<id>`; email-фильтры также
+принимают аудиторию `promo_group_<id>`.
 
 #### Система
 

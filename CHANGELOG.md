@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased — Upstream Cabinet v1.79.0 integration candidate (2026-09-24)
+
+### Custom Cabinet Source Integration
+
+* **accounts and admin users:** provider-email lifecycle, filtering, sorting, online/grace states, sales modes and panel-sync explanations
+* **subscriptions:** one shared legacy-subscription rule keeps the same connection while requiring a tariff before renewal or add-ons
+* **reminders:** localized user cards plus permission-gated admin list, audience, create, edit, toggle, delete and test-to-self flows
+* **operations:** promo-group recalculation status, direct-user and promo-group email audiences, and grace traffic/notification controls
+* **platform and quality:** same-origin PWA manifest handling, Telegram color alignment, locale-aware numbers/dates/transactions, responsive overflow fixes and single-layer wheel rendering
+* **i18n:** synchronized Slice 1–9 keys, interpolation and plural forms across Russian, English, Farsi and Chinese, including RTL reminder forms/cards
+
+### Compatibility
+
+* Receiving Custom Cabinet checkpoint: `80caeac6b756f208543a6c3f891877a4547c7d73` on `sync/upstream-v1.79.0`.
+* Upstream Cabinet target: `v1.79.0` / `821c7b71823573a756de00418acb25118ede1c9c`.
+* Exact source contracts target Upstream Bot `v4.15.0` / `877690a7039d1326b2c00eda3e297879b80c0678` and schema `0127`.
+* Simple/Lite Mode and BSCHEKER remain intentionally absent from the Custom Cabinet frontend.
+* The candidate working tree passed the source gate and a complete 133-file security diff review with no findings. Package metadata is aligned to `1.79.0`, but the candidate is not committed or tagged; no Release Bundle or production deployment is declared.
+
 ## [1.74.0](https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/compare/v1.71.1...v1.74.0) (2026-09-13)
 
 ### Custom Cabinet Integration

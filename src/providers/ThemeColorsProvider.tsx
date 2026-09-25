@@ -28,9 +28,11 @@ export function ThemeColorsProvider({ children }: ThemeColorsProviderProps) {
     const themeColors = colors || DEFAULT_THEME_COLORS;
     // Use surface color for header/bottom bar to match app UI
     const headerColor = isDark ? themeColors.darkSurface : themeColors.lightSurface;
+    const pageColor = isDark ? themeColors.darkBackground : themeColors.lightBackground;
 
     platformTheme.setHeaderColor(headerColor);
     platformTheme.setBottomBarColor(headerColor);
+    platformTheme.setBackgroundColor(pageColor);
   }, [capabilities.hasThemeSync, colors, isDark, platformTheme]);
 
   // Apply Telegram colors when theme or colors change

@@ -9,6 +9,7 @@ import { useTheme } from '../hooks/useTheme';
 import { getGlassColors } from '../utils/glassTheme';
 import { useAuthStore } from '../store/auth';
 import { getApiErrorMessage } from '../utils/api-error';
+import { hasLegacySubscription } from '../utils/legacySubscription';
 import SubscriptionListCard from '../components/subscription/SubscriptionListCard';
 import TrialOfferCard from '../components/dashboard/TrialOfferCard';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
@@ -62,6 +63,7 @@ export default function Subscriptions() {
   });
 
   const subscriptions = data?.subscriptions ?? [];
+  const hasLegacy = hasLegacySubscription(subscriptions);
   const isMultiTariff = data?.multi_tariff_enabled ?? false;
   const hasNoSubscriptions = !isLoading && subscriptions.length === 0;
   // Есть ли хотя бы одна НАСТОЯЩАЯ (платная, не триал) живая подписка. От этого
@@ -116,7 +118,7 @@ export default function Subscriptions() {
           {t('subscriptions.title', 'Мои подписки')}
         </h1>
         {/* «+ Купить ещё» — только если уже есть платная активная подписка */}
-        {!isLoading && hasActivePaid && (
+        {!isLoading && hasActivePaid && !hasLegacy && (
           <button
             onClick={() => navigate('/subscription/purchase')}
             className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-colors"
@@ -134,7 +136,7 @@ export default function Subscriptions() {
 
       {/* Есть подписки, но платной активной нет (только триал/истёкшие) —
           даём ЯВНУЮ primary-кнопку покупки: мы продаём подписки. */}
-      {!isLoading && subscriptions.length > 0 && !hasActivePaid && (
+      {!isLoading && subscriptions.length > 0 && !hasActivePaid && !hasLegacy && (
         <button
           onClick={() => navigate('/subscription/purchase')}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent-500 p-3.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-600"

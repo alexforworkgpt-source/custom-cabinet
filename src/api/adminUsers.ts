@@ -25,6 +25,7 @@ export interface UserSubscriptionInfo {
   sbp_recurring_id: number | null;
   is_active: boolean;
   days_remaining: number;
+  grace_until?: string | null;
   purchased_traffic_gb: number;
   traffic_purchases: TrafficPurchaseInfo[];
 }
@@ -46,6 +47,7 @@ export interface UserListItemSubscription {
   traffic_used_gb: number;
   traffic_limit_gb: number;
   device_limit: number;
+  grace_until?: string | null;
 }
 
 export interface UserListItem {
@@ -60,6 +62,9 @@ export interface UserListItem {
   balance_rubles: number;
   created_at: string;
   last_activity: string | null;
+  is_online?: boolean | null;
+  online_at?: string | null;
+  grace_until?: string | null;
   has_subscription: boolean;
   subscription_status: string | null;
   subscription_is_trial: boolean;
@@ -143,6 +148,8 @@ export interface UserDetailResponse {
   promo_offer_discount_expires_at: string | null;
   recent_transactions: UserTransactionItem[];
   remnawave_id: number | null;
+  sales_mode?: 'classic' | 'tariffs';
+  multi_tariff_enabled?: boolean;
 }
 
 export interface UserPanelInfo {
@@ -320,6 +327,8 @@ export interface PanelSyncStatusResponse {
   panel_traffic_used_gb: number;
   panel_device_limit: number;
   panel_squads: string[];
+  grace_open?: boolean;
+  grace_until?: string | null;
   has_differences: boolean;
   differences: string[];
 }
@@ -436,32 +445,42 @@ export interface AdminUserGiftsResponse {
   received_total: number;
 }
 
-export type AdminUserSortBy =
-  | 'created_at'
-  | 'balance'
-  | 'traffic'
-  | 'last_activity'
-  | 'total_spent'
-  | 'purchase_count'
-  | 'subscription_end_date';
+export interface UsersListParams {
+  offset?: number;
+  limit?: number;
+  search?: string;
+  email?: string;
+  status?: 'active' | 'blocked' | 'deleted';
+  subscription_status?: string;
+  tariff_id?: string;
+  promo_group_id?: number;
+  campaign_id?: number;
+  partner_id?: number;
+  expires_within_days?: number;
+  active_within_minutes?: number;
+  online?: boolean;
+  has_restrictions?: boolean;
+  has_subscription?: boolean;
+  traffic_used_percent_min?: number;
+  purchase_count?: number;
+  in_grace?: boolean;
+  sort_by?:
+    | 'created_at'
+    | 'balance'
+    | 'traffic'
+    | 'last_activity'
+    | 'total_spent'
+    | 'purchase_count'
+    | 'subscription_end_date'
+    | 'grace_until';
+  sort_order?: 'asc' | 'desc';
+}
+
+export type AdminUserSortBy = NonNullable<UsersListParams['sort_by']>;
 
 export const adminUsersApi = {
   // List users
-  getUsers: async (
-    params: {
-      offset?: number;
-      limit?: number;
-      search?: string;
-      email?: string;
-      status?: 'active' | 'blocked' | 'deleted';
-      subscription_status?: string;
-      tariff_id?: string;
-      promo_group_id?: number;
-      campaign_id?: number;
-      partner_id?: number;
-      sort_by?: AdminUserSortBy;
-    } = {},
-  ): Promise<UsersListResponse> => {
+  getUsers: async (params: UsersListParams = {}): Promise<UsersListResponse> => {
     const response = await apiClient.get('/cabinet/admin/users', { params });
     return response.data;
   },

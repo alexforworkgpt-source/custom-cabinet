@@ -141,6 +141,23 @@ export function buildWebManifest(input: WebManifestInput): Record<string, unknow
   };
 }
 
+/**
+ * Манифест бота на том же origin оставляем владельцем PWA-метаданных. Chrome
+ * на Android может получить его по URL вместе с обычными URL иконок. Для API
+ * на другом origin используем локальный data: manifest: его start_url и scope
+ * должны вести в Custom Cabinet, а не на API-домен.
+ */
+export function hasSameOriginManifest(): boolean {
+  const link = document.head.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+  const href = link?.getAttribute('href');
+  if (!link || !href || href.startsWith('data:')) return false;
+  try {
+    return new URL(link.href, window.location.href).origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
 export function setWebManifest(input: WebManifestInput): void {
   const json = JSON.stringify(buildWebManifest(input));
   upsertLink('manifest').href = `data:application/manifest+json,${encodeURIComponent(json)}`;

@@ -37,7 +37,22 @@
     "no_results": "No results",
     "ok": "OK",
     "processing": "Processing…",
-    "rangeTo": "to"
+    "rangeTo": "to",
+    "relative": {
+      "now": "just now",
+      "never": "never",
+      "minutes_one": "{{count}} min ago",
+      "minutes_other": "{{count}} min ago",
+      "hours_one": "{{count}} h ago",
+      "hours_other": "{{count}} h ago",
+      "days_one": "{{count}} day ago",
+      "days_other": "{{count}} days ago",
+      "weeks_one": "{{count}} wk ago",
+      "weeks_other": "{{count}} wks ago",
+      "months_one": "{{count}} mo ago",
+      "months_other": "{{count}} mo ago",
+      "yesterday": "yesterday"
+    }
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -399,6 +414,9 @@
       "title": "Subscription Suspended",
       "resume": "Resume"
     },
+    "reminders": {
+      "dismiss": "Dismiss"
+    },
     "trialOffer": {
       "freeTitle": "Free Trial Available",
       "paidTitle": "Trial Subscription",
@@ -476,7 +494,9 @@
       "expiredHint": "Choose a plan and pay",
       "trialHint": "More traffic and devices",
       "activeHint": "Renewal and plan change",
-      "renewHint": "Subscription expired — renew to continue using"
+      "renewHint": "Subscription expired — renew to continue using",
+      "moveToTariff": "Switch to a plan",
+      "moveToTariffHint": "Bought before plans were introduced"
     },
     "connectionInfo": "Connection Info",
     "copyLink": "Copy Link",
@@ -753,9 +773,10 @@
       "cooldown": "Available in {{minutes}} min {{seconds}} sec"
     },
     "legacy": {
-      "selectTariffTitle": "Select a tariff to renew",
-      "selectTariffDescription": "Your current subscription was created before tariffs were introduced. To renew, please select one of the available tariffs.",
-      "currentSubContinues": "Your current subscription will remain active until it expires."
+      "noTariff": "No plan",
+      "selectTariffTitle": "Bought before plans were introduced",
+      "selectTariffDescription": "Choose a plan: it applies to this same subscription, your connection link stays the same.",
+      "currentSubContinues": "Remaining days are kept and added to the paid period."
     },
     "promoGroup": {
       "yourGroup": "Your group: {{name}}",
@@ -974,6 +995,11 @@
     "withdrawal": "Withdrawal",
     "subscriptionPayment": "Subscription Payment",
     "referralReward": "Referral Reward",
+    "refund": "Refund",
+    "failedRefund": "Failed refund",
+    "pollReward": "Poll reward",
+    "giftPayment": "Gift payment",
+    "otherOperation": "Operation",
     "minAmount": "Min.",
     "maxAmount": "Max.",
     "notAvailable": "Not available",
@@ -1574,6 +1600,7 @@
       "trafficUsage": "Traffic Usage",
       "updates": "Updates",
       "pinnedMessages": "Pinned Messages",
+      "reminders": "Reminders",
       "partners": "Partners",
       "referralLevels": "Reward levels",
       "withdrawals": "Withdrawals",
@@ -2325,7 +2352,9 @@
         "activity": "By activity",
         "source": "By source",
         "tariff": "By tariff",
-        "email": "Email users"
+        "email": "Email users",
+        "promo_group": "By promo group",
+        "recipient": "Recipient"
       },
       "channel": {
         "telegram": "Telegram",
@@ -2337,6 +2366,7 @@
       "emailSection": "Email broadcast",
       "selectEmailFilter": "Select email audience",
       "selectEmailFilterPlaceholder": "Select filter...",
+      "singleUser": "Only {{name}}",
       "emailSubject": "Email subject",
       "emailSubjectPlaceholder": "Enter email subject...",
       "emailContent": "Email content",
@@ -2413,6 +2443,78 @@
       "unpinnedCount": "Unpinned",
       "editMessage": "Edit",
       "cantDeleteActive": "Cannot delete active message"
+    },
+    "reminders": {
+      "title": "Reminders",
+      "description": "User reminders based on conditions: in the bot, in the cabinet, or both.",
+      "create": "Create",
+      "createTitle": "New reminder",
+      "editTitle": "Reminder",
+      "empty": "No reminders yet",
+      "active": "Enabled",
+      "inactive": "Disabled",
+      "builtin": "Built-in",
+      "enable": "Enable",
+      "disable": "Disable",
+      "edit": "Edit",
+      "delete": "Delete",
+      "confirmDelete": "Delete reminder \"{{name}}\"?",
+      "stats": "Sent: {{sent}} · dismissed: {{dismissed}} · currently match: bot {{bot}}, cabinet {{cabinet}}",
+      "any": "Any",
+      "channels": { "both": "Bot and cabinet", "bot": "Bot only", "cabinet": "Cabinet only" },
+      "category": {
+        "service": "Service — for everyone",
+        "marketing": "Marketing — except those unsubscribed from promo"
+      },
+      "auth": {
+        "single_method": "Single sign-in method only",
+        "telegram_only": "Telegram sign-in only",
+        "email_only": "Email sign-in only"
+      },
+      "segment": {
+        "active": "Active subscription",
+        "trial": "Trial",
+        "expiring": "Expiring soon",
+        "expired": "Subscription expired",
+        "none": "No subscription",
+        "low_balance": "Low balance",
+        "tariff": "Tariff"
+      },
+      "button": { "none": "No button", "cabinet": "Cabinet section", "url": "Link" },
+      "form": {
+        "name": "Name (admin panel only)",
+        "channels": "Where to show",
+        "category": "Type",
+        "conditions": "Audience",
+        "auth": "Sign-in method",
+        "segment": "Subscription",
+        "segmentDays": "Days before expiry",
+        "tariffId": "Tariff ID",
+        "tariffRequired": "Specify the tariff ID",
+        "registeredDays": "No earlier than N days after registration",
+        "inactiveDays": "Inactive for N days",
+        "audience": "Currently match",
+        "repeatEvery": "Repeat in bot every N days",
+        "maxSends": "Max sends in bot",
+        "title": "Title",
+        "body": "Text",
+        "buttonKind": "Button",
+        "buttonTarget": "Target",
+        "buttonText": "Button text",
+        "buttonTextRequired": "Fill in the button text in Russian",
+        "partialLanguage": "Fill in both the title and text for {{lang}}, or clear both",
+        "httpsRequired": "The link must start with https://",
+        "preview": "Preview",
+        "save": "Save",
+        "sendTest": "Send to myself",
+        "testHint": "Sends the saved version, without checking conditions or limits",
+        "testSent": "Sent to you in the bot",
+        "testFailed": "Failed to send",
+        "testNoTelegram": "You don't have Telegram linked",
+        "testInvalidTexts": "Fix the texts and save",
+        "ruRequired": "Fill in the Russian title and text",
+        "saveFailed": "Failed to save — check the fields"
+      }
     },
     "channelSubscriptions": {
       "title": "Required Channels",
@@ -2662,7 +2764,7 @@
     },
     "graceAccess": {
       "title": "Grace access",
-      "subtitle": "Temporary restricted access so a user can still renew",
+      "subtitle": "The subscription ended, but what matters stays reachable so the user can renew",
       "loadError": "Could not load grace access settings",
       "saveError": "Could not save the settings",
       "save": "Save",
@@ -2713,7 +2815,8 @@
         "traffic_required": "The traffic limit must be at least 1 GB",
         "open_sessions_stranded": "Sessions are still open but this mode never finishes them, so the overlay stays in the panel. Switch to “Drain”.",
         "number_required": "Number is empty: {{field}}",
-        "mode_invalid": "An unknown mode is stored. The bot fails on it at startup and leaves grace disabled — pick a mode again."
+        "mode_invalid": "An unknown mode is stored. The bot fails on it at startup and leaves grace disabled — pick a mode again.",
+        "allowed_required": "Say what stays reachable: without it the user message makes no sense"
       },
       "fields": {
         "mode": "Mode",
@@ -2722,9 +2825,13 @@
         "external_squad_uuid": "External squad",
         "duration_hours": "Duration, hours",
         "traffic_gb": "Traffic, GB",
+        "reset_traffic_on_start": "Reset the traffic counter on grant",
         "reconcile_interval_seconds": "Reconcile interval, sec",
         "reconcile_batch_size": "Batch size",
-        "candidate_lookback_minutes": "Lookback window, min"
+        "candidate_lookback_minutes": "Lookback window, min",
+        "allowed_services": "What stays reachable",
+        "notify_admins": "Notify admins",
+        "notify_user": "Tell the user"
       },
       "squads": {
         "title": "Squads",
@@ -2732,9 +2839,10 @@
         "choose": "Pick a squad",
         "manual": "Enter a UUID manually…",
         "members": "{{n}} members",
-        "unavailable": "The panel is unreachable — enter the UUID manually",
+        "unavailable": "The panel is not responding and squads have not been synced yet — enter the identifier manually",
         "expiredDesc": "Used when the subscription has expired",
-        "limitedDesc": "Used when the traffic limit is exhausted"
+        "limitedDesc": "Used when the traffic limit is exhausted",
+        "synced": "The panel is not responding — showing the last synced list"
       },
       "external": {
         "detach": "Detach",
@@ -2742,12 +2850,25 @@
         "custom": "Fallback squad",
         "detachDesc": "The external squad is removed for the grace period and restored afterwards",
         "keepDesc": "The external squad is left untouched",
-        "customDesc": "The chosen squad is used for the grace period"
+        "customDesc": "The chosen squad is used for the grace period",
+        "squad": "Which external squad to assign",
+        "unavailable": "The panel is not responding — enter the external squad identifier manually"
       },
       "limits": {
         "title": "Limits",
         "durationDesc": "How long access lasts if the subscription is never renewed",
-        "trafficDesc": "Traffic limit for the grace period"
+        "trafficDesc": "Traffic limit for the grace period",
+        "resetTrafficDesc": "The panel and the app show “0 of 1 GB” instead of an almost exhausted “64.76 of 65.76 GiB”. Only expired subscriptions with unlimited traffic — there the counter is informational; usage before grace is lost. Exhausted-traffic subscriptions are never reset",
+        "allowedDesc": "How the user will see it in the bot message and the email: “only this stays available: …”. What the grace squad really lets through is up to the nodes — the bot only says so.",
+        "allowedPlaceholder": "Telegram and the dashboard"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "hint": "Who is told when grace is granted and when it ends. Emails are edited in “Email templates”.",
+        "notify_admins": "Admins in the notification chat",
+        "notify_adminsDesc": "Who got it, why, until when and how it ended — in the “Renewals” category",
+        "notify_user": "The user in the bot and by email",
+        "notify_userDesc": "The subscription ended but access to what is named above is kept for a while, with a renew button; and when that access closes"
       },
       "coverage": {
         "title": "Who gets it",
@@ -3877,6 +3998,13 @@
       "daysShort": "{{days}} days",
       "autoFrom": "Auto from {{amount}} rub.",
       "members": "{{count}} members",
+      "recalculate": "Recalculate members",
+      "recalculateHint": "Assign groups by spending to everyone who has paid. This also runs automatically after a threshold group changes.",
+      "recalculating": "Recalculating members by spending…",
+      "recalculationQueued": "Another recalculation is queued after the current pass.",
+      "recalculateDone": "Last recalculation finished: {{checked}} checked, {{changed}} reassigned.",
+      "recalculateFailed": "The last recalculation failed. Please try again.",
+      "recalculatePollLimit": "Automatic status updates stopped after two minutes. Reload the page to continue checking.",
       "createTitle": "Create Discount Group",
       "editTitle": "Edit Group",
       "stats": {
@@ -3918,12 +4046,79 @@
     "users": {
       "title": "Users",
       "subtitle": "Bot user management",
-      "search": "Search by ID, name, username...",
+      "search": "ID, name, @username or email",
       "searchEmail": "Search by email...",
       "noData": "No users found",
       "purchaseCount_one": "{{count}} purchase",
       "purchaseCount_other": "{{count}} purchases",
       "noPurchases": "No purchases",
+      "shown": "Showing {{shown}} of {{total}}",
+      "noneFound": "No one found — try another query or clear the filters",
+      "loadError": "Could not load the list",
+      "connectedNow": "connected now",
+      "reset": "Clear all",
+      "toTop": "To top",
+      "viewsLabel": "View",
+      "views": {
+        "all": "All",
+        "expiring": "Expiring in {{days}} days",
+        "grace": "In grace",
+        "traffic": "Traffic running out",
+        "nopay": "No purchases",
+        "online": "Online",
+        "blocked": "Blocked"
+      },
+      "filterLabels": {
+        "status": "Status",
+        "sub": "Subscription",
+        "tariff": "Plan",
+        "group": "Promo group",
+        "campaign": "Campaign"
+      },
+      "filterAny": {
+        "status": "any",
+        "sub": "any",
+        "tariff": "any",
+        "group": "any",
+        "campaign": "any"
+      },
+      "subFilters": {
+        "active": "active",
+        "trial": "trial",
+        "expiring": "expiring",
+        "expired": "expired",
+        "limited": "traffic exhausted",
+        "none": "no subscription"
+      },
+      "sort": {
+        "label": "Sort",
+        "expires": { "asc": "Expiring soonest", "desc": "Expiring latest" },
+        "grace": { "asc": "Grace ends soonest", "desc": "Grace ends latest" },
+        "activity": { "asc": "Least recently active", "desc": "Most recently active" },
+        "created": { "asc": "Oldest first", "desc": "Newest first" },
+        "balance": { "asc": "Lowest balance", "desc": "Highest balance" },
+        "spent": { "asc": "Least spent", "desc": "Most spent" },
+        "traffic": { "asc": "Least traffic", "desc": "Most traffic" },
+        "purchases": { "asc": "Fewest purchases", "desc": "Most purchases" }
+      },
+      "statuses": {
+        "active": "Active",
+        "blocked": "Blocked",
+        "deleted": "Deleted",
+        "noSubscription": "No subscription",
+        "trial": "Trial",
+        "limited": "Traffic exhausted",
+        "expired": "Expired",
+        "disabled": "Disabled",
+        "pending": "Awaiting payment",
+        "other": "Subscription"
+      },
+      "subscriptionChips": {
+        "graceUntil": "temporary until {{date}}"
+      },
+      "moreTariffs": "{{count}} more",
+      "endOfList_one": "That is everyone: {{total}} user",
+      "endOfList_other": "That is everyone: {{total}} users",
       "stats": {
         "total": "Total",
         "active": "Active",
@@ -3941,6 +4136,7 @@
         "expired": "Expired"
       },
       "filters": {
+        "remove": "Remove filter “{{name}}”",
         "allStatuses": "All statuses",
         "byDate": "By date",
         "byBalance": "By balance",
@@ -4004,6 +4200,16 @@
         }
       },
       "detail": {
+        "header": {
+          "writeEmail": "Email"
+        },
+        "salesMode": {
+          "classic": "Classic mode",
+          "tariffs": "Tariff mode",
+          "multi": "Multi-tariff",
+          "subscriptionCount_one": "{{count}} subscription",
+          "subscriptionCount_other": "{{count}} subscriptions"
+        },
         "tabs": {
           "info": "Information",
           "subscription": "Subscription",
@@ -4161,6 +4367,16 @@
           "selectSubscription": "Select subscription",
           "hasDifferences": "Differences found",
           "synced": "Synchronized",
+          "graceOverlay": "Panel reflects temporary access",
+          "byGrace": "expected during grace",
+          "rows": {
+            "status": "Status",
+            "until": "Expiration",
+            "trafficLimit": "Traffic limit",
+            "trafficUsed": "Traffic used",
+            "devices": "Devices",
+            "squads": "Squads"
+          },
           "bot": "Bot",
           "panel": "Panel",
           "statusLabel": "Status",
@@ -5692,6 +5908,7 @@
       "unlink": "Disconnect",
       "unlinkConfirm": "Are you sure? You won't be able to sign in with this service after disconnecting.",
       "unlinkConfirmBtn": "Confirm disconnect?",
+      "unlinkForgetsEmail": "The email {{email}} will be forgotten with it: it came from this service and no password is set for email sign-in.",
       "cannotUnlinkLast": "Cannot disconnect the last sign-in method",
       "linkSuccess": "Account connected successfully",
       "unlinkSuccess": "Account disconnected successfully",

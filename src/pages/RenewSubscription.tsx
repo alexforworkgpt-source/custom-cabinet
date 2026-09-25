@@ -7,6 +7,7 @@ import { useTheme } from '../hooks/useTheme';
 import { getGlassColors } from '../utils/glassTheme';
 import { getMonthlyPriceKopeks } from '../utils/pricing';
 import { pickBestValue } from '../utils/bestValue';
+import { needsTariff, tariffSelectionPath } from '../utils/legacySubscription';
 import { useCurrency } from '../hooks/useCurrency';
 import { useHaptic } from '../platform';
 import InsufficientBalancePrompt from '../components/InsufficientBalancePrompt';
@@ -30,7 +31,7 @@ export default function RenewSubscription() {
   const [error, setError] = useState<string | null>(null);
 
   // Load subscription detail for tariff name
-  const { data: subscriptionResponse } = useQuery({
+  const { data: subscriptionResponse, isLoading: isSubscriptionLoading } = useQuery({
     queryKey: ['subscription', subId],
     queryFn: () => subscriptionApi.getSubscription(subId),
     enabled: !!subId,
@@ -97,7 +98,11 @@ export default function RenewSubscription() {
     return <Navigate to="/subscriptions" replace />;
   }
 
-  if (isLoading) {
+  if (needsTariff(subscription)) {
+    return <Navigate to={tariffSelectionPath(subId)} replace />;
+  }
+
+  if (isLoading || isSubscriptionLoading) {
     return (
       <PageSkeleton leading={1} titleWidth="w-56" className="space-y-5">
         <Skeleton variant="card" className="h-16" />

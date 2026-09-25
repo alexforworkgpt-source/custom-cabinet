@@ -4,6 +4,35 @@ This document records verified source compatibility for each Custom Cabinet
 baseline and Release Bundle. Tags and commit SHAs are immutable technical
 identifiers, not public branding.
 
+## Source-Gated v1.79.0 Integration Candidate (2026-09-24)
+
+This is an uncommitted source-integration candidate, not a Custom Cabinet
+release, Release Bundle or production row. The current production baseline
+remains the verified `v1.74.0` combination recorded below.
+
+| Item | Exact identity or decision |
+| --- | --- |
+| Receiving Custom Cabinet checkpoint | `80caeac6b756f208543a6c3f891877a4547c7d73` on `sync/upstream-v1.79.0` |
+| Candidate Custom Cabinet source | Source-gated local working tree; no commit SHA or tag assigned yet |
+| Previous Upstream Cabinet | `v1.74.0` / `57810c7da24b5c142371ed83a6ad5e43a591d454` |
+| Target Upstream Cabinet | `v1.79.0` / `821c7b71823573a756de00418acb25118ede1c9c` |
+| Contract-verified Upstream Bot source | `v4.15.0` / `877690a7039d1326b2c00eda3e297879b80c0678`; supported fresh schema and `0119 -> 0127` upgrade passed in isolation |
+| Package metadata | `1.79.0`; aligned locally for release preparation, not committed or tagged |
+| Simple/Lite Mode | Upstream Bot endpoint remains in the exact backend; no client, storage key, setting, route or presentation branch exists in Custom Cabinet |
+| BSCHEKER/reachability/GEO | Present in the official Upstream Bot backend; intentionally unsupported and absent in Custom Cabinet frontend |
+
+All 78 incoming Upstream Cabinet commits and 340 changed paths are classified
+in [`UPSTREAM_V1.79.0_SYNC_REPORT.md`](UPSTREAM_V1.79.0_SYNC_REPORT.md). The
+candidate passed 158 test files / 936 tests, type-check, production build, the
+affected Biome scope, `git diff --check` and a focused system-Chrome Farsi RTL
+check at 390 x 844. The exact Bot source proof passed 145 focused tests.
+
+The 133-file source snapshot also passed a complete Codex Security diff review
+with no findings. Commit, immutable Custom Cabinet artifact/tag, Release Bundle
+publication, full Installer lifecycle proof and staging/production checks remain
+required before this candidate can become a release or deployment compatibility
+claim.
+
 ## Verified v1.74.0 Source Compatibility (2026-09-13)
 
 This is a verified source-integration contract, not a Release Bundle or
@@ -90,10 +119,10 @@ report for the exact test inventory and limitations.
 | Previous production Release Bundle | `v2026.09.14`; `rollback-compatible` | `e9e3710d066644674ab12c83b650ae926985f7efd46b192a610e6452503b823e` |
 | Node.js development baseline | 24.15+ | Declared in `README.md` |
 
-The integrated upstream source identity is recorded in
-[`UPSTREAM.md`](UPSTREAM.md). Source compatibility or publication alone is not
-deployment proof; the current baseline above is backed by the recorded
-production transition and independent verifier.
+The current source-integration target is recorded in [`UPSTREAM.md`](UPSTREAM.md).
+It does not replace the production baseline above: source compatibility or
+publication alone is not deployment proof, while the table is backed by the
+recorded production transition and independent verifier.
 
 ## Historical Verified v1.69.1 Release and Production Gate (2026-09-07)
 

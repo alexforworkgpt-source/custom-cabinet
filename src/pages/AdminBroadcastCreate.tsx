@@ -1,9 +1,10 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
   adminBroadcastsApi,
+  emailUserTarget,
   type BroadcastFilter,
   type TariffFilter,
   type CombinedBroadcastCreateRequest,
@@ -34,21 +35,36 @@ const FILTER_GROUP_LABEL_KEYS: Record<string, string> = {
   source: 'admin.broadcasts.filterGroups.source',
   tariff: 'admin.broadcasts.filterGroups.tariff',
   email: 'admin.broadcasts.filterGroups.email',
+  promo_group: 'admin.broadcasts.filterGroups.promo_group',
+  recipient: 'admin.broadcasts.filterGroups.recipient',
 };
+
+function parseEmailUserParam(value: string | null): number | null {
+  if (!value || !/^\d+$/.test(value)) return null;
+  const id = Number(value);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
 
 export default function AdminBroadcastCreate() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const presetEmailUserId = parseEmailUserParam(searchParams.get('email_user'));
+  const presetEmailUserLabel =
+    (location.state as { emailUserLabel?: string } | null)?.emailUserLabel ?? null;
 
   // Channel toggles (both can be enabled)
-  const [telegramEnabled, setTelegramEnabled] = useState(true);
-  const [emailEnabled, setEmailEnabled] = useState(false);
+  const [telegramEnabled, setTelegramEnabled] = useState(presetEmailUserId === null);
+  const [emailEnabled, setEmailEnabled] = useState(presetEmailUserId !== null);
 
   // Separate targets per channel
   const [telegramTarget, setTelegramTarget] = useState('');
-  const [emailTarget, setEmailTarget] = useState('');
+  const [emailTarget, setEmailTarget] = useState(
+    presetEmailUserId === null ? '' : emailUserTarget(presetEmailUserId),
+  );
   const [showTelegramFilters, setShowTelegramFilters] = useState(false);
   const [showEmailFilters, setShowEmailFilters] = useState(false);
 
@@ -154,6 +170,24 @@ export default function AdminBroadcastCreate() {
     mutationFn: adminBroadcastsApi.previewEmail,
   });
 
+  const presetEmailTarget = presetEmailUserId === null ? null : emailUserTarget(presetEmailUserId);
+  const previewEmail = emailPreviewMutation.mutate;
+  useEffect(() => {
+    if (presetEmailTarget) previewEmail(presetEmailTarget);
+  }, [presetEmailTarget, previewEmail]);
+
+  const singleUserEmailFilter = useMemo<BroadcastFilter | null>(() => {
+    if (!presetEmailTarget) return null;
+    return {
+      key: presetEmailTarget,
+      label: t('admin.broadcasts.singleUser', {
+        name: presetEmailUserLabel ?? `#${presetEmailUserId}`,
+      }),
+      count: null,
+      group: 'recipient',
+    };
+  }, [presetEmailTarget, presetEmailUserId, presetEmailUserLabel, t]);
+
   // Create mutation (used for single-channel sends)
   const createMutation = useMutation({
     mutationFn: adminBroadcastsApi.createCombined,
@@ -189,17 +223,21 @@ export default function AdminBroadcastCreate() {
 
   // Group Email filters
   const groupedEmailFilters = useMemo(() => {
-    if (!emailFiltersData) return {};
     const groups: Record<string, BroadcastFilter[]> = {};
 
-    emailFiltersData.filters.forEach((f) => {
+    if (singleUserEmailFilter) groups.recipient = [singleUserEmailFilter];
+
+    for (const f of emailFiltersData?.filters ?? []) {
       const group = f.group || 'email';
       if (!groups[group]) groups[group] = [];
       groups[group].push(f);
-    });
+    }
+
+    const promoGroupFilters = emailFiltersData?.promo_group_filters ?? [];
+    if (promoGroupFilters.length > 0) groups.promo_group = promoGroupFilters;
 
     return groups;
-  }, [emailFiltersData]);
+  }, [emailFiltersData, singleUserEmailFilter]);
 
   // Selected filter info for each channel
   const selectedTelegramFilter = useMemo(() => {
@@ -213,9 +251,14 @@ export default function AdminBroadcastCreate() {
   }, [telegramTarget, filtersData]);
 
   const selectedEmailFilter = useMemo(() => {
-    if (!emailTarget || !emailFiltersData) return null;
-    return emailFiltersData.filters.find((f) => f.key === emailTarget) ?? null;
-  }, [emailTarget, emailFiltersData]);
+    if (!emailTarget) return null;
+    if (singleUserEmailFilter?.key === emailTarget) return singleUserEmailFilter;
+    const filters = [
+      ...(emailFiltersData?.filters ?? []),
+      ...(emailFiltersData?.promo_group_filters ?? []),
+    ];
+    return filters.find((filter) => filter.key === emailTarget) ?? null;
+  }, [emailTarget, emailFiltersData, singleUserEmailFilter]);
 
   // Handle toggling channels
   const handleToggleTelegram = () => {

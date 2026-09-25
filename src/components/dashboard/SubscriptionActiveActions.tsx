@@ -1,5 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import { CheckIcon, CopyIcon, QrCodeIcon, SettingsIcon } from '@/components/icons';
+import { Link } from 'react-router';
+import {
+  CheckIcon,
+  CopyIcon,
+  QrCodeIcon,
+  SettingsIcon,
+  SubscriptionIcon,
+} from '@/components/icons';
 import { Button } from '@/components/primitives/Button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTheme } from '@/hooks/useTheme';
@@ -7,6 +14,7 @@ import { getGlassColors } from '@/utils/glassTheme';
 import type { Subscription } from '@/types';
 import { SubscriptionConnectFooter } from '../subscription/SubscriptionConnectFooter';
 import { connectFooterState } from '../subscription/connectFooterState';
+import { needsTariff, tariffSelectionPath } from '@/utils/legacySubscription';
 
 interface SubscriptionActiveActionsProps {
   subscription: Subscription;
@@ -53,6 +61,9 @@ export function SubscriptionActiveActions({
     connected: connectedDevices,
     hasError: devicesError,
   });
+  const requiresTariff = needsTariff(subscription);
+  const primaryActionClassName =
+    'flex min-h-11 w-full items-center justify-center gap-2 rounded-[14px] border border-accent-400/20 bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_15%,rgba(var(--color-dark-900),0.80)_85%)] px-4 py-3 text-center text-sm font-semibold text-accent-400 shadow-sm transition-[background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.98] active:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_25%,rgba(var(--color-dark-900),0.80)_75%)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-950 motion-reduce:transform-none motion-reduce:transition-none md:hover:-translate-y-0.5 md:hover:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_20%,rgba(var(--color-dark-900),0.80)_80%)] md:hover:shadow-md lg:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_15%,rgba(var(--color-dark-900),0.85)_85%)] lg:hover:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_20%,rgba(var(--color-dark-900),0.85)_80%)] lg:active:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_25%,rgba(var(--color-dark-900),0.85)_75%)]';
 
   return (
     <>
@@ -126,16 +137,23 @@ export function SubscriptionActiveActions({
         </div>
       )}
 
-      <button
-        type="button"
-        aria-haspopup="dialog"
-        aria-expanded={managementOpen}
-        onClick={onManageSubscription}
-        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[14px] border border-accent-400/20 bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_15%,rgba(var(--color-dark-900),0.80)_85%)] px-4 py-3 text-center text-sm font-semibold text-accent-400 shadow-sm transition-[background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.98] active:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_25%,rgba(var(--color-dark-900),0.80)_75%)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-950 motion-reduce:transform-none motion-reduce:transition-none md:hover:-translate-y-0.5 md:hover:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_20%,rgba(var(--color-dark-900),0.80)_80%)] md:hover:shadow-md lg:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_15%,rgba(var(--color-dark-900),0.85)_85%)] lg:hover:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_20%,rgba(var(--color-dark-900),0.85)_80%)] lg:active:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_25%,rgba(var(--color-dark-900),0.85)_75%)]"
-      >
-        <SettingsIcon className="h-4 w-4 shrink-0 text-accent-400" />
-        {t('dashboard.manageSubscription')}
-      </button>
+      {requiresTariff ? (
+        <Link to={tariffSelectionPath(subscription.id)} className={primaryActionClassName}>
+          <SubscriptionIcon className="h-4 w-4 shrink-0 text-accent-400" />
+          {t('subscription.cta.moveToTariff')}
+        </Link>
+      ) : (
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          aria-expanded={managementOpen}
+          onClick={onManageSubscription}
+          className={primaryActionClassName}
+        >
+          <SettingsIcon className="h-4 w-4 shrink-0 text-accent-400" />
+          {t('dashboard.manageSubscription')}
+        </button>
+      )}
     </>
   );
 }

@@ -28,7 +28,6 @@ import {
   ChatIcon,
   UserIcon,
   ShieldIcon,
-  LogoutIcon,
   SunIcon,
   MoonIcon,
   TariffsIcon,
@@ -37,6 +36,7 @@ import {
 import { MobileBottomNav } from './MobileBottomNav';
 import { isMobileNavScreen, mobileNavItems } from './mobileNavRoutes';
 import { AppHeader } from './AppHeader';
+import { LogoutButton } from '@/components/LogoutButton';
 import { useBackgroundConsumer } from '@/components/backgrounds/BackgroundHost';
 
 interface AppShellProps {
@@ -242,17 +242,13 @@ export function AppShell({ children }: AppShellProps) {
               <TicketNotificationBell isAdmin={location.pathname.startsWith('/admin')} />
             )}
             <LanguageSwitcher />
-            <button
-              onClick={() => {
+            <LogoutButton
+              variant="icon"
+              onLogout={() => {
                 haptic.impact('light');
                 logout();
               }}
-              className="rounded-xl border border-dark-700/50 bg-dark-800/50 p-2 text-dark-400 transition-colors duration-200 hover:bg-dark-700 hover:text-accent-400"
-              aria-label={t('nav.logout')}
-              title={t('nav.logout')}
-            >
-              <LogoutIcon className="h-5 w-5" />
-            </button>
+            />
           </div>
         </div>
       </header>

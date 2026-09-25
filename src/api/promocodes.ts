@@ -132,6 +132,24 @@ export interface PromoGroupUpdateRequest {
   is_default?: boolean;
 }
 
+export interface PromoGroupRecalculationLast {
+  reason: string;
+  checked: number;
+  changed: number;
+  failed: number;
+  started_at: string | null;
+  finished_at: string | null;
+  error: string | null;
+}
+
+export interface PromoGroupRecalculationStatus {
+  running: boolean;
+  queued: boolean;
+  reason: string | null;
+  started: boolean;
+  last: PromoGroupRecalculationLast | null;
+}
+
 // ============== API ==============
 
 export const promocodesApi = {
@@ -190,6 +208,16 @@ export const promocodesApi = {
 
   deletePromoGroup: async (id: number): Promise<void> => {
     await apiClient.delete(`/cabinet/admin/promo-groups/${id}`);
+  },
+
+  recalculatePromoGroups: async (): Promise<PromoGroupRecalculationStatus> => {
+    const response = await apiClient.post('/cabinet/admin/promo-groups/recalculate');
+    return response.data;
+  },
+
+  getPromoGroupRecalculation: async (): Promise<PromoGroupRecalculationStatus> => {
+    const response = await apiClient.get('/cabinet/admin/promo-groups/recalculate');
+    return response.data;
   },
 
   // Deactivate user's active discount (admin)

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -52,7 +52,10 @@ const featureDisabled = () =>
   });
 
 const calls = { sbp: [] as number[], lava: [] as number[] };
-const state = { purchaseOptions: {} as Record<string, unknown> };
+const state = {
+  purchaseOptions: {} as Record<string, unknown>,
+  requiresTariff: false,
+};
 
 const subscription = (id: number) => ({
   id,
@@ -70,6 +73,7 @@ const subscription = (id: number) => ({
   servers: [],
   connected_squads: [],
   autopay_enabled: false,
+  requires_tariff_selection: state.requiresTariff,
 });
 
 vi.mock('@/api/subscription', () => ({
@@ -127,6 +131,7 @@ beforeEach(() => {
     platega_recurrent_enabled: false,
     lava_recurrent_enabled: false,
   };
+  state.requiresTariff = false;
 });
 
 afterEach(cleanup);
@@ -151,7 +156,9 @@ function wrap(children: React.ReactNode, path: string, route: string) {
 async function renderSubscription() {
   const Page = (await import('@/pages/Subscription')).default;
   wrap(<Page />, '/subscriptions/1', '/subscriptions/:subscriptionId');
-  await screen.findAllByText(/Базовый/);
+  await screen.findAllByText(
+    state.requiresTariff ? /Без тарифа|subscription\.legacy\.noTariff/ : /Базовый/,
+  );
 }
 
 async function renderSavedCards() {
@@ -179,6 +186,25 @@ describe('страница подписки', () => {
 
     expect(calls.sbp).toEqual([1]);
     expect(calls.lava).toEqual([1]);
+  });
+
+  it('не показывает автоплатёж старой подписке', async () => {
+    state.requiresTariff = true;
+    await renderSubscription();
+
+    expect(screen.queryByRole('switch')).toBeNull();
+  });
+
+  it('не предлагает старой подписке докупать устройства и трафик', async () => {
+    state.requiresTariff = true;
+    await renderSubscription();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: ru('subscription.additionalOptions.title') }),
+    );
+
+    expect(screen.queryByText(ru('subscription.additionalOptions.buyDevices'))).toBeNull();
+    expect(screen.queryByText(ru('subscription.additionalOptions.buyTraffic'))).toBeNull();
   });
 });
 

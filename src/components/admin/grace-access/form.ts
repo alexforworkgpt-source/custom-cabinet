@@ -67,6 +67,10 @@ export function graceFormIssues(form: GraceForm): GraceAccessIssue[] {
     issues.push({ field: 'traffic_gb', code: 'traffic_required', severity: 'error' });
   }
 
+  if (form.notify_user && form.allowed_services.trim() === '') {
+    issues.push({ field: 'allowed_services', code: 'allowed_required', severity: 'error' });
+  }
+
   return issues;
 }
 

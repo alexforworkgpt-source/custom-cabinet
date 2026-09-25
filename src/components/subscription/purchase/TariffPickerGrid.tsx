@@ -6,6 +6,7 @@ import { useCurrency } from '../../../hooks/useCurrency';
 import { usePromoDiscount } from '../../../hooks/usePromoDiscount';
 import { getGlassColors } from '../../../utils/glassTheme';
 import { getDailyPriceQuote } from '../../../utils/pricing';
+import { needsTariff } from '../../../utils/legacySubscription';
 import { ArrowDownIcon, DevicesIcon, RestartIcon } from '@/components/icons';
 import type { Tariff, Subscription, PurchaseOptions } from '../../../types';
 
@@ -124,8 +125,7 @@ export function TariffPickerGrid({
               !isSubscriptionExpired &&
               !isOnFreeTariff &&
               (subscription.is_active || subscription.is_limited);
-            const isLegacySubscription =
-              subscription && !subscription.is_trial && !subscription.tariff_id;
+            const isLegacySubscription = needsTariff(subscription);
 
             return (
               <div
@@ -263,7 +263,7 @@ export function TariffPickerGrid({
                       onClick={() => onSelectTariff(tariff)}
                       className="btn-primary flex-1 py-2 text-sm"
                     >
-                      {t('subscription.tariff.selectForRenewal')}
+                      {t('subscription.cta.moveToTariff')}
                     </button>
                   ) : canSwitch ? (
                     <button

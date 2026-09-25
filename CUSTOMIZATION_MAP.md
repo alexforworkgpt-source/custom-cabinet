@@ -178,6 +178,32 @@ rendered states separately from presentation.
   any other subresource request. This privacy ordering takes precedence over
   an API-backed first paint on that landing URL.
 
+## Intentional v1.79.0 Simple/Lite Mode Exclusion
+
+Custom Cabinet intentionally keeps one user presentation path: the Unified
+Dashboard, responsive overlays and the existing four-item mobile navigation.
+The upstream Simple/Lite Mode is not a second supported presentation variant.
+Custom Cabinet therefore has no `/cabinet/branding/lite-mode` client, storage
+hint, admin toggle, route branch, navigation branch or lite-specific screen.
+The endpoint may still exist in the exact unmodified Upstream Bot `v4.15.0`;
+frontend absence is not a claim that the backend contract was removed.
+
+For every future upstream synchronization, classify each lite-related commit
+individually:
+
+- skip code whose only purpose is Simple/Lite Mode;
+- separate mixed commits and adapt shared security, API, payment,
+  subscription, accessibility or platform fixes into the existing Custom
+  surfaces;
+- do not import a lite endpoint, storage key, setting or presentation branch
+  as a side effect of a shared fix;
+- reconsider the product boundary only through a new owner-approved ADR that
+  explicitly supersedes
+  [`ADR 0002`](docs/adr/0002-adapt-upstream-cabinet-v1.79-bot-v4.15.md).
+
+`src/noLiteMode.guard.test.ts` enforces this boundary in the normal source
+gate. BSCHEKER remains independently excluded by ADR 0001 and its own guard.
+
 ## Boundary Rules
 
 Presentational components should not call API clients, mutate stores or decode

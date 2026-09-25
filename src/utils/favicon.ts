@@ -78,6 +78,71 @@ export async function roundedFaviconDataUri(
   }
 }
 
+/** Сторона уменьшенной копии для анализа цвета внешней каймы. */
+const EDGE_SAMPLE_PX = 64;
+const EDGE_OPAQUE_ALPHA = 250;
+const EDGE_MIN_OPAQUE_SHARE = 0.5;
+const EDGE_MIN_UNIFORM_SHARE = 0.9;
+const EDGE_COLOR_TOLERANCE = 12;
+
+/**
+ * Возвращает единый цвет внешней каймы или null, если край прозрачный либо
+ * неоднородный. Это позволяет продолжить фон full-bleed логотипа до границы
+ * maskable-иконки без полос цвета темы.
+ */
+export function edgeColorOfPixels(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+): string | null {
+  if (width < 2 || height < 2) return null;
+  const opaque: number[][] = [];
+  let ring = 0;
+  const visit = (x: number, y: number): void => {
+    ring++;
+    const index = (y * width + x) * 4;
+    if (data[index + 3] >= EDGE_OPAQUE_ALPHA) {
+      opaque.push([data[index], data[index + 1], data[index + 2]]);
+    }
+  };
+  for (let x = 0; x < width; x++) {
+    visit(x, 0);
+    visit(x, height - 1);
+  }
+  for (let y = 1; y < height - 1; y++) {
+    visit(0, y);
+    visit(width - 1, y);
+  }
+  if (opaque.length < ring * EDGE_MIN_OPAQUE_SHARE) return null;
+
+  const median = [0, 1, 2].map(
+    (channel) =>
+      opaque.map((color) => color[channel]).sort((a, b) => a - b)[Math.floor(opaque.length / 2)],
+  );
+  const matching = opaque.filter((color) =>
+    color.every((value, channel) => Math.abs(value - median[channel]) <= EDGE_COLOR_TOLERANCE),
+  ).length;
+  if (matching < opaque.length * EDGE_MIN_UNIFORM_SHARE) return null;
+  return `rgb(${median[0]}, ${median[1]}, ${median[2]})`;
+}
+
+function edgeColorOfImage(img: HTMLImageElement): string | null {
+  const scale = Math.min(1, EDGE_SAMPLE_PX / Math.max(img.width, img.height));
+  const width = Math.max(1, Math.round(img.width * scale));
+  const height = Math.max(1, Math.round(img.height * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return null;
+  try {
+    ctx.drawImage(img, 0, 0, width, height);
+    return edgeColorOfPixels(ctx.getImageData(0, 0, width, height).data, width, height);
+  } catch {
+    return null;
+  }
+}
+
 export interface SquareIconOptions {
   /** Непрозрачная заливка под содержимым (CSS-цвет). */
   background: string;
@@ -105,7 +170,7 @@ export async function squareIconDataUri(
   if (!ctx) return null;
   try {
     const img = await loadImage(src);
-    ctx.fillStyle = options.background;
+    ctx.fillStyle = edgeColorOfImage(img) ?? options.background;
     ctx.fillRect(0, 0, size, size);
     const scale = Math.min(size / img.width, size / img.height) * (options.contentScale ?? 1);
     const dw = img.width * scale;

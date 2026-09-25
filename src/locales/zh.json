@@ -37,7 +37,17 @@
     "no_results": "无结果",
     "ok": "确定",
     "processing": "处理中…",
-    "rangeTo": "至"
+    "rangeTo": "至",
+    "relative": {
+      "now": "刚刚",
+      "never": "从未",
+      "minutes_other": "{{count}} 分钟前",
+      "hours_other": "{{count}} 小时前",
+      "days_other": "{{count}} 天前",
+      "weeks_other": "{{count}} 周前",
+      "months_other": "{{count}} 个月前",
+      "yesterday": "昨天"
+    }
   },
   "nav": {
     "dashboard": "首页",
@@ -375,6 +385,9 @@
       "balance": "余额",
       "referrals": "推荐人"
     },
+    "reminders": {
+      "dismiss": "关闭"
+    },
     "tariff": "套餐",
     "trafficUsageTitle": "流量使用",
     "trialOffer": {
@@ -597,9 +610,10 @@
       "cooldown": "{{minutes}}分{{seconds}}秒后可用"
     },
     "legacy": {
-      "selectTariffTitle": "选择续费套餐",
-      "selectTariffDescription": "您的当前订阅是在引入套餐之前创建的。要续费，请选择一个可用的套餐。",
-      "currentSubContinues": "您的当前订阅将继续有效直到到期。"
+      "noTariff": "无套餐",
+      "selectTariffTitle": "订阅购买于套餐推出之前",
+      "selectTariffDescription": "请选择套餐：它将应用于当前订阅，连接链接不会改变。",
+      "currentSubContinues": "剩余天数将保留并计入已付费周期。"
     },
     "switchTariff": {
       "dailyPayment": "每日付费",
@@ -745,7 +759,9 @@
       "renewHint": "订阅已过期 — 续订以继续使用",
       "activeHint": "续费和更换套餐",
       "expiredHint": "选择套餐并付款",
-      "trialHint": "更多流量和设备"
+      "trialHint": "更多流量和设备",
+      "moveToTariff": "切换到套餐",
+      "moveToTariffHint": "订阅购买于套餐推出之前"
     },
     "dailyAutoCharge": "每日自动扣费",
     "defaultName": "订阅",
@@ -849,6 +865,11 @@
     "withdrawal": "支出",
     "subscriptionPayment": "订阅付款",
     "referralReward": "推荐奖励",
+    "refund": "退款",
+    "failedRefund": "退款失败",
+    "pollReward": "问卷奖励",
+    "giftPayment": "礼物付款",
+    "otherOperation": "操作",
     "minAmount": "最小",
     "maxAmount": "最大",
     "notAvailable": "不可用",
@@ -1377,6 +1398,7 @@
       "trafficUsage": "流量使用",
       "updates": "更新",
       "pinnedMessages": "置顶消息",
+      "reminders": "提醒",
       "partners": "合作伙伴",
       "referralLevels": "奖励等级",
       "withdrawals": "提现",
@@ -1953,6 +1975,9 @@
         "cancelling": "取消中"
       },
       "filterGroups": {
+        "email": "电子邮件用户",
+        "promo_group": "按促销组",
+        "recipient": "收件人",
         "basic": "基础",
         "subscription": "按订阅",
         "traffic": "按流量",
@@ -1998,6 +2023,7 @@
       "selectChannel": "群发渠道",
       "selectEmailFilter": "选择邮件受众",
       "selectEmailFilterPlaceholder": "选择筛选器...",
+      "singleUser": "仅 {{name}}",
       "telegramSection": "Telegram 群发"
     },
     "pinnedMessages": {
@@ -2041,6 +2067,75 @@
       "unpinnedCount": "已取消置顶",
       "editMessage": "编辑",
       "cantDeleteActive": "无法删除活跃消息"
+    },
+    "reminders": {
+      "title": "提醒",
+      "description": "按条件向用户发送提醒：在机器人、在个人中心，或两者都发送。",
+      "create": "创建",
+      "createTitle": "新建提醒",
+      "editTitle": "提醒",
+      "empty": "暂无提醒",
+      "active": "已启用",
+      "inactive": "已禁用",
+      "builtin": "内置",
+      "enable": "启用",
+      "disable": "禁用",
+      "edit": "编辑",
+      "delete": "删除",
+      "confirmDelete": "删除提醒「{{name}}」？",
+      "stats": "已发送：{{sent}} · 已关闭：{{dismissed}} · 当前符合条件：机器人 {{bot}}，个人中心 {{cabinet}}",
+      "any": "任意",
+      "channels": { "both": "机器人和个人中心", "bot": "仅机器人", "cabinet": "仅个人中心" },
+      "category": { "service": "服务类 — 所有人", "marketing": "营销类 — 已退订推广的用户除外" },
+      "auth": {
+        "single_method": "仅单一登录方式",
+        "telegram_only": "仅Telegram登录",
+        "email_only": "仅邮箱登录"
+      },
+      "segment": {
+        "active": "有效订阅",
+        "trial": "试用",
+        "expiring": "即将到期",
+        "expired": "订阅已过期",
+        "none": "无订阅",
+        "low_balance": "余额不足",
+        "tariff": "套餐"
+      },
+      "button": { "none": "无按钮", "cabinet": "个人中心页面", "url": "链接" },
+      "form": {
+        "name": "名称（仅管理后台可见）",
+        "channels": "展示位置",
+        "category": "类型",
+        "conditions": "面向对象",
+        "auth": "登录方式",
+        "segment": "订阅",
+        "segmentDays": "距到期天数",
+        "tariffId": "套餐ID",
+        "tariffRequired": "请填写套餐ID",
+        "registeredDays": "注册后至少N天",
+        "inactiveDays": "不活跃N天",
+        "audience": "当前符合条件",
+        "repeatEvery": "机器人内每N天重复一次",
+        "maxSends": "机器人内最大发送次数",
+        "title": "标题",
+        "body": "正文",
+        "buttonKind": "按钮",
+        "buttonTarget": "跳转目标",
+        "buttonText": "按钮文字",
+        "buttonTextRequired": "请填写俄语按钮文字",
+        "partialLanguage": "请填写{{lang}}语言的标题和正文，或将两者都清空",
+        "httpsRequired": "链接必须以 https:// 开头",
+        "preview": "预览",
+        "save": "保存",
+        "sendTest": "发送给自己",
+        "testHint": "发送已保存的版本，不检查条件和限制",
+        "testSent": "已发送到你的机器人",
+        "testFailed": "发送失败",
+        "testNoTelegram": "您尚未绑定Telegram",
+        "testInvalidTexts": "请修正文本后重新保存",
+        "ruRequired": "请填写俄语标题和正文",
+        "saveFailed": "保存失败 — 请检查字段"
+      }
     },
     "channelSubscriptions": {
       "title": "必订频道",
@@ -2290,7 +2385,7 @@
     },
     "graceAccess": {
       "title": "宽限访问",
-      "subtitle": "临时受限访问，让用户仍有机会续订",
+      "subtitle": "订阅到期后仍保留最必要的访问，让用户能够续订",
       "loadError": "无法加载宽限访问设置",
       "saveError": "无法保存设置",
       "save": "保存",
@@ -2341,7 +2436,8 @@
         "traffic_required": "流量上限不得少于 1 GB",
         "open_sessions_stranded": "仍有未结束的会话，而当前模式不会处理它们，面板中的覆盖状态会一直保留。请切换到「排空」。",
         "number_required": "数值未填写：{{field}}",
-        "mode_invalid": "保存了未知的模式。机器人启动时会因此失败并保持宽限访问关闭——请重新选择模式。"
+        "mode_invalid": "保存了未知的模式。机器人启动时会因此失败并保持宽限访问关闭——请重新选择模式。",
+        "allowed_required": "请填写保留可访问的内容：否则给用户的消息没有意义"
       },
       "fields": {
         "mode": "模式",
@@ -2350,9 +2446,13 @@
         "external_squad_uuid": "外部小队",
         "duration_hours": "时长（小时）",
         "traffic_gb": "流量（GB）",
+        "reset_traffic_on_start": "发放时清零流量计数",
         "reconcile_interval_seconds": "核对间隔（秒）",
         "reconcile_batch_size": "批量大小",
-        "candidate_lookback_minutes": "回溯窗口（分钟）"
+        "candidate_lookback_minutes": "回溯窗口（分钟）",
+        "allowed_services": "保留可访问的内容",
+        "notify_admins": "通知管理员",
+        "notify_user": "告知用户"
       },
       "squads": {
         "title": "小队",
@@ -2360,9 +2460,10 @@
         "choose": "选择小队",
         "manual": "手动输入 UUID…",
         "members": "{{n}} 人",
-        "unavailable": "面板不可用 — 可手动输入 UUID",
+        "unavailable": "面板无响应且小队尚未同步——需要手动输入标识符",
         "expiredDesc": "订阅到期时使用",
-        "limitedDesc": "流量上限耗尽时使用"
+        "limitedDesc": "流量上限耗尽时使用",
+        "synced": "面板无响应——显示上次同步的列表"
       },
       "external": {
         "detach": "移除",
@@ -2370,12 +2471,25 @@
         "custom": "备用小队",
         "detachDesc": "宽限期间移除外部小队，结束后恢复",
         "keepDesc": "不改动用户的外部小队",
-        "customDesc": "宽限期间使用指定的小队"
+        "customDesc": "宽限期间使用指定的小队",
+        "squad": "指定哪个外部小队",
+        "unavailable": "面板无响应——需要手动输入外部小队标识符"
       },
       "limits": {
         "title": "限制",
         "durationDesc": "如果一直没有续订，访问可持续多久",
-        "trafficDesc": "宽限期间的流量上限"
+        "trafficDesc": "宽限期间的流量上限",
+        "resetTrafficDesc": "面板和应用将显示“0 / 1 GB”，而不是几乎用尽的“64.76 / 65.76 GiB”。仅适用于不限流量的已到期订阅——其计数仅供参考；宽限前的用量将丢失。流量耗尽的订阅永不清零",
+        "allowedDesc": "用户在机器人消息和邮件中会这样看到：“仅可使用：…”。宽限小队实际放行什么由节点决定——机器人只是告知。",
+        "allowedPlaceholder": "Telegram 和个人中心"
+      },
+      "notifications": {
+        "title": "通知",
+        "hint": "宽限发放和结束时通知谁。邮件在“邮件模板”中编辑。",
+        "notify_admins": "通知聊天中的管理员",
+        "notify_adminsDesc": "发给谁、原因、截止时间以及结果——归入“续订”类别",
+        "notify_user": "在机器人和邮件中告知用户",
+        "notify_userDesc": "订阅已到期，但暂时保留对上述内容的访问，并附续订按钮；以及访问关闭时"
       },
       "coverage": {
         "title": "发放对象",
@@ -3282,6 +3396,13 @@
       "daysShort": "{{days}} 天",
       "autoFrom": "自动 从 {{amount}} 卢布",
       "members": "{{count}} 名成员",
+      "recalculate": "重新计算成员",
+      "recalculateHint": "按消费为所有付费用户分配组。更改带门槛的组后也会自动运行。",
+      "recalculating": "正在按消费重新计算成员…",
+      "recalculationQueued": "另一轮重新计算已排队，将在当前任务结束后运行。",
+      "recalculateDone": "上次重新计算已完成：检查 {{checked}} 人，重新分配 {{changed}} 人。",
+      "recalculateFailed": "上次重新计算失败，请重试。",
+      "recalculatePollLimit": "自动状态更新已在两分钟后停止。请重新加载页面以继续检查。",
       "createTitle": "创建折扣组",
       "editTitle": "编辑组",
       "stats": {
@@ -3323,11 +3444,77 @@
     "users": {
       "title": "用户",
       "subtitle": "机器人用户管理",
-      "search": "按ID、姓名、用户名搜索...",
+      "search": "ID、姓名、@用户名或邮箱",
       "searchEmail": "按邮箱搜索...",
       "noData": "未找到用户",
       "purchaseCount_other": "{{count}} 次购买",
       "noPurchases": "无购买记录",
+      "shown": "显示 {{shown}} / {{total}}",
+      "noneFound": "未找到任何人，请换个关键词或清除筛选",
+      "loadError": "列表加载失败",
+      "connectedNow": "当前已连接",
+      "reset": "清除全部",
+      "toTop": "回到顶部",
+      "viewsLabel": "视图",
+      "views": {
+        "all": "全部",
+        "expiring": "{{days}} 天内到期",
+        "grace": "临时访问中",
+        "traffic": "流量将尽",
+        "nopay": "未购买",
+        "online": "在线",
+        "blocked": "已封禁"
+      },
+      "filterLabels": {
+        "status": "状态",
+        "sub": "订阅",
+        "tariff": "套餐",
+        "group": "促销组",
+        "campaign": "活动"
+      },
+      "filterAny": {
+        "status": "任意",
+        "sub": "任意",
+        "tariff": "任意",
+        "group": "任意",
+        "campaign": "任意"
+      },
+      "subFilters": {
+        "active": "有效",
+        "trial": "试用",
+        "expiring": "即将到期",
+        "expired": "已到期",
+        "limited": "流量用尽",
+        "none": "无订阅"
+      },
+      "sort": {
+        "label": "排序",
+        "expires": { "asc": "最早到期", "desc": "最晚到期" },
+        "grace": { "asc": "临时访问最早结束", "desc": "临时访问最晚结束" },
+        "activity": { "asc": "最久未活跃", "desc": "最近活跃" },
+        "created": { "asc": "最早注册", "desc": "最新注册" },
+        "balance": { "asc": "余额最少", "desc": "余额最多" },
+        "spent": { "asc": "消费最少", "desc": "消费最多" },
+        "traffic": { "asc": "流量最少", "desc": "流量最多" },
+        "purchases": { "asc": "购买最少", "desc": "购买最多" }
+      },
+      "statuses": {
+        "active": "正常",
+        "blocked": "已封禁",
+        "deleted": "已删除",
+        "noSubscription": "无订阅",
+        "trial": "试用",
+        "limited": "流量用尽",
+        "expired": "已到期",
+        "disabled": "已停用",
+        "pending": "待支付",
+        "other": "订阅"
+      },
+      "subscriptionChips": {
+        "graceUntil": "临时至 {{date}}"
+      },
+      "moreTariffs": "另有 {{count}} 个",
+      "endOfList_other": "已显示全部 {{total}} 位",
       "stats": {
         "total": "总计",
         "active": "活跃",
@@ -3345,6 +3532,7 @@
         "expired": "已过期"
       },
       "filters": {
+        "remove": "移除筛选“{{name}}”",
         "allStatuses": "所有状态",
         "byDate": "按日期",
         "byBalance": "按余额",
@@ -3365,6 +3553,15 @@
         "block": "确定封禁此用户？"
       },
       "detail": {
+        "header": {
+          "writeEmail": "发邮件"
+        },
+        "salesMode": {
+          "classic": "经典模式",
+          "tariffs": "套餐模式",
+          "multi": "多套餐模式",
+          "subscriptionCount_other": "{{count}} 个订阅"
+        },
         "tabs": {
           "info": "信息",
           "subscription": "订阅",
@@ -3517,6 +3714,16 @@
           "selectSubscription": "选择订阅",
           "hasDifferences": "存在差异",
           "synced": "已同步",
+          "graceOverlay": "面板显示的是临时访问",
+          "byGrace": "临时访问期间属于预期状态",
+          "rows": {
+            "status": "状态",
+            "until": "到期时间",
+            "trafficLimit": "流量限制",
+            "trafficUsed": "已用流量",
+            "devices": "设备",
+            "squads": "小组"
+          },
           "bot": "机器人",
           "panel": "面板",
           "statusLabel": "状态",
@@ -5068,6 +5275,7 @@
       "unlink": "取消关联",
       "unlinkConfirm": "确定吗？取消关联后，您将无法通过此服务登录。",
       "unlinkConfirmBtn": "确认取消关联？",
+      "unlinkForgetsEmail": "邮箱 {{email}} 也会随之被遗忘：它来自该服务，且未设置邮箱登录密码。",
       "cannotUnlinkLast": "无法取消最后一种登录方式",
       "linkSuccess": "账户关联成功",
       "unlinkSuccess": "账户取消关联成功",

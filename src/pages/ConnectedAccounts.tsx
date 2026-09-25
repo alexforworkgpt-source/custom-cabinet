@@ -726,6 +726,12 @@ export default function ConnectedAccounts() {
               </div>
             </div>
 
+            {confirmingUnlink === provider.provider && provider.forgets_email && (
+              <p className="mt-2 text-xs text-warning-400">
+                {t('profile.accounts.unlinkForgetsEmail', { email: provider.forgets_email })}
+              </p>
+            )}
+
             {provider.provider === 'email' &&
               provider.linked &&
               (user?.email || provider.identifier) && (

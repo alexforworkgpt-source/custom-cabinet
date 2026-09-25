@@ -8,6 +8,30 @@ interface FortuneWheelProps {
   onSpinComplete: () => void;
 }
 
+const SIZE = 400;
+const CENTER = SIZE / 2;
+const SPIN_DURATION_MS = 5000;
+const SPIN_EXTRA_TURNS_DEG = 1800;
+
+function cubicBezierCoordinate(t: number, p1: number, p2: number): number {
+  const inverse = 1 - t;
+  return 3 * inverse * inverse * t * p1 + 3 * inverse * t * t * p2 + t * t * t;
+}
+
+export function spinEasing(progress: number): number {
+  const targetX = Math.min(1, Math.max(0, progress));
+  let low = 0;
+  let high = 1;
+  for (let i = 0; i < 20; i++) {
+    const middle = (low + high) / 2;
+    if (cubicBezierCoordinate(middle, 0.15, 0.1) < targetX) low = middle;
+    else high = middle;
+  }
+  return cubicBezierCoordinate((low + high) / 2, 0.6, 1);
+}
+
+const rotateAttr = (degrees: number) => `rotate(${degrees} ${CENTER} ${CENTER})`;
+
 const FortuneWheel = memo(function FortuneWheel({
   prizes,
   isSpinning,
@@ -16,25 +40,38 @@ const FortuneWheel = memo(function FortuneWheel({
 }: FortuneWheelProps) {
   const wheelRef = useRef<SVGGElement>(null);
   const accumulatedRotation = useRef(0);
-  const [displayRotation, setDisplayRotation] = useState(0);
+  const [restAngle, setRestAngle] = useState(0);
+  const latestOnComplete = useRef(onSpinComplete);
 
   useEffect(() => {
-    if (isSpinning && targetRotation !== null && wheelRef.current) {
-      const currentPos = accumulatedRotation.current % 360;
-      let delta = targetRotation - currentPos;
-      // Normalize delta to positive
-      while (delta < 0) delta += 360;
-      const newRotation = accumulatedRotation.current + 1800 + delta;
-      accumulatedRotation.current = newRotation;
-      setDisplayRotation(newRotation);
+    latestOnComplete.current = onSpinComplete;
+  }, [onSpinComplete]);
 
-      const timeout = setTimeout(() => {
-        onSpinComplete();
-      }, 5000);
+  useEffect(() => {
+    const group = wheelRef.current;
+    if (!isSpinning || targetRotation === null || !group) return;
 
-      return () => clearTimeout(timeout);
-    }
-  }, [isSpinning, targetRotation, onSpinComplete]);
+    const from = accumulatedRotation.current;
+    let delta = targetRotation - (from % 360);
+    while (delta < 0) delta += 360;
+    const to = from + SPIN_EXTRA_TURNS_DEG + delta;
+    accumulatedRotation.current = to;
+
+    const started = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - started) / SPIN_DURATION_MS);
+      group.setAttribute('transform', rotateAttr(from + (to - from) * spinEasing(progress)));
+      if (progress < 1) {
+        frame = requestAnimationFrame(tick);
+        return;
+      }
+      setRestAngle(to);
+      latestOnComplete.current();
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [isSpinning, targetRotation]);
 
   if (prizes.length === 0) {
     return (
@@ -44,8 +81,8 @@ const FortuneWheel = memo(function FortuneWheel({
     );
   }
 
-  const size = 400;
-  const center = size / 2;
+  const size = SIZE;
+  const center = CENTER;
   const outerRadius = size / 2 - 20;
   const innerRadius = outerRadius - 15;
   const prizeRadius = innerRadius - 5;
@@ -219,16 +256,6 @@ const FortuneWheel = memo(function FortuneWheel({
           {/* Background shadow */}
           <circle cx={center} cy={center + 6} r={outerRadius + 5} fill="rgba(0,0,0,0.3)" />
 
-          {/* Outer decorative ring */}
-          <circle
-            cx={center}
-            cy={center}
-            r={outerRadius}
-            fill="none"
-            stroke="url(#ringGrad)"
-            strokeWidth="15"
-          />
-
           {/* Inner ring border */}
           <circle
             cx={center}
@@ -239,63 +266,8 @@ const FortuneWheel = memo(function FortuneWheel({
             strokeWidth="2"
           />
 
-          {/* LED chase animation — pure CSS, no React re-renders */}
-          <style>
-            {`
-              @keyframes ledChase {
-                0%, 100% { fill: #374151; stroke: #1F2937; }
-                10%, 30% { fill: #FEF08A; stroke: #FDE047; }
-              }
-              @keyframes ledGlow {
-                0%, 100% { opacity: 0; }
-                10%, 30% { opacity: 0.4; }
-              }
-              .led-dot { animation: ledChase 6s linear infinite; }
-              .led-glow { opacity: 0; animation: ledGlow 6s linear infinite; }
-              .led-spinning .led-dot { animation-duration: 2s; }
-              .led-spinning .led-glow { animation-duration: 2s; }
-            `}
-          </style>
-          <g className={isSpinning ? 'led-spinning' : undefined}>
-            {Array.from({ length: 20 }).map((_, i) => {
-              const angle = (i * 18 - 90) * (Math.PI / 180);
-              const ledRadius = outerRadius + 3;
-              const dotX = center + ledRadius * Math.cos(angle);
-              const dotY = center + ledRadius * Math.sin(angle);
-              // Delay as fraction of full cycle — CSS handles speed via animation-duration
-              const delay = `${(i / 20) * 6}s`;
-              return (
-                <g key={`led-${i}`}>
-                  <circle
-                    className="led-glow"
-                    cx={dotX}
-                    cy={dotY}
-                    r={9}
-                    fill="url(#ledGlowGrad)"
-                    style={{ animationDelay: delay }}
-                  />
-                  <circle
-                    className="led-dot"
-                    cx={dotX}
-                    cy={dotY}
-                    r={3.5}
-                    strokeWidth="1"
-                    style={{ animationDelay: delay }}
-                  />
-                </g>
-              );
-            })}
-          </g>
-
           {/* Rotating wheel group */}
-          <g
-            ref={wheelRef}
-            style={{
-              transformOrigin: `${center}px ${center}px`,
-              transform: `rotate(${displayRotation}deg)`,
-              transition: isSpinning ? 'transform 5s cubic-bezier(0.15, 0.6, 0.1, 1)' : 'none',
-            }}
-          >
+          <g ref={wheelRef} transform={rotateAttr(restAngle)}>
             {/* Sectors */}
             {prizes.map((prize, index) => (
               <path
@@ -347,6 +319,63 @@ const FortuneWheel = memo(function FortuneWheel({
             })}
 
             {/* Prize content - Text removed, only emoji visible on wheel */}
+          </g>
+
+          {/* Outer decorative ring */}
+          <circle
+            cx={center}
+            cy={center}
+            r={outerRadius}
+            fill="none"
+            stroke="url(#ringGrad)"
+            strokeWidth="15"
+          />
+
+          {/* LED chase animation — pure CSS, no React re-renders */}
+          <style>
+            {`
+              @keyframes ledChase {
+                0%, 100% { fill: #374151; stroke: #1F2937; }
+                10%, 30% { fill: #FEF08A; stroke: #FDE047; }
+              }
+              @keyframes ledGlow {
+                0%, 100% { fill-opacity: 0; }
+                10%, 30% { fill-opacity: 0.4; }
+              }
+              .led-dot { animation: ledChase 6s linear infinite; }
+              .led-glow { fill-opacity: 0; animation: ledGlow 6s linear infinite; }
+              .led-spinning .led-dot { animation-duration: 2s; }
+              .led-spinning .led-glow { animation-duration: 2s; }
+            `}
+          </style>
+          <g className={isSpinning ? 'led-spinning' : undefined}>
+            {Array.from({ length: 20 }).map((_, i) => {
+              const angle = (i * 18 - 90) * (Math.PI / 180);
+              const ledRadius = outerRadius + 3;
+              const dotX = center + ledRadius * Math.cos(angle);
+              const dotY = center + ledRadius * Math.sin(angle);
+              const delay = `${(i / 20) * 6}s`;
+              return (
+                <g key={`led-${i}`}>
+                  <circle
+                    className="led-glow"
+                    cx={dotX}
+                    cy={dotY}
+                    r={9}
+                    fill="url(#ledGlowGrad)"
+                    style={{ animationDelay: delay }}
+                  />
+                  <circle
+                    className="led-dot"
+                    cx={dotX}
+                    cy={dotY}
+                    r={3.5}
+                    strokeWidth="1"
+                    style={{ animationDelay: delay }}
+                  />
+                </g>
+              );
+            })}
           </g>
 
           {/* Center hub */}
