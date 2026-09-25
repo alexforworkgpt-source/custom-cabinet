@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — Upstream Cabinet v1.79.0 integration candidate (2026-09-24)
+## Unreleased — Upstream Cabinet v1.79.0 release candidate (2026-09-25)
 
 ### Custom Cabinet Source Integration
 
@@ -17,7 +17,8 @@
 * Upstream Cabinet target: `v1.79.0` / `821c7b71823573a756de00418acb25118ede1c9c`.
 * Exact source contracts target Upstream Bot `v4.15.0` / `877690a7039d1326b2c00eda3e297879b80c0678` and schema `0127`.
 * Simple/Lite Mode and BSCHEKER remain intentionally absent from the Custom Cabinet frontend.
-* The candidate working tree passed the source gate and a complete 133-file security diff review with no findings. Package metadata is aligned to `1.79.0`, but the candidate is not committed or tagged; no Release Bundle or production deployment is declared.
+* Exact integrated application source: `a772599846d58e86367d8ac5684630cfa3f471f4`; package metadata is `1.79.0`.
+* The candidate passed the source gate and a complete 133-file security diff review with no findings. The owner selected Custom Cabinet tag `cabinet-v2026.09.25.1` and Installer / Release Bundle tag `v2026.09.25`; lifecycle, publication and independent public-asset verification are still required, and no production deployment is declared.
 
 ## [1.74.0](https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/compare/v1.71.1...v1.74.0) (2026-09-13)
 

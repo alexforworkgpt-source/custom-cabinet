@@ -585,13 +585,15 @@ private-key or common provider-token signatures.
 
 Read-only remote checks on 2026-09-25 found no existing Custom Cabinet tags in
 the `cabinet-v2026.09.24*` or `cabinet-v2026.09.25*` namespaces and no Installer
-tags in the `v2026.09.24*` or `v2026.09.25*` namespaces. No tag name is selected
-or reserved by this preparation step.
+tags in the `v2026.09.24*` or `v2026.09.25*` namespaces. The owner subsequently
+authorized release work and selected `cabinet-v2026.09.25.1` for Custom Cabinet
+and `v2026.09.25` for Installer / Release Bundle. Both names must be rechecked
+immediately before creating their immutable tags.
 
-This local preparation does not assign a Custom Cabinet commit or tag, publish
-an artifact or Release Bundle, run the required full Installer lifecycle, or
-authorize staging or production changes. Those actions require a separate
-owner decision and exact immutable identities.
+The exact integrated application source was committed as
+`a772599846d58e86367d8ac5684630cfa3f471f4`. This record does not claim that an
+immutable tag, artifact or Release Bundle has been published or that the full
+Installer lifecycle has passed. Production remains outside the authorization.
 
 ## Residual Risks and Rollback Reference
 
@@ -600,8 +602,9 @@ owner decision and exact immutable identities.
   gate exercises fresh install, `0119 -> 0127`, rollback/recovery and uninstall.
 - Bot tag `v4.15.0` contains the known `uv.lock` virtual-project version mismatch;
   do not patch the tag and still call it the exact upstream source.
-- The source-gated Custom Cabinet candidate is still an uncommitted working
-  tree. It has no immutable source SHA, artifact checksum or release tag.
+- The source-gated Custom Cabinet application source is committed, but the
+  release remains unverified until the immutable tag, artifact checksum,
+  Release Bundle and full Installer lifecycle all pass.
 - Until a new immutable Release Bundle is published and verified, the confirmed
   runtime fallback remains Release Bundle `v2026.09.21.1` with Custom Cabinet
   `aec198424aa0b489db6d07d1af92bd704aa7c518`, Upstream Cabinet `v1.74.0`,
@@ -609,7 +612,8 @@ owner decision and exact immutable identities.
 
 ## Final Outcome
 
-`Release-prepared locally`: Slices 0 through 10 are complete, and Slice 11 has
-aligned package metadata plus a completed security diff review. Commit,
-immutable artifact/tag, Release Bundle publication, the full Installer lifecycle
-gate and any staging or production rollout require separate owner authorization.
+`Source committed; release gate pending`: Slices 0 through 10 are complete, and
+Slice 11 has aligned package metadata, a completed security diff review and exact
+application source commit `a772599846d58e86367d8ac5684630cfa3f471f4`.
+Immutable tag/artifact verification, Release Bundle publication and the full
+Installer lifecycle gate remain pending. Production is not authorized.
