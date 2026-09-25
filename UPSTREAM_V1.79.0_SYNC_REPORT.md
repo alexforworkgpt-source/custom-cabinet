@@ -1,13 +1,12 @@
 # Upstream v1.79.0 Synchronization Report
 
-Status: `source-gated`<br>
-Date: `2026-09-24`<br>
+Status: `release-gated`<br>
+Date: `2026-09-25`<br>
 Owner: `Codex implementation agent`
 
-This report starts the source-only adaptation of Upstream Cabinet `v1.79.0`.
-It does not declare a Custom Cabinet release, a compatible Release Bundle or a
-production deployment. Do not mark it completed until the selected source range
-is integrated, verified and recorded in `UPSTREAM.md` and `COMPATIBILITY.md`.
+This report records the completed source adaptation and immutable release gate
+for Upstream Cabinet `v1.79.0`. It declares a compatible published Release
+Bundle, but not a production deployment.
 
 ## Source Identity
 
@@ -591,29 +590,45 @@ and `v2026.09.25` for Installer / Release Bundle. Both names must be rechecked
 immediately before creating their immutable tags.
 
 The exact integrated application source was committed as
-`a772599846d58e86367d8ac5684630cfa3f471f4`. This record does not claim that an
-immutable tag, artifact or Release Bundle has been published or that the full
-Installer lifecycle has passed. Production remains outside the authorization.
+`a772599846d58e86367d8ac5684630cfa3f471f4`. Custom Cabinet tag
+`cabinet-v2026.09.25.1` resolves to release source
+`ddf2a37c827c760ee699fc56bb17bfc00ff38e9b`. Installer tag `v2026.09.25`
+resolves to `b54219d34a582e393f397a4441c6aacc52f274a8`.
+
+Official workflow run `36121801132` published Release Bundle `v2026.09.25`.
+Independent unauthenticated verification passed for all six public assets,
+both checksum sidecars, manifest, provenance, exact source identities and the
+Installer archive. The final Cabinet artifact is byte-identical to the artifact
+used by the lifecycle candidate. Its SHA-256 is
+`e2a8dad22ab68705eb0fd937deac14a1679d386c90961798b3492346ce2a9c78`;
+the Release Bundle identity is
+`b9c8fcda699344f252c4b9fa5509f2f9034fc8515ab18139174d5fcdb643be06`.
+
+The standard disposable Ubuntu 24.04 lifecycle passed fresh/repeat install,
+settings, project isolation, Protected Update, injected verified rollback,
+file recovery, launcher, uninstall and final postflight. A second lifecycle
+started from public Bundle `v2026.09.21.1`, proved the supported schema upgrade
+`0119 -> 0127`, and repeated rollback/recovery/uninstall/postflight. A targeted
+fresh install of the final public Bundle then confirmed exact Bot/Cabinet/
+artifact/Bundle identities, three healthy containers, Cabinet and direct
+instruction routes, branding, unified health, webhook default-deny and
+`Cache-Control: no-store`; cleanup left no test project, Caddy snippet,
+integration env, containers or volumes. Production was not accessed.
 
 ## Residual Risks and Rollback Reference
 
-- A source-level decision does not prove exact Bot runtime compatibility.
-- Migration rollback safety remains unproven until the full Installer lifecycle
-  gate exercises fresh install, `0119 -> 0127`, rollback/recovery and uninstall.
 - Bot tag `v4.15.0` contains the known `uv.lock` virtual-project version mismatch;
   do not patch the tag and still call it the exact upstream source.
-- The source-gated Custom Cabinet application source is committed, but the
-  release remains unverified until the immutable tag, artifact checksum,
-  Release Bundle and full Installer lifecycle all pass.
-- Until a new immutable Release Bundle is published and verified, the confirmed
-  runtime fallback remains Release Bundle `v2026.09.21.1` with Custom Cabinet
+- The exact-tag build, lifecycle and final smoke passed despite that metadata
+  mismatch; the upstream tag itself remains unchanged.
+- Production was intentionally not touched. Its confirmed runtime fallback
+  remains Release Bundle `v2026.09.21.1` with Custom Cabinet
   `aec198424aa0b489db6d07d1af92bd704aa7c518`, Upstream Cabinet `v1.74.0`,
   Upstream Bot `v4.10.0` and schema `0119`.
 
 ## Final Outcome
 
-`Source committed; release gate pending`: Slices 0 through 10 are complete, and
-Slice 11 has aligned package metadata, a completed security diff review and exact
-application source commit `a772599846d58e86367d8ac5684630cfa3f471f4`.
-Immutable tag/artifact verification, Release Bundle publication and the full
-Installer lifecycle gate remain pending. Production is not authorized.
+`Release-gated`: Slices 0 through 11 are complete. Exact source tags, public
+assets, checksums, provenance, both lifecycle variants and the targeted final
+Bundle fresh-install smoke passed. Release Bundle `v2026.09.25` is publishable
+for a separately authorized production transition; production was not touched.

@@ -4,17 +4,20 @@ This document records verified source compatibility for each Custom Cabinet
 baseline and Release Bundle. Tags and commit SHAs are immutable technical
 identifiers, not public branding.
 
-## Committed v1.79.0 Integration Candidate (2026-09-25)
+## Verified v1.79.0 Release Gate (2026-09-25)
 
-This is a committed source-integration candidate, not yet a verified Custom
-Cabinet release, Release Bundle or production row. The current production
-baseline remains the verified `v1.74.0` combination recorded below.
+This combination passed the source, immutable publication, full Installer
+lifecycle and targeted final-Bundle smoke gates. It is not a production row;
+the current production baseline remains the verified `v1.74.0` combination
+recorded below.
 
 | Item | Exact identity or decision |
 | --- | --- |
 | Receiving Custom Cabinet checkpoint | `80caeac6b756f208543a6c3f891877a4547c7d73` on `sync/upstream-v1.79.0` |
 | Integrated Custom Cabinet application source | `a772599846d58e86367d8ac5684630cfa3f471f4` |
-| Authorized release identities | Custom Cabinet tag `cabinet-v2026.09.25.1`; Installer / Release Bundle tag `v2026.09.25`; neither identity is claimed verified until publication and lifecycle gates pass |
+| Custom Cabinet release source | `cabinet-v2026.09.25.1` / `ddf2a37c827c760ee699fc56bb17bfc00ff38e9b` |
+| Installer / Release Bundle | `v2026.09.25` / Installer `b54219d34a582e393f397a4441c6aacc52f274a8` / Bundle identity `b9c8fcda699344f252c4b9fa5509f2f9034fc8515ab18139174d5fcdb643be06` |
+| Custom Cabinet artifact | `e2a8dad22ab68705eb0fd937deac14a1679d386c90961798b3492346ce2a9c78` |
 | Previous Upstream Cabinet | `v1.74.0` / `57810c7da24b5c142371ed83a6ad5e43a591d454` |
 | Target Upstream Cabinet | `v1.79.0` / `821c7b71823573a756de00418acb25118ede1c9c` |
 | Contract-verified Upstream Bot source | `v4.15.0` / `877690a7039d1326b2c00eda3e297879b80c0678`; supported fresh schema and `0119 -> 0127` upgrade passed in isolation |
@@ -29,9 +32,12 @@ affected Biome scope, `git diff --check` and a focused system-Chrome Farsi RTL
 check at 390 x 844. The exact Bot source proof passed 145 focused tests.
 
 The 133-file source snapshot also passed a complete Codex Security diff review
-with no findings. Immutable Custom Cabinet artifact/tag verification, Release
-Bundle publication and the full Installer lifecycle proof remain required before
-this candidate can become a release compatibility claim. Production remains a
+with no findings. The public Release assets passed independent unauthenticated
+checksum, manifest, provenance, exact-source and archive-safety verification.
+The disposable Ubuntu 24.04 gate passed both the standard lifecycle and a
+targeted `0119 -> 0127` upgrade lifecycle, including rollback/recovery,
+uninstall and final postflight. A final public-Bundle fresh install also passed
+with exact runtime identities and public health checks. Production remains a
 separate owner-authorized transition.
 
 ## Verified v1.74.0 Source Compatibility (2026-09-13)

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — Upstream Cabinet v1.79.0 release candidate (2026-09-25)
+## [1.79.0](https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/compare/v1.74.0...v1.79.0) (2026-09-25)
 
 ### Custom Cabinet Source Integration
 
@@ -18,7 +18,9 @@
 * Exact source contracts target Upstream Bot `v4.15.0` / `877690a7039d1326b2c00eda3e297879b80c0678` and schema `0127`.
 * Simple/Lite Mode and BSCHEKER remain intentionally absent from the Custom Cabinet frontend.
 * Exact integrated application source: `a772599846d58e86367d8ac5684630cfa3f471f4`; package metadata is `1.79.0`.
-* The candidate passed the source gate and a complete 133-file security diff review with no findings. The owner selected Custom Cabinet tag `cabinet-v2026.09.25.1` and Installer / Release Bundle tag `v2026.09.25`; lifecycle, publication and independent public-asset verification are still required, and no production deployment is declared.
+* The candidate passed the source gate and a complete 133-file security diff review with no findings.
+* Custom Cabinet tag `cabinet-v2026.09.25.1` resolves to `ddf2a37c827c760ee699fc56bb17bfc00ff38e9b`; Release Bundle `v2026.09.25` resolves to Installer `b54219d34a582e393f397a4441c6aacc52f274a8` and Bundle identity `b9c8fcda699344f252c4b9fa5509f2f9034fc8515ab18139174d5fcdb643be06`.
+* Independent public-asset verification, the full disposable Ubuntu 24.04 lifecycle, the supported `0119 -> 0127` upgrade lifecycle and a targeted final-Bundle fresh install passed. Production deployment is not declared.
 
 ## [1.74.0](https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/compare/v1.71.1...v1.74.0) (2026-09-13)
 
