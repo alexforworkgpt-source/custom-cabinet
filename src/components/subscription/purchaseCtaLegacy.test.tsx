@@ -106,3 +106,68 @@ describe('tariff subscription primary action', () => {
     expect(screen.getByText('subscription.extend')).toBeTruthy();
   });
 });
+
+describe('classic subscription renewal action', () => {
+  it('opens renewal with the existing subscription parameters in single-subscription mode', () => {
+    render(
+      <MemoryRouter>
+        <PurchaseCTAButton subscription={subscription()} isClassic />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/subscriptions/42/renew');
+    expect(screen.getByText('subscription.classicRenewHint')).toBeTruthy();
+  });
+
+  it('renews an expired paid classic subscription', () => {
+    render(
+      <MemoryRouter>
+        <PurchaseCTAButton
+          subscription={subscription({ status: 'expired', is_active: false, is_expired: true })}
+          isClassic
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/subscriptions/42/renew');
+    expect(screen.getByText('subscription.extend')).toBeTruthy();
+  });
+
+  it.each([
+    ['trial', { is_trial: true }],
+    ['daily', { is_daily: true }],
+    ['limited', { is_limited: true }],
+    ['pending', { status: 'pending' }],
+    ['disabled', { status: 'disabled' }],
+    ['tariff mode subscription', { tariff_id: 7 }],
+  ])('preserves the purchase route for %s in single-subscription mode', (_case, overrides) => {
+    render(
+      <MemoryRouter>
+        <PurchaseCTAButton subscription={subscription(overrides)} isClassic />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/subscription/purchase');
+  });
+
+  it('keeps new classic purchase available when no subscription exists', () => {
+    render(
+      <MemoryRouter>
+        <PurchaseCTAButton subscription={null} isClassic />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/subscription/purchase');
+  });
+
+  it('preserves explicit migration to tariff selection in classic mode', () => {
+    render(
+      <MemoryRouter>
+        <PurchaseCTAButton
+          subscription={subscription({ requires_tariff_selection: true })}
+          isClassic
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link').getAttribute('href')).toBe(
+      '/subscription/purchase?subscriptionId=42',
+    );
+  });
+});

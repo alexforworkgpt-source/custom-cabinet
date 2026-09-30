@@ -657,7 +657,11 @@ export default function Subscription({
       )}
 
       {/* Purchase / Renewal CTA */}
-      <PurchaseCTAButton subscription={subscription} isMultiTariff={isMultiTariff} />
+      <PurchaseCTAButton
+        subscription={subscription}
+        isMultiTariff={isMultiTariff}
+        isClassic={purchaseOptions?.sales_mode === 'classic'}
+      />
 
       {embedded && subscription && (
         <Link

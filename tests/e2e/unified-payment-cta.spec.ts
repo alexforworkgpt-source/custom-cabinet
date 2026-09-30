@@ -116,7 +116,7 @@ test('mobile Classic purchase saves the cart before choosing a top-up method @cr
         detail: {
           code: 'insufficient_funds',
           cart_saved: true,
-          cart_mode: 'classic',
+          cart_mode: 'subscription_purchase',
           missing_amount: 30_000,
         },
       },
@@ -125,10 +125,19 @@ test('mobile Classic purchase saves the cart before choosing a top-up method @cr
 
   await page.goto('/subscription/purchase');
   await page.getByRole('button', { name: /^Далее/ }).click();
-  const pay = page.getByRole('button', { name: 'Оплатить', exact: true });
-  await expect(pay).toBeEnabled();
+  const topUp = page.getByRole('button', { name: 'Пополнить баланс', exact: true });
+  await expect(topUp).toHaveCount(1);
+  await expect(topUp).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Оплатить', exact: true })).toHaveCount(0);
+  await expect(
+    page.getByText(
+      'На балансе не хватает 300.00 ₽. После пополнения вернитесь к выбору тарифа, проверьте параметры и нажмите «Оплатить» ещё раз, чтобы завершить покупку.',
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(page.getByText(/После пополнения тариф оформится автоматически/)).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Пополнить', exact: true })).toHaveCount(0);
-  await pay.click();
+  await topUp.click();
 
   await expect(page).toHaveURL(/\/balance\/top-up\?amount=300/);
   await expect(page.getByRole('heading', { name: 'Выберите способ оплаты' })).toBeVisible();
@@ -143,7 +152,7 @@ test('mobile Classic purchase saves the cart before choosing a top-up method @cr
   expect(apiRequests).not.toContain('POST /api/cabinet/balance/topup');
   expect([...unexpectedApiRequests]).toEqual([]);
 
-  // Returning after the provider callback only reloads server state; the Bot owns auto-purchase.
+  // Returning after top-up reloads server state; Classic checkout requires another payment action.
   await page.goto('/subscription/purchase');
   await expect(page.getByRole('button', { name: /^Далее/ })).toBeVisible();
   expect(purchaseRequests).toBe(1);

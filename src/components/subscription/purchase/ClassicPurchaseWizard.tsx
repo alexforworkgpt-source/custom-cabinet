@@ -294,6 +294,7 @@ export function ClassicPurchaseWizard({
                 return (
                   <button
                     key={period.id}
+                    aria-pressed={selectedPeriod?.id === period.id}
                     onClick={() => {
                       setSelectedPeriod(period);
                       if (period.traffic.current !== undefined) {
@@ -313,7 +314,9 @@ export function ClassicPurchaseWizard({
                       }
                     }}
                     className={`bento-card-hover relative p-4 text-left transition-all ${
-                      selectedPeriod?.id === period.id ? 'bento-card-glow border-accent-500' : ''
+                      selectedPeriod?.id === period.id
+                        ? 'bento-card-glow border-accent-500 light:!border-accent-500 light:border-2'
+                        : ''
                     }`}
                   >
                     {promoPeriod.percent && promoPeriod.percent > 0 && (
@@ -354,10 +357,13 @@ export function ClassicPurchaseWizard({
                 return (
                   <button
                     key={option.value}
+                    aria-pressed={selectedTraffic === option.value}
                     onClick={() => setSelectedTraffic(option.value)}
                     disabled={!option.is_available}
                     className={`bento-card-hover relative p-4 text-center transition-all ${
-                      selectedTraffic === option.value ? 'bento-card-glow border-accent-500' : ''
+                      selectedTraffic === option.value
+                        ? 'bento-card-glow border-accent-500 light:!border-accent-500 light:border-2'
+                        : ''
                     } ${!option.is_available ? 'cursor-not-allowed opacity-50' : ''}`}
                   >
                     {promoTraffic.percent && promoTraffic.percent > 0 && (
@@ -562,7 +568,10 @@ export function ClassicPurchaseWizard({
                   {!purchaseMutation.isError &&
                     !preview.can_purchase &&
                     (preview.missing_amount_kopeks > 0 ? (
-                      <PurchaseFundingNotice missingAmountKopeks={preview.missing_amount_kopeks} />
+                      <PurchaseFundingNotice
+                        missingAmountKopeks={preview.missing_amount_kopeks}
+                        messageKey="subscription.classicFundingNotice"
+                      />
                     ) : preview.status_message ? (
                       <div className="rounded-lg bg-error-500/10 px-4 py-3 text-center text-sm text-error-400">
                         {preview.status_message}
@@ -614,6 +623,8 @@ export function ClassicPurchaseWizard({
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                     {t('common.loading')}
                   </span>
+                ) : preview && !preview.can_purchase && preview.missing_amount_kopeks > 0 ? (
+                  t('dashboard.topUpBalance')
                 ) : (
                   t('subscription.pay')
                 )}

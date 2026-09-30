@@ -40,6 +40,7 @@ copyright and AGPL terms remain unchanged in [`LICENSE`](LICENSE).
 
 ## Maintenance
 
+- [`docs/known-issues/classic-auto-purchase.md`](docs/known-issues/classic-auto-purchase.md) records the open classic auto-purchase defect, reproduction, current frontend scope and revalidation conditions after an Upstream Bot fix.
 - [`UPSTREAM_SYNC.md`](UPSTREAM_SYNC.md) defines the required Upstream Cabinet
   integration process.
 - [`UPSTREAM_SYNC_REPORT_TEMPLATE.md`](UPSTREAM_SYNC_REPORT_TEMPLATE.md) is the

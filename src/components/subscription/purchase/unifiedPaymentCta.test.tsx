@@ -18,7 +18,12 @@ const api = vi.hoisted(() => ({
 vi.mock('@/api/subscription', () => ({ subscriptionApi: api }));
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => (key === 'subscription.pay' ? 'Оплатить' : key),
+    t: (key: string) =>
+      key === 'subscription.pay'
+        ? 'Оплатить'
+        : key === 'dashboard.topUpBalance'
+          ? 'Пополнить баланс'
+          : key,
   }),
   initReactI18next: { type: '3rdParty', init: () => {} },
 }));
@@ -187,29 +192,45 @@ afterEach(() => {
 });
 
 describe('unified payment CTA', () => {
-  it('sends the Classic selection before opening top-up for a saved cart', async () => {
-    api.previewPurchase.mockResolvedValue(preview);
-    api.submitPurchase.mockRejectedValue(
-      insufficientFunds({ code: 'insufficient_funds', cart_saved: true, missing_amount: 30_000 }),
-    );
-    renderClassic();
-
-    fireEvent.click(screen.getByRole('button', { name: 'common.next' }));
-    const pay = await screen.findByRole('button', { name: 'Оплатить' });
-    await waitFor(() => expect(pay.hasAttribute('disabled')).toBe(false));
-    expect(screen.queryByRole('button', { name: 'balance.topUp' })).toBeNull();
-    fireEvent.click(pay);
-
-    await waitFor(() => {
-      expect(api.submitPurchase).toHaveBeenCalledWith(
-        { period_id: 'month', period_days: 30, traffic_value: 100, servers: [], devices: 1 },
-        42,
+  it.each([
+    { balance: 0, missing: 50_000, amount: 500 },
+    { balance: 20_000, missing: 30_000, amount: 300 },
+  ])(
+    'sends the Classic selection before topping up a balance of $balance kopeks',
+    async ({ balance, missing, amount }) => {
+      api.previewPurchase.mockResolvedValue({
+        ...preview,
+        balance_kopeks: balance,
+        missing_amount_kopeks: missing,
+      });
+      api.submitPurchase.mockRejectedValue(
+        insufficientFunds({
+          code: 'insufficient_funds',
+          cart_saved: true,
+          missing_amount: missing,
+        }),
       );
-      expect(screen.getByTestId('route').textContent).toBe(
-        '/balance/top-up?amount=300&returnTo=%2Fsubscription%2Fpurchase%3FsubscriptionId%3D42',
-      );
-    });
-  });
+      renderClassic();
+
+      fireEvent.click(screen.getByRole('button', { name: 'common.next' }));
+      const topUp = await screen.findByRole('button', { name: 'Пополнить баланс' });
+      await waitFor(() => expect(topUp.hasAttribute('disabled')).toBe(false));
+      expect(screen.getAllByRole('button', { name: 'Пополнить баланс' })).toHaveLength(1);
+      expect(screen.queryByRole('button', { name: 'Оплатить' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'balance.topUp' })).toBeNull();
+      fireEvent.click(topUp);
+
+      await waitFor(() => {
+        expect(api.submitPurchase).toHaveBeenCalledWith(
+          { period_id: 'month', period_days: 30, traffic_value: 100, servers: [], devices: 1 },
+          42,
+        );
+        expect(screen.getByTestId('route').textContent).toBe(
+          `/balance/top-up?amount=${amount}&returnTo=%2Fsubscription%2Fpurchase%3FsubscriptionId%3D42`,
+        );
+      });
+    },
+  );
 
   it('opens top-up after the ordinary tariff purchase saves the cart', async () => {
     api.purchaseTariff.mockRejectedValue(
@@ -277,9 +298,9 @@ describe('unified payment CTA', () => {
     api.submitPurchase.mockRejectedValue(error);
     renderClassic();
     fireEvent.click(screen.getByRole('button', { name: 'common.next' }));
-    const pay = await screen.findByRole('button', { name: 'Оплатить' });
-    await waitFor(() => expect(pay.hasAttribute('disabled')).toBe(false));
-    fireEvent.click(pay);
+    const topUp = await screen.findByRole('button', { name: 'Пополнить баланс' });
+    await waitFor(() => expect(topUp.hasAttribute('disabled')).toBe(false));
+    fireEvent.click(topUp);
 
     await waitFor(() => {
       expect(api.submitPurchase).toHaveBeenCalledTimes(1);
@@ -289,7 +310,7 @@ describe('unified payment CTA', () => {
       expect(screen.getByText(error.message)).toBeTruthy();
     });
     expect(screen.queryByRole('button', { name: 'balance.topUp' })).toBeNull();
-    expect(screen.queryByText('subscription.fundingNotice')).toBeNull();
+    expect(screen.queryByText('subscription.classicFundingNotice')).toBeNull();
   });
 
   it('uses the Classic preview amount when the saved-cart response omits it', async () => {
@@ -299,9 +320,9 @@ describe('unified payment CTA', () => {
     );
     renderClassic();
     fireEvent.click(screen.getByRole('button', { name: 'common.next' }));
-    const pay = await screen.findByRole('button', { name: 'Оплатить' });
-    await waitFor(() => expect(pay.hasAttribute('disabled')).toBe(false));
-    fireEvent.click(pay);
+    const topUp = await screen.findByRole('button', { name: 'Пополнить баланс' });
+    await waitFor(() => expect(topUp.hasAttribute('disabled')).toBe(false));
+    fireEvent.click(topUp);
     await waitFor(() =>
       expect(screen.getByTestId('route').textContent).toContain('/balance/top-up?amount=300'),
     );
@@ -310,6 +331,8 @@ describe('unified payment CTA', () => {
   it('keeps direct Classic purchase and blocks repeat clicks while pending', async () => {
     api.previewPurchase.mockResolvedValue({
       ...preview,
+      balance_kopeks: preview.total_price_kopeks,
+      balance_label: preview.total_price_label,
       can_purchase: true,
       missing_amount_kopeks: 0,
     });
@@ -324,6 +347,7 @@ describe('unified payment CTA', () => {
     fireEvent.click(screen.getByRole('button', { name: 'common.next' }));
     const pay = await screen.findByRole('button', { name: 'Оплатить' });
     await waitFor(() => expect(pay.hasAttribute('disabled')).toBe(false));
+    expect(screen.queryByRole('button', { name: 'Пополнить баланс' })).toBeNull();
     fireEvent.click(pay);
     fireEvent.click(pay);
     await waitFor(() => expect(api.submitPurchase).toHaveBeenCalledTimes(1));

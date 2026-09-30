@@ -239,6 +239,17 @@ flowchart LR
 
 Экран деталей использует sheets без собственного URL для добавления и уменьшения числа устройств, покупки трафика, управления сервером и удаления подписки. Параметр `section=additional-options` восстанавливает раскрытый раздел дополнительных действий, но не открывает конкретный sheet покупки.
 
+В режиме `sales_mode=classic` действие продления обычной платной подписки
+(`active` или `expired`, без `is_trial`, `is_daily`, `is_limited` и
+`requires_tariff_selection`) ведёт из управления на
+`/subscriptions/:id/renew` и сохраняет текущие параметры. При нехватке средств
+этот экран сначала отправляет `/cabinet/subscription/renew`; только после
+HTTP402 с `cart_saved=true`, `cart_mode=extend` и положительной суммой открывает
+`/balance/top-up?amount=...&returnTo=...`. Возвращение на экран не запускает
+повторный POST: исполнение после зачисления выполняет Upstream Bot.
+Новая classic-покупка остаётся на `/subscription/purchase`; текущий Upstream
+Bot `v4.15.0` не исполняет её корзину `subscription_purchase` автоматически.
+
 ### 7.3. Подключение устройства
 
 | URL | Экран | Назначение |

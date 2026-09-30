@@ -252,5 +252,27 @@ for (const colorScheme of ['dark', 'light'] as const) {
       await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth),
     ).toBe(false);
     await page.screenshot({ path: testInfo.outputPath(`support-instructions-${colorScheme}.png`) });
+
+    const icon = page
+      .getByRole('region', { name: 'Инструкции и настройка', exact: true })
+      .locator('span[aria-hidden="true"]')
+      .first();
+    await expect(icon).toHaveCSS('width', '40px');
+    await expect(icon).toHaveCSS('height', '40px');
+    const iconStyle = await icon.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { background: style.backgroundColor, radius: style.borderRadius };
+    });
+    expect(iconStyle.background).not.toBe('rgba(0, 0, 0, 0)');
+
+    await instructions.click();
+    const referenceIcon = page.locator('section span[aria-hidden="true"]').first();
+    await expect(referenceIcon).toBeVisible();
+    expect(
+      await referenceIcon.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { background: style.backgroundColor, radius: style.borderRadius };
+      }),
+    ).toEqual(iconStyle);
   });
 }

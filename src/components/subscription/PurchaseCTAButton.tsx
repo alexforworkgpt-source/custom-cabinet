@@ -9,11 +9,14 @@ interface PurchaseCTAButtonProps {
   subscription: Subscription | null;
   /** In multi-tariff mode, link to /subscriptions/:id/renew instead of /subscription/purchase */
   isMultiTariff?: boolean;
+  /** Explicit sales mode from purchase-options; a missing tariff alone is ambiguous. */
+  isClassic?: boolean;
 }
 
 export default function PurchaseCTAButton({
   subscription,
   isMultiTariff = false,
+  isClassic = false,
 }: PurchaseCTAButtonProps) {
   const { t } = useTranslation();
 
@@ -23,6 +26,15 @@ export default function PurchaseCTAButton({
   const isTrial = subscription?.is_trial;
   const isDaily = subscription?.is_daily;
   const requiresTariff = needsTariff(subscription);
+  const isClassicRenewal =
+    isClassic &&
+    !!subscription &&
+    !requiresTariff &&
+    !subscription.tariff_id &&
+    !isTrial &&
+    !isDaily &&
+    !subscription.is_limited &&
+    (subscription.status === 'active' || subscription.status === 'expired');
 
   // Daily tariffs renew automatically — no manual renewal button needed in multi-tariff
   if (isMultiTariff && isDaily && !isExpired) return null;
@@ -31,31 +43,35 @@ export default function PurchaseCTAButton({
 
   const buttonText = requiresTariff
     ? t('subscription.cta.moveToTariff')
-    : isExpired
-      ? t('subscription.getSubscription')
-      : isTrial
-        ? t('subscription.trialUpgrade.title')
-        : t('subscription.extend');
+    : isClassicRenewal
+      ? t('subscription.extend')
+      : isExpired
+        ? t('subscription.getSubscription')
+        : isTrial
+          ? t('subscription.trialUpgrade.title')
+          : t('subscription.extend');
 
-  const hintText = isExpired
-    ? t('subscription.cta.expiredHint')
-    : requiresTariff
-      ? t('subscription.cta.moveToTariffHint')
-      : isTrial
-        ? t('subscription.cta.trialHint')
-        : isMultiTariff
-          ? t('subscription.cta.renewHint', 'Продление подписки')
-          : t('subscription.cta.activeHint');
+  const hintText = isClassicRenewal
+    ? t('subscription.classicRenewHint')
+    : isExpired
+      ? t('subscription.cta.expiredHint')
+      : requiresTariff
+        ? t('subscription.cta.moveToTariffHint')
+        : isTrial
+          ? t('subscription.cta.trialHint')
+          : isMultiTariff
+            ? t('subscription.cta.renewHint', 'Продление подписки')
+            : t('subscription.cta.activeHint');
 
   // Trial → purchase page (buy a real tariff, trial can't be renewed)
-  // Multi-tariff active → per-subscription renew page
+  // Paid classic and multi-tariff → per-subscription renew page
   // Otherwise → purchase page
   const linkTo =
     requiresTariff && subscription?.id
       ? tariffSelectionPath(subscription.id)
       : isTrial
         ? '/subscription/purchase'
-        : isMultiTariff && subscription?.id
+        : (isMultiTariff || isClassicRenewal) && subscription?.id
           ? `/subscriptions/${subscription.id}/renew`
           : '/subscription/purchase';
 

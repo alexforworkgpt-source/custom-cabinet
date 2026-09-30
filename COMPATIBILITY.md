@@ -4,6 +4,21 @@ This document records verified source compatibility for each Custom Cabinet
 baseline and Release Bundle. Tags and commit SHAs are immutable technical
 identifiers, not public branding.
 
+## Open Classic Auto-Purchase Limitation (2026-09-30)
+
+Upstream Bot `v4.15.0` / `877690a7039d1326b2c00eda3e297879b80c0678`
+saves Cabinet classic purchases as `subscription_purchase`, which its top-up
+dispatcher does not support. Source/build compatibility and the historical
+Installer lifecycle rows below do not prove this payment flow. Local Custom
+Cabinet changes correct the CTA text and route ordinary paid classic renewal
+through the supported `extend` flow; they do not fix new auto-purchases or
+prove real server-side renewal. See
+[`the defect and revalidation contract`](docs/known-issues/classic-auto-purchase.md).
+For Release Bundle `v2026.09.30`, the owner explicitly approved publication
+with manual confirmation of new classic purchases after top-up on 2026-09-30.
+This release-specific exception does not close the defect, prove server-side
+renewal, waive other applicable gates or authorize a production transition.
+
 ## Verified v1.79.0 Release Gate (2026-09-25)
 
 This combination passed the source, immutable publication, full Installer
