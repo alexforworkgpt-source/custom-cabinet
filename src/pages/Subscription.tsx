@@ -657,11 +657,31 @@ export default function Subscription({
       )}
 
       {/* Purchase / Renewal CTA */}
-      <PurchaseCTAButton
-        subscription={subscription}
-        isMultiTariff={isMultiTariff}
-        isClassic={purchaseOptions?.sales_mode === 'classic'}
-      />
+      {purchaseOptionsQuery.isError ? (
+        <div
+          role="alert"
+          className="space-y-2 rounded-xl bg-error-400/10 p-4 text-sm text-error-400"
+        >
+          <p>{t('subscription.paymentOptionsLoadError')}</p>
+          <button
+            className="btn-secondary"
+            disabled={purchaseOptionsQuery.isFetching}
+            onClick={() => purchaseOptionsQuery.refetch()}
+          >
+            {t('common.retry')}
+          </button>
+        </div>
+      ) : !purchaseOptionsQuery.isSuccess || purchaseOptionsQuery.isFetching ? (
+        <div role="status" className="rounded-xl bg-dark-800/50 p-4 text-sm text-dark-400">
+          {t('common.loading')}
+        </div>
+      ) : (
+        <PurchaseCTAButton
+          subscription={subscription}
+          isMultiTariff={isMultiTariff}
+          isClassic={purchaseOptions?.sales_mode === 'classic'}
+        />
+      )}
 
       {embedded && subscription && (
         <Link

@@ -1,76 +1,77 @@
 import { expect, test } from '@playwright/test';
 import { prepareAuthenticatedPage } from './cabinetTestHarness';
 
-const subscription = {
-  id: 42,
-  status: 'active',
-  is_trial: false,
-  start_date: '2026-09-01T00:00:00Z',
-  end_date: '2026-10-30T00:00:00Z',
-  days_left: 30,
-  hours_left: 0,
-  minutes_left: 0,
-  time_left_display: '30 дней',
-  traffic_limit_gb: 100,
-  traffic_used_gb: 0,
-  traffic_used_percent: 0,
-  device_limit: 3,
-  connected_squads: [],
-  servers: [],
-  autopay_enabled: false,
-  autopay_days_before: 3,
-  subscription_url: 'https://example.test/subscription',
-  hide_subscription_link: false,
-  is_active: true,
-  is_expired: false,
-  is_limited: false,
-};
+import { responses, subscription } from './classicRenewalFixture';
 
-const responses = {
-  '/api/cabinet/subscription': { has_subscription: true, subscription },
-  '/api/cabinet/subscriptions': { subscriptions: [subscription], multi_tariff_enabled: false },
-  '/api/cabinet/subscription/devices': { devices: [], total: 0, device_limit: 3 },
-  '/api/cabinet/subscription/refresh-traffic': {
-    traffic_used_gb: 0,
-    traffic_used_percent: 0,
-    is_unlimited: false,
-  },
-  '/api/cabinet/subscription/purchase-options': {
-    sales_mode: 'classic',
-    balance_kopeks: 20_000,
-    periods: [],
-    platega_recurrent_enabled: false,
-    lava_recurrent_enabled: false,
-  },
-  '/api/cabinet/subscription/renewal-options': [
-    {
-      period_days: 30,
-      price_kopeks: 50_000,
-      price_rubles: 500,
-      discount_percent: 0,
-      original_price_kopeks: null,
-    },
-    {
-      period_days: 90,
-      price_kopeks: 120_000,
-      price_rubles: 1200,
-      discount_percent: 20,
-      original_price_kopeks: 150_000,
-    },
-  ],
-  '/api/cabinet/balance/payment-methods': [
-    {
-      id: 'test-card',
-      name: 'Тестовая карта',
-      description: 'Локальный мок',
-      min_amount_kopeks: 10_000,
-      max_amount_kopeks: 200_000,
-      is_available: true,
-      quick_amounts: [100_000],
-      open_url_direct: false,
-    },
-  ],
-};
+for (const status of ['active', 'expired']) {
+  test(`Dashboard waits for the sales mode before ${status} classic renewal @critical-flow`, async ({
+    page,
+  }) => {
+    const current = {
+      ...subscription,
+      tariff_id: null,
+      status,
+      is_active: status === 'active',
+      is_expired: status === 'expired',
+    };
+    await prepareAuthenticatedPage(page, {
+      language: 'ru',
+      responses: {
+        ...responses,
+        '/api/cabinet/subscription': { has_subscription: true, subscription: current },
+        '/api/cabinet/subscriptions': { subscriptions: [current], multi_tariff_enabled: false },
+      },
+    });
+    let release!: () => void;
+    const waiting = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(/\/api\/cabinet\/subscription\/purchase-options(?:\?|$)/, async (route) => {
+      await waiting;
+      await route.fulfill({ json: responses['/api/cabinet/subscription/purchase-options'] });
+    });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: /Управление подпиской/ }).click();
+    await expect(page.getByRole('link', { name: /Мои устройства/ })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /Продлить подписку|Оформить подписку/ }),
+    ).toHaveCount(0);
+    release();
+    const renew = page.getByRole('link', {
+      name: /Продлить подписку.*Продление с текущими параметрами/,
+    });
+    await expect(renew).toHaveAttribute('href', '/subscriptions/42/renew');
+    await renew.click();
+    await expect(page).toHaveURL('/subscriptions/42/renew');
+  });
+}
+
+test('Dashboard retries a failed sales mode without opening purchase @critical-flow', async ({
+  page,
+}) => {
+  await prepareAuthenticatedPage(page, { language: 'ru', responses });
+  let failed = true;
+  await page.route(/\/api\/cabinet\/subscription\/purchase-options(?:\?|$)/, (route) =>
+    route.fulfill({
+      status: failed ? 503 : 200,
+      json: failed
+        ? { detail: 'Unavailable' }
+        : responses['/api/cabinet/subscription/purchase-options'],
+    }),
+  );
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.getByRole('button', { name: /Управление подпиской/ }).click();
+  await expect(page.getByText('Не удалось загрузить условия оплаты')).toBeVisible({
+    timeout: 20000,
+  });
+  await expect(page.getByRole('link', { name: /Продлить подписку/ })).toHaveCount(0);
+  failed = false;
+  await page.getByRole('button', { name: 'Повторить', exact: true }).click();
+  await page
+    .getByRole('link', { name: /Продлить подписку.*Продление с текущими параметрами/ })
+    .click();
+  await expect(page).toHaveURL('/subscriptions/42/renew');
+});
 
 test('classic management renews with the selected period before top-up @critical-flow', async ({
   page,

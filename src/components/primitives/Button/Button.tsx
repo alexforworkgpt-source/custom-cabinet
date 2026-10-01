@@ -47,7 +47,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       onClick?.(e);
     };
 
-    const classes = cn(buttonVariants({ variant, size, fullWidth }), className);
+    // Reuse the existing tariff action style without primitive size or motion overrides.
+    const legacyPrimary = variant === 'legacyPrimary';
+    const classes = legacyPrimary
+      ? cn('btn-primary', fullWidth && 'w-full', className)
+      : cn(buttonVariants({ variant, size, fullWidth }), className);
 
     if (asChild) {
       return (
@@ -63,8 +67,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={classes}
         disabled={isDisabled}
         onClick={handleClick}
-        whileHover={!isDisabled ? buttonHover : undefined}
-        whileTap={!isDisabled ? buttonTap : undefined}
+        whileHover={!isDisabled && !legacyPrimary ? buttonHover : undefined}
+        whileTap={!isDisabled && !legacyPrimary ? buttonTap : undefined}
         transition={springTransition}
         {...(props as HTMLMotionProps<'button'>)}
       >

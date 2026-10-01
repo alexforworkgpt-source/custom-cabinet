@@ -24,10 +24,14 @@ vi.mock('@/api/subscription', () => ({
         subscription: {
           id: 42,
           tariff_name: null,
+          status: 'active',
+          servers: [],
+          traffic_limit_gb: 100,
+          device_limit: 1,
           requires_tariff_selection: state.requiresTariff,
         },
       }),
-    getPurchaseOptions: () => Promise.resolve({ balance_kopeks: 0 }),
+    getPurchaseOptions: () => Promise.resolve({ sales_mode: 'tariffs', balance_kopeks: 0 }),
     renewSubscription: () => Promise.resolve({}),
   },
 }));

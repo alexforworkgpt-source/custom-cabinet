@@ -80,6 +80,6 @@ describe('calculatePromoDiscount', () => {
         expires_at: null,
         is_active: true,
       }).price,
-    ).toBe(8_499);
+    ).toBe(8_500);
   });
 });

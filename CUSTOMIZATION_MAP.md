@@ -113,6 +113,20 @@ For these files, never resolve an upstream change from filenames or JSX alone.
 Review data loading, mutations, state, error handling, platform behavior and
 rendered states separately from presentation.
 
+The classic purchase/renewal consistency change adds these hybrid seams:
+
+- `RenewSubscription` owns fresh subscription/options/balance queries and the
+  existing manual renew/top-up contract; `subscription/renewal/` owns compact
+  period cards and the summary rendered through the existing portal pattern.
+  Its action uses canonical `Button` with `legacyPrimary` to reuse the tariff
+  `btn-primary` appearance and CSS interaction states without duplicate styles.
+- `useRenewalSelection` and `utils/renewalSelection` own session-only period
+  intent, scoped to user/subscription and validated against fresh server state.
+  They never persist price, balance or payment permission; auth logout clears it.
+- `ClassicPurchaseWizard` treats purchase preview as the final server amount;
+  `promoDiscount` is applied only to preliminary option prices and follows the
+  confirmed Bot floor-discount arithmetic.
+
 ## Known High-Conflict Hotspots
 
 | Hotspot | Why it is sensitive |

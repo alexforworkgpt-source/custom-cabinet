@@ -58,7 +58,7 @@ export function ClassicPurchaseWizard({
   const location = useLocation();
   const queryClient = useQueryClient();
   const { formatAmount, currencySymbol } = useCurrency();
-  const { activeDiscount, applyPromoDiscount } = usePromoDiscount();
+  const { applyPromoDiscount } = usePromoDiscount();
 
   const formatPrice = (kopeks: number) =>
     kopeks === 0
@@ -67,7 +67,7 @@ export function ClassicPurchaseWizard({
   const formatCtaPrice = (kopeks: number) =>
     kopeks === 0
       ? t('subscription.free', 'Бесплатно')
-      : `${formatAmount(kopeks / 100, 0)} ${currencySymbol}`;
+      : `${formatAmount(kopeks / 100)} ${currencySymbol}`;
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState<PurchaseStep>('period');
@@ -150,16 +150,22 @@ export function ClassicPurchaseWizard({
     [selectedPeriod, selectedTraffic, selectedServers, selectedDevices],
   );
 
-  const { data: preview, isLoading: previewLoading } = useQuery({
-    queryKey: ['purchase-preview', currentSelection],
+  const {
+    data: preview,
+    isFetching: previewLoading,
+    isError: previewError,
+    refetch: refetchPreview,
+  } = useQuery({
+    queryKey: ['purchase-preview', currentSelection, subscriptionId],
     queryFn: () => subscriptionApi.previewPurchase(currentSelection, subscriptionId),
     enabled: !!selectedPeriod && showPurchaseForm,
   });
 
   const previewTotal = preview
-    ? applyPromoDiscount(preview.total_price_kopeks, preview.original_price_kopeks)
+    ? { price: preview.total_price_kopeks, original: preview.original_price_kopeks }
     : null;
-  const ctaPrice = previewTotal ? formatCtaPrice(previewTotal.price) : null;
+  const ctaPrice =
+    previewTotal && !previewLoading && !previewError ? formatCtaPrice(previewTotal.price) : null;
   const previewTotalValue = previewTotal
     ? formatPrice(previewTotal.price)
     : preview?.total_price_label;
@@ -200,7 +206,7 @@ export function ClassicPurchaseWizard({
   });
 
   const submitPurchase = () => {
-    if (purchaseInFlightRef.current) return;
+    if (purchaseInFlightRef.current || previewLoading || previewError || !preview) return;
     purchaseInFlightRef.current = true;
     purchaseMutation.mutate();
   };
@@ -531,7 +537,7 @@ export function ClassicPurchaseWizard({
                 </SkeletonGroup>
               ) : preview ? (
                 <div className="space-y-4">
-                  {activeDiscount?.is_active && activeDiscount.discount_percent && (
+                  {!!preview.discount_percent && (
                     <div className="flex items-center justify-center gap-2 rounded-lg border border-warning-500/30 bg-warning-500/10 p-3">
                       <svg
                         className="h-4 w-4 text-warning-400"
@@ -547,7 +553,7 @@ export function ClassicPurchaseWizard({
                         />
                       </svg>
                       <span className="text-sm font-medium text-warning-400">
-                        {t('promo.discountApplied')} -{activeDiscount.discount_percent}%
+                        {t('promo.discountApplied')} -{preview.discount_percent}%
                       </span>
                     </div>
                   )}
@@ -612,6 +618,7 @@ export function ClassicPurchaseWizard({
                 disabled={
                   purchaseMutation.isPending ||
                   previewLoading ||
+                  previewError ||
                   !preview ||
                   (!preview.can_purchase && preview.missing_amount_kopeks <= 0)
                 }
@@ -635,6 +642,14 @@ export function ClassicPurchaseWizard({
           {purchaseMutation.isError && (
             <div className="text-center text-sm text-error-400">
               {getErrorMessage(purchaseMutation.error)}
+            </div>
+          )}
+          {previewError && (
+            <div role="alert" className="space-y-2 text-center text-sm text-error-400">
+              <p>{t('subscription.previewLoadError')}</p>
+              <button className="btn-secondary" onClick={() => refetchPreview()}>
+                {t('common.retry')}
+              </button>
             </div>
           )}
         </div>
