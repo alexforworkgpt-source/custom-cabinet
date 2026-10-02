@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import i18n from '../i18n';
@@ -25,6 +25,7 @@ import { SyncTab } from '../components/admin/userDetail/SyncTab';
 import { ReferralsTab } from '../components/admin/userDetail/ReferralsTab';
 import { BalanceTab } from '../components/admin/userDetail/BalanceTab';
 import { ActivityTab } from '../components/admin/userDetail/ActivityTab';
+import { EmailBroadcastAction } from '../components/admin/userDetail/EmailBroadcastAction';
 import { TicketsTab } from '../components/admin/userDetail/TicketsTab';
 import { InfoTab } from '../components/admin/userDetail/InfoTab';
 import { SubscriptionTab } from '../components/admin/userDetail/SubscriptionTab';
@@ -36,6 +37,12 @@ import {
 import { toNumber } from '../utils/inputHelpers';
 import { usePermissionStore } from '../store/permissions';
 import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
+import { salesModeOf, selectSubscription } from './adminUserDetail/salesMode';
+import {
+  USER_DETAIL_TABS,
+  parseUserDetailTab,
+  withUserDetailTab,
+} from './adminUserDetail/userDetailTabState';
 
 // (Subscription-tab helpers: getCountryFlag / PlusIcon / MinusIcon /
 // StatusBadge / GiftStatusBadge / GiftCard moved to
@@ -49,6 +56,7 @@ export default function AdminUserDetail() {
   const notify = useNotify();
   const confirmDeleteSubscription = useDestructiveConfirm();
   const { id } = useParams<{ id: string }>();
+  const [tabParams, setTabParams] = useSearchParams();
   const hasPermission = usePermissionStore((s) => s.hasPermission);
 
   const localeMap: Record<string, string> = { ru: 'ru-RU', en: 'en-US', zh: 'zh-CN', fa: 'fa-IR' };
@@ -56,9 +64,13 @@ export default function AdminUserDetail() {
 
   const [user, setUser] = useState<UserDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<
-    'info' | 'subscription' | 'balance' | 'sync' | 'tickets' | 'gifts' | 'referrals' | 'activity'
-  >('info');
+  const activeTab = parseUserDetailTab(tabParams);
+  const setActiveTab = useCallback(
+    (tab: (typeof USER_DETAIL_TABS)[number]) => {
+      setTabParams(withUserDetailTab(tabParams, tab), { replace: true });
+    },
+    [setTabParams, tabParams],
+  );
   const [syncStatus, setSyncStatus] = useState<PanelSyncStatusResponse | null>(null);
   const [tariffs, setTariffs] = useState<UserAvailableTariff[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
@@ -135,6 +147,14 @@ export default function AdminUserDetail() {
   const [requestHistorySubId, setRequestHistorySubId] = useState<number | null>(null);
 
   const userId = id ? parseInt(id, 10) : null;
+
+  useEffect(() => {
+    hasAutoSelectedSub.current = userId === null;
+    setActiveSubscriptionId(null);
+    setRequestHistorySubId(null);
+    setSubscriptionDetailView(false);
+    setConfirmingAction(null);
+  }, [userId]);
 
   // React Query owns the main user fetch: caching across navigations + auto-loading
   // state. loadUser is kept as a thin refetch wrapper so the 25+ mutation handlers
@@ -568,8 +588,15 @@ export default function AdminUserDetail() {
 
   // Multi-subscription: pick active subscription or first from list
   const userSubscriptions = useMemo(() => user?.subscriptions ?? [], [user?.subscriptions]);
-  const selectedSub =
-    userSubscriptions.find((s) => s.id === activeSubscriptionId) ?? user?.subscription ?? null;
+  const selectedSub = selectSubscription(
+    userSubscriptions,
+    activeSubscriptionId,
+    user?.subscription ?? null,
+  );
+  const salesMode = user ? salesModeOf(user) : 'tariffs';
+  useEffect(() => {
+    if (salesMode !== 'tariffs' && subAction === 'change_tariff') setSubAction('extend');
+  }, [salesMode, subAction]);
   const selectedSubDeletionDecision = selectedSub
     ? getAdminSubscriptionDeletionDecision(selectedSub)
     : null;
@@ -847,11 +874,29 @@ export default function AdminUserDetail() {
               {user.telegram_id}
               {user.username && <span>@{user.username}</span>}
             </div>
+            <div className="mt-1 flex flex-wrap gap-1.5 text-xs text-dark-500">
+              <span>{t(`admin.users.detail.salesMode.${salesMode}`)}</span>
+              {salesMode === 'multi' && (
+                <span>
+                  ·{' '}
+                  {t('admin.users.detail.salesMode.subscriptionCount', {
+                    count: userSubscriptions.length,
+                  })}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-        <button onClick={loadUser} className="rounded-lg p-2 transition-colors hover:bg-dark-700">
-          <RefreshIcon className={loading ? 'animate-spin' : ''} />
-        </button>
+        <div className="flex items-center gap-2">
+          <EmailBroadcastAction
+            userId={user.id}
+            email={user.email}
+            emailVerified={user.email_verified}
+          />
+          <button onClick={loadUser} className="rounded-lg p-2 transition-colors hover:bg-dark-700">
+            <RefreshIcon className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -859,20 +904,8 @@ export default function AdminUserDetail() {
         className="scrollbar-hide -mx-4 mb-6 flex gap-2 overflow-x-auto px-4 py-1"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
-        {(
-          [
-            'info',
-            'subscription',
-            'balance',
-            'sync',
-            'tickets',
-            'gifts',
-            'referrals',
-            'activity',
-          ] as const
-        )
-          .filter((tab) => tab !== 'sync' || hasPermission('users:sync'))
-          .map((tab) => (
+        {USER_DETAIL_TABS.filter((tab) => tab !== 'sync' || hasPermission('users:sync')).map(
+          (tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -891,7 +924,8 @@ export default function AdminUserDetail() {
               {tab === 'referrals' && t('admin.users.detail.tabs.referrals')}
               {tab === 'activity' && t('admin.users.detail.tabs.activity')}
             </button>
-          ))}
+          ),
+        )}
       </div>
 
       {/* Content */}
@@ -939,6 +973,7 @@ export default function AdminUserDetail() {
         {/* Subscription Tab */}
         {activeTab === 'subscription' && (
           <SubscriptionTab
+            salesMode={salesMode}
             userSubscriptions={userSubscriptions}
             selectedSub={selectedSub}
             onCancelSbpRecurring={handleCancelSbpRecurring}

@@ -351,6 +351,15 @@
     }
   }
 
+  /* Нативные контролы и скроллбары следуют теме приложения, а Android WebView
+     не пытается повторно затемнять операторскую палитру. */
+  .dark {
+    color-scheme: dark;
+  }
+  .light {
+    color-scheme: light;
+  }
+
   /* Dark theme (default) */
   body,
   .dark body {

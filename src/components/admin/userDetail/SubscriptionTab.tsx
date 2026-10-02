@@ -22,6 +22,7 @@ import type {
   UserNodeUsageItem,
   SubscriptionRequestRecord,
 } from '../../../api/adminUsers';
+import type { SalesMode } from '@/pages/adminUserDetail/salesMode';
 
 // ──────────────────────────────────────────────────────────────────
 // Local helpers / icons. Each is small enough to live inline; the
@@ -67,6 +68,7 @@ type DeviceRow = {
 // ──────────────────────────────────────────────────────────────────
 
 export interface SubscriptionTabProps {
+  salesMode: SalesMode;
   // Selection
   userSubscriptions: UserSubscriptionInfo[];
   selectedSub: UserSubscriptionInfo | null;
@@ -150,6 +152,7 @@ export interface SubscriptionTabProps {
 export function SubscriptionTab(props: SubscriptionTabProps) {
   const { t } = useTranslation();
   const {
+    salesMode,
     userSubscriptions,
     selectedSub,
     activeSubscriptionId,
@@ -340,14 +343,16 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
               <StatusBadge status={selectedSub.status} />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <div className="text-xs text-dark-500">
-                  {t('admin.users.detail.subscription.tariff')}
+              {salesMode !== 'classic' && (
+                <div>
+                  <div className="text-xs text-dark-500">
+                    {t('admin.users.detail.subscription.tariff')}
+                  </div>
+                  <div className="text-dark-100">
+                    {selectedSub.tariff_name || t('admin.users.detail.subscription.notSpecified')}
+                  </div>
                 </div>
-                <div className="text-dark-100">
-                  {selectedSub.tariff_name || t('admin.users.detail.subscription.notSpecified')}
-                </div>
-              </div>
+              )}
               <div>
                 <div className="text-xs text-dark-500">
                   {t('admin.users.detail.subscription.validUntil')}
@@ -585,7 +590,7 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                 >
                   <option value="extend">{t('admin.users.detail.subscription.extend')}</option>
                   <option value="shorten">{t('admin.users.detail.subscription.shorten')}</option>
-                  {userSubscriptions.length <= 1 && (
+                  {salesMode === 'tariffs' && userSubscriptions.length <= 1 && (
                     <option value="change_tariff">
                       {t('admin.users.detail.subscription.changeTariff')}
                     </option>
@@ -606,7 +611,7 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                   />
                 )}
 
-                {subAction === 'change_tariff' && (
+                {salesMode === 'tariffs' && subAction === 'change_tariff' && (
                   <select
                     value={selectedTariffId || ''}
                     onChange={(e) =>
@@ -641,64 +646,67 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
       ) : null}
 
       {/* Create new subscription — only for single-sub users or no subs */}
-      {hasPermission('users:subscription') && userSubscriptions.length <= 1 && (
-        <div className="rounded-xl bg-dark-800/50 p-4">
-          {userSubscriptions.length === 0 && (
-            <div className="mb-4 text-center text-dark-400">
-              {t('admin.users.detail.subscription.noActive')}
+      {hasPermission('users:subscription') &&
+        (userSubscriptions.length === 0 || salesMode === 'multi') && (
+          <div className="rounded-xl bg-dark-800/50 p-4">
+            {userSubscriptions.length === 0 && (
+              <div className="mb-4 text-center text-dark-400">
+                {t('admin.users.detail.subscription.noActive')}
+              </div>
+            )}
+            <div className="mb-3 text-sm font-medium text-dark-200">
+              {t('admin.users.detail.subscription.createNew', 'Создать подписку')}
             </div>
-          )}
-          <div className="mb-3 text-sm font-medium text-dark-200">
-            {t('admin.users.detail.subscription.createNew', 'Создать подписку')}
-          </div>
-          <div className="space-y-3">
-            <select
-              value={selectedTariffId || ''}
-              onChange={(e) =>
-                onSelectedTariffIdChange(e.target.value ? parseInt(e.target.value, 10) : null)
-              }
-              className="input"
-            >
-              <option value="">{t('admin.users.detail.subscription.selectTariff')}</option>
-              {tariffs
-                .filter((tariffItem) => {
-                  if (userSubscriptions.length > 0) {
-                    const purchasedIds = new Set(
-                      userSubscriptions
-                        .filter((s) => s.is_active || s.status === 'trial')
-                        .map((s) => s.tariff_id),
-                    );
-                    return !purchasedIds.has(tariffItem.id);
+            <div className="space-y-3">
+              {salesMode !== 'classic' && (
+                <select
+                  value={selectedTariffId || ''}
+                  onChange={(e) =>
+                    onSelectedTariffIdChange(e.target.value ? parseInt(e.target.value, 10) : null)
                   }
-                  return true;
-                })
-                .map((tariffItem) => (
-                  <option key={tariffItem.id} value={tariffItem.id}>
-                    {tariffItem.name}
-                  </option>
-                ))}
-            </select>
-            <input
-              type="number"
-              value={subDays}
-              onChange={createNumberInputHandler(onSubDaysChange, 1)}
-              placeholder={t('admin.users.detail.subscription.days')}
-              className="input"
-              min={1}
-              max={3650}
-            />
-            <button
-              onClick={() => onUpdateSubscription('create')}
-              disabled={actionLoading}
-              className="btn-primary w-full"
-            >
-              {actionLoading
-                ? t('admin.users.detail.subscription.creating')
-                : t('admin.users.detail.subscription.create')}
-            </button>
+                  className="input"
+                >
+                  <option value="">{t('admin.users.detail.subscription.selectTariff')}</option>
+                  {tariffs
+                    .filter((tariffItem) => {
+                      if (userSubscriptions.length > 0) {
+                        const purchasedIds = new Set(
+                          userSubscriptions
+                            .filter((s) => s.is_active || s.status === 'trial')
+                            .map((s) => s.tariff_id),
+                        );
+                        return !purchasedIds.has(tariffItem.id);
+                      }
+                      return true;
+                    })
+                    .map((tariffItem) => (
+                      <option key={tariffItem.id} value={tariffItem.id}>
+                        {tariffItem.name}
+                      </option>
+                    ))}
+                </select>
+              )}
+              <input
+                type="number"
+                value={subDays}
+                onChange={createNumberInputHandler(onSubDaysChange, 1)}
+                placeholder={t('admin.users.detail.subscription.days')}
+                className="input"
+                min={1}
+                max={3650}
+              />
+              <button
+                onClick={() => onUpdateSubscription('create')}
+                disabled={actionLoading}
+                className="btn-primary w-full"
+              >
+                {actionLoading
+                  ? t('admin.users.detail.subscription.creating')
+                  : t('admin.users.detail.subscription.create')}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Panel Info, Traffic, Devices — only inside subscription detail */}
       {(subscriptionDetailView || userSubscriptions.length <= 1) && (

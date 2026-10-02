@@ -29,6 +29,7 @@
         }
       })();
     </script>
+    <link rel="manifest" href="__APP_MANIFEST__" />
     <link rel="icon" href="__APP_ICON__" />
 
     <meta
@@ -36,6 +37,9 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <meta name="theme-color" content="#000000" />
+    <!-- Страница сама ведёт обе темы. Без этого Android WebView может
+         алгоритмически затемнять уже настроенную оператором палитру. -->
+    <meta name="color-scheme" content="dark light" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -88,6 +92,14 @@
       }
       :where(html.light) body {
         background-color: #ffffff;
+      }
+      /* Схема следует выбранной теме, а не системной настройке. Эти правила
+         нужны уже на первом кадре, до загрузки globals.css. */
+      html.dark {
+        color-scheme: dark;
+      }
+      html.light {
+        color-scheme: light;
       }
     </style>
     <script>

@@ -30,8 +30,10 @@ Custom Cabinet does not publish production assets from an uncommitted local
 folder. Installer builds a pinned Cabinet source commit in GitHub Actions and
 delivers `cabinet-dist.tar.gz` through a verified Release Bundle.
 
-Upstream publication workflows were removed from this repository. Automation
-for future Custom Cabinet releases is a separate workstream.
+Upstream publication workflows were removed from this repository. The separate
+Custom Cabinet publication workflow and reviewed source records are described
+in [`RELEASE_PROCESS.md`](RELEASE_PROCESS.md). Cabinet Releases record source
+versions; compiled production assets remain in Installer Release Bundle.
 
 ## Provenance
 
@@ -40,6 +42,7 @@ copyright and AGPL terms remain unchanged in [`LICENSE`](LICENSE).
 
 ## Maintenance
 
+- [`docs/known-issues/classic-auto-purchase.md`](docs/known-issues/classic-auto-purchase.md) records the open classic auto-purchase defect, reproduction, current frontend scope and revalidation conditions after an Upstream Bot fix.
 - [`UPSTREAM_SYNC.md`](UPSTREAM_SYNC.md) defines the required Upstream Cabinet
   integration process.
 - [`UPSTREAM_SYNC_REPORT_TEMPLATE.md`](UPSTREAM_SYNC_REPORT_TEMPLATE.md) is the

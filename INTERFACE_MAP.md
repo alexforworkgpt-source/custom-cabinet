@@ -18,6 +18,18 @@
 
 Это карта существующей реализации, а не спецификация будущего интерфейса. Визуальные и UX-проблемы подробно разобраны в [`DESIGN_UX_UI_AUDIT.md`](DESIGN_UX_UI_AUDIT.md).
 
+Уточнение classic purchase/renewal (2026-10-01): управление подпиской ждёт
+успешной загрузки `purchase-options` перед показом финансовой ссылки; при ошибке
+доступен повтор. Платная active/expired classic-подписка без тарифа открывает
+`/subscriptions/:id/renew` того же ID. Другие правила CTA сохранены.
+Продление различает ошибку и пустой список и блокирует действие при обновлении
+критичных данных. Выбранный период хранится в безопасном session storage
+`cabinet-renewal-selection` для пользователя и подписки. Возврат/reload сверяет
+его с актуальными сроками, режимом, датой и параметрами подписки; logout и
+подтверждённое продление очищают выбор. Цена и баланс не сохраняются, финансовый
+запрос отправляется только после нажатия. Компактный итог на мобильном находится
+над навигацией, с резервом высоты в содержимом и учётом safe areas.
+
 ## 2. Источники истины
 
 | Область | Основной источник |
@@ -239,6 +251,17 @@ flowchart LR
 
 Экран деталей использует sheets без собственного URL для добавления и уменьшения числа устройств, покупки трафика, управления сервером и удаления подписки. Параметр `section=additional-options` восстанавливает раскрытый раздел дополнительных действий, но не открывает конкретный sheet покупки.
 
+В режиме `sales_mode=classic` действие продления обычной платной подписки
+(`active` или `expired`, без `is_trial`, `is_daily`, `is_limited` и
+`requires_tariff_selection`) ведёт из управления на
+`/subscriptions/:id/renew` и сохраняет текущие параметры. При нехватке средств
+этот экран сначала отправляет `/cabinet/subscription/renew`; только после
+HTTP402 с `cart_saved=true`, `cart_mode=extend` и положительной суммой открывает
+`/balance/top-up?amount=...&returnTo=...`. Возвращение на экран не запускает
+повторный POST: исполнение после зачисления выполняет Upstream Bot.
+Новая classic-покупка остаётся на `/subscription/purchase`; текущий Upstream
+Bot `v4.15.0` не исполняет её корзину `subscription_purchase` автоматически.
+
 ### 7.3. Подключение устройства
 
 | URL | Экран | Назначение |
@@ -417,6 +440,9 @@ Feature flags управляют прежде всего видимостью с
 | Кампании | `/admin/campaigns`, `/create`, `/:id/stats`, `/:id/edit` | `campaigns:read` |
 | Рассылки | `/admin/broadcasts`, `/create`, `/:id` | `broadcasts:read` |
 | Закрепленные сообщения | `/admin/pinned-messages`, `/create`, `/:id/edit` | `pinned_messages:read` |
+| Напоминания | `/admin/reminders` | `user_reminders:read` |
+| Создание напоминания | `/admin/reminders/create` | `user_reminders:create` |
+| Редактирование напоминания | `/admin/reminders/:id/edit` | `user_reminders:edit` |
 | Колесо | `/admin/wheel` | `wheel:read` |
 | Партнеры | `/admin/partners` | `partners:read` |
 | Настройки партнеров | `/admin/partners/settings` | `partners:read` |
@@ -426,6 +452,20 @@ Feature flags управляют прежде всего видимостью с
 | Отзыв статуса | `/admin/partners/:userId/revoke` | `partners:read` |
 | Назначение кампаний | `/admin/partners/:userId/campaigns/assign` | `partners:read` |
 | Выводы | `/admin/withdrawals`, `/:id`, `/:id/reject` | `withdrawals:read` |
+
+В разделе напоминаний просмотр списка требует `user_reminders:read`, а маршрут
+создания и сохранение новой формы доступны только с
+`user_reminders:create`. Включение, выключение, переход к редактированию,
+сохранение существующего напоминания и test-to-self требуют
+`user_reminders:edit`. Удаление обычного напоминания требует
+`user_reminders:delete`; встроенное напоминание удалить нельзя.
+
+Запуск перерасчёта промогрупп требует `promo_groups:edit`; текущий статус и
+последний результат остаются доступны на странице групп с правом чтения.
+Действие «На почту» в карточке пользователя требует `broadcasts:send` и
+появляется только для подтверждённого email. Оно открывает существующий маршрут
+`/admin/broadcasts/create` с прямым адресатом `user_<id>`; email-фильтры также
+принимают аудиторию `promo_group_<id>`.
 
 #### Система
 

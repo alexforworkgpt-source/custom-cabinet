@@ -21,13 +21,13 @@ import { cn } from '@/lib/utils';
 
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import TicketNotificationBell from '@/components/TicketNotificationBell';
+import { LogoutButton } from '@/components/LogoutButton';
 
 // Icons
 import {
   HomeIcon,
   ChatIcon,
   UserIcon,
-  LogoutIcon,
   CogIcon,
   MenuIcon,
   CloseIcon,
@@ -368,16 +368,13 @@ export function AppHeader({
 
                 <div className="divider my-3" />
 
-                <button
-                  onClick={() => {
+                <LogoutButton
+                  variant="menu"
+                  onLogout={() => {
                     setMobileMenuOpen(false);
                     logout();
                   }}
-                  className="nav-item w-full text-error-400"
-                >
-                  <LogoutIcon className="h-5 w-5" />
-                  {t('nav.logout')}
-                </button>
+                />
               </nav>
             </div>
           </div>

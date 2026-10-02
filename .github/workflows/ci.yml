@@ -2,13 +2,24 @@ name: CI
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main, dev, 'release/**', 'sync/**']
+    tags: ['cabinet-v*']
   pull_request:
     branches: [main, dev]
+  workflow_call:
+    inputs:
+      source_sha:
+        required: true
+        type: string
+
+permissions:
+  contents: read
 
 jobs:
   lint:
     uses: ./.github/workflows/lint.yml
+    with:
+      source_sha: ${{ inputs.source_sha || github.sha }}
 
   test:
     runs-on: ubuntu-latest
@@ -24,6 +35,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+
+      - name: Verify selected source
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$(git rev-parse "$SOURCE_SHA^{commit}")"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -35,7 +53,10 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm run test
+        run: npm run test -- --maxWorkers=2
+
+      - name: Test publication guards
+        run: node --test scripts/release/*.node-test.mjs
 
   build:
     needs: [lint, test]
@@ -43,6 +64,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+
+      - name: Verify selected source
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$(git rev-parse "$SOURCE_SHA^{commit}")"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

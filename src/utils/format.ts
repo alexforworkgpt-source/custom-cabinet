@@ -61,6 +61,28 @@ export function formatPrice(kopeks: number, lang?: string): string {
   }
 }
 
+/** Parse date-only values as local calendar days; full timestamps remain instants. */
+export function parseCalendarDate(value: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return new Date(value);
+
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+/** Format a machine date, but preserve an unrecognized value instead of showing Invalid Date. */
+export function formatDateOrRaw(
+  value: string | null | undefined,
+  locale: string,
+  options: Intl.DateTimeFormatOptions,
+): string | null {
+  if (!value) return null;
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  return parsed.toLocaleDateString(locale, options);
+}
+
 /** Date-only (dd.mm.yyyy) in the active UI locale; '-' for a null date. */
 export function formatShortDate(date: string | null): string {
   if (!date) return '-';

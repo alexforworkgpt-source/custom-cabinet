@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { subscriptionApi } from '../../../api/subscription';
-import { getErrorMessage, getInsufficientBalanceError } from '../../../utils/subscriptionHelpers';
+import { getErrorMessage, getSavedCartTopUpPath } from '../../../utils/subscriptionHelpers';
 import { useCurrency } from '../../../hooks/useCurrency';
 import { usePromoDiscount } from '../../../hooks/usePromoDiscount';
 import { usePlatform } from '../../../platform';
 import { openPaymentUrl } from '../../../utils/openPaymentUrl';
 import { getDailyPriceQuote, getMonthlyPriceKopeks } from '../../../utils/pricing';
 import { pickBestValue } from '../../../utils/bestValue';
-import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
+import { PurchaseFundingNotice } from './PurchaseFundingNotice';
 import type { Tariff, TariffPeriod } from '../../../types';
 import { BestValueBadge } from '../BestValueBadge';
 
@@ -53,12 +53,14 @@ export function TariffPurchaseForm({
 }: TariffPurchaseFormProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { formatAmount, currencySymbol } = useCurrency();
   const { activeDiscount, applyPromoDiscount } = usePromoDiscount();
   const dailyQuote = getDailyPriceQuote(tariff, activeDiscount);
   const { openLink, platform } = usePlatform();
   const ref = useRef<HTMLDivElement>(null);
+  const purchaseInFlightRef = useRef(false);
 
   const formatPrice = (kopeks: number) =>
     kopeks === 0
@@ -104,7 +106,24 @@ export function TariffPurchaseForm({
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
       navigate('/subscriptions', { replace: true });
     },
+    onError: (error) => {
+      const topUpPath = getSavedCartTopUpPath(
+        error,
+        undefined,
+        `${location.pathname}${location.search}`,
+      );
+      if (topUpPath) navigate(topUpPath);
+    },
+    onSettled: () => {
+      purchaseInFlightRef.current = false;
+    },
   });
+
+  const submitPurchase = () => {
+    if (purchaseInFlightRef.current) return;
+    purchaseInFlightRef.current = true;
+    purchaseMutation.mutate();
+  };
 
   // СБП-оформление: первое списание = подтверждение привязки в банке; период
   // на форме не участвует — списания идут по каденс-правилу тарифа.
@@ -276,21 +295,20 @@ export function TariffPurchaseForm({
 
           {(() => {
             const dailyPrice = dailyQuote?.price ?? 0;
-            const hasEnoughBalance = balanceKopeks !== undefined && dailyPrice <= balanceKopeks;
+            const missingAmount = balanceKopeks === undefined ? 0 : dailyPrice - balanceKopeks;
 
             return (
               <div className="mt-6">
-                {balanceKopeks !== undefined && !hasEnoughBalance && (
-                  <InsufficientBalancePrompt
-                    missingAmountKopeks={dailyPrice - balanceKopeks}
-                    compact
-                    className="mb-4"
-                  />
+                {missingAmount > 0 && !purchaseMutation.isError && (
+                  <div className="mb-4">
+                    <PurchaseFundingNotice missingAmountKopeks={missingAmount} />
+                  </div>
                 )}
 
                 <button
-                  onClick={() => purchaseMutation.mutate()}
+                  onClick={submitPurchase}
                   disabled={purchaseMutation.isPending}
+                  aria-busy={purchaseMutation.isPending}
                   className="btn-primary w-full py-3"
                 >
                   {purchaseMutation.isPending ? (
@@ -299,33 +317,18 @@ export function TariffPurchaseForm({
                       {t('common.loading')}
                     </span>
                   ) : (
-                    t('subscription.dailyPurchase.activate', {
-                      price: formatPrice(dailyPrice),
-                    })
+                    t('subscription.pay')
                   )}
                 </button>
 
                 {sbpPurchaseButton}
                 {lavaPurchaseButton}
 
-                {purchaseMutation.isError &&
-                  !getInsufficientBalanceError(purchaseMutation.error) && (
-                    <div className="mt-3 text-center text-sm text-error-400">
-                      {getErrorMessage(purchaseMutation.error)}
-                    </div>
-                  )}
-                {purchaseMutation.isError &&
-                  getInsufficientBalanceError(purchaseMutation.error) && (
-                    <div className="mt-3">
-                      <InsufficientBalancePrompt
-                        missingAmountKopeks={
-                          getInsufficientBalanceError(purchaseMutation.error)?.missingAmount ||
-                          dailyPrice - (balanceKopeks || 0)
-                        }
-                        compact
-                      />
-                    </div>
-                  )}
+                {purchaseMutation.isError && (
+                  <div className="mt-3 text-center text-sm text-error-400">
+                    {getErrorMessage(purchaseMutation.error)}
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -714,9 +717,18 @@ export function TariffPurchaseForm({
                       </div>
                     </div>
 
+                    {balanceKopeks !== undefined &&
+                      totalPrice > balanceKopeks &&
+                      !purchaseMutation.isError && (
+                        <div className="mb-4">
+                          <PurchaseFundingNotice missingAmountKopeks={totalPrice - balanceKopeks} />
+                        </div>
+                      )}
+
                     <button
-                      onClick={() => purchaseMutation.mutate()}
+                      onClick={submitPurchase}
                       disabled={purchaseMutation.isPending}
+                      aria-busy={purchaseMutation.isPending}
                       className="btn-primary w-full py-3"
                     >
                       {purchaseMutation.isPending ? (
@@ -725,7 +737,7 @@ export function TariffPurchaseForm({
                           {t('common.loading')}
                         </span>
                       ) : (
-                        t('subscription.purchase')
+                        t('subscription.pay')
                       )}
                     </button>
 
@@ -735,19 +747,9 @@ export function TariffPurchaseForm({
                 );
               })()}
 
-              {purchaseMutation.isError && !getInsufficientBalanceError(purchaseMutation.error) && (
+              {purchaseMutation.isError && (
                 <div className="mt-3 text-center text-sm text-error-400">
                   {getErrorMessage(purchaseMutation.error)}
-                </div>
-              )}
-              {purchaseMutation.isError && getInsufficientBalanceError(purchaseMutation.error) && (
-                <div className="mt-3">
-                  <InsufficientBalancePrompt
-                    missingAmountKopeks={
-                      getInsufficientBalanceError(purchaseMutation.error)?.missingAmount || 0
-                    }
-                    compact
-                  />
                 </div>
               )}
             </div>

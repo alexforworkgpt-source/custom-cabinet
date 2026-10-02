@@ -1,0 +1,118 @@
+name: Publish Custom Cabinet
+
+on:
+  workflow_dispatch:
+    inputs:
+      cabinet_tag:
+        description: Existing immutable cabinet-vYYYY.MM.DD[.N] source tag
+        required: true
+        type: string
+      cabinet_sha:
+        description: Exact Cabinet commit (40 lowercase hex characters)
+        required: true
+        type: string
+      record_commit:
+        description: Exact reviewed record commit reachable from default branch
+        required: true
+        type: string
+      record_path:
+        description: Public releases/records/<name>.json in that commit
+        required: true
+        type: string
+      prerelease:
+        description: Publish as candidate; false requires approved stable project Release
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cabinet-publication-${{ inputs.cabinet_tag }}
+  cancel-in-progress: false
+
+env:
+  CABINET_TAG: ${{ inputs.cabinet_tag }}
+  CABINET_SHA: ${{ inputs.cabinet_sha }}
+  WORKFLOW_SHA: ${{ github.workflow_sha }}
+  RECORD_COMMIT: ${{ inputs.record_commit }}
+  RECORD_PATH: ${{ inputs.record_path }}
+  DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+  PRERELEASE: ${{ inputs.prerelease }}
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.cabinet_sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify exact source, tag and workflow
+        run: node scripts/release/publish.mjs source
+      - name: Read reviewed record from default branch
+        run: |
+          git check-ref-format "refs/heads/$DEFAULT_BRANCH"
+          git fetch origin "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"
+          node scripts/release/publish.mjs prepare "$RUNNER_TEMP/cabinet-publication"
+      - name: Preserve existing draft or Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release/publish.mjs check-release "$RUNNER_TEMP/cabinet-publication"
+
+  source-gates:
+    needs: preflight
+    uses: ./.github/workflows/ci.yml
+    with:
+      source_sha: ${{ inputs.cabinet_sha }}
+
+  codeql:
+    needs: preflight
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    uses: ./.github/workflows/codeql.yml
+    with:
+      source_sha: ${{ inputs.cabinet_sha }}
+
+  publish:
+    needs: [preflight, source-gates, codeql]
+    runs-on: ubuntu-latest
+    environment: production-release
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.cabinet_sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Prepare reviewed metadata after successful source gates
+        run: |
+          git check-ref-format "refs/heads/$DEFAULT_BRANCH"
+          git fetch origin "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"
+          node scripts/release/publish.mjs prepare "$RUNNER_TEMP/cabinet-publication"
+      - name: Create own draft
+        run: node scripts/release/publish.mjs create-draft "$RUNNER_TEMP/cabinet-publication"
+      - name: Upload metadata without replacing assets
+        run: |
+          node scripts/release/publish.mjs upload-assets "$RUNNER_TEMP/cabinet-publication"
+      - name: Re-download and verify exact uploaded bytes
+        run: |
+          node scripts/release/publish.mjs download-assets \
+            "$RUNNER_TEMP/cabinet-publication" "$RUNNER_TEMP/cabinet-downloaded"
+          node scripts/release/publish.mjs verify-download \
+            "$RUNNER_TEMP/cabinet-publication" "$RUNNER_TEMP/cabinet-downloaded"
+      - name: Publish project Release with latest disabled
+        run: node scripts/release/publish.mjs publish-draft "$RUNNER_TEMP/cabinet-publication"
+      - name: Remove only this run's unfinished draft
+        if: failure() || cancelled()
+        run: node scripts/release/publish.mjs cleanup-draft "$RUNNER_TEMP/cabinet-publication"

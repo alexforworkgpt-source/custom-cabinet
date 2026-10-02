@@ -1,5 +1,9 @@
 import { expect, test, type Dialog, type Page } from '@playwright/test';
-import type { UserDetailResponse, UserSubscriptionInfo } from '../../src/api/adminUsers';
+import type {
+  UserDetailResponse,
+  UserListItem,
+  UserSubscriptionInfo,
+} from '../../src/api/adminUsers';
 import { browserTestUser, prepareAuthenticatedPage } from './cabinetTestHarness';
 
 const adminUserId = 84_210;
@@ -168,14 +172,47 @@ async function confirmOrdinarySubscriptionDelete(page: Page) {
   await inlineConfirmation.click();
 }
 
-test('resets admin user pagination when sorting by subscription end date @desktop-flow', async ({
+test('restarts admin user list at the first chunk after sorting by subscription end date @desktop-flow', async ({
   page,
 }) => {
   const listRequests: URL[] = [];
+  const users: UserListItem[] = Array.from({ length: 55 }, (_, index) => ({
+    id: index + 1,
+    telegram_id: 10_000 + index,
+    username: `browser_user_${index + 1}`,
+    first_name: `Browser ${index + 1}`,
+    last_name: null,
+    full_name: `Browser User ${index + 1}`,
+    status: 'active',
+    balance_kopeks: 0,
+    balance_rubles: 0,
+    created_at: '2026-08-01T00:00:00Z',
+    last_activity: null,
+    has_subscription: false,
+    subscription_status: null,
+    subscription_is_trial: false,
+    subscription_end_date: null,
+    tariff_id: null,
+    tariff_name: null,
+    traffic_used_gb: 0,
+    traffic_limit_gb: 0,
+    device_limit: 0,
+    days_remaining: 0,
+    promo_group_id: null,
+    promo_group_name: null,
+    total_spent_kopeks: 0,
+    purchase_count: 0,
+    has_restrictions: false,
+    restriction_topup: false,
+    restriction_subscription: false,
+  }));
   const { unexpectedApiRequests } = await prepareAdminPage(page, ['users:read'], {
+    '/api/cabinet/admin/tariffs': { tariffs: [], total: 0 },
+    '/api/cabinet/admin/promo-groups': { items: [], total: 0, offset: 0, limit: 100 },
+    '/api/cabinet/admin/campaigns': { campaigns: [], total: 0 },
     '/api/cabinet/admin/users/stats': {
-      total_users: 45,
-      active_users: 45,
+      total_users: 55,
+      active_users: 55,
       blocked_users: 0,
       new_today: 0,
       users_with_active_subscription: 0,
@@ -190,33 +227,35 @@ test('resets admin user pagination when sorting by subscription end date @deskto
     }
 
     listRequests.push(url);
+    const offset = Number(url.searchParams.get('offset') ?? 0);
     await route.fulfill({
       status: 200,
       json: {
-        users: [],
-        total: 45,
-        offset: Number(url.searchParams.get('offset') ?? 0),
-        limit: 20,
+        users: users.slice(offset, offset + 50),
+        total: 55,
+        offset,
+        limit: 50,
       },
     });
   });
 
   await page.goto('/admin/users');
-  await expect(page.getByText('1 / 3', { exact: true })).toBeVisible();
-  await page.getByText('1 / 3', { exact: true }).locator('..').getByRole('button').last().click();
-  await expect(page.getByText('2 / 3', { exact: true })).toBeVisible();
+  await expect(page.getByText('Showing 50 of 55', { exact: true })).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect(page.getByText('Showing 55 of 55', { exact: true })).toBeVisible();
+  expect(listRequests.some((url) => url.searchParams.get('offset') === '50')).toBe(true);
 
-  const sortSelect = page.locator('select').filter({
-    has: page.locator('option[value="subscription_end_date"]'),
-  });
-  await sortSelect.selectOption('subscription_end_date');
-
-  await expect(page.getByText('1 / 3', { exact: true })).toBeVisible();
+  await page.getByRole('combobox', { name: 'Sort' }).selectOption('expires');
   await expect
-    .poll(() => listRequests[listRequests.length - 1]?.searchParams.get('sort_by'))
-    .toBe('subscription_end_date');
-  const sortedRequest = listRequests[listRequests.length - 1];
-  expect(sortedRequest.searchParams.get('offset')).toBe('0');
+    .poll(() =>
+      listRequests.find((url) => url.searchParams.get('sort_by') === 'subscription_end_date'),
+    )
+    .toBeTruthy();
+  const sortedRequest = listRequests.find(
+    (url) => url.searchParams.get('sort_by') === 'subscription_end_date',
+  );
+  expect(sortedRequest).toBeDefined();
+  expect(sortedRequest?.searchParams.get('offset')).toBe('0');
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 

@@ -15,8 +15,11 @@ export function SupportInstructionsCard() {
       className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
     >
       <div className="flex min-w-0 items-center gap-3">
-        <span className="shrink-0 text-accent-400" aria-hidden="true">
-          <BookOpenIcon className="h-6 w-6" />
+        <span
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-dark-800 text-accent-400"
+          aria-hidden="true"
+        >
+          <BookOpenIcon className="h-5 w-5" />
         </span>
         <div className="min-w-0">
           <h2 className="text-base font-semibold text-dark-100">{t('instructions.title')}</h2>

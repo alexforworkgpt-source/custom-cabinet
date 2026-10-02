@@ -13,15 +13,20 @@ import {
   UsersIcon,
   TagIcon,
   BoltIcon,
+  RefreshIcon,
 } from '@/components/icons';
 import { StatCard } from '@/components/stats';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { usePermissionStore } from '@/store/permissions';
+import { useRecalculation } from './adminPromoGroups/useRecalculation';
 
 export default function AdminPromoGroups() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { capabilities } = usePlatform();
+  const canRecalculate = usePermissionStore((state) => state.hasPermission('promo_groups:edit'));
+  const recalculation = useRecalculation();
 
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const deleteDialogRef = useFocusTrap<HTMLDivElement>(!!deleteConfirm, {
@@ -64,14 +69,72 @@ export default function AdminPromoGroups() {
             <p className="text-sm text-dark-400">{t('admin.promoGroups.subtitle')}</p>
           </div>
         </div>
-        <button
-          onClick={() => navigate('/admin/promo-groups/create')}
-          className="flex items-center justify-center gap-2 rounded-lg bg-accent-500 px-4 py-2 text-on-accent transition-colors hover:bg-accent-600"
-        >
-          <PlusIcon />
-          {t('admin.promoGroups.addGroup')}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {canRecalculate && (
+            <button
+              type="button"
+              onClick={recalculation.start}
+              disabled={
+                recalculation.isActive ||
+                recalculation.isStarting ||
+                recalculation.isStatusLoading ||
+                recalculation.isStatusError
+              }
+              title={t('admin.promoGroups.recalculateHint')}
+              className="btn-secondary flex items-center justify-center gap-2"
+            >
+              <RefreshIcon spinning={recalculation.isActive || recalculation.isStarting} />
+              {t('admin.promoGroups.recalculate')}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => navigate('/admin/promo-groups/create')}
+            className="btn-primary flex items-center justify-center gap-2"
+          >
+            <PlusIcon />
+            {t('admin.promoGroups.addGroup')}
+          </button>
+        </div>
       </div>
+
+      {((recalculation.status &&
+        (recalculation.isActive || recalculation.status.last || recalculation.pollLimitReached)) ||
+        recalculation.isStatusError ||
+        recalculation.isStartError) && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`mb-6 rounded-xl border px-4 py-3 text-sm ${
+            recalculation.status?.last &&
+            !recalculation.status.last.error &&
+            !recalculation.isActive
+              ? 'border-success-500/30 bg-success-500/10 text-success-400'
+              : recalculation.status?.last?.error ||
+                  recalculation.isStatusError ||
+                  recalculation.isStartError
+                ? 'border-error-500/30 bg-error-500/10 text-error-400'
+                : 'border-dark-700 bg-dark-800 text-dark-300'
+          }`}
+        >
+          {recalculation.pollLimitReached
+            ? t('admin.promoGroups.recalculatePollLimit')
+            : recalculation.isStatusError || recalculation.isStartError
+              ? t('admin.promoGroups.recalculateFailed')
+              : recalculation.status?.queued
+                ? t('admin.promoGroups.recalculationQueued')
+                : recalculation.status?.running
+                  ? t('admin.promoGroups.recalculating')
+                  : recalculation.status?.last?.error
+                    ? t('admin.promoGroups.recalculateFailed')
+                    : recalculation.status?.last
+                      ? t('admin.promoGroups.recalculateDone', {
+                          checked: recalculation.status.last.checked,
+                          changed: recalculation.status.last.changed,
+                        })
+                      : null}
+        </div>
+      )}
 
       {/* Stats */}
       {groups.length > 0 && (

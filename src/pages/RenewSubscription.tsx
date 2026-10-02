@@ -1,261 +1,263 @@
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useNavigate, useParams } from 'react-router';
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router';
 import { subscriptionApi } from '../api/subscription';
-import { useTheme } from '../hooks/useTheme';
-import { getGlassColors } from '../utils/glassTheme';
-import { getMonthlyPriceKopeks } from '../utils/pricing';
-import { pickBestValue } from '../utils/bestValue';
-import { useCurrency } from '../hooks/useCurrency';
+import { needsTariff, tariffSelectionPath } from '../utils/legacySubscription';
+import {
+  getErrorMessage,
+  getInsufficientBalanceError,
+  getSavedCartTopUpPath,
+} from '../utils/subscriptionHelpers';
+import { formatDateOrRaw } from '../utils/format';
 import { useHaptic } from '../platform';
+import { useAuthStore } from '../store/auth';
+import { useRenewalSelection } from '../hooks/useRenewalSelection';
 import InsufficientBalancePrompt from '../components/InsufficientBalancePrompt';
 import { WebBackButton } from '../components/WebBackButton';
-import { BEST_VALUE_BORDER, BestValueBadge } from '../components/subscription/BestValueBadge';
+import { Card } from '../components/data-display';
+import { Button } from '../components/primitives';
 import { PageSkeleton, Skeleton } from '../components/ui/skeleton';
+import { RenewalOptions } from '../components/subscription/renewal/RenewalOptions';
+import { RenewalSummary } from '../components/subscription/renewal/RenewalSummary';
 
 export default function RenewSubscription() {
   const { subscriptionId } = useParams<{ subscriptionId: string }>();
   const subId = subscriptionId ? Number(subscriptionId) : undefined;
-
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
-  const { isDark } = useTheme();
-  const g = getGlassColors(isDark);
-  const { formatAmount, currencySymbol } = useCurrency();
   const { impact } = useHaptic();
-
-  const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null);
+  const userId = useAuthStore((state) => state.user?.id);
   const [error, setError] = useState<string | null>(null);
+  const renewalInFlightRef = useRef(false);
 
-  // Load subscription detail for tariff name
-  const { data: subscriptionResponse } = useQuery({
+  const subscriptionQuery = useQuery({
     queryKey: ['subscription', subId],
     queryFn: () => subscriptionApi.getSubscription(subId),
     enabled: !!subId,
-    staleTime: 30_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
-  const subscription = subscriptionResponse?.subscription ?? null;
-
-  // Load renewal options
-  const { data: options, isLoading } = useQuery({
+  const subscription = subscriptionQuery.data?.subscription ?? null;
+  const optionsQuery = useQuery({
     queryKey: ['renewal-options', subId],
     queryFn: () => subscriptionApi.getRenewalOptions(subId),
     enabled: !!subId,
     staleTime: 0,
     refetchOnMount: 'always',
   });
-
-  useEffect(() => {
-    if (selectedPeriod !== null) return;
-    const best = pickBestValue(options);
-    if (best) setSelectedPeriod(best.period_days);
-  }, [options, selectedPeriod]);
-
-  // Load balance
-  const { data: purchaseOptions } = useQuery({
+  const purchaseQuery = useQuery({
     queryKey: ['purchase-options', subId],
     queryFn: () => subscriptionApi.getPurchaseOptions(subId),
+    enabled: !!subId,
     staleTime: 0,
+    refetchOnMount: 'always',
   });
-  const balanceKopeks = purchaseOptions?.balance_kopeks ?? 0;
+  const queries = [subscriptionQuery, optionsQuery, purchaseQuery];
+  const ready = queries.every((query) => query.isSuccess && !query.isFetching);
+  const isClassic = purchaseQuery.data?.sales_mode === 'classic';
+  const balanceKopeks = purchaseQuery.data?.balance_kopeks;
+  const { selectedPeriod, selectPeriod, clearSelection, selectionReset } = useRenewalSelection(
+    userId,
+    subId,
+    subscription,
+    purchaseQuery.data?.sales_mode,
+    optionsQuery.data,
+    ready,
+  );
+  const selectedOption = optionsQuery.data?.find((option) => option.period_days === selectedPeriod);
+  const missingKopeks =
+    selectedOption && balanceKopeks !== undefined
+      ? Math.max(0, selectedOption.price_kopeks - balanceKopeks)
+      : 0;
 
   const renewMutation = useMutation({
     mutationFn: (periodDays: number) => subscriptionApi.renewSubscription(periodDays, subId),
     onSuccess: () => {
+      clearSelection();
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
       queryClient.invalidateQueries({ queryKey: ['renewal-options', subId] });
       queryClient.invalidateQueries({ queryKey: ['balance'] });
+      queryClient.invalidateQueries({ queryKey: ['purchase-options', subId] });
       navigate(`/subscriptions/${subId}`, { replace: true });
     },
     onError: (err: unknown) => {
+      if (isClassic) {
+        const insufficient = getInsufficientBalanceError(err);
+        const detail =
+          err && typeof err === 'object' && 'response' in err
+            ? (err as { response?: { data?: { detail?: { code?: string } } } }).response?.data
+                ?.detail
+            : null;
+        const topUpPath =
+          detail?.code === 'insufficient_funds' && insufficient?.cartMode === 'extend'
+            ? getSavedCartTopUpPath(err, missingKopeks, `${location.pathname}${location.search}`)
+            : null;
+        if (topUpPath) navigate(topUpPath);
+        else setError(getErrorMessage(err));
+        return;
+      }
       const detail =
         err && typeof err === 'object' && 'response' in err
           ? ((err as { response?: { data?: { detail?: unknown } } }).response?.data?.detail ?? null)
           : null;
-
-      if (detail && typeof detail === 'object' && 'code' in (detail as Record<string, unknown>)) {
+      if (detail && typeof detail === 'object' && 'code' in detail) {
         const typed = detail as { code: string; missing_amount?: number };
         if (typed.code === 'insufficient_funds' && typed.missing_amount) {
           setError(`insufficient:${typed.missing_amount}`);
           return;
         }
       }
-      setError(typeof detail === 'string' ? detail : t('common.error'));
+      setError(getErrorMessage(err));
+    },
+    onSettled: () => {
+      renewalInFlightRef.current = false;
     },
   });
-
-  const handleRenew = (periodDays: number) => {
+  const handleRenew = () => {
+    if (
+      renewalInFlightRef.current ||
+      !ready ||
+      !subscription ||
+      !selectedOption ||
+      balanceKopeks === undefined
+    )
+      return;
+    renewalInFlightRef.current = true;
     impact('medium');
     setError(null);
-    renewMutation.mutate(periodDays);
+    renewMutation.mutate(selectedOption.period_days);
   };
 
-  if (!subId) {
+  if (!subId || !Number.isInteger(subId) || subId < 1)
     return <Navigate to="/subscriptions" replace />;
+  if (subscriptionQuery.isSuccess && !subscriptionQuery.isFetching && needsTariff(subscription)) {
+    return <Navigate to={tariffSelectionPath(subId)} replace />;
   }
-
-  if (isLoading) {
+  if (queries.some((query) => query.isLoading)) {
     return (
       <PageSkeleton leading={1} titleWidth="w-56" className="space-y-5">
         <Skeleton variant="card" className="h-16" />
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Skeleton variant="card" count={4} className="h-20" />
+        <div className="grid grid-cols-2 gap-3">
+          <Skeleton variant="card" count={4} className="h-28" />
         </div>
       </PageSkeleton>
     );
   }
-
-  const insufficientMatch = error?.match(/^insufficient:(\d+)$/);
-  const missingAmount = insufficientMatch ? Number(insufficientMatch[1]) : null;
+  const failedQuery = subscriptionQuery.isError
+    ? subscriptionQuery
+    : purchaseQuery.isError
+      ? purchaseQuery
+      : optionsQuery.isError
+        ? optionsQuery
+        : null;
+  const loadErrorKey = subscriptionQuery.isError
+    ? 'subscription.renewSubscriptionLoadError'
+    : purchaseQuery.isError
+      ? 'subscription.paymentOptionsLoadError'
+      : 'subscription.renewOptionsLoadError';
+  const missingAmount = error?.match(/^insufficient:(\d+)$/)?.[1];
+  const endDate = formatDateOrRaw(subscription?.end_date, i18n?.language ?? 'ru', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 
   return (
-    <div className="space-y-5">
-      {/* Title */}
+    <div className="space-y-4">
       <div className="flex items-center gap-3">
         <WebBackButton to={`/subscriptions/${subId}`} />
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: g.text }}>
-            {t('subscription.extend', 'Продлить подписку')}
-          </h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-dark-100">{t('subscription.extend')}</h1>
           {subscription?.tariff_name && (
-            <p className="mt-1 text-sm" style={{ color: g.textSecondary }}>
-              {subscription.tariff_name}
-            </p>
+            <p className="mt-1 text-sm text-dark-400">{subscription.tariff_name}</p>
           )}
         </div>
       </div>
-
-      {/* Balance */}
-      <div
-        className="flex items-center justify-between rounded-2xl p-4"
-        style={{ background: g.cardBg, border: `1px solid ${g.cardBorder}` }}
-      >
-        <span className="text-sm" style={{ color: g.textSecondary }}>
-          {t('common.balance', 'Баланс')}
-        </span>
-        <span className="text-base font-semibold" style={{ color: g.text }}>
-          {formatAmount(balanceKopeks / 100)} {currencySymbol}
-        </span>
-      </div>
-
-      {/* Period options */}
-      {!options || options.length === 0 ? (
-        <div
-          className="rounded-2xl p-6 text-center"
-          style={{ background: g.cardBg, border: `1px solid ${g.cardBorder}` }}
-        >
-          <p style={{ color: g.textSecondary }}>
-            {t('subscription.noRenewalOptions', 'Нет доступных вариантов продления')}
-          </p>
-        </div>
+      {failedQuery ? (
+        <Card>
+          <div role="alert" className="space-y-3 text-sm text-error-400">
+            <p>{t(loadErrorKey)}</p>
+            <Button
+              variant="secondary"
+              size="lg"
+              disabled={failedQuery.isFetching}
+              onClick={() => failedQuery.refetch()}
+            >
+              {t('common.retry')}
+            </Button>
+          </div>
+        </Card>
+      ) : !subscription ? (
+        <Card>
+          <p className="text-sm text-dark-400">{t('subscription.noSubscription')}</p>
+        </Card>
+      ) : balanceKopeks === undefined || !purchaseQuery.data?.sales_mode ? (
+        <Card>
+          <p role="alert">{t('subscription.paymentOptionsLoadError')}</p>
+          <Button size="lg" onClick={() => purchaseQuery.refetch()}>
+            {t('common.retry')}
+          </Button>
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {options.map((option) => {
-            const isSelected = selectedPeriod === option.period_days;
-            const canAfford = balanceKopeks >= option.price_kopeks;
-            const perMonth = getMonthlyPriceKopeks(option.price_kopeks, option.period_days);
-            const isBestValue = Boolean(option.is_highlighted);
-
-            return (
-              <button
-                key={option.period_days}
-                onClick={() => {
-                  impact('light');
-                  setSelectedPeriod(option.period_days);
-                  setError(null);
-                }}
-                className={`w-full rounded-2xl p-4 text-left transition-all duration-200 ${
-                  isBestValue ? 'border-2' : 'border'
-                }`}
-                style={{
-                  background: isSelected
-                    ? isDark
-                      ? 'rgba(var(--color-accent-400), 0.08)'
-                      : 'rgba(var(--color-accent-400), 0.05)'
-                    : g.cardBg,
-                  borderColor: isBestValue
-                    ? BEST_VALUE_BORDER
-                    : isSelected
-                      ? 'rgb(var(--color-accent-400))'
-                      : g.cardBorder,
-                  boxShadow:
-                    isSelected && isBestValue
-                      ? 'inset 0 0 0 2px rgb(var(--color-accent-400))'
-                      : undefined,
-                }}
-              >
-                {isBestValue && <BestValueBadge className="mb-2" />}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-base font-semibold" style={{ color: g.text }}>
-                      {option.period_days} {t('subscription.days', 'дней')}
-                    </span>
-                    {option.discount_percent > 0 && (
-                      <span className="ml-2 rounded-full bg-success-400/15 px-2 py-0.5 text-[10px] font-semibold text-success-400">
-                        -{option.discount_percent}%
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <div className="text-base font-semibold" style={{ color: g.text }}>
-                      {option.price_kopeks === 0
-                        ? t('subscription.free', 'Бесплатно')
-                        : `${formatAmount(option.price_kopeks / 100)} ${currencySymbol}`}
-                    </div>
-                    {perMonth !== null && (
-                      <div className="text-[11px]" style={{ color: g.textSecondary }}>
-                        {formatAmount(perMonth / 100)} {currencySymbol}/
-                        {t('subscription.month', 'мес')}
-                      </div>
-                    )}
-                    {option.original_price_kopeks && (
-                      <div className="text-[11px] line-through" style={{ color: g.textSecondary }}>
-                        {formatAmount(option.original_price_kopeks / 100)} {currencySymbol}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {!canAfford && (
-                  <div className="mt-1 text-[11px] text-error-400">
-                    {t(
-                      'subscription.insufficientBalanceAmount',
-                      'Недостаточно средств. Не хватает {{missing}}',
-                      {
-                        missing: `${formatAmount((option.price_kopeks - balanceKopeks) / 100)} ${currencySymbol}`,
-                      },
-                    )}
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Insufficient balance prompt */}
-      {missingAmount && <InsufficientBalancePrompt missingAmountKopeks={missingAmount} compact />}
-
-      {/* Error */}
-      {error && !missingAmount && (
-        <div className="rounded-xl bg-error-400/10 p-3 text-center text-sm text-error-400">
-          {error}
-        </div>
-      )}
-
-      {/* Renew button */}
-      {selectedPeriod && (
-        <button
-          onClick={() => handleRenew(selectedPeriod)}
-          disabled={renewMutation.isPending}
-          className="w-full rounded-2xl bg-accent-500 py-3.5 text-base font-semibold text-on-accent transition-colors hover:bg-accent-600 disabled:opacity-50"
-        >
-          {renewMutation.isPending
-            ? t('common.processing', 'Обработка...')
-            : t('subscription.extend', 'Продлить подписку')}
-        </button>
+        <>
+          <Card size="sm" className="space-y-1 text-sm text-dark-400">
+            {endDate && (
+              <p className="font-medium text-dark-100">
+                {t('subscription.renewCurrentEnd', { date: endDate })}
+              </p>
+            )}
+            {isClassic && <p>{t('subscription.classicRenewHint')}</p>}
+            <p>
+              {t('subscription.traffic')}:{' '}
+              {subscription.traffic_limit_gb || t('subscription.unlimited')}
+              {subscription.traffic_limit_gb > 0 && ` ${t('common.units.gb')}`}
+              {' · '}
+              {t('subscription.devices')}:{' '}
+              {subscription.device_limit || t('subscription.unlimited')}
+            </p>
+            {subscription.servers.length > 0 && (
+              <p>
+                {t('subscription.serversLabel')}:{' '}
+                {subscription.servers.map((server) => server.name).join(', ')}
+              </p>
+            )}
+          </Card>
+          {selectionReset && (
+            <p role="status" className="text-sm text-dark-400">
+              {t('subscription.renewSelectionReset')}
+            </p>
+          )}
+          <RenewalOptions
+            options={optionsQuery.data ?? []}
+            selectedPeriod={selectedPeriod}
+            disabled={!ready || renewMutation.isPending}
+            onSelect={(period) => {
+              selectPeriod(period);
+              setError(null);
+              impact('light');
+            }}
+          />
+          {missingAmount && !isClassic && (
+            <InsufficientBalancePrompt missingAmountKopeks={Number(missingAmount)} compact />
+          )}
+          {error && !missingAmount && (
+            <p role="alert" className="rounded-xl bg-error-400/10 p-3 text-sm text-error-400">
+              {error}
+            </p>
+          )}
+          <RenewalSummary
+            option={selectedOption}
+            balanceKopeks={balanceKopeks}
+            isClassic={isClassic}
+            disabled={!ready}
+            pending={renewMutation.isPending}
+            onSubmit={handleRenew}
+          />
+        </>
       )}
     </div>
   );

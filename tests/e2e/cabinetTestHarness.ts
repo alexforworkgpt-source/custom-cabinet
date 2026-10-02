@@ -122,6 +122,7 @@ export const baseApiResponses: Record<string, unknown> = {
     inviter_bonus_rubles: 0,
     max_commission_payments: 0,
   },
+  '/api/cabinet/reminders/active': [],
   '/api/cabinet/subscription': { has_subscription: false, subscription: null },
   '/api/cabinet/subscription/connection-link': {
     subscription_url: null,

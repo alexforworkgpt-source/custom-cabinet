@@ -52,6 +52,8 @@ export interface DialogController {
 export interface ThemeController {
   setHeaderColor: (color: string) => void;
   setBottomBarColor: (color: string) => void;
+  /** Фон мини-приложения под WebView; должен совпадать с фоном страницы. */
+  setBackgroundColor: (color: string) => void;
   getThemeParams: () => TelegramThemeParams | null;
 }
 

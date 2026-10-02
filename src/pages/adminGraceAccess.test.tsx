@@ -55,6 +55,7 @@ vi.mock('@/store/permissions', () => ({
     }),
 }));
 const LIMITED_UUID = '17b2c1de-9f47-4a3d-8c11-5b6a0f9e2d34';
+const EXTERNAL_UUID = '94f3c12a-2b80-4bb6-9d85-fb57cf45951e';
 
 const config = (overrides: Partial<GraceAccessConfig> = {}): GraceAccessConfig => ({
   mode: 'false',
@@ -63,12 +64,16 @@ const config = (overrides: Partial<GraceAccessConfig> = {}): GraceAccessConfig =
   limited_squad_uuid: LIMITED_UUID,
   external_squad_uuid: '',
   traffic_gb: 1,
+  reset_traffic_on_start: false,
   trial_enabled: false,
   daily_enabled: false,
   free_enabled: false,
   reconcile_interval_seconds: 60,
   reconcile_batch_size: 200,
   candidate_lookback_minutes: 30,
+  allowed_services: 'Telegram и личный кабинет',
+  notify_admins: true,
+  notify_user: true,
   ...overrides,
 });
 
@@ -86,10 +91,12 @@ const overview = (overrides: Partial<GraceAccessOverview> = {}): GraceAccessOver
 const state: {
   overview: GraceAccessOverview;
   squads: GraceSquadsResponse;
+  externalSquads: GraceSquadsResponse;
   saves: unknown[];
 } = {
   overview: overview(),
   squads: { available: true, items: [] },
+  externalSquads: { available: true, items: [] },
   saves: [],
 };
 
@@ -100,6 +107,7 @@ vi.mock('@/api/adminGraceAccess', async (importOriginal) => {
     adminGraceAccessApi: {
       getOverview: () => Promise.resolve(state.overview),
       getSquads: () => Promise.resolve(state.squads),
+      getExternalSquads: () => Promise.resolve(state.externalSquads),
       getSessions: () => Promise.resolve({ items: [], total: 0, page: 1, limit: 20 }),
       update: (patch: unknown) => {
         state.saves.push(patch);
@@ -129,6 +137,7 @@ afterEach(() => {
   permissions.canEdit = true;
   state.overview = overview();
   state.squads = { available: true, items: [] };
+  state.externalSquads = { available: true, items: [] };
   state.saves = [];
 });
 
@@ -174,6 +183,39 @@ describe('раздел grace-доступа', () => {
     fireEvent.click(saveButton());
 
     await waitFor(() => expect(state.saves).toEqual([{ duration_hours: 48 }]));
+  });
+
+  it('отправляет новые настройки уведомлений и трафика только изменёнными', async () => {
+    await renderPage();
+
+    fireEvent.click(screen.getByLabelText('Обнулять счётчик трафика при выдаче'));
+    fireEvent.click(screen.getByLabelText('Админам в чат уведомлений'));
+    fireEvent.click(saveButton());
+
+    await waitFor(() =>
+      expect(state.saves).toEqual([{ reset_traffic_on_start: true, notify_admins: false }]),
+    );
+  });
+
+  it('по умолчанию не обнуляет трафик при выдаче grace-доступа', async () => {
+    await renderPage();
+
+    expect(
+      screen
+        .getByRole('switch', { name: 'Обнулять счётчик трафика при выдаче' })
+        .getAttribute('aria-checked'),
+    ).toBe('false');
+  });
+
+  it('не сохраняет пустое описание доступных сервисов при уведомлении человека', async () => {
+    state.overview = overview({ config: config({ mode: 'true' }) });
+    await renderPage();
+
+    fireEvent.change(screen.getByLabelText('Что остаётся доступным'), { target: { value: '' } });
+
+    expect(saveButton().disabled).toBe(true);
+    expect(screen.getByText(/без этого сообщение человеку бессмысленно/)).toBeTruthy();
+    expect(state.saves).toEqual([]);
   });
 
   it('не даёт включить режим без сквада и называет поле', async () => {
@@ -249,6 +291,16 @@ describe('раздел grace-доступа', () => {
     );
   });
 
+  it('не даёт изменить reset_traffic_on_start, закреплённый в .env', async () => {
+    state.overview = overview({ env_locked: ['reset_traffic_on_start'] });
+    await renderPage();
+
+    expect(
+      (screen.getByLabelText('Обнулять счётчик трафика при выдаче') as HTMLInputElement).disabled,
+    ).toBe(true);
+    expect(state.saves).toEqual([]);
+  });
+
   it('о полностью закреплённом в .env разделе сообщает одной строкой', async () => {
     // Пример .env отдавал все ключи grace раскомментированными: у скопировавших
     // его раздел нередактируем целиком, и двенадцать замков этого не объясняют.
@@ -294,7 +346,9 @@ describe('раздел grace-доступа', () => {
     await renderPage();
 
     fireEvent.change(screen.getByLabelText('Внешний сквад'), { target: { value: 'custom' } });
-    fireEvent.change(screen.getByLabelText('Аварийный сквад'), { target: { value: '   ' } });
+    fireEvent.change(screen.getByLabelText('Какой внешний сквад назначить'), {
+      target: { value: '   ' },
+    });
 
     expect(saveButton().disabled).toBe(true);
     expect(state.saves).toEqual([]);
@@ -324,7 +378,7 @@ describe('раздел grace-доступа', () => {
     state.squads = { available: false, items: [] };
     await renderPage();
 
-    expect(screen.getAllByText(/Панель недоступна/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Панель не отвечает/).length).toBeGreaterThan(0);
   });
 
   it('живая панель без сквадов недоступной не объявляется', async () => {
@@ -333,7 +387,7 @@ describe('раздел grace-доступа', () => {
     state.squads = { available: true, items: [] };
     await renderPage();
 
-    expect(screen.queryByText(/Панель недоступна/)).toBeNull();
+    expect(screen.queryByText(/Панель не отвечает/)).toBeNull();
   });
 
   it('без права на список сессий объясняет, какого права не хватает', async () => {
@@ -371,6 +425,25 @@ describe('раздел grace-доступа', () => {
     expect(field.value).toBe(EXPIRED_UUID);
   });
 
+  it('внешний сквад выбирается из отдельного списка панели', async () => {
+    state.externalSquads = {
+      available: true,
+      items: [{ uuid: EXTERNAL_UUID, name: 'External grace', members_count: 2 }],
+    };
+    await renderPage();
+
+    fireEvent.change(screen.getByLabelText('Внешний сквад'), { target: { value: 'custom' } });
+    await waitFor(() =>
+      expect(screen.getByLabelText('Какой внешний сквад назначить').tagName).toBe('SELECT'),
+    );
+    const field = screen.getByLabelText('Какой внешний сквад назначить');
+
+    fireEvent.change(field, { target: { value: EXTERNAL_UUID } });
+    fireEvent.click(saveButton());
+
+    await waitFor(() => expect(state.saves).toEqual([{ external_squad_uuid: EXTERNAL_UUID }]));
+  });
+
   it('сквад, которого нет в панели, остаётся видимым и правимым', async () => {
     // Сквады переименовывают и удаляют; молчаливый сброс поля терял бы рабочую настройку.
     state.squads = {
@@ -393,7 +466,7 @@ describe('раздел grace-доступа', () => {
     fireEvent.change(select, { target: { value: 'custom' } });
 
     expect(select.value).toBe('custom');
-    expect(screen.getByLabelText('Аварийный сквад')).toBeTruthy();
+    expect(screen.getByLabelText('Какой внешний сквад назначить')).toBeTruthy();
   });
 
   it('пустой аварийный сквад не сохраняется как «Отцепить»', async () => {

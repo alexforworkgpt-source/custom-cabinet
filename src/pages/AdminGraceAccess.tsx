@@ -100,6 +100,12 @@ export default function AdminGraceAccess() {
 
   const [form, setForm] = useState<GraceForm | null>(null);
   const [externalChoice, setExternalChoice] = useState<ExternalChoice>('detach');
+  const { data: externalSquads } = useQuery({
+    queryKey: ['grace-access-external-squads'],
+    queryFn: adminGraceAccessApi.getExternalSquads,
+    staleTime: 60_000,
+    enabled: externalChoice === 'custom',
+  });
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showReconcile, setShowReconcile] = useState(false);
 
@@ -395,6 +401,7 @@ export default function AdminGraceAccess() {
           onChange={(value) => update('expired_squad_uuid', value)}
           squads={squads?.items ?? []}
           squadsAvailable={squads?.available ?? true}
+          synced={squads?.source === 'synced'}
           disabled={isLocked('expired_squad_uuid')}
           invalid={invalidFields.has('expired_squad_uuid')}
         />
@@ -408,6 +415,7 @@ export default function AdminGraceAccess() {
           onChange={(value) => update('limited_squad_uuid', value)}
           squads={squads?.items ?? []}
           squadsAvailable={squads?.available ?? true}
+          synced={squads?.source === 'synced'}
           disabled={isLocked('limited_squad_uuid')}
           invalid={invalidFields.has('limited_squad_uuid')}
         />
@@ -449,24 +457,24 @@ export default function AdminGraceAccess() {
             {t(`admin.graceAccess.external.${externalChoice}Desc`)}
           </p>
           {externalChoice === 'custom' && (
-            <input
-              id="grace-external-squad-uuid"
-              type="text"
-              aria-label={t('admin.graceAccess.external.custom')}
-              className={`input mt-2 font-mono text-xs ${
-                invalidFields.has('external_squad_uuid') || externalIncomplete
-                  ? 'border-error-500/50'
-                  : ''
-              }`}
-              placeholder="00000000-0000-0000-0000-000000000000"
-              value={
-                externalChoiceOf(form.external_squad_uuid) === 'keep'
-                  ? ''
-                  : form.external_squad_uuid
-              }
-              disabled={isLocked('external_squad_uuid')}
-              onChange={(event) => update('external_squad_uuid', event.target.value)}
-            />
+            <div className="mt-2">
+              <SquadField
+                id="grace-external-squad-uuid"
+                label={t('admin.graceAccess.external.squad')}
+                description={t('admin.graceAccess.external.customDesc')}
+                value={
+                  externalChoiceOf(form.external_squad_uuid) === 'keep'
+                    ? ''
+                    : form.external_squad_uuid
+                }
+                onChange={(value) => update('external_squad_uuid', value)}
+                squads={externalSquads?.items ?? []}
+                squadsAvailable={externalSquads?.available ?? true}
+                unavailableHint={t('admin.graceAccess.external.unavailable')}
+                disabled={isLocked('external_squad_uuid')}
+                invalid={invalidFields.has('external_squad_uuid') || externalIncomplete}
+              />
+            </div>
           )}
           {lockNote('external_squad_uuid')}
         </div>
@@ -519,6 +527,76 @@ export default function AdminGraceAccess() {
             </p>
             {lockNote('traffic_gb')}
           </div>
+          <div className="sm:col-span-2">
+            <label
+              htmlFor="grace-allowed-services"
+              className="mb-2 block text-sm font-medium text-dark-300"
+            >
+              {t('admin.graceAccess.fields.allowed_services')}
+            </label>
+            <input
+              id="grace-allowed-services"
+              type="text"
+              maxLength={120}
+              className={`input ${
+                invalidFields.has('allowed_services') ? 'border-error-500/50' : ''
+              }`}
+              placeholder={t('admin.graceAccess.limits.allowedPlaceholder')}
+              value={form.allowed_services}
+              disabled={isLocked('allowed_services')}
+              onChange={(event) => update('allowed_services', event.target.value)}
+            />
+            <p className="mt-1 text-xs text-dark-500">
+              {t('admin.graceAccess.limits.allowedDesc')}
+            </p>
+            {lockNote('allowed_services')}
+          </div>
+          <div className="flex items-center justify-between gap-3 sm:col-span-2">
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-dark-100">
+                {t('admin.graceAccess.fields.reset_traffic_on_start')}
+              </div>
+              <div className="text-xs text-dark-500">
+                {t('admin.graceAccess.limits.resetTrafficDesc')}
+              </div>
+              {lockNote('reset_traffic_on_start')}
+            </div>
+            <Toggle
+              checked={form.reset_traffic_on_start}
+              disabled={isLocked('reset_traffic_on_start')}
+              aria-label={t('admin.graceAccess.fields.reset_traffic_on_start')}
+              onChange={() => update('reset_traffic_on_start', !form.reset_traffic_on_start)}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Notifications */}
+      <div className="card">
+        <h3 className="text-lg font-semibold text-dark-100">
+          {t('admin.graceAccess.notifications.title')}
+        </h3>
+        <p className="mt-1 text-sm text-dark-500">{t('admin.graceAccess.notifications.hint')}</p>
+        <div className="mt-4 space-y-3">
+          {(['notify_admins', 'notify_user'] as const).map((field) => (
+            <div key={field} className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-dark-100">
+                  {t(`admin.graceAccess.notifications.${field}`)}
+                </div>
+                <div className="text-xs text-dark-500">
+                  {t(`admin.graceAccess.notifications.${field}Desc`)}
+                </div>
+                {lockNote(field)}
+              </div>
+              <Toggle
+                checked={form[field]}
+                disabled={isLocked(field)}
+                aria-label={t(`admin.graceAccess.notifications.${field}`)}
+                onChange={() => update(field, !form[field])}
+              />
+            </div>
+          ))}
         </div>
       </div>
 

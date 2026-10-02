@@ -5,6 +5,7 @@ import type {
   UserSubscriptionInfo,
   PanelSyncStatusResponse,
 } from '../../../api/adminUsers';
+import { panelSyncRows } from './panelSyncRows';
 
 // ──────────────────────────────────────────────────────────────────
 // Sync tab — compares bot DB vs panel data, offers a 2-way push
@@ -34,6 +35,9 @@ export function SyncTab({
   locale,
 }: SyncTabProps) {
   const { t } = useTranslation();
+  const comparisonRows = syncStatus ? panelSyncRows(syncStatus) : [];
+  const hasRealDifferences = comparisonRows.some((row) => row.differs);
+  const hasGraceOverlay = comparisonRows.some((row) => row.byGrace);
 
   return (
     <div className="space-y-4">
@@ -60,12 +64,16 @@ export function SyncTab({
       {/* Sync status */}
       {syncStatus && (
         <div
-          className={`rounded-xl border p-4 ${syncStatus.has_differences ? 'border-warning-500/30 bg-warning-500/10' : 'border-success-500/30 bg-success-500/10'}`}
+          className={`rounded-xl border p-4 ${hasRealDifferences ? 'border-warning-500/30 bg-warning-500/10' : hasGraceOverlay ? 'border-accent-500/30 bg-accent-500/10' : 'border-success-500/30 bg-success-500/10'}`}
         >
           <div className="mb-3 flex items-center gap-2">
-            {syncStatus.has_differences ? (
+            {hasRealDifferences ? (
               <span className="font-medium text-warning-400">
                 {t('admin.users.detail.sync.hasDifferences')}
+              </span>
+            ) : hasGraceOverlay ? (
+              <span className="font-medium text-accent-400">
+                {t('admin.users.detail.sync.graceOverlay')}
               </span>
             ) : (
               <span className="font-medium text-success-400">
@@ -74,13 +82,19 @@ export function SyncTab({
             )}
           </div>
 
-          {syncStatus.differences.length > 0 && (
+          {comparisonRows.some((row) => row.differs || row.byGrace) && (
             <div className="mb-3 space-y-1">
-              {syncStatus.differences.map((diff, i) => (
-                <div key={i} className="text-xs text-dark-300">
-                  • {diff}
-                </div>
-              ))}
+              {comparisonRows
+                .filter((row) => row.differs || row.byGrace)
+                .map((row) => (
+                  <div
+                    key={row.key}
+                    className={`text-xs ${row.byGrace ? 'text-accent-300' : 'text-dark-300'}`}
+                  >
+                    • {t(`admin.users.detail.sync.rows.${row.key}`)}
+                    {row.byGrace ? ` — ${t('admin.users.detail.sync.byGrace')}` : ''}
+                  </div>
+                ))}
             </div>
           )}
 

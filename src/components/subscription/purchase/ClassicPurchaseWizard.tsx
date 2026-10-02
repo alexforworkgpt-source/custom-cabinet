@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subscriptionApi } from '../../../api/subscription';
 import { useCurrency } from '../../../hooks/useCurrency';
 import { usePromoDiscount } from '../../../hooks/usePromoDiscount';
 import { useCloseOnSuccessNotification } from '../../../store/successNotification';
-import { getErrorMessage, type PurchaseStep } from '../../../utils/subscriptionHelpers';
+import {
+  getErrorMessage,
+  getSavedCartTopUpPath,
+  type PurchaseStep,
+} from '../../../utils/subscriptionHelpers';
 import { CheckIcon } from '../../icons';
-import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
 import { PurchaseOrderSummary } from './PurchaseOrderSummary';
+import { PurchaseFundingNotice } from './PurchaseFundingNotice';
 import Twemoji from 'react-twemoji';
 import { Skeleton, SkeletonGroup } from '../../ui/skeleton';
 import type {
@@ -51,9 +55,10 @@ export function ClassicPurchaseWizard({
 }: ClassicPurchaseWizardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { formatAmount, currencySymbol } = useCurrency();
-  const { activeDiscount, applyPromoDiscount } = usePromoDiscount();
+  const { applyPromoDiscount } = usePromoDiscount();
 
   const formatPrice = (kopeks: number) =>
     kopeks === 0
@@ -62,7 +67,7 @@ export function ClassicPurchaseWizard({
   const formatCtaPrice = (kopeks: number) =>
     kopeks === 0
       ? t('subscription.free', 'Бесплатно')
-      : `${formatAmount(kopeks / 100, 0)} ${currencySymbol}`;
+      : `${formatAmount(kopeks / 100)} ${currencySymbol}`;
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState<PurchaseStep>('period');
@@ -145,16 +150,22 @@ export function ClassicPurchaseWizard({
     [selectedPeriod, selectedTraffic, selectedServers, selectedDevices],
   );
 
-  const { data: preview, isLoading: previewLoading } = useQuery({
-    queryKey: ['purchase-preview', currentSelection],
+  const {
+    data: preview,
+    isFetching: previewLoading,
+    isError: previewError,
+    refetch: refetchPreview,
+  } = useQuery({
+    queryKey: ['purchase-preview', currentSelection, subscriptionId],
     queryFn: () => subscriptionApi.previewPurchase(currentSelection, subscriptionId),
     enabled: !!selectedPeriod && showPurchaseForm,
   });
 
   const previewTotal = preview
-    ? applyPromoDiscount(preview.total_price_kopeks, preview.original_price_kopeks)
+    ? { price: preview.total_price_kopeks, original: preview.original_price_kopeks }
     : null;
-  const ctaPrice = previewTotal ? formatCtaPrice(previewTotal.price) : null;
+  const ctaPrice =
+    previewTotal && !previewLoading && !previewError ? formatCtaPrice(previewTotal.price) : null;
   const previewTotalValue = previewTotal
     ? formatPrice(previewTotal.price)
     : preview?.total_price_label;
@@ -181,13 +192,21 @@ export function ClassicPurchaseWizard({
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
       navigate('/subscriptions', { replace: true });
     },
+    onError: (error) => {
+      const topUpPath = getSavedCartTopUpPath(
+        error,
+        preview?.missing_amount_kopeks,
+        `${location.pathname}${location.search}`,
+      );
+      if (topUpPath) navigate(topUpPath);
+    },
     onSettled: () => {
       purchaseInFlightRef.current = false;
     },
   });
 
   const submitPurchase = () => {
-    if (purchaseInFlightRef.current) return;
+    if (purchaseInFlightRef.current || previewLoading || previewError || !preview) return;
     purchaseInFlightRef.current = true;
     purchaseMutation.mutate();
   };
@@ -281,6 +300,7 @@ export function ClassicPurchaseWizard({
                 return (
                   <button
                     key={period.id}
+                    aria-pressed={selectedPeriod?.id === period.id}
                     onClick={() => {
                       setSelectedPeriod(period);
                       if (period.traffic.current !== undefined) {
@@ -300,7 +320,9 @@ export function ClassicPurchaseWizard({
                       }
                     }}
                     className={`bento-card-hover relative p-4 text-left transition-all ${
-                      selectedPeriod?.id === period.id ? 'bento-card-glow border-accent-500' : ''
+                      selectedPeriod?.id === period.id
+                        ? 'bento-card-glow border-accent-500 light:!border-accent-500 light:border-2'
+                        : ''
                     }`}
                   >
                     {promoPeriod.percent && promoPeriod.percent > 0 && (
@@ -341,10 +363,13 @@ export function ClassicPurchaseWizard({
                 return (
                   <button
                     key={option.value}
+                    aria-pressed={selectedTraffic === option.value}
                     onClick={() => setSelectedTraffic(option.value)}
                     disabled={!option.is_available}
                     className={`bento-card-hover relative p-4 text-center transition-all ${
-                      selectedTraffic === option.value ? 'bento-card-glow border-accent-500' : ''
+                      selectedTraffic === option.value
+                        ? 'bento-card-glow border-accent-500 light:!border-accent-500 light:border-2'
+                        : ''
                     } ${!option.is_available ? 'cursor-not-allowed opacity-50' : ''}`}
                   >
                     {promoTraffic.percent && promoTraffic.percent > 0 && (
@@ -512,7 +537,7 @@ export function ClassicPurchaseWizard({
                 </SkeletonGroup>
               ) : preview ? (
                 <div className="space-y-4">
-                  {activeDiscount?.is_active && activeDiscount.discount_percent && (
+                  {!!preview.discount_percent && (
                     <div className="flex items-center justify-center gap-2 rounded-lg border border-warning-500/30 bg-warning-500/10 p-3">
                       <svg
                         className="h-4 w-4 text-warning-400"
@@ -528,7 +553,7 @@ export function ClassicPurchaseWizard({
                         />
                       </svg>
                       <span className="text-sm font-medium text-warning-400">
-                        {t('promo.discountApplied')} -{activeDiscount.discount_percent}%
+                        {t('promo.discountApplied')} -{preview.discount_percent}%
                       </span>
                     </div>
                   )}
@@ -546,11 +571,12 @@ export function ClassicPurchaseWizard({
                     discountValue={previewDiscountValue}
                   />
 
-                  {!preview.can_purchase &&
+                  {!purchaseMutation.isError &&
+                    !preview.can_purchase &&
                     (preview.missing_amount_kopeks > 0 ? (
-                      <InsufficientBalancePrompt
+                      <PurchaseFundingNotice
                         missingAmountKopeks={preview.missing_amount_kopeks}
-                        compact
+                        messageKey="subscription.classicFundingNotice"
                       />
                     ) : preview.status_message ? (
                       <div className="rounded-lg bg-error-500/10 px-4 py-3 text-center text-sm text-error-400">
@@ -589,7 +615,14 @@ export function ClassicPurchaseWizard({
             ) : (
               <button
                 onClick={submitPurchase}
-                disabled={purchaseMutation.isPending || previewLoading || !preview?.can_purchase}
+                disabled={
+                  purchaseMutation.isPending ||
+                  previewLoading ||
+                  previewError ||
+                  !preview ||
+                  (!preview.can_purchase && preview.missing_amount_kopeks <= 0)
+                }
+                aria-busy={purchaseMutation.isPending}
                 className="btn-primary flex-1"
               >
                 {purchaseMutation.isPending ? (
@@ -597,10 +630,10 @@ export function ClassicPurchaseWizard({
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                     {t('common.loading')}
                   </span>
-                ) : ctaPrice ? (
-                  t('subscription.payAmount', { amount: ctaPrice })
+                ) : preview && !preview.can_purchase && preview.missing_amount_kopeks > 0 ? (
+                  t('dashboard.topUpBalance')
                 ) : (
-                  t('subscription.purchase')
+                  t('subscription.pay')
                 )}
               </button>
             )}
@@ -609,6 +642,14 @@ export function ClassicPurchaseWizard({
           {purchaseMutation.isError && (
             <div className="text-center text-sm text-error-400">
               {getErrorMessage(purchaseMutation.error)}
+            </div>
+          )}
+          {previewError && (
+            <div role="alert" className="space-y-2 text-center text-sm text-error-400">
+              <p>{t('subscription.previewLoadError')}</p>
+              <button className="btn-secondary" onClick={() => refetchPreview()}>
+                {t('common.retry')}
+              </button>
             </div>
           )}
         </div>

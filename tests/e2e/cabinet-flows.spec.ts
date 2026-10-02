@@ -507,7 +507,7 @@ test('keeps the top-right traffic value visible at 420 px @telegram-flow', async
   await page.goto('/');
 
   const summary = page.getByRole('region', { name: 'Расход трафика' });
-  const trafficValue = summary.getByText('987.6 ГБ / 999.9 ГБ', { exact: true });
+  const trafficValue = summary.getByText('987,6 ГБ / 999,9 ГБ', { exact: true });
   await expect(trafficValue).toBeVisible();
 
   const horizontalBounds = await trafficValue.evaluate((element) => {
@@ -1447,6 +1447,7 @@ test('reveals one subscription-sharing scenario at a time @critical-flow', async
   await expect(page.locator('[data-instruction-step]')).toHaveCount(0);
 
   const isMobileViewport = (page.viewportSize()?.width ?? 0) < 768;
+  if (!isMobileViewport) await sender.scrollIntoViewIfNeeded();
   const scrollPositionBeforeOpening = await page.evaluate(() => window.scrollY);
 
   if (isMobileViewport) {
@@ -2295,7 +2296,7 @@ test('shows the complete classic env order before purchase @critical-flow', asyn
 
   await expect(page.getByText('Скидка', { exact: true })).toBeVisible();
   await expect(page.getByText('−109 ₽', { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Оплатить 1091 ₽' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Оплатить', exact: true })).toBeEnabled();
   const confirmationSummary = page.locator('[data-order-summary]');
   const confirmationSummaryWidth = (await confirmationSummary.boundingBox())?.width;
   const confirmationSummaryFontSize = await confirmationSummary
@@ -2434,7 +2435,7 @@ test('opens the classic period constructor from Tariffs before renewing @critica
 
   await periodButton.click();
   await page.getByRole('button', { name: /^Next · / }).click();
-  const purchaseButton = page.getByRole('button', { name: /^Pay / });
+  const purchaseButton = page.getByRole('button', { name: 'Pay', exact: true });
   await expect(purchaseButton).toBeEnabled();
   await purchaseButton.dblclick();
   await expect(page).toHaveURL('/subscriptions');

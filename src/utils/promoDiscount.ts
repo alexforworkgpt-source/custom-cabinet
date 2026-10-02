@@ -21,7 +21,9 @@ export function calculatePromoDiscount(
     return { price: priceKopeks, original: null, percent: null, isPromoGroup: false };
   }
 
-  const finalPrice = hasPromo ? Math.round(priceKopeks * (1 - discountPercent / 100)) : priceKopeks;
+  const finalPrice = hasPromo
+    ? priceKopeks - Math.floor((priceKopeks * discountPercent) / 100)
+    : priceKopeks;
 
   if (hasExisting) {
     return {

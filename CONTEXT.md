@@ -13,34 +13,41 @@ The product has three interface modes:
 
 ## Current Source and Production Reference
 
-The current production reference, verified on `2026-09-07`, is Custom Cabinet
-`cabinet-v2026.09.07.1` at
-`27f94c818435044ef7b58fcd0ed7de119331cfb8`, package `v1.69.1`, through Release
-Bundle `v2026.09.07.1`. It integrates Upstream Cabinet `v1.69.1` at
-`3da34239d1c1c7b87a0184e74d49bde43ea88b89` and runs with Upstream Bot
-`v4.5.0` at `07f3c6081233f5517200e62ad7be70aaa58ef27c`.
+The current production reference, deployed and verified on `2026-09-21`, is
+Custom Cabinet `cabinet-v2026.09.21.1` at
+`aec198424aa0b489db6d07d1af92bd704aa7c518`, package `v1.74.0`, through Release
+Bundle `v2026.09.21.1`, identity
+`991c6ec42053876ae6079d82faee14dc7a6e65157fd9d3c8ada3875795b768af`. It
+integrates Upstream Cabinet `v1.74.0` at
+`57810c7da24b5c142371ed83a6ad5e43a591d454` and runs with Upstream Bot
+`v4.10.0` at `9fcebfd7bc075dcca1bb9d1514740039208b906a`.
 
-The adaptive integration source is
-`bb6f56f050267d6d6aaa38793d2b288f4f186565`; the final tagged commit adds a
-formatting-only test change. Release publication, independent verification of
-all six public assets, a full disposable Ubuntu 24.04 Installer lifecycle and
-the production Protected Update passed. The database migrated from Alembic
-`0106` to `0114`; production Status, Diagnostics, exact runtime identities,
-three healthy services and final postflight passed.
+The protected transition from Release Bundle `v2026.09.14` completed with
+`outcome=committed`. A full migration package was checksum-verified on the VPS,
+copied off-host and verified again before the update. Database revision `0119`,
+the existing PostgreSQL/Redis volumes and immutable runtime images were
+preserved. Independent verification passed for exact identities, clean runtime
+repositories, three healthy services without restart/OOM, Installer Status and
+Diagnostics, firewall, Caddy, public health and Telegram webhook.
 
-Authenticated production browser smoke through the Upstream Bot covered
-Dashboard, tariff/subscription purchase without payment, Support, Profile and
-the administrative Grace Access, Referral Levels and System Errors routes. No
-form was saved and no payment, ticket, synchronization or Remnawave mutation
-was performed. The Remnawave API was read-only. Two persisted System Errors at
-the rollout timestamp were diagnosed as transient startup events; no recurrence
-or traceback was found in the final observation window. See
-[`LIVE_CHECK_REPORT_2026.09.07.md`](LIVE_CHECK_REPORT_2026.09.07.md).
+The owner-authenticated read-only production browser smoke passed for Dashboard,
+Balance, Connection, Profile, Support, tariffs without purchase, Instructions
+and selected admin pages. Responsive checks at 390 and 320 pixels also passed
+for the changed Dashboard/Instructions/Support scope, including all six lazy
+instruction images. No payment, ticket, synchronization, settings save or other
+production mutation was performed. Full authenticated Telegram staging, real
+Android/iOS Telegram and physical screen-reader checks remain `BLOCKED` and were
+explicitly accepted by the owner for this rollout. See
+[`LIVE_CHECK_REPORT_2026.09.21.md`](LIVE_CHECK_REPORT_2026.09.21.md).
 
 Release Bundle `v2026.09.07` is an immutable, superseded publication and was
 not deployed. A migration-export race was found after publication; the fix was
 published and deployed only as `v2026.09.07.1`. Never replace assets under the
 older tag.
+
+Release Bundle `v2026.09.21` is also immutable and superseded. Targeted
+fresh-install smoke found a nonexistent PostgreSQL digest before production.
+Its assets remain unchanged; only corrected Bundle `v2026.09.21.1` may be used.
 
 ## Historical Release Reference
 

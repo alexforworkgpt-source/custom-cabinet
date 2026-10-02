@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.79.0](https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/compare/v1.74.0...v1.79.0) (2026-09-25)
+
+### Custom Cabinet Source Integration
+
+* **accounts and admin users:** provider-email lifecycle, filtering, sorting, online/grace states, sales modes and panel-sync explanations
+* **subscriptions:** one shared legacy-subscription rule keeps the same connection while requiring a tariff before renewal or add-ons
+* **reminders:** localized user cards plus permission-gated admin list, audience, create, edit, toggle, delete and test-to-self flows
+* **operations:** promo-group recalculation status, direct-user and promo-group email audiences, and grace traffic/notification controls
+* **platform and quality:** same-origin PWA manifest handling, Telegram color alignment, locale-aware numbers/dates/transactions, responsive overflow fixes and single-layer wheel rendering
+* **i18n:** synchronized Slice 1–9 keys, interpolation and plural forms across Russian, English, Farsi and Chinese, including RTL reminder forms/cards
+
+### Compatibility
+
+* Receiving Custom Cabinet checkpoint: `80caeac6b756f208543a6c3f891877a4547c7d73` on `sync/upstream-v1.79.0`.
+* Upstream Cabinet target: `v1.79.0` / `821c7b71823573a756de00418acb25118ede1c9c`.
+* Exact source contracts target Upstream Bot `v4.15.0` / `877690a7039d1326b2c00eda3e297879b80c0678` and schema `0127`.
+* Simple/Lite Mode and BSCHEKER remain intentionally absent from the Custom Cabinet frontend.
+* Exact integrated application source: `a772599846d58e86367d8ac5684630cfa3f471f4`; package metadata is `1.79.0`.
+* The candidate passed the source gate and a complete 133-file security diff review with no findings.
+* Custom Cabinet tag `cabinet-v2026.09.25.1` resolves to `ddf2a37c827c760ee699fc56bb17bfc00ff38e9b`; Release Bundle `v2026.09.25` resolves to Installer `b54219d34a582e393f397a4441c6aacc52f274a8` and Bundle identity `b9c8fcda699344f252c4b9fa5509f2f9034fc8515ab18139174d5fcdb643be06`.
+* Independent public-asset verification, the full disposable Ubuntu 24.04 lifecycle, the supported `0119 -> 0127` upgrade lifecycle and a targeted final-Bundle fresh install passed. Production deployment is not declared.
+
 ## [1.74.0](https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/compare/v1.71.1...v1.74.0) (2026-09-13)
 
 ### Custom Cabinet Integration

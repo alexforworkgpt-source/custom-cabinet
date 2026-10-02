@@ -10,6 +10,7 @@ import type { Tariff, ClassicPurchaseOptions } from '../types';
 import { useCloseOnSuccessNotification } from '../store/successNotification';
 import { SwitchTariffSheet } from '../components/subscription/sheets/SwitchTariffSheet';
 import { TariffPurchaseForm } from '../components/subscription/purchase/TariffPurchaseForm';
+import { needsTariff } from '../utils/legacySubscription';
 import { TariffPickerGrid } from '../components/subscription/purchase/TariffPickerGrid';
 import { ClassicPurchaseWizard } from '../components/subscription/purchase/ClassicPurchaseWizard';
 import { PurchaseContextBanners } from '../components/subscription/purchase/PurchaseContextBanners';
@@ -138,13 +139,15 @@ export default function SubscriptionPurchase() {
       <div className="flex items-center gap-3">
         {subscriptionId && <WebBackButton to={`/subscriptions/${subscriptionId}`} />}
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
-          {isMultiTariff && !subscriptionId
-            ? t('subscription.newTariff', 'Новый тариф')
-            : !isMultiTariff && subscription?.is_daily && !subscription?.is_trial
-              ? t('subscription.switchTariff.title')
-              : subscription && !subscription.is_trial
-                ? t('subscription.extend')
-                : t('subscription.getSubscription')}
+          {needsTariff(subscription)
+            ? t('subscription.cta.moveToTariff')
+            : isMultiTariff && !subscriptionId
+              ? t('subscription.newTariff', 'Новый тариф')
+              : !isMultiTariff && subscription?.is_daily && !subscription?.is_trial
+                ? t('subscription.switchTariff.title')
+                : subscription && !subscription.is_trial
+                  ? t('subscription.extend')
+                  : t('subscription.getSubscription')}
         </h1>
       </div>
 
@@ -198,7 +201,7 @@ export default function SubscriptionPurchase() {
             )}
 
           {/* Legacy subscription notice */}
-          {subscription && !subscription.is_trial && !subscription.tariff_id && (
+          {needsTariff(subscription) && (
             <div className="mb-6 rounded-xl border border-accent-500/30 bg-accent-500/10 p-4">
               <div className="mb-2 font-medium text-accent-400">
                 {t('subscription.legacy.selectTariffTitle')}

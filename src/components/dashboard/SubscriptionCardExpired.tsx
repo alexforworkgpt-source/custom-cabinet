@@ -1,7 +1,7 @@
 import { uiLocale } from '@/utils/uiLocale';
 import { useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useLocation } from 'react-router';
+import { Link, useNavigate, useLocation } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import type { Subscription } from '../../types';
@@ -11,6 +11,7 @@ import { useCurrency } from '../../hooks/useCurrency';
 import { useHapticFeedback } from '../../platform/hooks/useHaptic';
 import { getGlassColors } from '../../utils/glassTheme';
 import { getInsufficientBalanceError } from '../../utils/subscriptionHelpers';
+import { needsTariff, tariffSelectionPath } from '../../utils/legacySubscription';
 import {
   ClockIcon,
   ExclamationIcon,
@@ -72,6 +73,7 @@ export default function SubscriptionCardExpired({
 
   // Detect limited (traffic exhausted) state
   const isLimited = subscription.is_limited;
+  const requiresTariff = needsTariff(subscription);
 
   // Detect daily subscription (disabled or expired)
   const isDaily = subscription.is_daily;
@@ -283,7 +285,20 @@ export default function SubscriptionCardExpired({
 
       {/* Action buttons */}
       <div className="flex gap-2.5">
-        {isLimited ? (
+        {requiresTariff ? (
+          <Link
+            to={tariffSelectionPath(subscription.id)}
+            onClick={() => haptic.buttonPressHeavy()}
+            className="flex flex-1 items-center justify-center gap-2 rounded-[14px] py-3.5 text-[15px] font-semibold tracking-tight text-white transition-all duration-300"
+            style={{
+              background: accent.gradient,
+              boxShadow: `0 4px 20px rgba(${accent.r},${accent.g},${accent.b},0.2)`,
+            }}
+          >
+            <SubscriptionIcon className="h-4 w-4" />
+            {t('subscription.cta.moveToTariff')}
+          </Link>
+        ) : isLimited ? (
           <button
             type="button"
             ref={trafficTopupTriggerRef}

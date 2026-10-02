@@ -9,6 +9,7 @@ import { useTelegramSDK } from '@/hooks/useTelegramSDK';
 import { cn } from '@/lib/utils';
 import {
   ArrowUpIcon,
+  BellIcon,
   BroadcastIcon,
   CabinetIcon,
   ChartBarIcon,
@@ -73,6 +74,7 @@ const icons = {
   megaphone: <MegaphoneIcon />,
   send: <SendIcon />,
   pin: <PinIcon />,
+  bell: <BellIcon />,
   'circle-dot': <WheelIcon />,
   handshake: <PartnerIcon />,
   'arrow-up': <ArrowUpIcon />,
@@ -245,6 +247,12 @@ const sections: AdminSection[] = [
         icon: 'pin',
         to: '/admin/pinned-messages',
         permission: 'pinned_messages:read',
+      },
+      {
+        name: 'admin.nav.reminders',
+        icon: 'bell',
+        to: '/admin/reminders',
+        permission: 'user_reminders:read',
       },
       { name: 'admin.nav.wheel', icon: 'circle-dot', to: '/admin/wheel', permission: 'wheel:read' },
       {

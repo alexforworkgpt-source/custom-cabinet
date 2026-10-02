@@ -12,6 +12,7 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
+        legacyPrimary: 'btn-primary',
         primary: [
           'bg-accent-500 text-on-accent',
           'hover:bg-accent-600',

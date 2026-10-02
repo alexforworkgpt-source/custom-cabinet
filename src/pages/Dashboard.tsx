@@ -13,6 +13,7 @@ import { wheelApi } from '../api/wheel';
 import Onboarding, { useOnboarding } from '../components/Onboarding';
 import PromoOffersSection from '../components/PromoOffersSection';
 import NewsSection from '../components/news/NewsSection';
+import ReminderCards from '../components/dashboard/ReminderCards';
 import SubscriptionCardActive from '../components/dashboard/SubscriptionCardActive';
 import SubscriptionCardSkeleton from '../components/dashboard/SubscriptionCardSkeleton';
 import SubscriptionCardExpired from '../components/dashboard/SubscriptionCardExpired';
@@ -38,6 +39,7 @@ import {
   selectDashboardPromoSlides,
 } from '@/components/dashboard/dashboardPromoSlides';
 import { DeviceLimitPanel } from '@/components/subscription/DeviceLimitSheet';
+import { needsTariff } from '@/utils/legacySubscription';
 
 const Connection = lazy(() => import('./Connection'));
 const TopUpMethodSelect = lazy(() => import('./TopUpMethodSelect'));
@@ -174,7 +176,7 @@ export default function Dashboard() {
   const { data: purchaseOptions } = useQuery({
     queryKey: ['purchase-options', selectedSubscriptionId],
     queryFn: () => subscriptionApi.getPurchaseOptions(selectedSubscriptionId),
-    enabled: Boolean(subscription?.is_limited && showTrafficTopup),
+    enabled: Boolean(subscription?.is_limited && !needsTariff(subscription) && showTrafficTopup),
     staleTime: 0,
   });
 
@@ -472,11 +474,14 @@ export default function Dashboard() {
           deviceLimit={overlaySubscription?.device_limit ?? 0}
           connectedDevices={devicesData?.total}
           isTrial={overlaySubscription?.is_trial ?? false}
-          onAddSlots={() =>
-            navigate(`/subscriptions/${overlaySubscriptionId}?section=additional-options`, {
-              replace: true,
-              state: { cabinetOverlayParent: true },
-            })
+          onAddSlots={
+            overlaySubscription && !needsTariff(overlaySubscription)
+              ? () =>
+                  navigate(`/subscriptions/${overlaySubscriptionId}?section=additional-options`, {
+                    replace: true,
+                    state: { cabinetOverlayParent: true },
+                  })
+              : undefined
           }
         >
           <DevicesPanel subscriptionId={overlaySubscriptionId} />
@@ -677,7 +682,7 @@ export default function Dashboard() {
         />
       ) : null}
 
-      {subscription?.is_limited && showTrafficTopup && (
+      {subscription?.is_limited && !needsTariff(subscription) && showTrafficTopup && (
         <div id="traffic-topup-panel" role="region" aria-live="polite">
           <TrafficTopupSheet
             open
@@ -748,6 +753,9 @@ export default function Dashboard() {
           </div>
         </Link>
       )}
+
+      {/* Reminders configured by an administrator */}
+      <ReminderCards />
 
       {/* News Section */}
       <NewsSection />

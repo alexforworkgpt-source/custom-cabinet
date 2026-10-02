@@ -25,7 +25,11 @@ export interface BroadcastFiltersResponse {
 
 export interface EmailFiltersResponse {
   filters: BroadcastFilter[];
+  /** Primary promo groups; each key has the `promo_group_<id>` form. */
+  promo_group_filters?: BroadcastFilter[];
 }
+
+export const emailUserTarget = (userId: number) => `user_${userId}`;
 
 export interface TariffForBroadcast {
   id: number;

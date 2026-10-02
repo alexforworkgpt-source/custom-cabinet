@@ -10,6 +10,8 @@ export function SquadField({
   onChange,
   squads,
   squadsAvailable,
+  synced = false,
+  unavailableHint,
   disabled,
   invalid,
 }: {
@@ -20,6 +22,8 @@ export function SquadField({
   onChange: (value: string) => void;
   squads: GraceSquadOption[];
   squadsAvailable: boolean;
+  synced?: boolean;
+  unavailableHint?: string;
   disabled: boolean;
   invalid: boolean;
 }) {
@@ -78,7 +82,12 @@ export function SquadField({
       )}
       <p className="mt-1 text-xs text-dark-500">{description}</p>
       {!squadsAvailable && (
-        <p className="mt-1 text-xs text-warning-400">{t('admin.graceAccess.squads.unavailable')}</p>
+        <p className="mt-1 text-xs text-warning-400">
+          {unavailableHint ?? t('admin.graceAccess.squads.unavailable')}
+        </p>
+      )}
+      {squadsAvailable && synced && (
+        <p className="mt-1 text-xs text-warning-400">{t('admin.graceAccess.squads.synced')}</p>
       )}
     </div>
   );

@@ -31,8 +31,18 @@ const state = { options: [] as RenewalOption[] };
 vi.mock('@/api/subscription', () => ({
   subscriptionApi: {
     getRenewalOptions: () => Promise.resolve(state.options),
-    getSubscription: () => Promise.resolve({ subscription: { id: 42, tariff_name: 'Базовый' } }),
-    getPurchaseOptions: () => Promise.resolve({ balance_kopeks: 1_000_000 }),
+    getSubscription: () =>
+      Promise.resolve({
+        subscription: {
+          id: 42,
+          status: 'active',
+          tariff_name: 'Базовый',
+          servers: [],
+          traffic_limit_gb: 100,
+          device_limit: 1,
+        },
+      }),
+    getPurchaseOptions: () => Promise.resolve({ sales_mode: 'tariffs', balance_kopeks: 1_000_000 }),
     renewSubscription: () => Promise.resolve({}),
   },
 }));
@@ -120,12 +130,12 @@ describe('best-value tariff contract', () => {
     );
 
     const badge = await screen.findByText('subscription.bestValue');
-    const highlightedCard = screen.getByText(/^180 /).closest('button');
+    const highlightedCard = screen.getByRole('button', { name: /^180 / });
     expect(highlightedCard?.contains(badge)).toBe(true);
-    expect(highlightedCard?.className).toContain('border-2');
+    expect(highlightedCard?.getAttribute('aria-pressed')).toBe('true');
 
     fireEvent.click(highlightedCard as HTMLButtonElement);
-    expect(highlightedCard?.className).toContain('border-2');
+    expect(highlightedCard?.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('marks the recommended tariff, but the current tariff remains the stronger state', async () => {
