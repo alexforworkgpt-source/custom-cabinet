@@ -1,0 +1,897 @@
+{
+  "schema_version": 1,
+  "status": "PASS_SOURCE_CONTRACT_SCOPE",
+  "owner_reviewed": true,
+  "checked_at_utc": "2026-10-02T14:06:32.168267+00:00",
+  "source": {
+    "cabinet_sha": "8fb8cbec19d651fcfaee3bce32621031b3e69965",
+    "cabinet_tree_sha": "2a3769d515f87f6e7c325d51d8b218fc4ce49bec",
+    "upstream_cabinet_sha": "821c7b71823573a756de00418acb25118ede1c9c",
+    "bot_sha": "877690a7039d1326b2c00eda3e297879b80c0678",
+    "bot_tree_sha": "adb7326e43d3e32ec840109558eb9a84ed25563a",
+    "backend_contract": "1"
+  },
+  "backend": {
+    "counts": {
+      "tests": 145,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "warnings": 34,
+    "test_files": [
+      "tests/database/test_migration_chain.py",
+      "tests/migrations/test_0127_user_reminders.py",
+      "tests/cabinet/test_linked_providers_forgets_email.py",
+      "tests/cabinet/test_admin_grace_access.py",
+      "tests/cabinet/test_admin_grace_access_http.py",
+      "tests/cabinet/test_admin_users_list_filters.py",
+      "tests/cabinet/test_admin_users_multi_tariff_and_grace.py",
+      "tests/cabinet/test_branding_manifest.py",
+      "tests/cabinet/test_admin_user_reminders.py",
+      "tests/cabinet/test_promo_group_recalculation_routes.py",
+      "tests/cabinet/test_email_broadcast_scoped_targets.py"
+    ],
+    "executed_test_names": [
+      {
+        "classname": "tests.database.test_migration_chain",
+        "name": "test_single_head"
+      },
+      {
+        "classname": "tests.database.test_migration_chain",
+        "name": "test_revision_ids_are_unique"
+      },
+      {
+        "classname": "tests.database.test_migration_chain",
+        "name": "test_every_revision_reaches_base"
+      },
+      {
+        "classname": "tests.migrations.test_0127_user_reminders",
+        "name": "test_revision_chain"
+      },
+      {
+        "classname": "tests.migrations.test_0127_user_reminders",
+        "name": "test_builtin_is_shipped_disabled_with_all_languages"
+      },
+      {
+        "classname": "tests.migrations.test_0127_user_reminders",
+        "name": "test_models_roundtrip"
+      },
+      {
+        "classname": "tests.cabinet.test_linked_providers_forgets_email",
+        "name": "test_google_row_names_the_email_that_unlinking_forgets"
+      },
+      {
+        "classname": "tests.cabinet.test_linked_providers_forgets_email",
+        "name": "test_nothing_is_forgotten_once_a_password_exists"
+      },
+      {
+        "classname": "tests.cabinet.test_linked_providers_forgets_email",
+        "name": "test_email_verified_elsewhere_is_not_tied_to_the_provider"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access",
+        "name": "test_routes_registered"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access",
+        "name": "test_each_url_reaches_its_own_handler[GET-/admin/grace-access-get_grace_access_overview]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access",
+        "name": "test_each_url_reaches_its_own_handler[PUT-/admin/grace-access-update_grace_access]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access",
+        "name": "test_each_url_reaches_its_own_handler[GET-/admin/grace-access/sessions-list_grace_sessions]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access",
+        "name": "test_each_url_reaches_its_own_handler[GET-/admin/grace-access/squads-list_grace_squads]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access",
+        "name": "test_each_url_reaches_its_own_handler[GET-/admin/grace-access/external-squads-list_grace_external_squads]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access",
+        "name": "test_sessions_endpoint_also_requires_users_read"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access",
+        "name": "test_configuration_endpoints_stay_on_settings_permissions"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestEnabling",
+        "name": "test_enabling_without_expired_squad_is_rejected"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestEnabling",
+        "name": "test_enabling_with_malformed_squad_is_rejected"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestEnabling",
+        "name": "test_enabling_without_traffic_is_rejected"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestEnabling",
+        "name": "test_enabling_with_complete_config_is_saved"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestEnabling",
+        "name": "test_turning_off_never_blocked_by_incomplete_config"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestEnabling",
+        "name": "test_drain_allowed_with_incomplete_config"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestRejectedInput",
+        "name": "test_explicit_null_is_refused"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestRejectedInput",
+        "name": "test_broken_config_refused_while_the_worker_still_runs"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestRejectedInput",
+        "name": "test_same_write_passes_once_the_worker_is_down"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestPartialUpdate",
+        "name": "test_only_changed_fields_are_written"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestPartialUpdate",
+        "name": "test_squad_uuid_is_trimmed"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestPartialUpdate",
+        "name": "test_nothing_written_when_nothing_changed"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestEnvLock",
+        "name": "test_changing_env_pinned_field_is_refused"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestEnvLock",
+        "name": "test_untouched_env_pinned_field_does_not_block_the_form"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestEnvLock",
+        "name": "test_overview_reports_env_pinned_fields"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestOverview",
+        "name": "test_broken_config_is_reported_before_it_is_switched_on"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestOverview",
+        "name": "test_same_gap_is_an_error_once_grace_runs"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestOverview",
+        "name": "test_unparseable_stored_mode_is_reported_not_fatal"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestOverview",
+        "name": "test_stored_mode_is_folded_like_the_runtime_folds_it"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestOverview",
+        "name": "test_keep_is_a_valid_external_squad"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestOverview",
+        "name": "test_keep_is_recognised_regardless_of_case"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestOverview",
+        "name": "test_open_sessions_without_a_worker_are_flagged"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestOverview",
+        "name": "test_restart_required_when_running_mode_differs"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestOverview",
+        "name": "test_no_restart_banner_when_modes_match"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestExternalSquadPicker",
+        "name": "test_external_squads_come_from_the_panel_by_name"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestExternalSquadPicker",
+        "name": "test_unreachable_panel_degrades_to_manual_entry"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestExternalSquadPicker",
+        "name": "test_unconfigured_panel_is_not_an_error"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestSquadPicker",
+        "name": "test_unreachable_panel_degrades_to_manual_entry"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestSquadPicker",
+        "name": "test_unconfigured_panel_is_not_an_error"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestSquadPicker",
+        "name": "test_panel_with_no_squads_is_not_reported_as_unreachable"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestSquadPicker",
+        "name": "test_unreachable_panel_falls_back_to_the_synced_squads"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access.TestSquadPicker",
+        "name": "test_squads_without_uuid_are_dropped"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access_http",
+        "name": "test_overview_serializes"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access_http",
+        "name": "test_sessions_serialize_dates_and_owner"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access_http",
+        "name": "test_put_writes_and_returns_fresh_overview"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access_http",
+        "name": "test_put_refuses_enabling_without_a_squad"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access_http",
+        "name": "test_out_of_range_value_is_a_validation_error"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access_http",
+        "name": "test_explicit_null_is_refused"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_grace_access_http",
+        "name": "test_unknown_mode_is_refused"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_expires_within_days"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_active_within_minutes"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_has_restrictions"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_has_subscription"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_no_purchases"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_search_matches_email"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_traffic_used_percent_min"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_connected_now_matches_any_panel_key"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_route_marks_connected_rows_and_filters_online"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_route_passes_sort_direction[None-None]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_route_passes_sort_direction[asc-False]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_route_passes_sort_direction[desc-True]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_route_maps_grace_sort_to_the_selection"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_route_passes_grace_filter_to_list_and_count"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_route_refuses_online_filter_without_panel"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_filters_combine"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_list_filters",
+        "name": "test_route_declares_new_filters"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_multi_tariff_and_grace",
+        "name": "test_expired_skips_anyone_who_still_has_a_live_tariff"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_multi_tariff_and_grace",
+        "name": "test_active_still_finds_anyone_with_a_live_tariff"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_multi_tariff_and_grace",
+        "name": "test_limited_and_disabled_follow_the_same_rule"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_multi_tariff_and_grace",
+        "name": "test_expired_tariff_of_a_live_person_still_found_by_tariff_filter"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_multi_tariff_and_grace",
+        "name": "test_row_shows_the_tariff_that_got_the_person_into_the_view"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_multi_tariff_and_grace",
+        "name": "test_row_shows_the_expired_tariff_in_the_expired_view"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_multi_tariff_and_grace",
+        "name": "test_row_says_the_person_is_on_temporary_access"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_users_multi_tariff_and_grace",
+        "name": "test_closed_grace_leaves_no_mark"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_manifest_uses_branding_name_and_theme_colors"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_manifest_icons_are_fetchable_urls_not_data_uris"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_light_background_when_dark_theme_is_disabled"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_broken_stored_colors_fall_back_to_defaults"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_empty_name_uses_build_default"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_start_url_accepts_only_a_same_site_path[/-/]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_start_url_accepts_only_a_same_site_path[/cabinet/-/cabinet/]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_start_url_accepts_only_a_same_site_path[/cabinet-/cabinet/]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_start_url_accepts_only_a_same_site_path[https://evil.example/-/]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_start_url_accepts_only_a_same_site_path[//evil.example/-/]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_start_url_accepts_only_a_same_site_path[/\\\\evil.example/-/]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_start_url_accepts_only_a_same_site_path[/ca binet/-/]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_start_url_accepts_only_a_same_site_path[-/]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_start_url_accepts_only_a_same_site_path[/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-/]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_icon_version_changes_with_logo_name_and_colors"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_logo_icon_is_an_opaque_square_of_the_exact_size[False-192]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_logo_icon_is_an_opaque_square_of_the_exact_size[False-512]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_logo_icon_is_an_opaque_square_of_the_exact_size[True-192]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_logo_icon_is_an_opaque_square_of_the_exact_size[True-512]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_full_bleed_logo_fills_the_whole_tile_with_its_own_color[False-192]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_full_bleed_logo_fills_the_whole_tile_with_its_own_color[False-512]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_full_bleed_logo_fills_the_whole_tile_with_its_own_color[True-192]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_full_bleed_logo_fills_the_whole_tile_with_its_own_color[True-512]"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_full_bleed_logo_with_baked_rounded_corners_gets_its_color_in_the_corners"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_logo_with_a_varied_edge_keeps_the_theme_background"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_without_logo_icon_is_a_monogram_on_the_accent"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_svg_logo_falls_back_to_monogram"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_unreadable_logo_falls_back_to_monogram_with_a_warning"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_unsupported_icon_size_is_404"
+      },
+      {
+        "classname": "tests.cabinet.test_branding_manifest",
+        "name": "test_readable_text_matches_the_cabinet_choice"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_permissions_are_registered"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_preset_roles_grant_the_section[Admin]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_preset_roles_grant_the_section[Marketer]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_payload_validation[kw0]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_payload_validation[kw1]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_payload_validation[kw2]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_payload_validation[kw3]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_payload_validation[kw4]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_payload_validation[kw5]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_payload_validation[kw6]"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_crud_flow_and_builtin_protection"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_audience_counts_per_channel"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_audience_marketing_excludes_promo_opt_out"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_response_audience_bot_uses_reminder_category"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_test_send_goes_to_the_admin"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_send_test_rejects_malformed_stored_texts"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_uses_non_deprecated_422_constant"
+      },
+      {
+        "classname": "tests.cabinet.test_admin_user_reminders",
+        "name": "test_malformed_stored_conditions_do_not_break_reads"
+      },
+      {
+        "classname": "tests.cabinet.test_promo_group_recalculation_routes",
+        "name": "test_routes_registered"
+      },
+      {
+        "classname": "tests.cabinet.test_promo_group_recalculation_routes",
+        "name": "test_status_url_is_not_swallowed_by_the_group_id_route"
+      },
+      {
+        "classname": "tests.cabinet.test_promo_group_recalculation_routes",
+        "name": "test_permissions_follow_the_action"
+      },
+      {
+        "classname": "tests.cabinet.test_promo_group_recalculation_routes",
+        "name": "test_post_starts_a_pass_and_returns_its_state"
+      },
+      {
+        "classname": "tests.cabinet.test_promo_group_recalculation_routes",
+        "name": "test_post_during_a_pass_reports_it_was_queued"
+      },
+      {
+        "classname": "tests.cabinet.test_promo_group_recalculation_routes",
+        "name": "test_get_reports_state_without_starting_anything"
+      },
+      {
+        "classname": "tests.cabinet.test_email_broadcast_scoped_targets",
+        "name": "test_parse_scoped_targets"
+      },
+      {
+        "classname": "tests.cabinet.test_email_broadcast_scoped_targets",
+        "name": "test_promo_group_target_counts_and_fetches_the_same_people"
+      },
+      {
+        "classname": "tests.cabinet.test_email_broadcast_scoped_targets",
+        "name": "test_single_user_target_reaches_exactly_that_user"
+      },
+      {
+        "classname": "tests.cabinet.test_email_broadcast_scoped_targets",
+        "name": "test_send_rejects_targets_nobody_can_receive[vip_unverified-400]"
+      },
+      {
+        "classname": "tests.cabinet.test_email_broadcast_scoped_targets",
+        "name": "test_send_rejects_targets_nobody_can_receive[vip_blocked-400]"
+      },
+      {
+        "classname": "tests.cabinet.test_email_broadcast_scoped_targets",
+        "name": "test_send_rejects_targets_nobody_can_receive[missing_user-404]"
+      },
+      {
+        "classname": "tests.cabinet.test_email_broadcast_scoped_targets",
+        "name": "test_send_rejects_targets_nobody_can_receive[missing_group-404]"
+      },
+      {
+        "classname": "tests.cabinet.test_email_broadcast_scoped_targets",
+        "name": "test_email_filters_list_promo_groups_with_counts"
+      },
+      {
+        "classname": "tests.cabinet.test_email_broadcast_scoped_targets",
+        "name": "test_multi_tariff_user_gets_one_email_not_one_per_subscription[active_email-statuses0]"
+      },
+      {
+        "classname": "tests.cabinet.test_email_broadcast_scoped_targets",
+        "name": "test_multi_tariff_user_gets_one_email_not_one_per_subscription[expired_email-statuses1]"
+      }
+    ],
+    "junit_sha256": "febdc4630299920694e7ba71fbbec582552f23054ce49ddf7a3a453095077bec",
+    "stdout_sha256": "1c7ce7e0802ee26f479e55dce00c5a15a067c77463975f269ba53bb5279ec317",
+    "test_image": {
+      "id": "sha256:a2aeaefa5d48b79b77bb2c038977be1ba57e33343e214f5e23469c540c8f4107",
+      "runtime_parent_id": "sha256:f2e0b7e9210d95f8a7d315ea8eaf686bc8f67cc6fba62e52ad77225924e74ebd",
+      "revision": "877690a7039d1326b2c00eda3e297879b80c0678",
+      "runtime_layers_prefix_verified": true
+    },
+    "network": "none",
+    "scope": "Existing upstream FastAPI/schema/migration tests with database/service test doubles; not a live service or full database/Telegram/payment/panel proof"
+  },
+  "frontend_api_audit": {
+    "counts": {
+      "bot_cabinet_paths": 521,
+      "frontend_calls_collected": 579,
+      "method_path_matches": 578,
+      "missing_method_paths": 1,
+      "outside_cabinet_router": 0,
+      "unresolved_expressions": 0
+    },
+    "literal_matches": 369,
+    "template_possible_matches": 209,
+    "openapi_sha256": "7281b888d3839c87c3b15848b8bc0fae3ca83bc51c597cb9c0f1656666989536",
+    "inventory_sha256": "e7e24451b27ac5656d9fdc9dbb2621d43c638983d001d0be4035d173e39a20f6",
+    "missing": [
+      {
+        "file": "src/api/adminBroadcasts.ts",
+        "line": 227,
+        "method": "POST",
+        "expression": "'/cabinet/admin/broadcasts/email'",
+        "endpoint": "/cabinet/admin/broadcasts/email",
+        "backend_paths": [],
+        "kind": "literal_method_path_match"
+      }
+    ],
+    "missing_disposition": "Unused legacy adminBroadcastsApi.createEmail wrapper; only its declaration exists in src. Current AdminBroadcastCreate uses createCombined -> POST /cabinet/admin/broadcasts/send, which matches exact Bot schema. Source unchanged; retain OPEN unused wrapper limitation.",
+    "scope": "Method/path schema audit only; template matches are possible routes, not resolved parameter/response/runtime evidence"
+  },
+  "mock_browser_smoke": {
+    "stats": {
+      "startTime": "2026-10-02T13:58:41.541Z",
+      "duration": 54183.896,
+      "expected": 11,
+      "skipped": 1,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "browser": {
+      "channel": "chrome",
+      "version": "154.0.8037.93",
+      "headless": true,
+      "playwright_core_version": "1.63.0"
+    },
+    "tests": [
+      {
+        "title": "keeps subscription management and Connection as compact as Balance",
+        "file": "cabinet-flows.spec.ts",
+        "line": 202,
+        "project": "mobile-320",
+        "results": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "duration": 28513
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "title": "keeps the compact Dashboard responsive in dark and light themes",
+        "file": "cabinet-flows.spec.ts",
+        "line": 380,
+        "project": "mobile-320",
+        "results": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "duration": 24111
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "title": "manages Devices from subscription management and returns to it @critical-flow",
+        "file": "cabinet-flows.spec.ts",
+        "line": 654,
+        "project": "mobile-320",
+        "results": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "duration": 3269
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "title": "runs the Connection wizard with Back, reload fallback, and legacy entry @critical-flow",
+        "file": "cabinet-flows.spec.ts",
+        "line": 749,
+        "project": "mobile-320",
+        "results": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "duration": 9762
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "title": "keeps subscription management and Connection as compact as Balance",
+        "file": "cabinet-flows.spec.ts",
+        "line": 202,
+        "project": "desktop-1280",
+        "results": [
+          {
+            "status": "skipped",
+            "retry": 0,
+            "duration": 206
+          }
+        ],
+        "annotations": [
+          {
+            "type": "skip",
+            "description": "Mobile and tablet density only"
+          }
+        ]
+      },
+      {
+        "title": "keeps the compact Dashboard responsive in dark and light themes",
+        "file": "cabinet-flows.spec.ts",
+        "line": 380,
+        "project": "desktop-1280",
+        "results": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "duration": 3564
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "title": "manages Devices from subscription management and returns to it @critical-flow",
+        "file": "cabinet-flows.spec.ts",
+        "line": 654,
+        "project": "desktop-1280",
+        "results": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "duration": 4294
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "title": "runs the Connection wizard with Back, reload fallback, and legacy entry @critical-flow",
+        "file": "cabinet-flows.spec.ts",
+        "line": 749,
+        "project": "desktop-1280",
+        "results": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "duration": 9711
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "title": "shows independent loading values without false unavailable or zero balances",
+        "file": "dashboard-loading.spec.ts",
+        "line": 12,
+        "project": "mobile-320",
+        "results": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "duration": 1615
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "title": "shows independent loading values without false unavailable or zero balances",
+        "file": "dashboard-loading.spec.ts",
+        "line": 12,
+        "project": "desktop-1280",
+        "results": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "duration": 4608
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "title": "manual Telegram login succeeds after bot confirmation",
+        "file": "telegram-login.spec.ts",
+        "line": 193,
+        "project": "mobile-320",
+        "results": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "duration": 4166
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "title": "manual Telegram login succeeds after bot confirmation",
+        "file": "telegram-login.spec.ts",
+        "line": 193,
+        "project": "desktop-1280",
+        "results": [
+          {
+            "status": "passed",
+            "retry": 0,
+            "duration": 4144
+          }
+        ],
+        "annotations": []
+      }
+    ],
+    "stdout_sha256": "d5643f90270cf805ff12c6804c99c1ada2a7bed0fe699248e5b700906d80670d",
+    "initial_attempt": "12 launch failures, 0 scenarios executed: missing bundled browser revision 1243",
+    "browser_install_attempt": "Bundled revision download failed on CDN timeouts; old browsers were preserved (--no-remove)",
+    "successful_environment": "System Chrome via temporary config; existing source/tests/assertions/timeouts unchanged; retries=0, workers=2",
+    "scope": "Frontend behavior with existing API/Telegram mocks; not actual Bot authentication/payment/Telegram proof"
+  },
+  "preserved_runtime_reference": {
+    "published_sha": "5ee46023afc373fbfcef69f6793d440aa1d2cdd0",
+    "candidate_sha": "8fb8cbec19d651fcfaee3bce32621031b3e69965",
+    "application_paths_unchanged": 691,
+    "only_src_change": "test-only relative grace_until fixture",
+    "evidence": "Installer local primary evidence preparation static comparison; runtime/license/upstream/package/lock unchanged"
+  },
+  "limitations": [
+    {
+      "id": "unused-legacy-email-wrapper",
+      "status": "OPEN",
+      "summary": "createEmail declares POST /cabinet/admin/broadcasts/email, absent from exact Bot schema. Static search finds only its declaration; current form uses supported createCombined -> /send. Wrapper unchanged from published source."
+    },
+    {
+      "id": "classic-auto-purchase",
+      "status": "OPEN",
+      "summary": "Exact Bot subscription_purchase top-up dispatch remains unsupported; real renewal/payment not proved."
+    },
+    {
+      "id": "source-contract-coverage",
+      "status": "BLOCKED",
+      "summary": "No full response-field parity proof for every call and no actual authenticated staging/Telegram/payment/panel/physical-device run."
+    },
+    {
+      "id": "new-bundle-smoke",
+      "status": "BLOCKED",
+      "summary": "No new primary Release Bundle or its targeted installation/smoke exists."
+    }
+  ],
+  "preservation": {
+    "status": "PASS",
+    "owner_worktrees_HEAD_index_all_files": "unchanged",
+    "exact_bot_and_cabinet_sources": "clean and unchanged",
+    "both_primary_main": "unchanged",
+    "owned_docker_containers": "removed",
+    "remote_mutations": [],
+    "shared_docker_desktop": "started for tests and remains running; other containers untouched"
+  },
+  "remote_mutations": [],
+  "remaining": "Actual authenticated staging, real Telegram/payment/panel/renewal/concurrency and new Release Bundle smoke remain BLOCKED. No new tag/Release, latest/settings or production action is authorized by this record.",
+  "owner_acceptance": {
+    "accepted_at_utc": "2026-10-02T14:18:17.610523+00:00",
+    "decision": "Accepted limited source-contract coverage; retain all OPEN/BLOCKED limitations. Actual authenticated Bot/Telegram/payment/panel/renewal/concurrency and new Bundle smoke are not proved.",
+    "original_review_report_sha256": "5534c16ec6e4d61ad12be2b9cfd1dd42b1549dbec86ab723a6f6b5cd8c5a55e2",
+    "source": "Owner acceptance in this chat"
+  }
+}
