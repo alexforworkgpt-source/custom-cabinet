@@ -192,7 +192,7 @@ describe('AdminUsers v1.79 behavior', () => {
         [
           user(1, {
             online_at: new Date(Date.now() - 5_000).toISOString(),
-            grace_until: '2026-10-02T00:00:00Z',
+            grace_until: new Date(Date.now() + 86_400_000).toISOString(),
             subscriptions: [
               { id: 1, tariff_name: 'A' },
               { id: 2, tariff_name: 'B' },

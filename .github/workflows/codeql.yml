@@ -2,12 +2,18 @@ name: CodeQL
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main, dev, 'release/**', 'sync/**']
+    tags: ['cabinet-v*']
   pull_request:
     branches: [main, dev]
   schedule:
     # Еженедельный полный проход, чтобы ловить новые правила даже без коммитов.
     - cron: "27 3 * * 1"
+  workflow_call:
+    inputs:
+      source_sha:
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -24,6 +30,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+
+      - name: Verify selected source
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$(git rev-parse "$SOURCE_SHA^{commit}")"
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4

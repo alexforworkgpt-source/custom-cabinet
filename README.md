@@ -30,8 +30,10 @@ Custom Cabinet does not publish production assets from an uncommitted local
 folder. Installer builds a pinned Cabinet source commit in GitHub Actions and
 delivers `cabinet-dist.tar.gz` through a verified Release Bundle.
 
-Upstream publication workflows were removed from this repository. Automation
-for future Custom Cabinet releases is a separate workstream.
+Upstream publication workflows were removed from this repository. The separate
+Custom Cabinet publication workflow and reviewed source records are described
+in [`RELEASE_PROCESS.md`](RELEASE_PROCESS.md). Cabinet Releases record source
+versions; compiled production assets remain in Installer Release Bundle.
 
 ## Provenance
 
