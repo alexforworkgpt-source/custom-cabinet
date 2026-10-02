@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "cabinet": {
+    "tag": "cabinet-v2026.10.02.1",
+    "sha": "8fb8cbec19d651fcfaee3bce32621031b3e69965",
+    "tree_sha": "2a3769d515f87f6e7c325d51d8b218fc4ce49bec"
+  },
+  "upstream": {
+    "repository": "https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git",
+    "tag": "v1.79.0",
+    "sha": "821c7b71823573a756de00418acb25118ede1c9c"
+  },
+  "bot": {
+    "repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "sha": "877690a7039d1326b2c00eda3e297879b80c0678",
+    "backend_contract": "1",
+    "compatibility_evidence": "https://github.com/alexforworkgpt-source/custom-cabinet/blob/3fed554a456bb7babcdec288d3c81f39de6fd816/releases/evidence/compatibility-evidence-8fb8cbe-877690a7-20261002.md"
+  },
+  "changes": [
+    "Exact-source CI/CodeQL, reviewed publication records, ID-bound asset transfer and bounded draft visibility",
+    "Test-only grace_until fixture uses a relative date; production source remains byte-identical to cabinet-v2026.10.01.1"
+  ],
+  "limitations": [
+    {
+      "id": "classic-auto-purchase",
+      "status": "OPEN",
+      "summary": "Backend subscription_purchase top-up dispatch remains unsupported; real server-side renewal is not proved."
+    },
+    {
+      "id": "unused-legacy-email-wrapper",
+      "status": "OPEN",
+      "summary": "createEmail declares POST /cabinet/admin/broadcasts/email, absent from exact Bot schema. Static search finds only its declaration; current form uses supported createCombined -> /send. Wrapper unchanged from published source."
+    },
+    {
+      "id": "exact-compatibility-evidence",
+      "status": "BLOCKED",
+      "summary": "Owner accepted limited source-contract evidence for exact Cabinet/Bot: 145 Bot tests, 578/579 method/path matches and 11 mocked browser scenarios. Full response-field parity and actual authenticated staging remain unverified; no complete runtime compatibility PASS is claimed."
+    },
+    {
+      "id": "new-bundle-smoke",
+      "status": "BLOCKED",
+      "summary": "A new Release Bundle has not been built/published/installed or smoke-tested."
+    },
+    {
+      "id": "physical-platform-and-payment",
+      "status": "BLOCKED",
+      "summary": "Real Telegram Android/iOS, physical accessibility, payment, renewal, concurrency and panel flows remain outside existing proof."
+    }
+  ],
+  "frontend_policy": {
+    "bscheker": "excluded",
+    "simple_mode": "excluded"
+  },
+  "owner_approved": true
+}
