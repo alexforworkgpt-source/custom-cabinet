@@ -1,6 +1,25 @@
 # Отдельный Release Custom Cabinet
 
-Status: подготовлено локально, 2026-10-01; новый workflow ещё не запускался в GitHub.
+Status: workflow опубликован и проверен настоящими GitHub runs 2026-10-02.
+Stable reference: `cabinet-v2026.10.02.1` / `bundle-v2026.10.02.1`.
+Данные разделов с датой 2026-10-01 ниже относятся к исторической подготовке.
+
+## Выпуск дизайна 2026-10-03
+
+Кандидат `cabinet-v2026.10.03.1` подготовлен из isolated source
+`ec3ca7dd0394b73b5630f82c978ed1d6fbe172d6`; tree
+`150fec3536a0a7dd6a9eb6ea16ccb29d9c772774`.
+Reviewed record: `releases/records/cabinet-v2026.10.03.1.json`.
+Ограниченное compatibility evidence:
+`releases/evidence/compatibility-design-ec3ca7d-877690a7-20261003.md`.
+Installer `installer-v2026.10.02` / `75c49bec9c2a764e123fc0ef675f8c45fc22a1ab`
+и принятое lifecycle evidence переиспользуются при прежних identities/contracts.
+Новый Bundle `bundle-v2026.10.03.1` сначала публикуется как candidate,
+проходит public-byte verification и отдельную disposable installation,
+затем metadata promotion Cabinet и Bundle. Состояние публикации и фактический
+smoke фиксируются в отдельных completion/evidence документах, не в tagged source.
+`latest`, production, прежние tags/Releases/assets и owner working copies
+сохраняются. Production transition требует отдельного разрешения.
 
 Custom Cabinet Release фиксирует версию исходников и известные ограничения.
 Release Bundle в репозитории Installer содержит готовый frontend и проверенный

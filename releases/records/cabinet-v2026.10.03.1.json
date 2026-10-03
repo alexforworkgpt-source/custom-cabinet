@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "cabinet": {
+    "tag": "cabinet-v2026.10.03.1",
+    "sha": "ec3ca7dd0394b73b5630f82c978ed1d6fbe172d6",
+    "tree_sha": "150fec3536a0a7dd6a9eb6ea16ccb29d9c772774"
+  },
+  "upstream": {
+    "repository": "https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git",
+    "tag": "v1.79.0",
+    "sha": "821c7b71823573a756de00418acb25118ede1c9c"
+  },
+  "bot": {
+    "repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "sha": "877690a7039d1326b2c00eda3e297879b80c0678",
+    "backend_contract": "1",
+    "compatibility_evidence": "https://github.com/alexforworkgpt-source/custom-cabinet/blob/4d6c6fbfb7864572f56a834f5675c4f3c955e630/releases/evidence/compatibility-design-ec3ca7d-877690a7-20261003.md"
+  },
+  "changes": [
+    "Compared with stable cabinet-v2026.10.02.1 / bundle-v2026.10.02.1: paid periodic tariffs in single-subscription mode open renewal of the same subscription; existing trial/daily/limited/explicit tariff selection rules are preserved.",
+    "Classic purchase shows discounted monthly prices for long periods and uses the canonical outer Card. Renewal shares the card design, promo-group banner and icon information rows, with a separate device row and inline payment action without a mobile gap.",
+    "Renewal heading remains Продлить подписку; ordinary purchase heading is Оформить подписку. Trial traffic badge uses short localized text, existing Gift icon and the approved gold palette with previous dimensions. Trial continuation banner and management action keep the original design.",
+    "Review correction reserves top padding for discount badges on purchase/renewal cards, covered by failing-before/passing-after browser geometry checks. API clients/types/config/dependencies/upstream provenance/LICENSE are unchanged."
+  ],
+  "limitations": [
+    {
+      "id": "classic-auto-purchase",
+      "status": "OPEN",
+      "summary": "Backend subscription_purchase top-up dispatch remains unsupported; real server-side renewal is not proved."
+    },
+    {
+      "id": "unused-legacy-email-wrapper",
+      "status": "OPEN",
+      "summary": "createEmail declares POST /cabinet/admin/broadcasts/email, absent from exact Bot schema. Static search finds only its declaration; current form uses supported createCombined -> /send. Wrapper unchanged from published source."
+    },
+    {
+      "id": "exact-compatibility-evidence",
+      "status": "BLOCKED",
+      "summary": "Owner accepted prior bounded contracts for the unchanged API/Bot combination; current frontend source has 1006 tests and 117 mocked browser scenarios. Full response-field parity and authenticated staging remain unverified; no full runtime compatibility PASS is claimed."
+    },
+    {
+      "id": "physical-platform-and-payment",
+      "status": "BLOCKED",
+      "summary": "Real Telegram Android/iOS, physical accessibility, payment, renewal, concurrency and panel flows remain outside existing proof."
+    }
+  ],
+  "frontend_policy": {
+    "bscheker": "excluded",
+    "simple_mode": "excluded"
+  },
+  "owner_approved": true
+}
