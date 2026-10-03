@@ -14,7 +14,7 @@
     "repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
     "sha": "877690a7039d1326b2c00eda3e297879b80c0678",
     "backend_contract": "1",
-    "compatibility_evidence": "https://github.com/alexforworkgpt-source/custom-cabinet/blob/77b9e8926e7248aa75ad49efd63d6c93ede7782e/releases/evidence/compatibility-design-3b62555-877690a7-20261003.md"
+    "compatibility_evidence": "https://github.com/alexforworkgpt-source/custom-cabinet/blob/77f0d15493b70426fe791cf307f48f3d859246b0/releases/evidence/compatibility-design-3b62555-877690a7-20261003.md"
   },
   "changes": [
     "Compared with stable cabinet-v2026.10.02.1 / bundle-v2026.10.02.1: paid periodic tariffs in single-subscription mode open renewal of the same subscription; existing trial/daily/limited/explicit tariff selection rules are preserved.",
