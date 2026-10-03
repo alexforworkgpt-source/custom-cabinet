@@ -7,11 +7,11 @@ Stable reference: `cabinet-v2026.10.02.1` / `bundle-v2026.10.02.1`.
 ## Выпуск дизайна 2026-10-03
 
 Кандидат `cabinet-v2026.10.03.1` подготовлен из isolated source
-`ec3ca7dd0394b73b5630f82c978ed1d6fbe172d6`; tree
-`150fec3536a0a7dd6a9eb6ea16ccb29d9c772774`.
+`3b6255597f5ad5270136dd1f683fed980b925a66`; tree
+`8422dc4a2ab015b6025200a3f8c417fa912c38de`.
 Reviewed record: `releases/records/cabinet-v2026.10.03.1.json`.
 Ограниченное compatibility evidence:
-`releases/evidence/compatibility-design-ec3ca7d-877690a7-20261003.md`.
+`releases/evidence/compatibility-design-3b62555-877690a7-20261003.md`.
 Installer `installer-v2026.10.02` / `75c49bec9c2a764e123fc0ef675f8c45fc22a1ab`
 и принятое lifecycle evidence переиспользуются при прежних identities/contracts.
 Новый Bundle `bundle-v2026.10.03.1` сначала публикуется как candidate,

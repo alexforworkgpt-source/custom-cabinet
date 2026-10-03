@@ -2,8 +2,8 @@
   "schema_version": 1,
   "cabinet": {
     "tag": "cabinet-v2026.10.03.1",
-    "sha": "ec3ca7dd0394b73b5630f82c978ed1d6fbe172d6",
-    "tree_sha": "150fec3536a0a7dd6a9eb6ea16ccb29d9c772774"
+    "sha": "3b6255597f5ad5270136dd1f683fed980b925a66",
+    "tree_sha": "8422dc4a2ab015b6025200a3f8c417fa912c38de"
   },
   "upstream": {
     "repository": "https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git",
@@ -14,13 +14,13 @@
     "repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
     "sha": "877690a7039d1326b2c00eda3e297879b80c0678",
     "backend_contract": "1",
-    "compatibility_evidence": "https://github.com/alexforworkgpt-source/custom-cabinet/blob/4d6c6fbfb7864572f56a834f5675c4f3c955e630/releases/evidence/compatibility-design-ec3ca7d-877690a7-20261003.md"
+    "compatibility_evidence": "https://github.com/alexforworkgpt-source/custom-cabinet/blob/77b9e8926e7248aa75ad49efd63d6c93ede7782e/releases/evidence/compatibility-design-3b62555-877690a7-20261003.md"
   },
   "changes": [
     "Compared with stable cabinet-v2026.10.02.1 / bundle-v2026.10.02.1: paid periodic tariffs in single-subscription mode open renewal of the same subscription; existing trial/daily/limited/explicit tariff selection rules are preserved.",
     "Classic purchase shows discounted monthly prices for long periods and uses the canonical outer Card. Renewal shares the card design, promo-group banner and icon information rows, with a separate device row and inline payment action without a mobile gap.",
     "Renewal heading remains Продлить подписку; ordinary purchase heading is Оформить подписку. Trial traffic badge uses short localized text, existing Gift icon and the approved gold palette with previous dimensions. Trial continuation banner and management action keep the original design.",
-    "Review correction reserves top padding for discount badges on purchase/renewal cards, covered by failing-before/passing-after browser geometry checks. API clients/types/config/dependencies/upstream provenance/LICENSE are unchanged."
+    "Review corrections reserve top padding for discount badges and keep active tariff renewal hints accurate, covered by failing-before/passing-after tests. API clients/types/config/dependencies/upstream provenance/LICENSE are unchanged."
   ],
   "limitations": [
     {
