@@ -157,6 +157,18 @@ tag/SHA, фактическая новая дата публикации, ссы
 
 ## Проверка локальной подготовки
 
+Актуальный выполненный выпуск: `cabinet-v2026.10.03.1` и
+`bundle-v2026.10.03.1`, stable, из точного Cabinet source
+`3b6255597f5ad5270136dd1f683fed980b925a66`. Linux Actions, публичные bytes,
+браузерная проверка скачанного artifact и disposable installation завершены.
+Installer `installer-v2026.10.02` и его принятое lifecycle evidence
+переиспользованы по неизменному protected tuple. `latest` и старые Releases
+сохранены; production не обновлялся. Подробности и сохранённые ограничения:
+[итог выпуска](docs/releases/design-release-20261003.1.md),
+[live-check report](docs/releases/LIVE_CHECK_REPORT_2026.10.03.1.md).
+Следующие абзацы — исторический snapshot подготовки 2026-10-01, а не статус
+завершённого выпуска 2026-10-03.
+
 На 2026-10-01: 991 frontend tests PASS на Node 24.19.0 и 26.10.0
 с `--maxWorkers=2`; Node 24 type-check/build PASS. До release-правок обычный
 параллельный прогон дал 21 ошибку преимущественно по timeout; тот же набор
