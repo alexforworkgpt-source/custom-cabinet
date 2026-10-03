@@ -15,6 +15,7 @@ import { TariffPickerGrid } from '../components/subscription/purchase/TariffPick
 import { ClassicPurchaseWizard } from '../components/subscription/purchase/ClassicPurchaseWizard';
 import { PurchaseContextBanners } from '../components/subscription/purchase/PurchaseContextBanners';
 import { ExclamationIcon } from '@/components/icons';
+import { Card } from '@/components/data-display';
 import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
 
 export default function SubscriptionPurchase() {
@@ -111,7 +112,9 @@ export default function SubscriptionPurchase() {
   if (optionsError || (!purchaseOptions && !optionsLoading)) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('subscription.extend')}</h1>
+        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
+          {t('subscription.getSubscription')}
+        </h1>
         <div
           className="rounded-3xl p-6 text-center"
           style={{
@@ -145,9 +148,7 @@ export default function SubscriptionPurchase() {
               ? t('subscription.newTariff', 'Новый тариф')
               : !isMultiTariff && subscription?.is_daily && !subscription?.is_trial
                 ? t('subscription.switchTariff.title')
-                : subscription && !subscription.is_trial
-                  ? t('subscription.extend')
-                  : t('subscription.getSubscription')}
+                : t('subscription.getSubscription')}
         </h1>
       </div>
 
@@ -273,11 +274,13 @@ export default function SubscriptionPurchase() {
 
       {/* Purchase/Extend Section - Classic Mode */}
       {classicOptions && classicOptions.periods.length > 0 && (
-        <ClassicPurchaseWizard
-          classicOptions={classicOptions}
-          subscription={subscription}
-          subscriptionId={subscriptionId}
-        />
+        <Card>
+          <ClassicPurchaseWizard
+            classicOptions={classicOptions}
+            subscription={subscription}
+            subscriptionId={subscriptionId}
+          />
+        </Card>
       )}
 
       {/* No options available fallback */}

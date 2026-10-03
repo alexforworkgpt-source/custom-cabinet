@@ -26,15 +26,15 @@ export default function PurchaseCTAButton({
   const isTrial = subscription?.is_trial;
   const isDaily = subscription?.is_daily;
   const requiresTariff = needsTariff(subscription);
-  const isClassicRenewal =
-    isClassic &&
+  const canRenewCurrentSubscription =
     !!subscription &&
     !requiresTariff &&
-    !subscription.tariff_id &&
+    (isClassic || !!subscription.tariff_id) &&
     !isTrial &&
     !isDaily &&
     !subscription.is_limited &&
     (subscription.status === 'active' || subscription.status === 'expired');
+  const isClassicRenewal = canRenewCurrentSubscription && isClassic && !subscription?.tariff_id;
 
   // Daily tariffs renew automatically — no manual renewal button needed in multi-tariff
   if (isMultiTariff && isDaily && !isExpired) return null;
@@ -43,7 +43,7 @@ export default function PurchaseCTAButton({
 
   const buttonText = requiresTariff
     ? t('subscription.cta.moveToTariff')
-    : isClassicRenewal
+    : canRenewCurrentSubscription
       ? t('subscription.extend')
       : isExpired
         ? t('subscription.getSubscription')
@@ -59,19 +59,19 @@ export default function PurchaseCTAButton({
         ? t('subscription.cta.moveToTariffHint')
         : isTrial
           ? t('subscription.cta.trialHint')
-          : isMultiTariff
+          : isMultiTariff || canRenewCurrentSubscription
             ? t('subscription.cta.renewHint', 'Продление подписки')
             : t('subscription.cta.activeHint');
 
   // Trial → purchase page (buy a real tariff, trial can't be renewed)
-  // Paid classic and multi-tariff → per-subscription renew page
+  // Paid classic, periodic tariff and multi-tariff → per-subscription renew page
   // Otherwise → purchase page
   const linkTo =
     requiresTariff && subscription?.id
       ? tariffSelectionPath(subscription.id)
       : isTrial
         ? '/subscription/purchase'
-        : (isMultiTariff || isClassicRenewal) && subscription?.id
+        : (isMultiTariff || canRenewCurrentSubscription) && subscription?.id
           ? `/subscriptions/${subscription.id}/renew`
           : '/subscription/purchase';
 

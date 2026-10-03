@@ -20,6 +20,8 @@ import { Button } from '../components/primitives';
 import { PageSkeleton, Skeleton } from '../components/ui/skeleton';
 import { RenewalOptions } from '../components/subscription/renewal/RenewalOptions';
 import { RenewalSummary } from '../components/subscription/renewal/RenewalSummary';
+import { RenewalSubscriptionInfo } from '../components/subscription/renewal/RenewalSubscriptionInfo';
+import { PurchaseContextBanners } from '../components/subscription/purchase/PurchaseContextBanners';
 
 export default function RenewSubscription() {
   const { subscriptionId } = useParams<{ subscriptionId: string }>();
@@ -204,51 +206,17 @@ export default function RenewSubscription() {
         </Card>
       ) : (
         <>
-          <Card size="sm" className="space-y-1 text-sm text-dark-400">
-            {endDate && (
-              <p className="font-medium text-dark-100">
-                {t('subscription.renewCurrentEnd', { date: endDate })}
-              </p>
-            )}
-            {isClassic && <p>{t('subscription.classicRenewHint')}</p>}
-            <p>
-              {t('subscription.traffic')}:{' '}
-              {subscription.traffic_limit_gb || t('subscription.unlimited')}
-              {subscription.traffic_limit_gb > 0 && ` ${t('common.units.gb')}`}
-              {' · '}
-              {t('subscription.devices')}:{' '}
-              {subscription.device_limit || t('subscription.unlimited')}
-            </p>
-            {subscription.servers.length > 0 && (
-              <p>
-                {t('subscription.serversLabel')}:{' '}
-                {subscription.servers.map((server) => server.name).join(', ')}
-              </p>
-            )}
-          </Card>
-          {selectionReset && (
-            <p role="status" className="text-sm text-dark-400">
-              {t('subscription.renewSelectionReset')}
-            </p>
-          )}
-          <RenewalOptions
-            options={optionsQuery.data ?? []}
-            selectedPeriod={selectedPeriod}
-            disabled={!ready || renewMutation.isPending}
-            onSelect={(period) => {
-              selectPeriod(period);
-              setError(null);
-              impact('light');
-            }}
+          <PurchaseContextBanners
+            subscription={subscription}
+            purchaseOptions={purchaseQuery.data}
+            tariffs={'tariffs' in purchaseQuery.data ? purchaseQuery.data.tariffs : []}
+            showPromoGroup
           />
-          {missingAmount && !isClassic && (
-            <InsufficientBalancePrompt missingAmountKopeks={Number(missingAmount)} compact />
-          )}
-          {error && !missingAmount && (
-            <p role="alert" className="rounded-xl bg-error-400/10 p-3 text-sm text-error-400">
-              {error}
-            </p>
-          )}
+          <RenewalSubscriptionInfo
+            subscription={subscription}
+            endDate={endDate}
+            isClassic={isClassic}
+          />
           <RenewalSummary
             option={selectedOption}
             balanceKopeks={balanceKopeks}
@@ -256,7 +224,31 @@ export default function RenewSubscription() {
             disabled={!ready}
             pending={renewMutation.isPending}
             onSubmit={handleRenew}
-          />
+          >
+            {selectionReset && (
+              <p role="status" className="text-sm text-dark-400">
+                {t('subscription.renewSelectionReset')}
+              </p>
+            )}
+            <RenewalOptions
+              options={optionsQuery.data ?? []}
+              selectedPeriod={selectedPeriod}
+              disabled={!ready || renewMutation.isPending}
+              onSelect={(period) => {
+                selectPeriod(period);
+                setError(null);
+                impact('light');
+              }}
+            />
+            {missingAmount && !isClassic && (
+              <InsufficientBalancePrompt missingAmountKopeks={Number(missingAmount)} compact />
+            )}
+            {error && !missingAmount && (
+              <p role="alert" className="rounded-xl bg-error-400/10 p-3 text-sm text-error-400">
+                {error}
+              </p>
+            )}
+          </RenewalSummary>
         </>
       )}
     </div>

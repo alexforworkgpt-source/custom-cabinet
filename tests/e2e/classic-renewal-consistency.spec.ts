@@ -16,6 +16,28 @@ for (const language of ['ru', 'en', 'fa']) {
         language,
         responses: {
           ...responses,
+          '/api/cabinet/subscription': {
+            has_subscription: true,
+            subscription: {
+              ...subscription,
+              traffic_limit_gb: 0,
+              device_limit: 1,
+              servers: [
+                { uuid: 'nl', name: '🇳🇱 Нидерланды' },
+                { uuid: 'ee', name: '🇪🇪 Эстония' },
+                { uuid: 'de', name: '🇩🇪 Германия' },
+                { uuid: 'fi', name: '🇫🇮 Финляндия' },
+                { uuid: 'us', name: '🇺🇸 США' },
+              ],
+            },
+          },
+          '/api/cabinet/promo/group-discounts': {
+            group_name: 'Базовый юзер',
+            server_discount_percent: 0,
+            traffic_discount_percent: 0,
+            device_discount_percent: 0,
+            period_discounts: { '90': 10 },
+          },
           '/api/cabinet/subscription/renewal-options': periods,
           ...(theme === 'operator'
             ? {
@@ -37,6 +59,48 @@ for (const language of ['ru', 'en', 'fa']) {
       await page.goto('/subscriptions/42/renew', { waitUntil: 'domcontentloaded' });
       const option = page.getByRole('button', { name: /^30 / });
       await expect(option).toBeVisible();
+      await expect(page.getByText(/Базовый юзер/)).toBeVisible();
+      await expect(page.locator('[data-renewal-info] svg')).toHaveCount(5);
+      await expect(page.locator('[data-renewal-info]')).toContainText('Нидерланды');
+      const outerPanel = page.locator('[data-renewal-panel]');
+      await expect(outerPanel.locator('[data-renewal-clearance]')).toHaveCount(0);
+      expect(
+        await outerPanel.evaluate((element) => getComputedStyle(element).borderTopWidth),
+      ).not.toBe('0px');
+      await expect(option).toHaveClass(/bento-card-hover/);
+      for (const days of [60, 90, 180, 360]) {
+        const discounted = page.getByRole('button', { name: new RegExp(`^${days} `) });
+        const titleBox = await discounted
+          .locator(':scope > span')
+          .first()
+          .evaluate((element) => {
+            const range = document.createRange();
+            range.selectNodeContents(element);
+            const { x, y, width, height } = range.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+        const badgeBox = await discounted.locator(':scope > span.absolute').boundingBox();
+        expect(titleBox).not.toBeNull();
+        expect(badgeBox).not.toBeNull();
+        const overlap =
+          titleBox &&
+          badgeBox &&
+          titleBox.x < badgeBox.x + badgeBox.width &&
+          titleBox.x + titleBox.width > badgeBox.x &&
+          titleBox.y < badgeBox.y + badgeBox.height &&
+          titleBox.y + titleBox.height > badgeBox.y;
+        expect(overlap, `${days}-day title must remain clear of its discount badge`).toBe(false);
+      }
+      if (language === 'ru') {
+        await expect(
+          page.getByRole('heading', { name: 'Продлить подписку', exact: true }),
+        ).toBeVisible();
+        const info = page.locator('[data-renewal-info]');
+        await expect(info.locator('p', { hasText: 'Трафик:' })).not.toContainText('Устройства:');
+        await expect(info.locator('p', { hasText: 'Устройства:' })).toContainText('Устройства: 1');
+        await expect(page.getByRole('button', { name: /^90 / })).toContainText('267.30');
+        await expect(page.locator('[data-renewal-info]')).toContainText('Безлимит');
+      }
       await expect(option).toHaveAttribute('aria-pressed', 'false');
       const action = page.locator('[data-renewal-summary] button');
       await expect(action).toBeDisabled();
@@ -64,21 +128,16 @@ for (const language of ['ru', 'en', 'fa']) {
             ),
           ),
       ).toBe(true);
-      const panel = await page.locator('[data-renewal-summary]').boundingBox();
-      if (testInfo.project.name.includes('mobile') || testInfo.project.name.includes('tablet')) {
-        expect((panel?.y ?? 0) + (panel?.height ?? 0)).toBeLessThanOrEqual(
-          (page.viewportSize()?.height ?? 0) - 90,
-        );
-        // The selected period changes the panel height; wait for its measured spacer.
-        await expect
-          .poll(async () => {
-            await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
-            const last = await page.getByRole('button', { name: /^360 / }).boundingBox();
-            const currentPanel = await page.locator('[data-renewal-summary]').boundingBox();
-            return (last?.y ?? 0) + (last?.height ?? 0) - (currentPanel?.y ?? 0);
-          })
-          .toBeLessThanOrEqual(0);
-      }
+      await expect(outerPanel.locator('[data-renewal-summary]')).toHaveCount(1);
+      await expect(page.locator('[data-renewal-clearance]')).toHaveCount(0);
+      const summary = page.locator('[data-renewal-summary]');
+      const panel = await summary.boundingBox();
+      const last = await page.getByRole('button', { name: /^360 / }).boundingBox();
+      const gap = (panel?.y ?? 0) - ((last?.y ?? 0) + (last?.height ?? 0));
+      expect(gap).toBeGreaterThanOrEqual(0);
+      expect(gap).toBeLessThanOrEqual(20);
+      await action.scrollIntoViewIfNeeded();
+      await expect(action).toBeInViewport();
       await page.screenshot({
         path: `.scratch/classic-purchase-renewal-consistency/${testInfo.project.name}-${language}-${theme}.png`,
       });
