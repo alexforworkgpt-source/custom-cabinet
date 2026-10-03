@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { RenewalOption } from '../../../types';
 import { useCurrency } from '../../../hooks/useCurrency';
@@ -7,6 +6,7 @@ import { Card } from '../../data-display';
 import { Button } from '../../primitives';
 
 interface Props {
+  children: ReactNode;
   option: RenewalOption | undefined;
   balanceKopeks: number;
   isClassic: boolean;
@@ -16,6 +16,7 @@ interface Props {
 }
 
 export function RenewalSummary({
+  children,
   option,
   balanceKopeks,
   isClassic,
@@ -25,38 +26,10 @@ export function RenewalSummary({
 }: Props) {
   const { t } = useTranslation();
   const { formatAmount, currencySymbol } = useCurrency();
-  const [mobile, setMobile] = useState(
-    () => typeof matchMedia === 'function' && matchMedia('(max-width: 1023px)').matches,
-  );
-  const [height, setHeight] = useState(220);
-  const panel = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (typeof matchMedia !== 'function') return;
-    const media = matchMedia('(max-width: 1023px)');
-    const update = () => setMobile(media.matches);
-    media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
-  }, []);
-  useEffect(() => {
-    if (!mobile || !panel.current || typeof ResizeObserver !== 'function') return;
-    const observer = new ResizeObserver(() =>
-      setHeight((panel.current?.getBoundingClientRect().height ?? 220) + 16),
-    );
-    observer.observe(panel.current);
-    return () => observer.disconnect();
-  }, [mobile]);
   const price = (kopeks: number) => `${formatAmount(kopeks / 100)} ${currencySymbol}`;
   const missing = option ? Math.max(0, option.price_kopeks - balanceKopeks) : 0;
   const summary = (
-    <div
-      ref={panel}
-      data-renewal-summary
-      className={
-        mobile
-          ? 'fixed inset-x-0 bottom-[var(--mobile-nav-clearance)] z-40 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]'
-          : ''
-      }
-    >
+    <div data-renewal-summary>
       <Card size="sm" className="space-y-2 !bg-dark-900">
         {option ? (
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -97,16 +70,10 @@ export function RenewalSummary({
       </Card>
     </div>
   );
-  return mobile ? (
-    <>
-      <div
-        data-renewal-clearance
-        aria-hidden="true"
-        style={{ height: `calc(${height}px + var(--mobile-nav-clearance, 0px))` }}
-      />
-      {createPortal(summary, document.body)}
-    </>
-  ) : (
-    summary
+  return (
+    <Card className="space-y-4" data-renewal-panel>
+      {children}
+      {summary}
+    </Card>
   );
 }

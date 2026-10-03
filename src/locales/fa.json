@@ -413,6 +413,7 @@
     "active": "فعال",
     "inactive": "غیرفعال",
     "trialStatus": "دوره آزمایشی",
+    "trialStatusShort": "آزمایشی",
     "expired": "منقضی شده",
     "trafficLimited": "ترافیک تمام شده",
     "trafficLimitedTitle": "محدودیت ترافیک",

@@ -442,6 +442,7 @@
     "active": "Active",
     "inactive": "Inactive",
     "trialStatus": "Trial",
+    "trialStatusShort": "Trial",
     "expired": "Expired",
     "trafficLimited": "Traffic Exhausted",
     "trafficLimitedTitle": "Traffic Limit Reached",

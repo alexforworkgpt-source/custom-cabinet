@@ -92,6 +92,67 @@ describe('legacy subscription primary action', () => {
 });
 
 describe('tariff subscription primary action', () => {
+  it.each([
+    ['active', false],
+    ['expired', false],
+    ['active', true],
+    ['expired', true],
+  ] as const)(
+    'opens %s tariff renewal in single-subscription mode (classic=%s)',
+    (status, isClassic) => {
+      render(
+        <MemoryRouter>
+          <PurchaseCTAButton
+            subscription={subscription({
+              tariff_id: 7,
+              requires_tariff_selection: false,
+              status,
+              is_active: status === 'active',
+              is_expired: status === 'expired',
+            })}
+            isClassic={isClassic}
+          />
+        </MemoryRouter>,
+      );
+
+      expect(screen.getByRole('link').getAttribute('href')).toBe('/subscriptions/42/renew');
+      expect(screen.getByText('subscription.extend')).toBeTruthy();
+      expect(
+        screen.getByText(
+          status === 'active' ? 'subscription.cta.activeHint' : 'subscription.cta.expiredHint',
+        ),
+      ).toBeTruthy();
+    },
+  );
+
+  it.each([
+    ['trial', { is_trial: true }],
+    ['daily', { is_daily: true }],
+    ['limited', { is_limited: true }],
+    ['pending', { status: 'pending' }],
+    ['disabled', { status: 'disabled' }],
+  ])('preserves the purchase route for a %s tariff subscription', (_case, overrides) => {
+    render(
+      <MemoryRouter>
+        <PurchaseCTAButton subscription={subscription({ tariff_id: 7, ...overrides })} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/subscription/purchase');
+  });
+
+  it('preserves explicit tariff selection even when a tariff ID is present', () => {
+    render(
+      <MemoryRouter>
+        <PurchaseCTAButton
+          subscription={subscription({ tariff_id: 7, requires_tariff_selection: true })}
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link').getAttribute('href')).toBe(
+      '/subscription/purchase?subscriptionId=42',
+    );
+  });
+
   it('keeps the existing multi-subscription renewal route', () => {
     render(
       <MemoryRouter>
@@ -108,6 +169,15 @@ describe('tariff subscription primary action', () => {
 });
 
 describe('classic subscription renewal action', () => {
+  it('does not infer classic renewal from a missing tariff without a sales mode', () => {
+    render(
+      <MemoryRouter>
+        <PurchaseCTAButton subscription={subscription()} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/subscription/purchase');
+  });
+
   it('opens renewal with the existing subscription parameters in single-subscription mode', () => {
     render(
       <MemoryRouter>
@@ -138,7 +208,6 @@ describe('classic subscription renewal action', () => {
     ['limited', { is_limited: true }],
     ['pending', { status: 'pending' }],
     ['disabled', { status: 'disabled' }],
-    ['tariff mode subscription', { tariff_id: 7 }],
   ])('preserves the purchase route for %s in single-subscription mode', (_case, overrides) => {
     render(
       <MemoryRouter>

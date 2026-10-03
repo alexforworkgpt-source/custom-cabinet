@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subscriptionApi } from '../../../api/subscription';
 import { useCurrency } from '../../../hooks/useCurrency';
 import { usePromoDiscount } from '../../../hooks/usePromoDiscount';
+import { getMonthlyPriceKopeks } from '../../../utils/pricing';
 import { useCloseOnSuccessNotification } from '../../../store/successNotification';
 import {
   getErrorMessage,
@@ -296,6 +297,7 @@ export function ClassicPurchaseWizard({
                   period.price_kopeks,
                   period.original_price_kopeks,
                 );
+                const monthly = getMonthlyPriceKopeks(promoPeriod.price, period.period_days);
 
                 return (
                   <button
@@ -319,7 +321,7 @@ export function ClassicPurchaseWizard({
                         setSelectedDevices(period.devices.current);
                       }
                     }}
-                    className={`bento-card-hover relative p-4 text-left transition-all ${
+                    className={`bento-card-hover relative p-4 text-left transition-all ${promoPeriod.percent && promoPeriod.percent > 0 ? 'pt-8' : ''} ${
                       selectedPeriod?.id === period.id
                         ? 'bento-card-glow border-accent-500 light:!border-accent-500 light:border-2'
                         : ''
@@ -345,6 +347,11 @@ export function ClassicPurchaseWizard({
                         </span>
                       )}
                     </div>
+                    {monthly !== null && (
+                      <div className="mt-1 text-xs text-dark-400">
+                        {formatAmount(monthly / 100)} {currencySymbol}/{t('subscription.month')}
+                      </div>
+                    )}
                   </button>
                 );
               })}

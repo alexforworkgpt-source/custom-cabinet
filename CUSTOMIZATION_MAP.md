@@ -115,17 +115,37 @@ rendered states separately from presentation.
 
 The classic purchase/renewal consistency change adds these hybrid seams:
 
+- `PurchaseCTAButton` routes ordinary paid active/expired Classic subscriptions
+  and subscriptions with an attached periodic tariff to renewal of the same ID,
+  including single-subscription mode. Trial, daily, limited and explicit tariff
+  selection behavior remains unchanged.
 - `RenewSubscription` owns fresh subscription/options/balance queries and the
   existing manual renew/top-up contract; `subscription/renewal/` owns compact
-  period cards and the summary rendered through the existing portal pattern.
+  period cards and the inline payment summary.
   Its action uses canonical `Button` with `legacyPrimary` to reuse the tariff
   `btn-primary` appearance and CSS interaction states without duplicate styles.
+  Renewal period cards reuse Classic purchase card classes; the period area
+  uses canonical `Card`, `PurchaseContextBanners` supplies the same promo-group
+  banner, and `RenewalSubscriptionInfo` presents current parameters with icons.
+  Devices occupy a separate info row; the renewal route heading uses
+  `subscription.extend`, while ordinary purchase uses `subscription.getSubscription`.
+  `RenewalSummary` groups period content with the payment summary inside `Card`
+  on every screen size, with the standard 16px gap and no fixed panel or spacer.
+  Renewal prices remain final server values; the banner never reapplies discounts.
+  Discounted period cards reserve top space for the absolute badge in both
+  purchase and renewal; browser checks reject overlapping badge/title text.
 - `useRenewalSelection` and `utils/renewalSelection` own session-only period
   intent, scoped to user/subscription and validated against fresh server state.
   They never persist price, balance or payment permission; auth logout clears it.
 - `ClassicPurchaseWizard` treats purchase preview as the final server amount;
   `promoDiscount` is applied only to preliminary option prices and follows the
-  confirmed Bot floor-discount arithmetic.
+  confirmed Bot floor-discount arithmetic. Long-period Classic options share
+  `getMonthlyPriceKopeks` with renewal, using the discounted period price;
+  `SubscriptionPurchase` groups the Classic wizard inside canonical `Card`.
+
+The traffic-card trial badge uses the existing Gift icon and the short trial
+locale key, with the owner-approved gold palette and unchanged badge dimensions.
+The trial upgrade banner and management purchase action retain their prior design.
 
 ## Known High-Conflict Hotspots
 

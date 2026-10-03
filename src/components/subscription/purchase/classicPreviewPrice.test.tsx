@@ -50,8 +50,8 @@ function fixture(days: number, original: number, total: number, includeSecondPer
   const period: ClassicPurchaseOptions['periods'][number] = {
     id: `days:${days}`,
     period_days: days,
-    months: days === 14 ? 0 : 1,
-    label: days === 14 ? '14 дней' : '1 месяц',
+    months: days / 30,
+    label: days === 30 ? '1 месяц' : `${days} дней`,
     price_kopeks: original,
     price_label: `${original / 100} ₽`,
     per_month_price_kopeks: original,
@@ -123,6 +123,33 @@ afterEach(() => {
 });
 
 describe('Classic final server preview', () => {
+  it('shows the monthly price of a long period after the discount', async () => {
+    promo.percent = 20;
+    const { client } = fixture(90, 30_000, 24_000);
+    const period = screen.getByRole('button', { name: /90 дней/ });
+    expect(period.textContent).toContain('80.00 ₽/subscription.month');
+    await screen.findByRole('button', { name: 'Далее · 240.00 ₽' });
+    expect(api.submitPurchase).not.toHaveBeenCalled();
+    client.clear();
+  });
+
+  it.each([
+    [14, 5_000, 4_000, null],
+    [30, 9_999, 8_000, null],
+    [45, 9_999, 8_000, '53.33 ₽/subscription.month'],
+    [90, 30_000, 24_000, '80.00 ₽/subscription.month'],
+  ])('uses the renewal monthly-rate rule for %s days', async (days, original, total, monthly) => {
+    promo.percent = 20;
+    const { client } = fixture(days, original, total);
+    const period = screen.getByRole('button', {
+      name: days === 30 ? /1 месяц/ : new RegExp(`${days} дней`),
+    });
+    if (monthly) expect(period.textContent).toContain(monthly);
+    else expect(period.textContent).not.toContain('/subscription.month');
+    await screen.findByRole('button', { name: `Далее · ${(total / 100).toFixed(2)} ₽` });
+    client.clear();
+  });
+
   it.each([
     [14, 5000, 500, 90],
     [30, 9900, 990, 90],

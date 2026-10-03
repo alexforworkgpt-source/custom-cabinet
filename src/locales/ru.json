@@ -450,6 +450,7 @@
     "active": "Активна",
     "inactive": "Неактивна",
     "trialStatus": "Пробный период",
+    "trialStatusShort": "Пробный",
     "expired": "Истекла",
     "trafficLimited": "Трафик исчерпан",
     "trafficLimitedTitle": "Трафик закончился",

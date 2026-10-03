@@ -408,6 +408,7 @@
     "active": "有效",
     "inactive": "无效",
     "trialStatus": "试用期",
+    "trialStatusShort": "试用",
     "expired": "已过期",
     "trafficLimited": "流量已用尽",
     "trafficLimitedTitle": "流量已达上限",

@@ -7,7 +7,7 @@ import { useAnimatedNumber } from '../../hooks/useAnimatedNumber';
 import { useTheme } from '../../hooks/useTheme';
 import { useTrafficZone } from '../../hooks/useTrafficZone';
 import { formatTraffic } from '../../utils/formatTraffic';
-import { CalendarIcon, RefreshIcon, TagIcon } from '@/components/icons';
+import { CalendarIcon, GiftIcon, RefreshIcon, TagIcon } from '@/components/icons';
 import type { Subscription } from '../../types';
 import { SubscriptionActiveActions } from './SubscriptionActiveActions';
 
@@ -79,7 +79,6 @@ export default function SubscriptionCardActive({
   const contrastStatusShade = isDark ? 400 : 500;
   const zoneColor = `rgb(var(--color-${zone.colorKey}-${contrastStatusShade}))`;
   const activeStatusRaw = `var(--color-success-${contrastStatusShade})`;
-  const trialStatusRaw = `var(--color-accent-${contrastStatusShade})`;
   const warningStatusRaw = `var(--color-warning-${contrastStatusShade})`;
   const animatedPercent = useAnimatedNumber(usedPercent);
 
@@ -124,30 +123,11 @@ export default function SubscriptionCardActive({
                 {isUnlimited ? t('dashboard.unlimited') : t(zone.labelKey)}
               </span>
               {subscription.is_trial && (
-                <span
-                  className="inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest"
-                  style={{
-                    borderColor: `rgba(${trialStatusRaw}, 0.25)`,
-                    background: `rgba(${trialStatusRaw}, 0.1)`,
-                    color: `rgb(${trialStatusRaw})`,
-                  }}
-                >
-                  <svg
-                    width="10"
-                    height="10"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  {t('subscription.trialStatus')}
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#74572F] bg-[#3A3023] px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-[#FFC56B]">
+                  <span aria-hidden="true" className="inline-flex">
+                    <GiftIcon className="h-2.5 w-2.5" />
+                  </span>
+                  {t('subscription.trialStatusShort')}
                 </span>
               )}
               {!subscription.is_trial && (
