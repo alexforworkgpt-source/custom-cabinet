@@ -59,7 +59,7 @@ export default function PurchaseCTAButton({
         ? t('subscription.cta.moveToTariffHint')
         : isTrial
           ? t('subscription.cta.trialHint')
-          : isMultiTariff || canRenewCurrentSubscription
+          : isMultiTariff
             ? t('subscription.cta.renewHint', 'Продление подписки')
             : t('subscription.cta.activeHint');
 

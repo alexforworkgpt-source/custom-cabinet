@@ -47,6 +47,10 @@ for (const salesMode of ['classic', 'tariffs']) {
 
       await page.goto('/subscriptions/42?overlay=subscription');
       const renew = page.getByRole('link', { name: /Продлить подписку/ });
+      if (status === 'active') {
+        await expect(renew).toContainText('Продление и смена тарифа');
+        await expect(renew).not.toContainText('Подписка истекла');
+      }
       await expect(renew).toHaveAttribute('href', '/subscriptions/42/renew');
       await renew.click();
       await expect(page).toHaveURL('/subscriptions/42/renew');

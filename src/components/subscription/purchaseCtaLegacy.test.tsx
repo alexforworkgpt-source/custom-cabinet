@@ -117,6 +117,11 @@ describe('tariff subscription primary action', () => {
 
       expect(screen.getByRole('link').getAttribute('href')).toBe('/subscriptions/42/renew');
       expect(screen.getByText('subscription.extend')).toBeTruthy();
+      expect(
+        screen.getByText(
+          status === 'active' ? 'subscription.cta.activeHint' : 'subscription.cta.expiredHint',
+        ),
+      ).toBeTruthy();
     },
   );
 
