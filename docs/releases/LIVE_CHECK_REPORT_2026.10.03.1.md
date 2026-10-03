@@ -1,14 +1,16 @@
 # Live Check Report: `bundle-v2026.10.03.1`
 
-Status: **PASS WITH RISKS — bounded release-package check**<br>
+Status: **BLOCKED — overall live check**<br>
 Date: `2026-10-03`<br>
 Checker: Codex<br>
 Release owner: DMITRY
 
 This report follows `LIVE_CHECK_REPORT_TEMPLATE.md`. The full authenticated
-staging/device matrix remains **BLOCKED**, as recorded in the accepted
+staging/device matrix remains **BLOCKED**, as recorded in the existing
 compatibility limitations. Mock checks and disposable installation do not close
-those limitations. Detailed evidence: [release completion](design-release-20261003.1.md).
+those limitations. Package-only gates passed; stable package publication is not
+approval of the overall live check or production rollout. Detailed evidence:
+[release completion](design-release-20261003.1.md).
 
 ## Source Identity
 
@@ -119,10 +121,12 @@ See exact bounded compatibility evidence linked in the completion report.
 
 ## Staging Decision
 
-Bounded package result: **PASS WITH RISKS**. Full authenticated staging result:
-**BLOCKED**. Owner authorization on 2026-10-03 covers the new release package,
-test installation and stable promotion; existing accepted limitations were
-retained in the reviewed promotion record. No absent live check is marked PASS.
+Overall staging/live result: **BLOCKED** because the required authenticated
+staging, physical Telegram, accessibility, payment and recovery proof is absent.
+Package-only gates: **PASS**, with existing compatibility limitations recorded
+in the promotion evidence. Owner authorization on 2026-10-03 covers the release
+package, test installation and stable promotion; it does not turn unavailable
+live checks into an accepted noncritical visual defect or production approval.
 
 ## Production Smoke
 
@@ -150,4 +154,5 @@ authorized transition.
 - [x] Report contains no credentials or personal account data.
 - [x] Production smoke explicitly NOT STARTED.
 
-Final result: **PASS WITH RISKS for package; full live matrix BLOCKED**.
+Final result: **BLOCKED — overall live-check/production gate**.
+Source, artifact, browser and disposable installation package-only gates: PASS.
