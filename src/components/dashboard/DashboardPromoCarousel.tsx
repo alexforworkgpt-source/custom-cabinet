@@ -12,6 +12,7 @@ import {
   PlayIcon,
   ShieldIcon,
   SubscriptionIcon,
+  TariffsIcon,
   TelegramIcon,
   UsersIcon,
   WalletIcon,
@@ -60,7 +61,7 @@ const PRESENTATION: Record<DashboardPromoSlideId, SlidePresentation> = {
     accentText: 'text-accent-300',
   },
   tariff: {
-    Icon: SubscriptionIcon,
+    Icon: TariffsIcon,
     DetailIcon: ShieldIcon,
     gradient: 'from-warning-500/20 via-dark-900/95 to-dark-900',
     glow: 'bg-warning-500/25',

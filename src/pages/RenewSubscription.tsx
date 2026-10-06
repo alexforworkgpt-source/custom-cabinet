@@ -174,9 +174,6 @@ export default function RenewSubscription() {
         <WebBackButton to={`/subscriptions/${subId}`} />
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-dark-100">{t('subscription.extend')}</h1>
-          {subscription?.tariff_name && (
-            <p className="mt-1 text-sm text-dark-400">{subscription.tariff_name}</p>
-          )}
         </div>
       </div>
       {failedQuery ? (

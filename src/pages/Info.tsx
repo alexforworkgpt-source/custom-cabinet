@@ -2,6 +2,7 @@ import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import { uiLocale } from '@/utils/uiLocale';
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { PiCaretDown } from 'react-icons/pi';
 import DOMPurify from 'dompurify';
@@ -10,10 +11,11 @@ import { formatContent } from '../utils/legalContent';
 import { infoPagesApi } from '../api/infoPages';
 import { promoApi, type LoyaltyTierInfo } from '../api/promo';
 import type { FaqItem, ReplacesTab } from '../api/infoPages';
+import { InfoNavigation, type InfoSection } from '@/components/info/InfoNavigation';
+import { useTransientOverlayBackHandler } from '@/providers/TransientOverlayBackProvider';
 import {
   CreditCardIcon,
   DocumentIcon,
-  InfoIcon,
   QuestionIcon,
   ShieldIcon,
   StarIcon,
@@ -276,9 +278,19 @@ function ReplacementFaqView({ items }: { items: FaqItem[] }) {
 
 export default function Info() {
   const { t, i18n } = useTranslation();
-  const [activeTab, setActiveTab] = useState<string>('faq');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const routeSection = (location.state as { infoSection?: unknown } | null)?.infoSection;
+  const selectedSection = typeof routeSection === 'string' ? routeSection : null;
+  const [activeTab, setActiveTab] = useState<string>(selectedSection ?? 'faq');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const locale = i18n.language.split('-')[0];
+  const returnToSections = useCallback(() => navigate(-1), [navigate]);
+  useTransientOverlayBackHandler(selectedSection !== null, returnToSections);
+
+  useEffect(() => {
+    if (selectedSection) setActiveTab(selectedSection);
+  }, [selectedSection]);
 
   // Fetch tab replacements
   const { data: tabReplacements, isError: replacementsError } = useQuery({
@@ -288,7 +300,7 @@ export default function Info() {
   });
 
   // Fetch custom InfoPages (active pages without replaces_tab — shown as extra tabs)
-  const { data: customPages } = useQuery({
+  const { data: customPages, isError: customPagesError } = useQuery({
     queryKey: ['info-pages', 'list'],
     queryFn: () => infoPagesApi.getPages(),
     staleTime: 60_000,
@@ -400,7 +412,7 @@ export default function Info() {
   });
 
   const tabs = useMemo(() => {
-    const builtinTabs: Array<{ id: string; label: string; icon: React.FC; emoji?: string }> = [
+    const builtinTabs: InfoSection[] = [
       { id: 'faq', label: t('info.faq'), icon: QuestionIcon },
       { id: 'rules', label: t('info.rules'), icon: DocumentIcon },
       { id: 'privacy', label: t('info.privacy'), icon: ShieldIcon },
@@ -425,11 +437,13 @@ export default function Info() {
   }, [visibility, tabReplacements, extraPages, locale, t]);
 
   useEffect(() => {
+    // Validate restored custom sections only after their list has finished loading.
+    if (customPages === undefined && !customPagesError) return;
     if (tabs.length === 0) return;
     if (!tabs.some((tab) => tab.id === activeTab)) {
       setActiveTab(tabs[0].id);
     }
-  }, [tabs, activeTab]);
+  }, [tabs, activeTab, customPages, customPagesError]);
 
   const toggleFaq = useCallback((id: number) => {
     setExpandedFaq((prev) => (prev === id ? null : id));
@@ -732,32 +746,15 @@ export default function Info() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <InfoIcon className="h-6 w-6" />
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('info.title')}</h1>
-      </div>
-
-      {/* Tabs */}
-      <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-x-visible">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex min-h-[44px] shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
-              activeTab === tab.id
-                ? 'bg-accent-500 text-on-accent'
-                : 'bg-dark-800 text-dark-300 hover:bg-dark-700'
-            }`}
-          >
-            {tab.emoji ? <span className="text-base">{tab.emoji}</span> : <tab.icon />}
-            <span className="max-w-[140px] truncate">{tab.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
+    <InfoNavigation
+      sections={tabs}
+      activeSection={activeTab}
+      showMobileContent={selectedSection !== null}
+      sectionHref={`${location.pathname}${location.search}${location.hash}`}
+      onSelect={setActiveTab}
+      onBack={returnToSections}
+    >
       {renderContent()}
-    </div>
+    </InfoNavigation>
   );
 }

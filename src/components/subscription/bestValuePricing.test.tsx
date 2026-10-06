@@ -129,7 +129,7 @@ describe('best-value tariff contract', () => {
       ),
     );
 
-    const badge = await screen.findByText('subscription.bestValue');
+    const badge = await screen.findByRole('img', { name: 'subscription.bestValue' });
     const highlightedCard = screen.getByRole('button', { name: /^180 / });
     expect(highlightedCard?.contains(badge)).toBe(true);
     expect(highlightedCard?.getAttribute('aria-pressed')).toBe('true');

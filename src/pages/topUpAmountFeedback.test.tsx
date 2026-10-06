@@ -48,7 +48,8 @@ vi.mock('../hooks/useCurrency', () => ({
   }),
 }));
 
-vi.mock('../store/successNotification', () => ({
+vi.mock('../store/successNotification', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../store/successNotification')>()),
   useCloseOnSuccessNotification: vi.fn(),
 }));
 

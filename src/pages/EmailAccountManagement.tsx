@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { authApi } from '@/api/auth';
@@ -12,6 +13,7 @@ interface EmailAccountManagementProps {
   email: string;
   verified: boolean;
   verificationEnabled: boolean;
+  actionContainer?: HTMLElement | null;
 }
 
 type ChangeStep = 'email' | 'code' | 'success' | null;
@@ -20,6 +22,7 @@ export default function EmailAccountManagement({
   email,
   verified,
   verificationEnabled,
+  actionContainer,
 }: EmailAccountManagementProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -138,122 +141,134 @@ export default function EmailAccountManagement({
     verifyChange.mutate(code.trim());
   };
 
+  const changeEmailAction = step === null && (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      className={actionContainer ? undefined : 'mt-2'}
+      onClick={() => {
+        setError(null);
+        setNotice(null);
+        setStep('email');
+      }}
+    >
+      {t('profile.changeEmail.button')}
+    </Button>
+  );
+  const hasDetails =
+    (!verified && verificationEnabled) || step !== null || Boolean(error || notice);
+
   return (
-    <section aria-label={t('profile.emailAuth')} className="mt-4 border-t border-dark-700/30 pt-4">
-      {!verified && verificationEnabled && (
-        <div className="mt-2 rounded-linear border border-warning-500/30 bg-warning-500/10 p-3">
-          <p className="text-sm text-warning-400">{t('profile.verificationRequired')}</p>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="mt-2"
-            loading={resendVerification.isPending}
-            disabled={verificationCooldown > 0}
-            onClick={() => resendVerification.mutate()}
-          >
-            {verificationCooldown > 0
-              ? t('profile.resendIn', { seconds: verificationCooldown })
-              : t('profile.resendVerification')}
-          </Button>
-        </div>
-      )}
-
-      {step === null && (
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="mt-2"
-          onClick={() => {
-            setError(null);
-            setNotice(null);
-            setStep('email');
-          }}
-        >
-          {t('profile.changeEmail.button')}
-        </Button>
-      )}
-
-      {step === 'email' && (
-        <form className="mt-3 space-y-3" onSubmit={submitEmail}>
-          <label htmlFor="profile-new-email" className="label">
-            {t('profile.changeEmail.newEmail')}
-          </label>
-          <input
-            id="profile-new-email"
-            type="email"
-            value={newEmail}
-            onChange={(event) => setNewEmail(event.target.value)}
-            className="input w-full"
-            autoComplete="email"
-            aria-invalid={Boolean(error)}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" size="sm" loading={requestChange.isPending}>
-              {t('profile.changeEmail.sendCode')}
-            </Button>
-            <Button type="button" variant="secondary" size="sm" onClick={resetChange}>
-              {t('common.cancel')}
-            </Button>
-          </div>
-        </form>
-      )}
-
-      {step === 'code' && (
-        <form className="mt-3 space-y-3" onSubmit={submitCode}>
-          <p className="text-sm text-accent-400">
-            {t('profile.changeEmail.codeSentTo', { email: newEmail })}
-          </p>
-          <label htmlFor="profile-email-verification-code" className="label">
-            {t('profile.changeEmail.verificationCode')}
-          </label>
-          <input
-            id="profile-email-verification-code"
-            type="text"
-            inputMode="numeric"
-            value={code}
-            onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
-            maxLength={6}
-            className="input w-full text-center tracking-[0.5em]"
-            autoComplete="one-time-code"
-            aria-invalid={Boolean(error)}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" size="sm" loading={verifyChange.isPending}>
-              {t('profile.changeEmail.verify')}
-            </Button>
+    <>
+      {actionContainer && createPortal(changeEmailAction, actionContainer)}
+      <section
+        aria-label={t('profile.emailAuth')}
+        className={
+          actionContainer && !hasDetails ? 'hidden' : 'mt-4 border-t border-dark-700/30 pt-4'
+        }
+      >
+        {!verified && verificationEnabled && (
+          <div className="mt-2 rounded-linear border border-warning-500/30 bg-warning-500/10 p-3">
+            <p className="text-sm text-warning-400">{t('profile.verificationRequired')}</p>
             <Button
               type="button"
               variant="secondary"
               size="sm"
-              disabled={resendCooldown > 0}
-              loading={requestChange.isPending}
-              onClick={() => requestChange.mutate(newEmail.trim())}
+              className="mt-2"
+              loading={resendVerification.isPending}
+              disabled={verificationCooldown > 0}
+              onClick={() => resendVerification.mutate()}
             >
-              {resendCooldown > 0
-                ? t('profile.changeEmail.resendIn', { seconds: resendCooldown })
-                : t('profile.changeEmail.resendCode')}
+              {verificationCooldown > 0
+                ? t('profile.resendIn', { seconds: verificationCooldown })
+                : t('profile.resendVerification')}
             </Button>
           </div>
-        </form>
-      )}
+        )}
 
-      {step === 'success' && (
-        <div role="status" className="mt-3 text-sm text-success-400">
-          {t('profile.changeEmail.success')}
-        </div>
-      )}
-      {error && (
-        <p role="alert" className="mt-2 text-sm text-error-400">
-          {error}
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="mt-2 text-sm text-success-400">
-          {notice}
-        </p>
-      )}
-    </section>
+        {!actionContainer && changeEmailAction}
+
+        {step === 'email' && (
+          <form className="mt-3 space-y-3" onSubmit={submitEmail}>
+            <label htmlFor="profile-new-email" className="label">
+              {t('profile.changeEmail.newEmail')}
+            </label>
+            <input
+              id="profile-new-email"
+              type="email"
+              value={newEmail}
+              onChange={(event) => setNewEmail(event.target.value)}
+              className="input w-full"
+              autoComplete="email"
+              aria-invalid={Boolean(error)}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" size="sm" loading={requestChange.isPending}>
+                {t('profile.changeEmail.sendCode')}
+              </Button>
+              <Button type="button" variant="secondary" size="sm" onClick={resetChange}>
+                {t('common.cancel')}
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {step === 'code' && (
+          <form className="mt-3 space-y-3" onSubmit={submitCode}>
+            <p className="text-sm text-accent-400">
+              {t('profile.changeEmail.codeSentTo', { email: newEmail })}
+            </p>
+            <label htmlFor="profile-email-verification-code" className="label">
+              {t('profile.changeEmail.verificationCode')}
+            </label>
+            <input
+              id="profile-email-verification-code"
+              type="text"
+              inputMode="numeric"
+              value={code}
+              onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
+              maxLength={6}
+              className="input w-full text-center tracking-[0.5em]"
+              autoComplete="one-time-code"
+              aria-invalid={Boolean(error)}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" size="sm" loading={verifyChange.isPending}>
+                {t('profile.changeEmail.verify')}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={resendCooldown > 0}
+                loading={requestChange.isPending}
+                onClick={() => requestChange.mutate(newEmail.trim())}
+              >
+                {resendCooldown > 0
+                  ? t('profile.changeEmail.resendIn', { seconds: resendCooldown })
+                  : t('profile.changeEmail.resendCode')}
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {step === 'success' && (
+          <div role="status" className="mt-3 text-sm text-success-400">
+            {t('profile.changeEmail.success')}
+          </div>
+        )}
+        {error && (
+          <p role="alert" className="mt-2 text-sm text-error-400">
+            {error}
+          </p>
+        )}
+        {notice && (
+          <p role="status" className="mt-2 text-sm text-success-400">
+            {notice}
+          </p>
+        )}
+      </section>
+    </>
   );
 }

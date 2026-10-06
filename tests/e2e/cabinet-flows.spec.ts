@@ -288,7 +288,7 @@ test.describe('unified dashboard states', () => {
     {
       name: 'active single subscription',
       responses: activeResponses,
-      heading: 'Traffic Usage',
+      heading: 'Subscription active',
     },
     {
       name: 'active trial subscription',
@@ -299,7 +299,7 @@ test.describe('unified dashboard states', () => {
           subscription: { ...activeSubscription, is_trial: true, tariff_name: 'Trial' },
         },
       },
-      heading: 'Traffic Usage',
+      heading: 'Trial subscription',
       visibleText: 'Trial',
     },
     {
@@ -372,7 +372,7 @@ test.describe('unified dashboard states', () => {
     await expect(subscriptionSelector).toHaveCount(1);
     await subscriptionSelector.selectOption('2');
     await expect(page).toHaveURL('/?sub=2');
-    await expect(page.getByRole('heading', { name: 'Traffic Usage' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Subscription active' })).toBeVisible();
     expect([...unexpectedApiRequests]).toEqual([]);
   });
 });
@@ -390,7 +390,7 @@ test('keeps the compact Dashboard responsive in dark and light themes', async ({
   });
 
   const expectCompactLayout = async () => {
-    const summary = page.getByRole('region', { name: 'Traffic Usage' });
+    const summary = page.getByRole('region', { name: 'Subscription active' });
     const managementButton = page.getByRole('button', { name: 'Manage subscription' });
     const balanceCard = page.getByRole('link', { name: /Balance/ });
     const referralCard = page.getByRole('link', { name: /Referrals/ });
@@ -506,7 +506,7 @@ test('keeps the top-right traffic value visible at 420 px @telegram-flow', async
 
   await page.goto('/');
 
-  const summary = page.getByRole('region', { name: 'Расход трафика' });
+  const summary = page.getByRole('region', { name: 'Подписка активна' });
   const trafficValue = summary.getByText('987,6 ГБ / 999,9 ГБ', { exact: true });
   await expect(trafficValue).toBeVisible();
 
@@ -1037,6 +1037,12 @@ test('runs top-up method, amount, validation, cancellation, handoff, and result 
         status: 'pending',
         expires_at: null,
       },
+      '/api/cabinet/balance/pending-payments/test-card/42': {
+        id: 42,
+        is_paid: false,
+        status: 'pending',
+        amount_kopeks: 30_000,
+      },
     },
   });
 
@@ -1229,7 +1235,10 @@ test('shows recurring payments inside Information when enabled @critical-flow', 
   });
 
   await page.goto('/info');
-  const recurringTab = page.getByRole('button', { name: 'Recurring Payments', exact: true });
+  const recurringTab = page.getByRole((page.viewportSize()?.width ?? 0) < 768 ? 'link' : 'button', {
+    name: 'Recurring Payments',
+    exact: true,
+  });
   await expect(recurringTab).toBeVisible();
   await recurringTab.click();
   await expect(page.getByText('Recurring payment terms')).toBeVisible();
@@ -2267,7 +2276,7 @@ test('shows the complete classic env order before purchase @critical-flow', asyn
   await page.goto('/subscription/purchase');
   await expect(page.getByRole('heading', { name: 'Оформить подписку' })).toHaveCount(1);
 
-  const nextButton = page.getByRole('button', { name: 'Далее · 991 ₽' });
+  const nextButton = page.getByRole('button', { name: 'Далее · 991.00 ₽' });
   await expect(nextButton).toBeEnabled();
   await nextButton.click();
 
@@ -2286,7 +2295,7 @@ test('shows the complete classic env order before purchase @critical-flow', asyn
   await expect(devicesSummary.locator('svg')).toHaveCount(3);
 
   await page.getByRole('button', { name: '+', exact: true }).click();
-  const updatedNextButton = page.getByRole('button', { name: 'Далее · 1091 ₽' });
+  const updatedNextButton = page.getByRole('button', { name: 'Далее · 1091.00 ₽' });
   await expect(updatedNextButton).toBeEnabled();
   await expect(page.getByText('200 ₽', { exact: true }).locator('..')).toContainText('Устройства');
   await expect(page.getByText('200 ₽', { exact: true }).locator('..')).toContainText(
@@ -2422,7 +2431,7 @@ test('opens the classic period constructor from Tariffs before renewing @critica
   await expect(classicLayout).not.toHaveClass(/rounded-3xl/);
   const periodButton = page.getByRole('button', { name: /30 days.*3[.,]00/ });
   await expect(periodButton).toBeVisible();
-  await expect(periodButton).toHaveCSS('border-top-width', '1px');
+  await expect(periodButton).toHaveCSS('border-top-width', '2px');
   await expect(page.getByRole('button', { name: 'Extend Subscription', exact: true })).toHaveCount(
     0,
   );

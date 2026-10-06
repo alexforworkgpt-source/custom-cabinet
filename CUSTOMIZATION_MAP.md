@@ -49,6 +49,7 @@ These areas are intended Custom Cabinet ownership after redesign:
 | Shared motion | `src/components/motion/` | Reduced-motion-aware durations and transitions |
 | Layout presentation | `src/components/layout/` | User and admin shell presentation |
 | Profile presentation | `src/components/profile/` | Progressive-disclosure sections for preferences, information and enabled features |
+| Information presentation | `src/components/info/InfoNavigation.tsx` | Mobile section list reuses Profile `HubLink` and canonical Card; desktop tabs remain available |
 | Branding presentation | `src/components/DocumentBranding.tsx`, `src/hooks/useBranding.ts`, `src/hooks/useDocumentBranding.ts`, `src/utils/documentBranding.ts`, `vite-plugins/` | One owner for title/favicon/monogram and Custom Cabinet public identity while preserving API provenance |
 | Background presentation | `src/components/backgrounds/` | Optional brand effects with mobile performance limits |
 | Browser acceptance harness | `tests/e2e/`, `playwright.config.ts` | Custom responsive, Telegram, storage and branding behavior across the supported viewport matrix |
@@ -62,6 +63,19 @@ future intentional ownership, not removal of upstream copyright or provenance.
 All route pages under `src/pages/` are hybrid unless explicitly reclassified.
 They commonly combine React Query, mutations, navigation, permissions,
 translations and page-specific JSX.
+
+`Info.tsx` retains document queries, visibility, administrator replacements,
+sanitization and accordion content. Mobile section selection uses router history
+state `infoSection` on the unchanged `/info` URL; `InfoNavigation` owns only the
+responsive presentation and focus return. `profile/HubLink` is shared with Profile
+without changing its existing link appearance or destinations.
+
+Profile subsection exit presentation reuses `WebBackButton` from renewal. Route
+pages keep API queries and mutations intact; their headers remain available in
+loading and error states. `InfoNavigation` separates the web exit to Profile
+from the existing mobile return to its section list. The Instructions catalog
+preserves its Support origin and article navigation. Gift result exit stays
+outside the changing live status region and performs navigation only.
 
 The following shared feature components are also hybrid by default:
 
@@ -132,8 +146,8 @@ The classic purchase/renewal consistency change adds these hybrid seams:
   `RenewalSummary` groups period content with the payment summary inside `Card`
   on every screen size, with the standard 16px gap and no fixed panel or spacer.
   Renewal prices remain final server values; the banner never reapplies discounts.
-  Discounted period cards reserve top space for the absolute badge in both
-  purchase and renewal; browser checks reject overlapping badge/title text.
+  Purchase and renewal use PeriodCardContent with a separate badge row;
+  compact-period browser checks reject overlapping badge/title text.
 - `useRenewalSelection` and `utils/renewalSelection` own session-only period
   intent, scoped to user/subscription and validated against fresh server state.
   They never persist price, balance or payment permission; auth logout clears it.
@@ -143,9 +157,9 @@ The classic purchase/renewal consistency change adds these hybrid seams:
   `getMonthlyPriceKopeks` with renewal, using the discounted period price;
   `SubscriptionPurchase` groups the Classic wizard inside canonical `Card`.
 
-The traffic-card trial badge uses the existing Gift icon and the short trial
-locale key, with the owner-approved gold palette and unchanged badge dimensions.
-The trial upgrade banner and management purchase action retain their prior design.
+The compact subscription summary uses the existing Gift icon and short trial
+locale key in one trial badge. Management is inside the summary; connection
+actions stay below it. API callbacks and traffic refresh cooldown remain intact.
 
 ## Known High-Conflict Hotspots
 
@@ -163,6 +177,7 @@ The trial upgrade banner and management purchase action retain their prior desig
 | `src/pages/TelegramCallback.tsx`, `src/pages/TelegramRedirect.tsx`, `src/components/TelegramLoginButton.tsx` | Original Telegram payload, one attempt, consent gate retry and cancellation behavior |
 | `src/pages/Subscription.tsx` | Payments, renewal, connection and status behavior |
 | `src/pages/Balance.tsx` | Payment methods, saved methods and top-up entry |
+| `src/pages/TopUpAmount.tsx`, `src/pages/TopUpResult.tsx`, `src/hooks/useCreatedTopUpStatus.ts`, `src/utils/topUpReturnPath.ts` | Close/back destination depends on whether payment was created; preserve its source and pending record, confirm through existing payment API before showing success |
 | `src/pages/Profile.tsx`, `src/pages/ProfileEmailAuthSection.tsx`, `src/pages/ProfileNotifications.tsx` | Identity, account linking and notification settings |
 | `src/pages/AdminSettings.tsx` | Broad operator configuration surface |
 | `src/pages/AdminGraceAccess.tsx` and `src/components/admin/grace-access/` | Permission-gated writes, env locks, validation and partial changed-field payloads |
@@ -239,6 +254,15 @@ individually:
 gate. BSCHEKER remains independently excluded by ADR 0001 and its own guard.
 
 ## Boundary Rules
+
+The active subscription summary is a Custom presentation seam:
+`src/components/dashboard/SubscriptionCardActive.tsx` groups status, tariff,
+refresh, remaining term and traffic conditions. Unlimited traffic shows usage
+against infinity and hides the progress bar when the existing API data indicates unlimited;
+limited subscriptions keep those indicators. `SubscriptionActiveActions.tsx`
+shares the existing primary action between the summary and legacy callers,
+with setup and connection link controls below the summary. This layout does
+not change refresh, device, trial or management contracts.
 
 Presentational components should not call API clients, mutate stores or decode
 external payloads when that behavior can remain in a route, hook or adapter.

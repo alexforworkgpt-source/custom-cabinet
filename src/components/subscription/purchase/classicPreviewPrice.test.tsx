@@ -22,6 +22,7 @@ vi.mock('react-i18next', () => ({
       if (key === 'subscription.nextWithPrice') return `Далее · ${args?.amount}`;
       if (key === 'subscription.total') return 'Итого';
       if (key === 'subscription.classicFundingNotice') return `Нехватка ${args?.amount}`;
+      if (key === 'subscription.priceForPeriod') return `за ${args?.count} дней`;
       return key;
     },
   }),
@@ -127,25 +128,26 @@ describe('Classic final server preview', () => {
     promo.percent = 20;
     const { client } = fixture(90, 30_000, 24_000);
     const period = screen.getByRole('button', { name: /90 дней/ });
-    expect(period.textContent).toContain('80.00 ₽/subscription.month');
+    expect(period.textContent).toContain('80 ₽/subscription.month');
     await screen.findByRole('button', { name: 'Далее · 240.00 ₽' });
     expect(api.submitPurchase).not.toHaveBeenCalled();
     client.clear();
   });
 
   it.each([
-    [14, 5_000, 4_000, null],
-    [30, 9_999, 8_000, null],
-    [45, 9_999, 8_000, '53.33 ₽/subscription.month'],
-    [90, 30_000, 24_000, '80.00 ₽/subscription.month'],
-  ])('uses the renewal monthly-rate rule for %s days', async (days, original, total, monthly) => {
-    promo.percent = 20;
+    [14, 5_000, 4_000, 'за 14 дней'],
+    [30, 9_999, 8_000, '80 ₽/subscription.month'],
+    [45, 9_999, 8_000, '53 ₽/subscription.month'],
+    [90, 30_000, 24_000, '80 ₽/subscription.month'],
+    [360, 89_100, 89_100, '74 ₽/subscription.month'],
+  ])('shows the period price caption for %s days', async (days, original, total, caption) => {
+    promo.percent = days === 360 ? 0 : 20;
     const { client } = fixture(days, original, total);
     const period = screen.getByRole('button', {
       name: days === 30 ? /1 месяц/ : new RegExp(`${days} дней`),
     });
-    if (monthly) expect(period.textContent).toContain(monthly);
-    else expect(period.textContent).not.toContain('/subscription.month');
+    expect(period.textContent).toContain(caption);
+    if (days < 30) expect(period.textContent).not.toContain('/subscription.month');
     await screen.findByRole('button', { name: `Далее · ${(total / 100).toFixed(2)} ₽` });
     client.clear();
   });

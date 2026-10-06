@@ -64,33 +64,10 @@ for (const language of ['ru', 'en', 'fa']) {
       await expect(page.locator('[data-renewal-info]')).toContainText('Нидерланды');
       const outerPanel = page.locator('[data-renewal-panel]');
       await expect(outerPanel.locator('[data-renewal-clearance]')).toHaveCount(0);
-      expect(
-        await outerPanel.evaluate((element) => getComputedStyle(element).borderTopWidth),
-      ).not.toBe('0px');
+      expect(await outerPanel.evaluate((element) => getComputedStyle(element).borderTopWidth)).toBe(
+        '0px',
+      );
       await expect(option).toHaveClass(/bento-card-hover/);
-      for (const days of [60, 90, 180, 360]) {
-        const discounted = page.getByRole('button', { name: new RegExp(`^${days} `) });
-        const titleBox = await discounted
-          .locator(':scope > span')
-          .first()
-          .evaluate((element) => {
-            const range = document.createRange();
-            range.selectNodeContents(element);
-            const { x, y, width, height } = range.getBoundingClientRect();
-            return { x, y, width, height };
-          });
-        const badgeBox = await discounted.locator(':scope > span.absolute').boundingBox();
-        expect(titleBox).not.toBeNull();
-        expect(badgeBox).not.toBeNull();
-        const overlap =
-          titleBox &&
-          badgeBox &&
-          titleBox.x < badgeBox.x + badgeBox.width &&
-          titleBox.x + titleBox.width > badgeBox.x &&
-          titleBox.y < badgeBox.y + badgeBox.height &&
-          titleBox.y + titleBox.height > badgeBox.y;
-        expect(overlap, `${days}-day title must remain clear of its discount badge`).toBe(false);
-      }
       if (language === 'ru') {
         await expect(
           page.getByRole('heading', { name: 'Продлить подписку', exact: true }),

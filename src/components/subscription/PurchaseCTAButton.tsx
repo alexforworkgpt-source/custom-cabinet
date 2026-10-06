@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { HoverBorderGradient } from '../ui/hover-border-gradient';
-import { ChevronRightIcon, SubscriptionIcon } from '@/components/icons';
+import { ChevronRightIcon, TariffsIcon } from '@/components/icons';
 import type { Subscription } from '../../types';
 import { needsTariff, tariffSelectionPath } from '../../utils/legacySubscription';
 
@@ -92,7 +92,7 @@ export default function PurchaseCTAButton({
         >
           {/* Left: icon + text */}
           <div className="flex items-center gap-3">
-            {/* Sparkle icon */}
+            {/* Tariffs icon */}
             <div
               className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
               style={{
@@ -102,7 +102,7 @@ export default function PurchaseCTAButton({
                 color: accentColor,
               }}
             >
-              <SubscriptionIcon className="h-[18px] w-[18px]" />
+              <TariffsIcon className="h-[18px] w-[18px]" />
             </div>
             <div>
               <div className="text-[15px] font-semibold text-dark-50">{buttonText}</div>

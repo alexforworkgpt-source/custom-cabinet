@@ -11,6 +11,7 @@ import { Card } from '@/components/data-display/Card';
 import { staggerContainer, staggerItem } from '@/components/motion/transitions';
 import { Button } from '@/components/primitives/Button';
 import { Switch } from '@/components/primitives/Switch';
+import { WebBackButton } from '@/components/WebBackButton';
 
 export default function ProfileNotifications() {
   const { t } = useTranslation();
@@ -46,8 +47,9 @@ export default function ProfileNotifications() {
       initial="initial"
       animate="animate"
     >
-      <motion.div variants={staggerItem}>
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
+      <motion.div variants={staggerItem} className="flex items-center gap-3">
+        <WebBackButton to="/profile" />
+        <h1 className="min-w-0 text-2xl font-bold text-dark-50 sm:text-3xl">
           {t('profile.notifications.title')}
         </h1>
       </motion.div>

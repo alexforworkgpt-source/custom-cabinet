@@ -54,7 +54,9 @@ for (const salesMode of ['classic', 'tariffs']) {
       await expect(renew).toHaveAttribute('href', '/subscriptions/42/renew');
       await renew.click();
       await expect(page).toHaveURL('/subscriptions/42/renew');
-      await expect(page.getByText('Базовый', { exact: true })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: 'Продлить подписку', exact: true }),
+      ).toBeVisible();
       await page.getByRole('button', { name: /^90 дней/ }).click();
       expect(renewals).toEqual([]);
       await page

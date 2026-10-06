@@ -17,7 +17,7 @@ import {
   ExclamationIcon,
   PlusIcon,
   SettingsIcon,
-  SubscriptionIcon,
+  TariffsIcon,
 } from '@/components/icons';
 import { SubscriptionConnectFooter } from '../subscription/SubscriptionConnectFooter';
 import { connectFooterState } from '../subscription/connectFooterState';
@@ -295,7 +295,7 @@ export default function SubscriptionCardExpired({
               boxShadow: `0 4px 20px rgba(${accent.r},${accent.g},${accent.b},0.2)`,
             }}
           >
-            <SubscriptionIcon className="h-4 w-4" />
+            <TariffsIcon className="h-4 w-4" />
             {t('subscription.cta.moveToTariff')}
           </Link>
         ) : isLimited ? (
@@ -325,7 +325,7 @@ export default function SubscriptionCardExpired({
                 boxShadow: `0 4px 20px rgba(${accent.r},${accent.g},${accent.b},0.2)`,
               }}
             >
-              <SubscriptionIcon className="h-4 w-4" />
+              <TariffsIcon className="h-4 w-4" />
               {t('dashboard.expired.quickRenew')}
             </button>
           ) : balanceKopeks === null ? (
@@ -353,7 +353,7 @@ export default function SubscriptionCardExpired({
                   aria-hidden="true"
                 />
               ) : (
-                <SubscriptionIcon className="h-4 w-4" />
+                <TariffsIcon className="h-4 w-4" />
               )}
               {isRenewing
                 ? t('common.loading')

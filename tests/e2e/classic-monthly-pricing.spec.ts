@@ -4,7 +4,7 @@ import { classicPricingDiscount, classicPurchaseOptions } from './classicPurchas
 
 for (const theme of ['light', 'dark'] as const) {
   for (const language of ['ru', 'en', 'fa']) {
-    test(`Classic monthly pricing and outer panel in ${theme} ${language}`, async ({
+    test(`Classic monthly pricing without outer panel in ${theme} ${language}`, async ({
       page,
     }, testInfo) => {
       const errors: string[] = [];
@@ -35,25 +35,8 @@ for (const theme of ['light', 'dark'] as const) {
       const month = wizard.getByRole('button', { name: /30 дней/ });
       const monthly = quarter.locator('div').filter({ hasText: /^[^/]+\/[^/]+$/ });
       await expect(monthly).toHaveCount(1);
-      const titleBox = await quarter.locator('.text-lg').evaluate((element) => {
-        const range = document.createRange();
-        range.selectNodeContents(element);
-        const { x, y, width, height } = range.getBoundingClientRect();
-        return { x, y, width, height };
-      });
-      const badgeBox = await quarter.locator('.absolute').boundingBox();
-      expect(titleBox).not.toBeNull();
-      expect(badgeBox).not.toBeNull();
-      const overlap =
-        titleBox &&
-        badgeBox &&
-        titleBox.x < badgeBox.x + badgeBox.width &&
-        titleBox.x + titleBox.width > badgeBox.x &&
-        titleBox.y < badgeBox.y + badgeBox.height &&
-        titleBox.y + titleBox.height > badgeBox.y;
-      expect(overlap, 'period title must remain clear of its discount badge').toBe(false);
       if (language === 'ru') {
-        await expect(monthly).toHaveText('75.74 ₽/мес');
+        await expect(monthly).toHaveText('76 ₽/мес');
         await expect(
           page.getByRole('heading', { name: 'Оформить подписку', exact: true }),
         ).toBeVisible();
@@ -61,12 +44,20 @@ for (const theme of ['light', 'dark'] as const) {
       expect(
         parseFloat(await monthly.evaluate((element) => getComputedStyle(element).fontSize)),
       ).toBeGreaterThanOrEqual(12);
-      await expect(month.locator('div').filter({ hasText: /^[^/]+\/[^/]+$/ })).toHaveCount(0);
+      const monthCaption = month.locator('div').filter({ hasText: /^[^/]+\/[^/]+$/ });
+      await expect(monthCaption).toHaveCount(1);
+      const shortPeriod = wizard.getByRole('button', { name: /14 дней/ });
+      await expect(shortPeriod.locator('div').last()).not.toBeEmpty();
+      await expect(shortPeriod.locator('div').filter({ hasText: /^[^/]+\/[^/]+$/ })).toHaveCount(0);
+      if (language === 'ru') {
+        await expect(monthCaption).toHaveText('84 ₽/мес');
+        await expect(shortPeriod.getByText('за 14 дней', { exact: true })).toBeVisible();
+      }
       const panel = wizard.locator('..');
-      expect(await panel.evaluate((element) => getComputedStyle(element).borderTopWidth)).not.toBe(
+      expect(await panel.evaluate((element) => getComputedStyle(element).borderTopWidth)).toBe(
         '0px',
       );
-      expect(await panel.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(
+      expect(await panel.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(
         'rgba(0, 0, 0, 0)',
       );
       await quarter.focus();

@@ -30,7 +30,7 @@ export function WebBackButton({ to, replace, className, ariaLabel }: WebBackButt
         'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-dark-700 bg-dark-800 transition-colors hover:border-dark-600'
       }
     >
-      <BackIcon />
+      <BackIcon className="rtl:rotate-180" />
     </Link>
   );
 }

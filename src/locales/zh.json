@@ -326,6 +326,10 @@
     "welcome": "欢迎，{{name}}！",
     "welcomeNoName": "欢迎！",
     "yourSubscription": "您的订阅",
+    "subscriptionActiveTitle": "订阅已激活",
+    "subscriptionTrialTitle": "试用订阅",
+    "subscriptionAvailableDescription": "服务可供连接",
+    "subscriptionDetailsDescription": "有效期和连接信息",
     "overlayDescriptions": {
       "subscription": "订阅期限、自动续订和其他订阅选项。",
       "connection": "选择设备并按照连接说明操作。",
@@ -666,6 +670,7 @@
     "devicesFree": "免费设备",
     "from": "起",
     "month": "月",
+    "priceForPeriod": "{{count}} 天费用",
     "myDevices": "我的设备",
     "noDevices": "没有已连接的设备",
     "renameDevice": "重命名",

@@ -40,6 +40,7 @@ import {
 } from '@/components/dashboard/dashboardPromoSlides';
 import { DeviceLimitPanel } from '@/components/subscription/DeviceLimitSheet';
 import { needsTariff } from '@/utils/legacySubscription';
+import { useTransientOverlayBackDispatcher } from '@/providers/TransientOverlayBackProvider';
 
 const Connection = lazy(() => import('./Connection'));
 const TopUpMethodSelect = lazy(() => import('./TopUpMethodSelect'));
@@ -51,6 +52,7 @@ const SubscriptionManagement = lazy(() => import('./Subscription'));
 export default function Dashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const dispatchTopUpBack = useTransientOverlayBackDispatcher();
   const location = useLocation();
   const { subscriptionId: routeSubscriptionId } = useParams<{ subscriptionId: string }>();
   const [searchParams] = useSearchParams();
@@ -429,6 +431,7 @@ export default function Dashboard() {
       ? subscription
       : subscriptions.find((item) => item.id === overlaySubscriptionId);
   const closeOverlay = () => {
+    if (routeState.overlay === 'topup' && dispatchTopUpBack()) return;
     if (location.state?.cabinetOverlayParent) {
       navigate(-1);
       return;
