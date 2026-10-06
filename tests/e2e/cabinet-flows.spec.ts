@@ -2304,7 +2304,7 @@ test('shows the complete classic env order before purchase @critical-flow', asyn
   await updatedNextButton.click();
 
   await expect(page.getByText('Скидка', { exact: true })).toBeVisible();
-  await expect(page.getByText('−109 ₽', { exact: true })).toBeVisible();
+  await expect(page.getByText('−109.00 ₽', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Оплатить', exact: true })).toBeEnabled();
   const confirmationSummary = page.locator('[data-order-summary]');
   const confirmationSummaryWidth = (await confirmationSummary.boundingBox())?.width;
