@@ -12,7 +12,7 @@ import { getDailyPriceQuote, getMonthlyPriceKopeks } from '../../../utils/pricin
 import { pickBestValue } from '../../../utils/bestValue';
 import { PurchaseFundingNotice } from './PurchaseFundingNotice';
 import type { Tariff, TariffPeriod } from '../../../types';
-import { BestValueBadge } from '../BestValueBadge';
+import { PeriodCardContent } from '../PeriodCardContent';
 
 // ──────────────────────────────────────────────────────────────────
 // TariffPurchaseForm
@@ -340,7 +340,7 @@ export function TariffPurchaseForm({
             <div className="mb-3 text-sm text-dark-400">{t('subscription.selectPeriod')}</div>
 
             {tariff.periods.length > 0 && !useCustomDays && (
-              <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="mb-4 grid auto-rows-fr grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
                 {tariff.periods.map((period) => {
                   const promoPeriod = applyPromoDiscount(
                     period.price_kopeks,
@@ -349,7 +349,10 @@ export function TariffPurchaseForm({
                   const displayDiscount = promoPeriod.percent;
                   const displayOriginal = promoPeriod.original;
                   const displayPrice = promoPeriod.price;
-                  const displayPerMonth = getMonthlyPriceKopeks(displayPrice, period.days);
+                  const displayPerMonth =
+                    period.days === 30
+                      ? displayPrice
+                      : getMonthlyPriceKopeks(displayPrice, period.days);
 
                   return (
                     <button
@@ -358,7 +361,7 @@ export function TariffPurchaseForm({
                         setSelectedTariffPeriod(period);
                         setUseCustomDays(false);
                       }}
-                      className={`relative rounded-xl p-4 text-left transition-all ${
+                      className={`relative flex min-w-0 flex-col rounded-xl p-3 text-start transition-all sm:p-4 ${
                         selectedTariffPeriod?.days === period.days && !useCustomDays
                           ? period.is_highlighted
                             ? 'border-2 border-urgent-400 bg-accent-500/10 ring-1 ring-inset ring-accent-500'
@@ -368,32 +371,28 @@ export function TariffPurchaseForm({
                             : 'border border-dark-700/50 bg-dark-800/50 hover:border-dark-600'
                       }`}
                     >
-                      {displayDiscount && displayDiscount > 0 && (
-                        <div
-                          className={`absolute -right-2 -top-2 rounded-full px-2 py-0.5 text-xs font-medium text-white ${
-                            promoPeriod.isPromoGroup ? 'bg-success-500' : 'bg-warning-500'
-                          }`}
-                        >
-                          -{displayDiscount}%
-                        </div>
-                      )}
-                      <div className="text-lg font-semibold text-dark-100">{period.label}</div>
-                      <div className="flex flex-wrap items-center gap-x-2">
-                        <span className="whitespace-nowrap font-medium text-accent-400">
-                          {formatPrice(displayPrice)}
-                        </span>
-                        {displayOriginal && displayOriginal > displayPrice && (
-                          <span className="whitespace-nowrap text-sm text-dark-500 line-through">
-                            {formatPrice(displayOriginal)}
-                          </span>
-                        )}
-                      </div>
-                      {displayPerMonth !== null && (
-                        <div className="mt-1 text-xs text-dark-500">
-                          {formatPrice(displayPerMonth)}/{t('subscription.month')}
-                        </div>
-                      )}
-                      {period.is_highlighted && <BestValueBadge className="mt-2" />}
+                      <PeriodCardContent
+                        label={period.label}
+                        periodDays={period.days}
+                        price={formatPrice(displayPrice)}
+                        originalPrice={
+                          displayOriginal && displayOriginal > displayPrice
+                            ? formatPrice(displayOriginal)
+                            : null
+                        }
+                        monthlyPrice={
+                          displayPerMonth !== null
+                            ? `${formatAmount(displayPerMonth / 100, 0)} ${currencySymbol}/${t('subscription.month')}`
+                            : null
+                        }
+                        discountPercent={displayDiscount}
+                        discountClassName={
+                          promoPeriod.isPromoGroup
+                            ? 'bg-success-500 text-white'
+                            : 'bg-warning-500 text-white'
+                        }
+                        highlighted={period.is_highlighted}
+                      />
                     </button>
                   );
                 })}

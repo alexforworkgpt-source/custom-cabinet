@@ -12,6 +12,7 @@ import { AnimatedCrossmark } from '@/components/ui/AnimatedCrossmark';
 import { cn } from '@/lib/utils';
 import { copyToClipboard } from '@/utils/clipboard';
 import { CheckIcon, CopyIcon, InfoIcon, ExclamationIcon, ClockIcon } from '@/components/icons';
+import { WebBackButton } from '@/components/WebBackButton';
 
 const MAX_POLL_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -509,21 +510,6 @@ export default function GiftResult() {
     refetch();
   }, [refetch]);
 
-  // No token
-  if (!token) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center px-4">
-        <div
-          className="w-full max-w-md rounded-2xl border border-dark-800/50 bg-dark-900/50 p-8"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          <NoTokenState />
-        </div>
-      </div>
-    );
-  }
-
   const purchaseToken = status?.purchase_token;
   const isClaimablePaid =
     status?.status === 'paid' && status?.is_claimable && purchaseToken != null;
@@ -537,42 +523,47 @@ export default function GiftResult() {
   const warning = statusWarning ?? urlWarning;
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4">
-      <div
-        className="w-full max-w-md rounded-2xl border border-dark-800/50 bg-dark-900/50 p-8"
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {isError ? (
-          <PollErrorState />
-        ) : isClaimablePaid && purchaseToken != null ? (
-          <CodeOnlySuccessState
-            purchaseToken={purchaseToken}
-            tariffName={status.tariff_name}
-            periodDays={status.period_days}
-          />
-        ) : isDelivered ? (
-          <DeliveredState
-            recipientContact={status.recipient_contact_value}
-            tariffName={status.tariff_name}
-            periodDays={status.period_days}
-            giftMessage={status.gift_message}
-            warning={warning}
-          />
-        ) : isPendingActivation ? (
-          <PendingActivationState
-            recipientContact={status.recipient_contact_value}
-            tariffName={status.tariff_name}
-            periodDays={status.period_days}
-            warning={warning}
-          />
-        ) : isFailed ? (
-          <FailedState />
-        ) : pollTimedOut ? (
-          <PollTimedOutState onRetry={handleRetryPoll} />
-        ) : (
-          <PendingState />
-        )}
+    <div className="space-y-4">
+      <WebBackButton to="/gift" />
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <div
+          className="w-full max-w-md rounded-2xl border border-dark-800/50 bg-dark-900/50 p-8"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {!token ? (
+            <NoTokenState />
+          ) : isError ? (
+            <PollErrorState />
+          ) : isClaimablePaid && purchaseToken != null ? (
+            <CodeOnlySuccessState
+              purchaseToken={purchaseToken}
+              tariffName={status.tariff_name}
+              periodDays={status.period_days}
+            />
+          ) : isDelivered ? (
+            <DeliveredState
+              recipientContact={status.recipient_contact_value}
+              tariffName={status.tariff_name}
+              periodDays={status.period_days}
+              giftMessage={status.gift_message}
+              warning={warning}
+            />
+          ) : isPendingActivation ? (
+            <PendingActivationState
+              recipientContact={status.recipient_contact_value}
+              tariffName={status.tariff_name}
+              periodDays={status.period_days}
+              warning={warning}
+            />
+          ) : isFailed ? (
+            <FailedState />
+          ) : pollTimedOut ? (
+            <PollTimedOutState onRetry={handleRetryPoll} />
+          ) : (
+            <PendingState />
+          )}
+        </div>
       </div>
     </div>
   );

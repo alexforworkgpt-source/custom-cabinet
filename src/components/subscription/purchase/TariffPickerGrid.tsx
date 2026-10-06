@@ -85,7 +85,7 @@ export function TariffPickerGrid({
             </button>
           </div>
         )}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2">
         {[...tariffs]
           .filter((tariff) => {
             // In multi-tariff mode: hide already purchased tariffs
@@ -126,11 +126,21 @@ export function TariffPickerGrid({
               !isOnFreeTariff &&
               (subscription.is_active || subscription.is_limited);
             const isLegacySubscription = needsTariff(subscription);
+            const dailyQuote = getDailyPriceQuote(tariff, activeDiscount);
+            const firstPeriod = tariff.periods[0];
+            const quote =
+              dailyQuote ??
+              (firstPeriod
+                ? applyPromoDiscount(
+                    firstPeriod.price_kopeks || 0,
+                    firstPeriod.original_price_kopeks,
+                  )
+                : null);
 
             return (
               <div
                 key={tariff.id}
-                className={`bento-card-hover p-5 text-left transition-all ${
+                className={`bento-card-hover flex min-w-0 flex-col !p-3 text-start transition-all sm:!p-4 ${
                   isCurrentTariff
                     ? 'bento-card-glow border-accent-500'
                     : tariff.is_highlighted
@@ -138,10 +148,20 @@ export function TariffPickerGrid({
                       : ''
                 }`}
               >
-                {tariff.is_highlighted && !isCurrentTariff && <BestValueBadge className="mb-2" />}
-                <div className="mb-3 flex items-start justify-between">
-                  <div>
-                    <div className="text-lg font-semibold text-dark-100">{tariff.name}</div>
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 break-words text-base font-semibold text-dark-100 sm:text-lg">
+                        {tariff.name}
+                      </div>
+                      {!!quote?.percent && quote.percent > 0 && (
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${quote.isPromoGroup ? 'bg-success-500/20 text-success-400' : 'bg-warning-500/20 text-warning-400'}`}
+                        >
+                          -{quote.percent}%
+                        </span>
+                      )}
+                    </div>
                     {tariff.description && (
                       <div className="mt-1 whitespace-pre-line text-sm text-dark-400">
                         {tariff.description}
@@ -152,7 +172,10 @@ export function TariffPickerGrid({
                     <span className="badge-success text-xs">{t('subscription.currentTariff')}</span>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-4 text-sm">
+                {tariff.is_highlighted && !isCurrentTariff && (
+                  <BestValueBadge className="mb-2 self-start" />
+                )}
+                <div className="mb-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
                   <div className="flex items-center gap-1.5">
                     <ArrowDownIcon className="h-4 w-4 text-accent-400" />
                     <span className="font-medium text-dark-200">{tariff.traffic_limit_label}</span>
@@ -175,76 +198,23 @@ export function TariffPickerGrid({
                   )}
                 </div>
                 {/* Price info */}
-                <div className="mt-3 border-t border-dark-700/50 pt-3 text-sm text-dark-400">
-                  {(() => {
-                    const promoDaily = getDailyPriceQuote(tariff, activeDiscount);
-                    if (promoDaily) {
-                      return (
-                        <span className="flex items-center gap-2">
-                          <span className="font-medium text-accent-400">
-                            {formatPrice(promoDaily.price)}
-                          </span>
-                          {promoDaily.original && promoDaily.original > promoDaily.price && (
-                            <span className="text-xs text-dark-500 line-through">
-                              {formatPrice(promoDaily.original)}
-                            </span>
-                          )}
-                          <span>{t('subscription.tariff.perDay')}</span>
-                          {promoDaily.percent && promoDaily.percent > 0 && (
-                            <span
-                              className={`rounded px-1.5 py-0.5 text-xs ${
-                                promoDaily.isPromoGroup
-                                  ? 'bg-success-500/20 text-success-400'
-                                  : 'bg-warning-500/20 text-warning-400'
-                              }`}
-                            >
-                              -{promoDaily.percent}%
-                            </span>
-                          )}
-                        </span>
-                      );
-                    }
-                    if (tariff.periods.length > 0) {
-                      const firstPeriod = tariff.periods[0];
-                      const promoPeriod = applyPromoDiscount(
-                        firstPeriod?.price_kopeks || 0,
-                        firstPeriod?.original_price_kopeks,
-                      );
-                      return (
-                        <span className="flex flex-wrap items-center gap-2">
-                          <span>{t('subscription.from')}</span>
-                          <span className="font-medium text-accent-400">
-                            {formatPrice(promoPeriod.price)}
-                          </span>
-                          {promoPeriod.original && promoPeriod.original > promoPeriod.price && (
-                            <span className="text-xs text-dark-500 line-through">
-                              {formatPrice(promoPeriod.original)}
-                            </span>
-                          )}
-                          {promoPeriod.percent && promoPeriod.percent > 0 && (
-                            <span
-                              className={`rounded px-1.5 py-0.5 text-xs ${
-                                promoPeriod.isPromoGroup
-                                  ? 'bg-success-500/20 text-success-400'
-                                  : 'bg-warning-500/20 text-warning-400'
-                              }`}
-                            >
-                              -{promoPeriod.percent}%
-                            </span>
-                          )}
-                        </span>
-                      );
-                    }
-                    return (
-                      <span className="font-medium text-accent-400">
-                        {t('subscription.tariff.flexiblePayment')}
-                      </span>
-                    );
-                  })()}
+                <div className="mt-auto border-t border-dark-700/50 pt-2 text-sm text-dark-400">
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    {quote && !dailyQuote && <span>{t('subscription.from')}</span>}
+                    <span className="break-words text-2xl font-medium text-accent-400">
+                      {quote ? formatPrice(quote.price) : t('subscription.tariff.flexiblePayment')}
+                    </span>
+                    {dailyQuote && <span>{t('subscription.tariff.perDay')}</span>}
+                  </div>
+                  <div className="min-h-4 text-xs leading-4 text-dark-500 line-through">
+                    {quote?.original && quote.original > quote.price
+                      ? formatPrice(quote.original)
+                      : null}
+                  </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="mt-4 flex gap-2">
+                <div className="mt-2 flex gap-2">
                   {isCurrentTariff ? (
                     subscription?.is_daily ? (
                       <div className="flex-1 py-2 text-center text-sm text-dark-500">

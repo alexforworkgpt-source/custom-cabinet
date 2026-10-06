@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { pollsApi, type PollInfo, type PollQuestion } from '../api/polls';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { ClipboardIcon, GiftIcon, CheckIcon, CloseIcon } from '@/components/icons';
+import { WebBackButton } from '@/components/WebBackButton';
 import { Card } from '@/components/data-display/Card';
-import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
+import { SkeletonGroup, Skeleton } from '@/components/ui/skeleton';
 
 export default function Polls() {
   const { t } = useTranslation();
@@ -89,28 +90,38 @@ export default function Polls() {
     onEscape: handleClosePoll,
   });
 
+  const header = (
+    <div className="flex items-center gap-3">
+      <WebBackButton to="/profile" />
+      <h1 className="min-w-0 text-2xl font-bold text-dark-50 sm:text-3xl">{t('polls.title')}</h1>
+    </div>
+  );
+
   if (isLoading) {
     return (
-      <PageSkeleton leading={1} titleWidth="w-40">
-        <Skeleton variant="card" count={3} className="h-32" />
-      </PageSkeleton>
+      <div className="space-y-6">
+        {header}
+        <SkeletonGroup className="space-y-6">
+          <Skeleton variant="card" count={3} className="h-32" />
+        </SkeletonGroup>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card size="lg" className="border-error-500/20 bg-error-500/10">
-        <p className="text-error-400">{t('polls.error')}</p>
-      </Card>
+      <div className="space-y-6">
+        {header}
+        <Card size="lg" className="border-error-500/20 bg-error-500/10">
+          <p className="text-error-400">{t('polls.error')}</p>
+        </Card>
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <ClipboardIcon className="h-6 w-6" />
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('polls.title')}</h1>
-      </div>
+      {header}
 
       {/* Poll Modal */}
       {selectedPoll && (

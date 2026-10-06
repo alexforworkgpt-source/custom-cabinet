@@ -331,6 +331,10 @@
     "welcome": "خوش آمدید، {{name}}!",
     "welcomeNoName": "خوش آمدید!",
     "yourSubscription": "اشتراک شما",
+    "subscriptionActiveTitle": "اشتراک فعال است",
+    "subscriptionTrialTitle": "اشتراک آزمایشی",
+    "subscriptionAvailableDescription": "سرویس برای اتصال در دسترس است",
+    "subscriptionDetailsDescription": "مدت اعتبار و جزئیات اتصال",
     "overlayDescriptions": {
       "subscription": "مدت اشتراک، تمدید خودکار و امکانات اضافی اشتراک.",
       "connection": "یک دستگاه انتخاب کنید و دستورالعمل اتصال را دنبال کنید.",
@@ -671,6 +675,7 @@
     "devicesFree": "دستگاه رایگان",
     "from": "از",
     "month": "ماه",
+    "priceForPeriod": "برای {{count}} روز",
     "myDevices": "دستگاه‌های من",
     "noDevices": "هیچ دستگاه متصلی نیست",
     "renameDevice": "تغییر نام",

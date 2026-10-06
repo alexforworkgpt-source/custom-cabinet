@@ -19,6 +19,7 @@ import { useAuthStore } from '../store/auth';
 import { isValidEmail } from '../utils/validation';
 import type { LinkedProvider } from '../types';
 import EmailAccountManagement from './EmailAccountManagement';
+import { WebBackButton } from '@/components/WebBackButton';
 
 const OAUTH_PROVIDERS = ['google', 'yandex', 'discord', 'vk'];
 
@@ -311,6 +312,7 @@ export default function ConnectedAccounts() {
   const navigate = useNavigate();
 
   const [confirmingUnlink, setConfirmingUnlink] = useState<string | null>(null);
+  const [emailActionContainer, setEmailActionContainer] = useState<HTMLDivElement | null>(null);
   const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
   const [waitingExternalLink, setWaitingExternalLink] = useState(false);
   const pendingLinkProvider = useRef<string | null>(null);
@@ -656,11 +658,14 @@ export default function ConnectedAccounts() {
       animate="animate"
     >
       {/* Page title */}
-      <motion.div variants={staggerItem}>
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
-          {t('profile.accounts.title')}
-        </h1>
-        <p className="mt-1 text-dark-400">{t('profile.accounts.subtitle')}</p>
+      <motion.div variants={staggerItem} className="flex items-center gap-3">
+        <WebBackButton to="/profile" />
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
+            {t('profile.accounts.title')}
+          </h1>
+          <p className="mt-1 text-dark-400">{t('profile.accounts.subtitle')}</p>
+        </div>
       </motion.div>
 
       {/* Loading state */}
@@ -695,11 +700,12 @@ export default function ConnectedAccounts() {
                   )}
                 </div>
               </div>
-              <div className="flex shrink-0 flex-col items-end gap-1.5">
-                {provider.linked ? (
-                  <>
-                    <span className="text-sm text-success-500">{t('profile.accounts.linked')}</span>
-                    {canUnlink(provider) && (
+              <div
+                ref={provider.provider === 'email' ? setEmailActionContainer : undefined}
+                className="flex shrink-0 flex-col items-center gap-1.5"
+              >
+                {provider.linked
+                  ? canUnlink(provider) && (
                       <Button
                         variant={confirmingUnlink === provider.provider ? 'destructive' : 'outline'}
                         size="sm"
@@ -718,11 +724,8 @@ export default function ConnectedAccounts() {
                           ? t('profile.accounts.unlinkConfirmBtn')
                           : t('profile.accounts.unlink')}
                       </Button>
-                    )}
-                  </>
-                ) : (
-                  isLinkableProvider(provider.provider) && renderLinkButton(provider)
-                )}
+                    )
+                  : isLinkableProvider(provider.provider) && renderLinkButton(provider)}
               </div>
             </div>
 
@@ -739,6 +742,7 @@ export default function ConnectedAccounts() {
                   email={user?.email || provider.identifier || ''}
                   verified={user?.email_verified ?? false}
                   verificationEnabled={isEmailVerificationEnabled}
+                  actionContainer={emailActionContainer}
                 />
               )}
 

@@ -354,6 +354,10 @@
     "welcome": "Добро пожаловать, {{name}}!",
     "welcomeNoName": "Добро пожаловать!",
     "yourSubscription": "Ваша подписка",
+    "subscriptionActiveTitle": "Подписка активна",
+    "subscriptionTrialTitle": "Пробная подписка",
+    "subscriptionAvailableDescription": "Сервис доступен для подключения",
+    "subscriptionDetailsDescription": "Срок действия и условия подключения",
     "overlayDescriptions": {
       "subscription": "Срок действия, автопродление и дополнительные возможности подписки.",
       "connection": "Выберите устройство и следуйте инструкции по подключению.",
@@ -508,7 +512,7 @@
     "getSubscription": "Оформить подписку",
     "cta": {
       "expiredHint": "Выберите тариф и оплатите",
-      "trialHint": "Больше трафика и устройств",
+      "trialHint": "Выберите период и устройства",
       "activeHint": "Продление и смена тарифа",
       "renewHint": "Подписка истекла — продлите, чтобы продолжить пользоваться",
       "moveToTariff": "Перейти на тариф",
@@ -565,7 +569,7 @@
     "renewCurrentEnd": "Текущий срок: до {{date}}",
     "renewSelectionReset": "Предыдущий выбор сброшен: подписка или доступные сроки изменились. Выберите срок заново.",
     "renewTopUpHint": "Нужно пополнить {{amount}}. Затем подтвердите продление.",
-    "classicRenewHint": "Продление с текущими параметрами подписки",
+    "classicRenewHint": "Продление с текущими параметрами",
     "classicRenewFundingNotice": "На балансе не хватает {{amount}}. Нажмите «Пополнить баланс»: сначала сохраним выбранное продление, затем откроем выбор способа оплаты.",
     "nextWithPrice": "Далее · {{amount}}",
     "payAmount": "Оплатить {{amount}}",
@@ -578,6 +582,10 @@
     "currentTariff": "Текущий",
     "from": "от",
     "month": "мес",
+    "priceForPeriod_one": "за {{count}} день",
+    "priceForPeriod_few": "за {{count}} дня",
+    "priceForPeriod_many": "за {{count}} дней",
+    "priceForPeriod_other": "за {{count}} дня",
     "insufficientBalance": "Недостаточно средств. Не хватает {{missing}} ₽",
     "trial": {
       "title": "Бесплатный пробный период",
@@ -610,7 +618,7 @@
       "upgradeNow": "Выбрать тариф"
     },
     "trialUpgrade": {
-      "title": "Выберите тариф для продолжения",
+      "title": "Выберите тариф",
       "description": "Пробный период скоро закончится. Выберите тариф для доступа без ограничений."
     },
     "expiredBanner": {

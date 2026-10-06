@@ -32,6 +32,7 @@ import { formatPrice } from '../utils/format';
 import { pickBestValue } from '../utils/bestValue';
 import { BestValueBadge } from '../components/subscription/BestValueBadge';
 import { useCurrency } from '../hooks/useCurrency';
+import { WebBackButton } from '@/components/WebBackButton';
 import { usePlatform, useHaptic } from '@/platform';
 import { openPaymentUrl } from '../utils/openPaymentUrl';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
@@ -1299,20 +1300,47 @@ export default function GiftSubscription() {
     staleTime: 30_000,
   });
 
+  const header = (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="mb-3 flex items-center gap-3 sm:mb-6"
+    >
+      <WebBackButton to="/profile" />
+      <h1 className="min-w-0 text-2xl font-bold text-dark-50">{t('gift.pageTitle')}</h1>
+    </motion.div>
+  );
+
   // Loading state
   if (isLoading) {
-    return <LoadingSkeleton />;
+    return (
+      <div className="mx-auto max-w-2xl space-y-4">
+        {header}
+        <LoadingSkeleton />
+      </div>
+    );
   }
 
   // Error state
   if (error || !config) {
     const errMsg = getApiErrorMessage(error, t('gift.notFound'));
-    return <ErrorState message={errMsg} />;
+    return (
+      <div className="mx-auto max-w-2xl space-y-4">
+        {header}
+        <ErrorState message={errMsg} />
+      </div>
+    );
   }
 
   // Disabled state
   if (!config.is_enabled) {
-    return <DisabledState />;
+    return (
+      <div className="mx-auto max-w-2xl space-y-4">
+        {header}
+        <DisabledState />
+      </div>
+    );
   }
 
   const tabs: { id: TabId; label: string }[] = [
@@ -1325,17 +1353,7 @@ export default function GiftSubscription() {
     <div className="min-h-dvh">
       <div className="mx-auto max-w-2xl sm:px-4 sm:py-6">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="mb-3 flex items-center gap-3 sm:mb-6"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-500/20">
-            <GiftIcon className="h-5 w-5 text-accent-400" />
-          </div>
-          <h1 className="text-2xl font-bold text-dark-50">{t('gift.pageTitle')}</h1>
-        </motion.div>
+        {header}
 
         {/* Tab bar */}
         <motion.div

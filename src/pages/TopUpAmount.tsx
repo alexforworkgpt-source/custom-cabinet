@@ -13,11 +13,13 @@ import { staggerContainer, staggerItem } from '@/components/motion/transitions';
 import type { PaymentMethod, PaymentMethodOption } from '../types';
 import BentoCard from '../components/ui/BentoCard';
 import { saveTopUpPendingInfo } from '../utils/topUpStorage';
-import { getSafeRedirectPath } from '../utils/safeRedirect';
+import { getTopUpReturnPath } from '../utils/topUpReturnPath';
 import { openPaymentUrl } from '../utils/openPaymentUrl';
 import { getApiErrorMessage } from '../utils/api-error';
 import { copyToClipboard } from '@/utils/clipboard';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { useTransientOverlayBackHandler } from '@/providers/TransientOverlayBackProvider';
+import { useCreatedTopUpStatus } from '@/hooks/useCreatedTopUpStatus';
 import {
   CardIcon,
   CheckIcon,
@@ -101,12 +103,7 @@ export default function TopUpAmount() {
   const method = methods?.find((m) => m.id === methodId);
 
   const handleSuccess = useCallback(() => {
-    // returnTo arrives via query string — validate as an in-app path before
-    // navigate(), otherwise an absolute or encoded URL produces ugly
-    // path artefacts in the URL bar. The validator returns '/' for invalid
-    // input; treat that case as "no returnTo" and use the /balance default.
-    const safe = getSafeRedirectPath(returnTo);
-    navigate(returnTo && safe !== '/' ? safe : '/balance', { replace: true });
+    navigate(getTopUpReturnPath(returnTo), { replace: true });
   }, [navigate, returnTo]);
 
   // Auto-redirect when success notification appears (e.g., balance topped up via WebSocket)
@@ -127,6 +124,17 @@ export default function TopUpAmount() {
     getPreferredOptionId(method?.options),
   );
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const handleTopUpBack = useCallback(() => {
+    if (paymentUrl) {
+      const returnPath = getTopUpReturnPath(returnTo);
+      // Closing the payment must also close the Balance overlay underneath it.
+      navigate(returnPath.split(/[?#]/, 1)[0] === '/balance' ? '/' : returnPath, { replace: true });
+      return;
+    }
+    const query = searchParams.toString();
+    navigate(`/balance/top-up${query ? `?${query}` : ''}`, { replace: true });
+  }, [paymentUrl, returnTo, navigate, searchParams]);
+  useTransientOverlayBackHandler(Boolean(methodId), handleTopUpBack);
   const [copied, setCopied] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
   // Canonical RUB amount when the user picked a quick-amount chip. The input shows a
@@ -137,7 +145,7 @@ export default function TopUpAmount() {
 
   // Once methods have loaded, redirect to method selection if this method id is unknown.
   useEffect(() => {
-    if (methods && !method) {
+    if (methodId && methods && !method) {
       const params = new URLSearchParams();
       const amount = searchParams.get('amount');
       const rt = searchParams.get('returnTo');
@@ -146,7 +154,7 @@ export default function TopUpAmount() {
       const qs = params.toString();
       navigate(`/balance/top-up${qs ? `?${qs}` : ''}`, { replace: true });
     }
-  }, [methods, method, navigate, searchParams]);
+  }, [methodId, methods, method, navigate, searchParams]);
 
   useEffect(() => {
     if (!method?.options || method.options.length === 0) {
@@ -227,6 +235,7 @@ export default function TopUpAmount() {
             method_name: displayName,
             payment_id: data.payment_id,
             created_at: Date.now(),
+            returnTo: getTopUpReturnPath(returnTo),
           });
         }
 
@@ -251,6 +260,7 @@ export default function TopUpAmount() {
           // when it hands off to a bank app via a custom scheme (SBP) — Android shows
           // ERR_UNKNOWN_URL_SCHEME, iOS opens nothing (bug #654272). Open externally there;
           // on web keep same-tab navigation.
+          setPaymentUrl(redirectUrl);
           openPaymentUrl(redirectUrl, platform, openLink);
           return;
         }
@@ -266,6 +276,8 @@ export default function TopUpAmount() {
       submissionLockRef.current = false;
     },
   });
+
+  useCreatedTopUpStatus(methodId, topUpMutation.data?.payment_id);
 
   // Auto-focus input (only on desktop — mobile keyboard hides bottom nav)
   useEffect(() => {

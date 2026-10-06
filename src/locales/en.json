@@ -346,6 +346,10 @@
     "welcome": "Welcome, {{name}}!",
     "welcomeNoName": "Welcome!",
     "yourSubscription": "Your Subscription",
+    "subscriptionActiveTitle": "Subscription active",
+    "subscriptionTrialTitle": "Trial subscription",
+    "subscriptionAvailableDescription": "Service is available for connection",
+    "subscriptionDetailsDescription": "Validity and connection details",
     "overlayDescriptions": {
       "subscription": "Subscription term, auto-renewal, and additional options.",
       "connection": "Select a device and follow the connection instructions.",
@@ -560,6 +564,8 @@
     "currentTariff": "Current",
     "from": "from",
     "month": "mo",
+    "priceForPeriod_one": "for {{count}} day",
+    "priceForPeriod_other": "for {{count}} days",
     "insufficientBalance": "Insufficient balance. Missing {{missing}} ₽",
     "trial": {
       "title": "Free Trial",

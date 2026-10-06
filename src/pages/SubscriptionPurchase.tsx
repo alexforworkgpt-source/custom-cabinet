@@ -15,7 +15,6 @@ import { TariffPickerGrid } from '../components/subscription/purchase/TariffPick
 import { ClassicPurchaseWizard } from '../components/subscription/purchase/ClassicPurchaseWizard';
 import { PurchaseContextBanners } from '../components/subscription/purchase/PurchaseContextBanners';
 import { ExclamationIcon } from '@/components/icons';
-import { Card } from '@/components/data-display';
 import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
 
 export default function SubscriptionPurchase() {
@@ -274,13 +273,11 @@ export default function SubscriptionPurchase() {
 
       {/* Purchase/Extend Section - Classic Mode */}
       {classicOptions && classicOptions.periods.length > 0 && (
-        <Card>
-          <ClassicPurchaseWizard
-            classicOptions={classicOptions}
-            subscription={subscription}
-            subscriptionId={subscriptionId}
-          />
-        </Card>
+        <ClassicPurchaseWizard
+          classicOptions={classicOptions}
+          subscription={subscription}
+          subscriptionId={subscriptionId}
+        />
       )}
 
       {/* No options available fallback */}

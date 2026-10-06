@@ -13,6 +13,7 @@ import { AnimatedCheckmark } from '@/components/ui/AnimatedCheckmark';
 import { AnimatedCrossmark } from '@/components/ui/AnimatedCrossmark';
 import { loadTopUpPendingInfo, clearTopUpPendingInfo } from '../utils/topUpStorage';
 import { isPaidStatus, isFailedStatus } from '../utils/paymentStatus';
+import { getTopUpReturnPath } from '../utils/topUpReturnPath';
 
 // ── Constants ────────────────────────────────────────────────
 const MAX_POLL_MS = 10 * 60 * 1000; // 10 minutes
@@ -57,13 +58,19 @@ function PendingState({ amountKopeks }: { amountKopeks: number | null }) {
   );
 }
 
-function SuccessState({ amountKopeks }: { amountKopeks: number | null }) {
+function SuccessState({
+  amountKopeks,
+  returnPath,
+}: {
+  amountKopeks: number | null;
+  returnPath: string;
+}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   const handleGoToBalance = useCallback(() => {
-    navigate('/balance', { replace: true });
-  }, [navigate]);
+    navigate(returnPath, { replace: true });
+  }, [navigate, returnPath]);
 
   return (
     <motion.div
@@ -87,7 +94,7 @@ function SuccessState({ amountKopeks }: { amountKopeks: number | null }) {
         onClick={handleGoToBalance}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent-500 px-6 py-3 text-sm font-medium text-on-accent transition-colors hover:bg-accent-400"
       >
-        {t('balance.topUpResult.goToBalance')}
+        {t(returnPath === '/balance' ? 'balance.topUpResult.goToBalance' : 'common.back')}
       </button>
     </motion.div>
   );
@@ -346,7 +353,10 @@ export default function TopUpResult() {
         aria-atomic="true"
       >
         {resolvedPaid ? (
-          <SuccessState amountKopeks={amountKopeks} />
+          <SuccessState
+            amountKopeks={amountKopeks}
+            returnPath={getTopUpReturnPath(pendingInfo?.returnTo)}
+          />
         ) : resolvedFailed ? (
           <FailedState amountKopeks={amountKopeks} />
         ) : pollTimedOut ? (

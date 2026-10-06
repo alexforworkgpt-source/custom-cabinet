@@ -71,9 +71,9 @@ export function RenewalSummary({
     </div>
   );
   return (
-    <Card className="space-y-4" data-renewal-panel>
+    <div className="space-y-4" data-renewal-panel>
       {children}
       {summary}
-    </Card>
+    </div>
   );
 }

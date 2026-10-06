@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { ClipboardIcon, PlusIcon } from '@/components/icons';
+import { ClipboardIcon, TariffsIcon } from '@/components/icons';
 import { subscriptionApi } from '../api/subscription';
 import { balanceApi } from '../api/balance';
 import { useTheme } from '../hooks/useTheme';
@@ -128,7 +128,7 @@ export default function Subscriptions() {
               border: '1px solid rgba(var(--color-accent-400), 0.2)',
             }}
           >
-            <PlusIcon className="h-4 w-4" />
+            <TariffsIcon className="h-4 w-4" />
             {t('subscriptions.buyAnother', 'Новый тариф')}
           </button>
         )}
@@ -141,7 +141,7 @@ export default function Subscriptions() {
           onClick={() => navigate('/subscription/purchase')}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent-500 p-3.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-600"
         >
-          <PlusIcon className="h-5 w-5" />
+          <TariffsIcon className="h-5 w-5" />
           {t('subscriptions.browsePlans', 'Посмотреть тарифы и купить подписку')}
         </button>
       )}
@@ -179,7 +179,7 @@ export default function Subscriptions() {
             onClick={() => navigate('/subscription/purchase')}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent-500 px-6 py-3 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-600"
           >
-            <PlusIcon className="h-5 w-5" />
+            <TariffsIcon className="h-5 w-5" />
             {t('subscriptions.browsePlans', 'Посмотреть тарифы и купить подписку')}
           </button>
         </div>

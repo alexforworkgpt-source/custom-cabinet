@@ -6,6 +6,7 @@ import { subscriptionApi } from '../../../api/subscription';
 import { useCurrency } from '../../../hooks/useCurrency';
 import { usePromoDiscount } from '../../../hooks/usePromoDiscount';
 import { getMonthlyPriceKopeks } from '../../../utils/pricing';
+import { PeriodCardContent } from '../PeriodCardContent';
 import { useCloseOnSuccessNotification } from '../../../store/successNotification';
 import {
   getErrorMessage,
@@ -236,11 +237,6 @@ export function ClassicPurchaseWizard({
     }
   };
 
-  const resetPurchase = () => {
-    setShowPurchaseForm(false);
-    setCurrentStep('period');
-  };
-
   const getStepLabel = (step: PurchaseStep) => {
     switch (step) {
       case 'period':
@@ -291,13 +287,16 @@ export function ClassicPurchaseWizard({
 
           {/* Step: Period Selection */}
           {currentStep === 'period' && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="grid auto-rows-fr grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
               {classicOptions.periods.map((period) => {
                 const promoPeriod = applyPromoDiscount(
                   period.price_kopeks,
                   period.original_price_kopeks,
                 );
-                const monthly = getMonthlyPriceKopeks(promoPeriod.price, period.period_days);
+                const monthly =
+                  period.period_days === 30
+                    ? promoPeriod.price
+                    : getMonthlyPriceKopeks(promoPeriod.price, period.period_days);
 
                 return (
                   <button
@@ -321,37 +320,33 @@ export function ClassicPurchaseWizard({
                         setSelectedDevices(period.devices.current);
                       }
                     }}
-                    className={`bento-card-hover relative p-4 text-left transition-all ${promoPeriod.percent && promoPeriod.percent > 0 ? 'pt-8' : ''} ${
+                    className={`bento-card-hover relative flex min-w-0 flex-col !p-3 text-start transition-all sm:!p-4 ${
                       selectedPeriod?.id === period.id
                         ? 'bento-card-glow border-accent-500 light:!border-accent-500 light:border-2'
                         : ''
                     }`}
                   >
-                    {promoPeriod.percent && promoPeriod.percent > 0 && (
-                      <div
-                        className={`absolute right-2 top-2 z-10 rounded-full px-2 py-0.5 text-xs font-medium text-white shadow-sm ${
-                          promoPeriod.isPromoGroup ? 'bg-success-500' : 'bg-warning-500'
-                        }`}
-                      >
-                        -{promoPeriod.percent}%
-                      </div>
-                    )}
-                    <div className="text-lg font-semibold text-dark-100">{period.label}</div>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="font-medium text-accent-400">
-                        {formatPrice(promoPeriod.price)}
-                      </span>
-                      {promoPeriod.original && promoPeriod.original > promoPeriod.price && (
-                        <span className="text-sm text-dark-500 line-through">
-                          {formatPrice(promoPeriod.original)}
-                        </span>
-                      )}
-                    </div>
-                    {monthly !== null && (
-                      <div className="mt-1 text-xs text-dark-400">
-                        {formatAmount(monthly / 100)} {currencySymbol}/{t('subscription.month')}
-                      </div>
-                    )}
+                    <PeriodCardContent
+                      label={period.label}
+                      periodDays={period.period_days}
+                      price={formatPrice(promoPeriod.price)}
+                      originalPrice={
+                        promoPeriod.original && promoPeriod.original > promoPeriod.price
+                          ? formatPrice(promoPeriod.original)
+                          : null
+                      }
+                      monthlyPrice={
+                        monthly !== null
+                          ? `${formatAmount(monthly / 100, 0)} ${currencySymbol}/${t('subscription.month')}`
+                          : null
+                      }
+                      discountPercent={promoPeriod.percent}
+                      discountClassName={
+                        promoPeriod.isPromoGroup
+                          ? 'bg-success-500 text-white'
+                          : 'bg-warning-500 text-white'
+                      }
+                    />
                   </button>
                 );
               })}
@@ -479,7 +474,7 @@ export function ClassicPurchaseWizard({
 
           {/* Step: Device Selection */}
           {currentStep === 'devices' && selectedPeriod && (
-            <div className="flex flex-col items-center py-8">
+            <div className="flex flex-col items-center pt-8">
               <div className="flex items-center gap-6">
                 <button
                   onClick={() =>
@@ -600,12 +595,6 @@ export function ClassicPurchaseWizard({
             {!isFirstStep && (
               <button onClick={goToPrevStep} className="btn-secondary flex-1">
                 {t('common.back')}
-              </button>
-            )}
-
-            {isFirstStep && (
-              <button onClick={resetPurchase} className="btn-secondary">
-                {t('common.cancel')}
               </button>
             )}
 

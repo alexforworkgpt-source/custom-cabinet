@@ -21,6 +21,7 @@ import { PiCaretDown } from 'react-icons/pi';
 import { StarIcon, CalendarIcon, HistoryIcon, CloseIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
+import { WebBackButton } from '@/components/WebBackButton';
 
 // Icons
 const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
@@ -470,35 +471,50 @@ export default function Wheel() {
     setTargetRotation(null);
   };
 
+  const header = (
+    <div className="flex items-center gap-3">
+      <WebBackButton to="/profile" />
+      <h1 className="min-w-0 text-2xl font-bold text-dark-50">{t('wheel.title')}</h1>
+    </div>
+  );
+
   if (isLoading) {
     return (
-      <PageSkeleton titleWidth="w-40" className="space-y-6 pb-8">
-        <Skeleton className="h-4 w-56" />
-        <Skeleton variant="card" className="h-80" />
-      </PageSkeleton>
+      <div className="space-y-4">
+        {header}
+        <PageSkeleton titleWidth="w-40" className="space-y-6 pb-8">
+          <Skeleton className="h-4 w-56" />
+          <Skeleton variant="card" className="h-80" />
+        </PageSkeleton>
+      </div>
     );
   }
 
   if (error || !config) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-error-500/10">
-          <span className="text-4xl">😔</span>
+      <div className="space-y-4">
+        {header}
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-error-500/10">
+            <span className="text-4xl">😔</span>
+          </div>
+          <p className="text-lg text-dark-400">{t('wheel.errors.loadFailed')}</p>
         </div>
-        <p className="text-lg text-dark-400">{t('wheel.errors.loadFailed')}</p>
       </div>
     );
   }
 
   if (!config.is_enabled) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6">
-        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-dark-800">
-          <span className="text-5xl">🎡</span>
-        </div>
-        <div className="text-center">
-          <h1 className="mb-2 text-2xl font-bold text-dark-100">{t('wheel.title')}</h1>
-          <p className="text-dark-400">{t('wheel.disabled')}</p>
+      <div className="space-y-4">
+        {header}
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-dark-800">
+            <span className="text-5xl">🎡</span>
+          </div>
+          <div className="text-center">
+            <p className="text-dark-400">{t('wheel.disabled')}</p>
+          </div>
         </div>
       </div>
     );
@@ -529,7 +545,7 @@ export default function Wheel() {
     <div className="animate-fade-in space-y-4 pb-8 sm:space-y-6">
       {/* Simple Header */}
       <div className="flex items-center justify-between gap-3 sm:block">
-        <h1 className="text-2xl font-bold text-dark-50">{t('wheel.title')}</h1>
+        {header}
         {config.daily_limit > 0 && (
           <p className="shrink-0 text-dark-400 sm:mt-1">
             <span className="sr-only sm:not-sr-only">{t('wheel.spinsRemaining')}: </span>

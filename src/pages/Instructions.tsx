@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router';
 import { Card } from '@/components/data-display/Card';
 import { InstructionSupportReturn } from '@/components/instructions/InstructionSupportReturn';
+import { WebBackButton } from '@/components/WebBackButton';
 import {
   BookOpenIcon,
   ChevronRightIcon,
@@ -38,7 +39,12 @@ export default function Instructions() {
     >
       <motion.header variants={staggerItem} className="max-w-2xl space-y-2">
         <InstructionSupportReturn fromSupport={fromSupport} />
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('instructions.title')}</h1>
+        <div className="flex items-center gap-3">
+          {!fromSupport && <WebBackButton to="/profile" />}
+          <h1 className="min-w-0 text-2xl font-bold text-dark-50 sm:text-3xl">
+            {t('instructions.title')}
+          </h1>
+        </div>
         <p className="text-sm leading-relaxed text-dark-400 sm:text-base">
           {t('instructions.subtitle')}
         </p>
