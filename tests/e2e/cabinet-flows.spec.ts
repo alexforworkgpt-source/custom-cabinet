@@ -1429,7 +1429,9 @@ test('shows a local not-found state for an unknown instruction @critical-flow', 
 });
 
 test('offers a safe cabinet action and related instructions @critical-flow', async ({ page }) => {
-  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page);
+  const { apiRequests, unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: { ...activeResponses, ...connectionResponses },
+  });
 
   await page.goto('/instructions/connect-android');
   const action = page.getByRole('link', { name: 'Open VPN setup' });
@@ -1441,6 +1443,8 @@ test('offers a safe cabinet action and related instructions @critical-flow', asy
 
   await action.click();
   await expect(page).toHaveURL(/\/connection/);
+  await expect.poll(() => apiRequests).toContain('GET /api/cabinet/subscription/app-config');
+  await expect(page.getByRole('heading', { name: /^Set up (Android|Windows)$/ })).toBeVisible();
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 

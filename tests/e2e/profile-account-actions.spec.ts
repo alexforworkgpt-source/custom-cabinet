@@ -37,11 +37,21 @@ for (const verified of [true, false]) {
       [emailRow, changeEmail],
       [googleRow, googleRow.getByRole('button', { name: 'Отвязать', exact: true })],
     ]) {
-      const [rowBox, actionBox] = await Promise.all([row.boundingBox(), action.boundingBox()]);
-      if (!rowBox || !actionBox) throw new Error('Account action must have visible bounds');
-      expect(
-        Math.abs(rowBox.y + rowBox.height / 2 - actionBox.y - actionBox.height / 2),
-      ).toBeLessThan(1);
+      await expect(action).toBeVisible();
+      const actionElement = await action.elementHandle();
+      if (!actionElement) throw new Error('Account action must have visible bounds');
+      // Read both bounds in the same frame while the row finishes its entrance animation.
+      await expect
+        .poll(() =>
+          row.evaluate((element, button) => {
+            const rowBox = element.getBoundingClientRect();
+            const actionBox = button.getBoundingClientRect();
+            if (!rowBox.width || !actionBox.width)
+              throw new Error('Account bounds must be visible');
+            return Math.abs(rowBox.y + rowBox.height / 2 - actionBox.y - actionBox.height / 2);
+          }, actionElement),
+        )
+        .toBeLessThan(1);
     }
     await expect(
       page.getByText('Подтвердите email для использования входа по почте.', { exact: true }),
