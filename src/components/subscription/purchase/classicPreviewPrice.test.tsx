@@ -23,6 +23,7 @@ vi.mock('react-i18next', () => ({
       if (key === 'subscription.total') return 'Итого';
       if (key === 'subscription.classicFundingNotice') return `Нехватка ${args?.amount}`;
       if (key === 'subscription.priceForPeriod') return `за ${args?.count} дней`;
+      if (key === 'subscription.devices' && args?.count) return `${args.count} устройство`;
       return key;
     },
   }),
@@ -47,7 +48,13 @@ vi.mock('@/hooks/usePromoDiscount', async () => {
   };
 });
 
-function fixture(days: number, original: number, total: number, includeSecondPeriod = false) {
+function fixture(
+  days: number,
+  original: number,
+  total: number,
+  includeSecondPeriod = false,
+  maxDevices = 1,
+) {
   const period: ClassicPurchaseOptions['periods'][number] = {
     id: `days:${days}`,
     period_days: days,
@@ -62,7 +69,7 @@ function fixture(days: number, original: number, total: number, includeSecondPer
     servers: { options: [], min: 0, max: 0, default: [], selected: [] },
     devices: {
       min: 1,
-      max: 1,
+      max: maxDevices,
       default: 1,
       current: 1,
       price_per_device_kopeks: 0,
@@ -96,7 +103,7 @@ function fixture(days: number, original: number, total: number, includeSecondPer
     discount_percent: 90,
     per_month_price_kopeks: total,
     per_month_price_label: `${total / 100} ₽`,
-    breakdown: [{ label: 'Период', value: `${original / 100} ₽` }],
+    breakdown: [{ label: maxDevices > 1 ? 'Устройства' : 'Период', value: `${original / 100} ₽` }],
     balance_kopeks: 0,
     balance_label: '0 ₽',
     missing_amount_kopeks: total,
@@ -124,6 +131,48 @@ afterEach(() => {
 });
 
 describe('Classic final server preview', () => {
+  it('keeps the confirmed quantity and price visible while devices are recalculated', async () => {
+    const { client, preview } = fixture(30, 9900, 990, false, 5);
+    const initial = {
+      ...preview,
+      breakdown: [{ label: 'Устройства', value: '9.90 ₽' }],
+    };
+    fireEvent.click(await screen.findByRole('button', { name: 'Далее · 9.90 ₽' }));
+    expect(screen.getByText('1 устройство')).toBeTruthy();
+    let finish!: (value: PurchasePreview) => void;
+    api.previewPurchase.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: '+' }));
+    await waitFor(() =>
+      expect(api.previewPurchase).toHaveBeenLastCalledWith(
+        expect.objectContaining({ devices: 2 }),
+        undefined,
+      ),
+    );
+    expect(screen.getByText('Итого').parentElement?.textContent).toContain('9.90 ₽');
+    expect(screen.getByText('1 устройство')).toBeTruthy();
+    expect(screen.queryByText('2 устройство')).toBeNull();
+    expect(screen.queryByText('subscription.previewUpdating')).toBeNull();
+    expect(screen.getByText('Итого').closest('[aria-busy]')?.getAttribute('aria-busy')).toBe(
+      'true',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'common.next' }));
+    expect(screen.getByRole('button', { name: 'subscription.pay' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+    finish({ ...initial, total_price_kopeks: 1990 });
+    await waitFor(() =>
+      expect(screen.getByText('Итого').parentElement?.textContent).toContain('19.90 ₽'),
+    );
+    expect(screen.getByText('2 устройство')).toBeTruthy();
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(api.submitPurchase).not.toHaveBeenCalled();
+    client.clear();
+  });
   it('shows the monthly price of a long period after the discount', async () => {
     promo.percent = 20;
     const { client } = fixture(90, 30_000, 24_000);

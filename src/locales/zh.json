@@ -486,6 +486,7 @@
     "fundingNotice": "余额还差 {{amount}}。充值后套餐将自动开通。",
     "classicFundingNotice": "余额还差 {{amount}}。充值后，请返回套餐选择页面，核对设置并再次点击“支付”以完成购买。",
     "previewLoadError": "无法加载订单价格",
+    "previewUpdating": "正在更新计算…",
     "paymentOptionsLoadError": "无法加载付款选项",
     "renewSubscriptionLoadError": "无法加载订阅",
     "renewOptionsLoadError": "无法加载续订周期",

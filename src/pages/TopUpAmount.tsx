@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 
 import { balanceApi } from '../api/balance';
@@ -10,10 +10,10 @@ import { checkRateLimit, getRateLimitResetTime, RATE_LIMIT_KEYS } from '../utils
 import { useCloseOnSuccessNotification } from '../store/successNotification';
 import { useHaptic, usePlatform } from '@/platform';
 import { staggerContainer, staggerItem } from '@/components/motion/transitions';
-import type { PaymentMethod, PaymentMethodOption } from '../types';
+import type { PaymentMethod, PaymentMethodOption, SubscriptionsListResponse } from '../types';
 import BentoCard from '../components/ui/BentoCard';
 import { saveTopUpPendingInfo } from '../utils/topUpStorage';
-import { getTopUpReturnPath } from '../utils/topUpReturnPath';
+import { getReadyTopUpClosePath, getTopUpReturnPath } from '../utils/topUpReturnPath';
 import { openPaymentUrl } from '../utils/openPaymentUrl';
 import { getApiErrorMessage } from '../utils/api-error';
 import { copyToClipboard } from '@/utils/clipboard';
@@ -79,6 +79,7 @@ const sortOptionsWithSbpFirst = (options?: PaymentMethod['options']) => {
 export default function TopUpAmount() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { methodId } = useParams<{ methodId: string }>();
   const [searchParams] = useSearchParams();
   const { formatAmount, currencySymbol, convertAmount, convertToRub, targetCurrency } =
@@ -126,14 +127,21 @@ export default function TopUpAmount() {
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const handleTopUpBack = useCallback(() => {
     if (paymentUrl) {
-      const returnPath = getTopUpReturnPath(returnTo);
-      // Closing the payment must also close the Balance overlay underneath it.
-      navigate(returnPath.split(/[?#]/, 1)[0] === '/balance' ? '/' : returnPath, { replace: true });
+      const subscriptions = queryClient.getQueryData<SubscriptionsListResponse>([
+        'subscriptions-list',
+      ]);
+      navigate(
+        getReadyTopUpClosePath(
+          returnTo,
+          subscriptions?.subscriptions.map((item) => item.id),
+        ),
+        { replace: true },
+      );
       return;
     }
     const query = searchParams.toString();
     navigate(`/balance/top-up${query ? `?${query}` : ''}`, { replace: true });
-  }, [paymentUrl, returnTo, navigate, searchParams]);
+  }, [paymentUrl, returnTo, navigate, searchParams, queryClient]);
   useTransientOverlayBackHandler(Boolean(methodId), handleTopUpBack);
   const [copied, setCopied] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);

@@ -264,6 +264,25 @@ shares the existing primary action between the summary and legacy callers,
 with setup and connection link controls below the summary. This layout does
 not change refresh, device, trial or management contracts.
 
+`SubscriptionTechGrid.tsx` owns the stationary SVG background of this summary,
+the expired/limited/disabled subscription card and the free/paid trial offer.
+The latter cards use theme-aware `text-dark-50` for the grid and an isolated
+stacking context so it stays behind the content. Active summaries retain their
+fixed contrast palette. Loading, errors and the standalone purchase link when
+no trial is available retain their existing presentation.
+Its base geometry and edge fades remain static. `useSubscriptionGridNodes.ts`
+measures the visible SVG on resize and selects scattered nodes on the same
+32px lattice. Per-instance seeded variation gives each row a different phase;
+within each row the rightmost nodes always pulse before those to their left.
+The `grid-node` animation from `tailwind.config.js` changes the actual SVG
+radius from 1.25px to approximately 2.05–2.45px and back over a 12-second cycle,
+along with a soft opacity pulse. Node centres and grid lines never move. CSS
+drives the animation without frame-by-frame React updates, blur or glow.
+The pulse layer is fully masked in the faded leftmost 35% of the card and
+then follows the base grid's gradual increase in visibility to the right.
+Reduced-motion users see only the original static layer; no API or
+subscription behavior is involved.
+
 Presentational components should not call API clients, mutate stores or decode
 external payloads when that behavior can remain in a route, hook or adapter.
 

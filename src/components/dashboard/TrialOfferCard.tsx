@@ -5,7 +5,8 @@ import type { TrialInfo } from '../../types';
 import { useCurrency } from '../../hooks/useCurrency';
 import { useTheme } from '../../hooks/useTheme';
 import { getGlassColors } from '../../utils/glassTheme';
-import { BoltIcon, SparklesIcon } from '@/components/icons';
+import { GiftIcon } from '@/components/icons';
+import { SubscriptionTechGrid } from './SubscriptionTechGrid';
 
 interface TrialOfferCardProps {
   trialInfo: TrialInfo;
@@ -31,7 +32,7 @@ export default function TrialOfferCard({
 
   return (
     <div
-      className="relative overflow-hidden rounded-3xl text-center"
+      className="relative isolate overflow-hidden rounded-3xl text-center"
       style={{
         background: g.cardBg,
         border: isDark
@@ -62,20 +63,7 @@ export default function TrialOfferCard({
         }}
         aria-hidden="true"
       />
-      {/* Grid pattern */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          opacity: isDark ? 0.0125 : 0.02,
-          backgroundImage: isDark
-            ? `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-               linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`
-            : `linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
-               linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px)`,
-          backgroundSize: '40px 40px',
-        }}
-        aria-hidden="true"
-      />
+      <SubscriptionTechGrid className="text-dark-50" />
 
       {/* Icon */}
       <div
@@ -100,7 +88,7 @@ export default function TrialOfferCard({
             style={{ color: 'rgb(var(--color-accent-400))' }}
             aria-hidden="true"
           >
-            <SparklesIcon className="h-[26px] w-[26px]" />
+            <GiftIcon className="h-[26px] w-[26px]" />
           </span>
         ) : (
           <span
@@ -108,7 +96,7 @@ export default function TrialOfferCard({
             style={{ color: 'rgb(var(--color-urgent-400))' }}
             aria-hidden="true"
           >
-            <BoltIcon className="h-[26px] w-[26px]" />
+            <GiftIcon className="h-[26px] w-[26px]" />
           </span>
         )}
         {/* Glow effect */}

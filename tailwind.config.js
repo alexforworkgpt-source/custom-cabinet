@@ -197,6 +197,7 @@ export default {
         'unlimited-flow': 'unlimitedFlow 3s ease-in-out infinite',
         'unlimited-pulse': 'unlimitedPulse 2s ease-in-out infinite',
         'trial-glow': 'trialGlow 3s ease-in-out infinite',
+        'grid-node': 'gridNodePulse 12s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -276,6 +277,10 @@ export default {
           '100%': { opacity: '1', transform: 'translate(-50%, -40%) scale(1)' },
         },
         // Dashboard traffic keyframes
+        gridNodePulse: {
+          '0%, 20%, 100%': { r: '1.25px', opacity: '0' },
+          '10%': { r: 'var(--node-radius)', opacity: '0.32' },
+        },
         trafficShimmer: {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(200%)' },

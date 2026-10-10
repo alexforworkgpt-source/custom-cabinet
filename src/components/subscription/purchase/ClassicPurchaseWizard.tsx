@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { subscriptionApi } from '../../../api/subscription';
 import { useCurrency } from '../../../hooks/useCurrency';
 import { usePromoDiscount } from '../../../hooks/usePromoDiscount';
+import { useClassicPurchasePreview } from '../../../hooks/useClassicPurchasePreview';
 import { getMonthlyPriceKopeks } from '../../../utils/pricing';
 import { PeriodCardContent } from '../PeriodCardContent';
 import { useCloseOnSuccessNotification } from '../../../store/successNotification';
@@ -31,7 +32,7 @@ import type {
 // The classic-mode (non-tariff) purchase flow: a step wizard with
 // period → traffic (optional) → servers (when >1) → devices
 // (optional) → confirm. Self-owns:
-//   - the preview query (gated to confirm step)
+//   - the preview query and confirmed summary via useClassicPurchasePreview
 //   - the submitPurchase mutation
 //   - all six pieces of wizard state (currentStep, selectedPeriod,
 //     selectedTraffic, selectedServers, selectedDevices, showForm)
@@ -157,32 +158,32 @@ export function ClassicPurchaseWizard({
     isFetching: previewLoading,
     isError: previewError,
     refetch: refetchPreview,
-  } = useQuery({
-    queryKey: ['purchase-preview', currentSelection, subscriptionId],
-    queryFn: () => subscriptionApi.previewPurchase(currentSelection, subscriptionId),
-    enabled: !!selectedPeriod && showPurchaseForm,
-  });
+    summary,
+  } = useClassicPurchasePreview(currentSelection, selectedPeriod, subscriptionId, showPurchaseForm);
 
+  const summaryPreview = summary?.preview;
   const previewTotal = preview
     ? { price: preview.total_price_kopeks, original: preview.original_price_kopeks }
     : null;
   const ctaPrice =
     previewTotal && !previewLoading && !previewError ? formatCtaPrice(previewTotal.price) : null;
-  const previewTotalValue = previewTotal
-    ? formatPrice(previewTotal.price)
-    : preview?.total_price_label;
+  const previewTotalValue = summaryPreview
+    ? formatPrice(summaryPreview.total_price_kopeks)
+    : undefined;
   const previewOriginalTotalValue =
-    previewTotal?.original && previewTotal.original > previewTotal.price
-      ? formatPrice(previewTotal.original)
+    summaryPreview?.original_price_kopeks &&
+    summaryPreview.original_price_kopeks > summaryPreview.total_price_kopeks
+      ? formatPrice(summaryPreview.original_price_kopeks)
       : null;
   const previewDiscountValue =
-    previewTotal?.original && previewTotal.original > previewTotal.price
-      ? `−${formatCtaPrice(previewTotal.original - previewTotal.price)}`
-      : preview?.discount_label;
-  const selectedPeriodDetail = selectedPeriod
-    ? selectedPeriod.months > 0
-      ? t('subscription.months', { count: selectedPeriod.months })
-      : t('subscription.days', { count: selectedPeriod.period_days })
+    summaryPreview?.original_price_kopeks &&
+    summaryPreview.original_price_kopeks > summaryPreview.total_price_kopeks
+      ? `−${formatCtaPrice(summaryPreview.original_price_kopeks - summaryPreview.total_price_kopeks)}`
+      : summaryPreview?.discount_label;
+  const selectedPeriodDetail = summary
+    ? summary.period.months > 0
+      ? t('subscription.months', { count: summary.period.months })
+      : t('subscription.days', { count: summary.period.period_days })
     : undefined;
 
   const purchaseMutation = useMutation({
@@ -510,36 +511,32 @@ export function ClassicPurchaseWizard({
                   </div>
                 )}
               </div>
-              {previewLoading ? (
-                <SkeletonGroup className="mt-6">
-                  <Skeleton variant="card" className="h-32 w-full rounded-xl" />
-                </SkeletonGroup>
-              ) : preview ? (
-                <div className="mt-6 w-full">
+              <div className="mt-6 w-full" aria-busy={previewLoading}>
+                {summaryPreview ? (
                   <PurchaseOrderSummary
-                    breakdown={preview.breakdown}
+                    breakdown={summaryPreview.breakdown}
                     details={{
                       period: selectedPeriodDetail,
-                      devices: t('subscription.devices', { count: selectedDevices }),
+                      devices: t('subscription.devices', { count: summary?.selection.devices }),
                     }}
                     totalLabel={t('subscription.total')}
-                    totalValue={previewTotalValue ?? preview.total_price_label}
+                    totalValue={previewTotalValue ?? summaryPreview.total_price_label}
                   />
-                </div>
-              ) : null}
+                ) : (
+                  <SkeletonGroup className="w-full">
+                    <Skeleton variant="card" className="h-44 w-full rounded-xl" />
+                  </SkeletonGroup>
+                )}
+              </div>
             </div>
           )}
 
           {/* Step: Confirm */}
           {currentStep === 'confirm' && (
             <div>
-              {previewLoading ? (
-                <SkeletonGroup className="space-y-3">
-                  <Skeleton variant="card" count={3} className="h-16" />
-                </SkeletonGroup>
-              ) : preview ? (
-                <div className="space-y-4">
-                  {!!preview.discount_percent && (
+              {summaryPreview ? (
+                <div className="space-y-4" aria-busy={previewLoading}>
+                  {!!summaryPreview.discount_percent && (
                     <div className="flex items-center justify-center gap-2 rounded-lg border border-warning-500/30 bg-warning-500/10 p-3">
                       <svg
                         className="h-4 w-4 text-warning-400"
@@ -555,25 +552,28 @@ export function ClassicPurchaseWizard({
                         />
                       </svg>
                       <span className="text-sm font-medium text-warning-400">
-                        {t('promo.discountApplied')} -{preview.discount_percent}%
+                        {t('promo.discountApplied')} -{summaryPreview.discount_percent}%
                       </span>
                     </div>
                   )}
 
                   <PurchaseOrderSummary
-                    breakdown={preview.breakdown}
+                    breakdown={summaryPreview.breakdown}
                     details={{
                       period: selectedPeriodDetail,
-                      devices: t('subscription.devices', { count: selectedDevices }),
+                      devices: t('subscription.devices', { count: summary?.selection.devices }),
                     }}
                     totalLabel={t('subscription.total')}
-                    totalValue={previewTotalValue ?? preview.total_price_label}
+                    totalValue={previewTotalValue ?? summaryPreview.total_price_label}
                     originalTotalValue={previewOriginalTotalValue}
                     discountLabel={t('subscription.discount')}
                     discountValue={previewDiscountValue}
                   />
 
-                  {!purchaseMutation.isError &&
+                  {!previewLoading &&
+                    !previewError &&
+                    preview &&
+                    !purchaseMutation.isError &&
                     !preview.can_purchase &&
                     (preview.missing_amount_kopeks > 0 ? (
                       <PurchaseFundingNotice
@@ -586,7 +586,11 @@ export function ClassicPurchaseWizard({
                       </div>
                     ) : null)}
                 </div>
-              ) : null}
+              ) : (
+                <SkeletonGroup className="w-full">
+                  <Skeleton variant="card" className="h-44 w-full rounded-xl" />
+                </SkeletonGroup>
+              )}
             </div>
           )}
 

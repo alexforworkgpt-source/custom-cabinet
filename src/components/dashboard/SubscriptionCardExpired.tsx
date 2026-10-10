@@ -21,6 +21,7 @@ import {
 } from '@/components/icons';
 import { SubscriptionConnectFooter } from '../subscription/SubscriptionConnectFooter';
 import { connectFooterState } from '../subscription/connectFooterState';
+import { SubscriptionTechGrid } from './SubscriptionTechGrid';
 
 interface SubscriptionCardExpiredProps {
   subscription: Subscription;
@@ -167,7 +168,7 @@ export default function SubscriptionCardExpired({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-3xl px-5 py-5 sm:px-6 ${className ?? ''}`}
+      className={`relative isolate overflow-hidden rounded-3xl px-5 py-5 sm:px-6 ${className ?? ''}`}
       style={{
         background: g.cardBg,
         border: isDark
@@ -191,20 +192,7 @@ export default function SubscriptionCardExpired({
         }}
         aria-hidden="true"
       />
-      {/* Grid pattern */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          opacity: isDark ? 0.01 : 0.02,
-          backgroundImage: isDark
-            ? `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-               linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`
-            : `linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
-               linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px)`,
-          backgroundSize: '40px 40px',
-        }}
-        aria-hidden="true"
-      />
+      <SubscriptionTechGrid className="text-dark-50" />
 
       {/* Header */}
       <div className="mb-4 flex items-center gap-3">

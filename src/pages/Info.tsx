@@ -13,6 +13,7 @@ import { promoApi, type LoyaltyTierInfo } from '../api/promo';
 import type { FaqItem, ReplacesTab } from '../api/infoPages';
 import { InfoNavigation, type InfoSection } from '@/components/info/InfoNavigation';
 import { useTransientOverlayBackHandler } from '@/providers/TransientOverlayBackProvider';
+import { getSafeRedirectPath } from '@/utils/safeRedirect';
 import {
   CreditCardIcon,
   DocumentIcon,
@@ -280,12 +281,20 @@ export default function Info() {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const routeSection = (location.state as { infoSection?: unknown } | null)?.infoSection;
+  const routeState = location.state as { infoSection?: unknown; infoReturnTo?: unknown } | null;
+  const routeSection = routeState?.infoSection;
+  const sourcePage =
+    typeof routeState?.infoReturnTo === 'string'
+      ? getSafeRedirectPath(routeState.infoReturnTo)
+      : null;
   const selectedSection = typeof routeSection === 'string' ? routeSection : null;
   const [activeTab, setActiveTab] = useState<string>(selectedSection ?? 'faq');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const locale = i18n.language.split('-')[0];
-  const returnToSections = useCallback(() => navigate(-1), [navigate]);
+  const returnToSections = useCallback(() => {
+    if (sourcePage) navigate(sourcePage, { replace: true });
+    else navigate(-1);
+  }, [navigate, sourcePage]);
   useTransientOverlayBackHandler(selectedSection !== null, returnToSections);
 
   useEffect(() => {
@@ -753,6 +762,7 @@ export default function Info() {
       sectionHref={`${location.pathname}${location.search}${location.hash}`}
       onSelect={setActiveTab}
       onBack={returnToSections}
+      hasSourcePage={sourcePage !== null}
     >
       {renderContent()}
     </InfoNavigation>
