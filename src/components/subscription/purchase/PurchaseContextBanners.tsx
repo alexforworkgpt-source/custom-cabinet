@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { Link, useLocation } from 'react-router';
 import { promoApi } from '../../../api/promo';
 import type { PurchaseOptions, Subscription, Tariff } from '../../../types';
-import { GiftIcon, SparklesIcon } from '../../icons';
+import { GiftIcon, TariffsIcon } from '../../icons';
 
 interface PurchaseContextBannersProps {
   subscription: Subscription | null;
@@ -18,6 +19,7 @@ export function PurchaseContextBanners({
   showPromoGroup,
 }: PurchaseContextBannersProps) {
   const { t } = useTranslation();
+  const location = useLocation();
   const tariffPromoGroupName = tariffs.find((tariff) => tariff.promo_group_name)?.promo_group_name;
   const { data: promoGroupDiscounts } = useQuery({
     queryKey: ['promo-group-discounts'],
@@ -38,7 +40,7 @@ export function PurchaseContextBanners({
         <div className="rounded-[14px] border border-warning-500/30 bg-warning-500/15 p-4">
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px] bg-warning-500/20 text-warning-400">
-              <SparklesIcon className="h-4 w-4" />
+              <TariffsIcon className="h-4 w-4" />
             </div>
             <div>
               <div className="text-sm font-semibold text-warning-400">
@@ -53,7 +55,14 @@ export function PurchaseContextBanners({
       )}
 
       {showPromoGroup && promoGroupName && (
-        <div className="flex items-center gap-3 rounded-xl border border-success-500/40 bg-success-500/15 p-3">
+        <Link
+          to="/info"
+          state={{
+            infoSection: 'loyalty',
+            infoReturnTo: `${location.pathname}${location.search}${location.hash}`,
+          }}
+          className="flex items-center gap-3 rounded-xl border border-success-500/40 bg-success-500/15 p-3 transition-colors hover:border-success-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success-500"
+        >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success-500/25 text-success-400">
             <GiftIcon className="h-5 w-5" />
           </div>
@@ -65,7 +74,7 @@ export function PurchaseContextBanners({
               {t('subscription.promoGroup.personalDiscountsApplied')}
             </div>
           </div>
-        </div>
+        </Link>
       )}
     </div>
   );

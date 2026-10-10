@@ -544,6 +544,7 @@
     "fundingNotice": "Your balance is short by {{amount}}. The plan will be activated automatically after you top up.",
     "classicFundingNotice": "Your balance is short by {{amount}}. After topping up, return to the plan selection, review the settings and press “Pay” again to complete your purchase.",
     "previewLoadError": "Could not load the order price",
+    "previewUpdating": "Updating the calculation…",
     "paymentOptionsLoadError": "Could not load payment options",
     "renewSubscriptionLoadError": "Could not load the subscription",
     "renewOptionsLoadError": "Could not load renewal periods",

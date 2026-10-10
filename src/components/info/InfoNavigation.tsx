@@ -21,6 +21,7 @@ interface InfoNavigationProps {
   sectionHref: string;
   onSelect: (id: string) => void;
   onBack: () => void;
+  hasSourcePage?: boolean;
   children: ReactNode;
 }
 
@@ -31,6 +32,7 @@ export function InfoNavigation({
   sectionHref,
   onSelect,
   onBack,
+  hasSourcePage = false,
   children,
 }: InfoNavigationProps) {
   const { t } = useTranslation();
@@ -97,7 +99,19 @@ export function InfoNavigation({
       </Card>
 
       <div className="hidden items-center gap-3 md:flex">
-        <WebBackButton to="/profile" />
+        {hasSourcePage ? (
+          <Button
+            variant="ghost"
+            size="icon-lg"
+            onClick={onBack}
+            aria-label={t('common.back')}
+            className="shrink-0"
+          >
+            <BackIcon className="h-5 w-5 rtl:rotate-180" />
+          </Button>
+        ) : (
+          <WebBackButton to="/profile" />
+        )}
         <h1 className="min-w-0 text-2xl font-bold text-dark-50 sm:text-3xl">{t('info.title')}</h1>
       </div>
       <div className="hidden flex-wrap gap-2 pb-1 md:flex">

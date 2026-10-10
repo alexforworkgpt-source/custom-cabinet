@@ -1,13 +1,13 @@
 import { uiLocale } from '@/utils/uiLocale';
-import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UseMutationResult } from '@tanstack/react-query';
 import TrafficProgressBar from './TrafficProgressBar';
+import { SubscriptionTechGrid } from './SubscriptionTechGrid';
 import { useAnimatedNumber } from '../../hooks/useAnimatedNumber';
 import { useTheme } from '../../hooks/useTheme';
 import { useTrafficZone } from '../../hooks/useTrafficZone';
 import { formatTraffic } from '../../utils/formatTraffic';
-import { CalendarIcon, ChartIcon, GiftIcon, RefreshIcon } from '@/components/icons';
+import { CalendarIcon, ChartIcon, GiftIcon, RefreshIcon, TariffsIcon } from '@/components/icons';
 import type { Subscription } from '../../types';
 import { SubscriptionActiveActions, SubscriptionPrimaryAction } from './SubscriptionActiveActions';
 
@@ -56,7 +56,6 @@ export default function SubscriptionCardActive({
 }: SubscriptionCardActiveProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const gridId = useId();
   const contrast = {
     background:
       'color-mix(in srgb, rgba(var(--color-accent-500), 0.95) 15%, rgba(var(--color-champagne-950), 0.95) 85%)',
@@ -98,61 +97,24 @@ export default function SubscriptionCardActive({
           boxShadow: contrast.shadow,
         }}
       >
-        <svg
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -z-10 h-full w-full text-champagne-50"
-        >
-          <defs>
-            <pattern id={gridId} width="32" height="32" patternUnits="userSpaceOnUse">
-              <path
-                d="M16.5 0V32M0 16.5H32"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="0.65"
-                opacity="0.025"
-              />
-              <circle cx="16.5" cy="16.5" r="1.25" fill="currentColor" opacity="0.14" />
-            </pattern>
-            <linearGradient id={`${gridId}-strength`} x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="white" stopOpacity="0" />
-              <stop offset="15%" stopColor="white" stopOpacity="0.01" />
-              <stop offset="35%" stopColor="white" stopOpacity="0.06" />
-              <stop offset="55%" stopColor="white" stopOpacity="0.22" />
-              <stop offset="75%" stopColor="white" stopOpacity="0.55" />
-              <stop offset="90%" stopColor="white" stopOpacity="0.82" />
-              <stop offset="100%" stopColor="white" stopOpacity="1" />
-            </linearGradient>
-            <linearGradient id={`${gridId}-edges`} x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="white" stopOpacity="0.06" />
-              <stop offset="15%" stopColor="white" stopOpacity="0.65" />
-              <stop offset="35%" stopColor="white" stopOpacity="1" />
-              <stop offset="65%" stopColor="white" stopOpacity="1" />
-              <stop offset="85%" stopColor="white" stopOpacity="0.65" />
-              <stop offset="100%" stopColor="white" stopOpacity="0.06" />
-            </linearGradient>
-            <mask id={`${gridId}-vertical-fade`}>
-              <rect width="100%" height="100%" fill={`url(#${gridId}-edges)`} />
-            </mask>
-            <mask id={`${gridId}-fade`}>
-              <rect
-                width="100%"
-                height="100%"
-                fill={`url(#${gridId}-strength)`}
-                mask={`url(#${gridId}-vertical-fade)`}
-              />
-            </mask>
-          </defs>
-          <rect width="100%" height="100%" fill={`url(#${gridId})`} mask={`url(#${gridId}-fade)`} />
-        </svg>
+        <SubscriptionTechGrid />
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-semibold uppercase"
-              style={{
-                borderColor: `rgba(${subscription.is_trial ? warningStatusRaw : activeStatusRaw}, 0.25)`,
-                background: `rgba(${subscription.is_trial ? warningStatusRaw : activeStatusRaw}, 0.1)`,
-                color: `rgb(${subscription.is_trial ? warningStatusRaw : activeStatusRaw})`,
-              }}
+              className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-semibold uppercase ${
+                subscription.is_trial
+                  ? 'border-warning-500/30 bg-warning-500/15 text-warning-200'
+                  : ''
+              }`}
+              style={
+                subscription.is_trial
+                  ? undefined
+                  : {
+                      borderColor: `rgba(${activeStatusRaw}, 0.25)`,
+                      background: `rgba(${activeStatusRaw}, 0.1)`,
+                      color: `rgb(${activeStatusRaw})`,
+                    }
+              }
             >
               {subscription.is_trial ? (
                 <GiftIcon className="h-3 w-3" />
@@ -163,14 +125,17 @@ export default function SubscriptionCardActive({
             </span>
             {!subscription.is_trial && (
               <span
-                className="min-w-0 rounded-lg border px-2 py-1 text-xs font-medium uppercase"
+                className="flex min-w-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-medium uppercase"
                 style={{
                   borderColor: contrast.innerBorder,
                   background: contrast.innerBackground,
                   color: contrast.secondary,
                 }}
               >
-                <span className="line-clamp-2 break-words">
+                <span aria-hidden="true" className="shrink-0">
+                  <TariffsIcon className="h-3 w-3" />
+                </span>
+                <span className="min-w-0 line-clamp-2 break-words">
                   {subscription.tariff_name || t('subscription.currentPlan')}
                 </span>
               </span>
