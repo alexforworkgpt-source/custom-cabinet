@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "cabinet": {
+    "tag": "cabinet-v2026.10.15.1",
+    "sha": "cc17e371d2db45e8c498dc944923d3b8354892e9",
+    "tree_sha": "20cc117aae6ecae68af0b99a89a63751b8cc6a5f"
+  },
+  "upstream": {
+    "repository": "https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git",
+    "tag": "v1.80.1",
+    "sha": "a693d30ca6084b9a54b45a72294b99237841ef13"
+  },
+  "bot": {
+    "repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+    "backend_contract": "1",
+    "compatibility_evidence": "https://github.com/alexforworkgpt-source/custom-cabinet/blob/29af741ef21be5db2caf92d78f4c866fe660e0e4/releases/evidence/compatibility-v1801-v5-cc17e37-20261015.md"
+  },
+  "changes": [
+    "Compared with cabinet-v2026.10.10.1: selected Upstream Cabinet v1.80.1 adaptation for unchanged Upstream Bot v5.0.0.",
+    "Broadcast audience condition editor, recipient preview and supported API requests; user search/list visibility follows existing permissions.",
+    "Language-aware public information and legal document cache; reminder list refresh, error and retry states.",
+    "Cashera QR/payment and recurring subscription UI through existing API, guarded by feature availability; no dependency or backend changes.",
+    "Session recovery returns to the saved route; subscription skeleton reserves the confirmed layout height.",
+    "DPI/BSCHEKER and Simple/Lite remain excluded; ordinary Vitest workers match the existing CI limit."
+  ],
+  "limitations": [
+    {
+      "id": "physical-telegram-device",
+      "status": "BLOCKED",
+      "summary": "SKIPPED_OWNER_ACCEPTED: owner waived the physical Telegram Android/iOS navigation/session/device gate only for this current candidate and task; no physical PASS is claimed. BLOCKED is the existing release-record schema representation of unverified coverage, not a request to reopen the waived gate."
+    },
+    {
+      "id": "classic-auto-purchase",
+      "status": "OPEN",
+      "summary": "Existing unchanged Upstream Bot behavior: manual purchase confirmation after top-up remains an accepted limitation."
+    },
+    {
+      "id": "unused-legacy-email-wrapper",
+      "status": "OPEN",
+      "summary": "The unused createEmail wrapper is unchanged; current UI uses the supported combined endpoint."
+    },
+    {
+      "id": "live-scope",
+      "status": "BLOCKED",
+      "summary": "Full live response-field parity, untested provider/recurring/renewal/concurrency and Panel mutation scenarios are not claimed PASS. Dated evidence retains its own scope; no backend acceptance suite is part of this release task."
+    },
+    {
+      "id": "dependency-security-audit",
+      "status": "OPEN",
+      "summary": "Fresh exact-source non-blocking audit: 11 findings (1 low, 2 moderate, 8 high). CodeQL completed with 32 existing open alert IDs and no new IDs compared with main. No dependency upgrade or reachability conclusion is claimed."
+    }
+  ],
+  "frontend_policy": {
+    "bscheker": "excluded",
+    "simple_mode": "excluded"
+  },
+  "owner_approved": true
+}
