@@ -7,8 +7,8 @@
   },
   "upstream": {
     "repository": "https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git",
-    "tag": "v1.80.1",
-    "sha": "a693d30ca6084b9a54b45a72294b99237841ef13"
+    "tag": "v1.79.0",
+    "sha": "821c7b71823573a756de00418acb25118ede1c9c"
   },
   "bot": {
     "repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",

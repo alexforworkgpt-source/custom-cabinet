@@ -41,3 +41,9 @@ not a new backend acceptance backlog. Classic manual confirmation after top-up
 and the unused legacy email wrapper remain OPEN. Upstream Bot is the working
 baseline; no backend changes are part of this package. DPI/BSCHEKER/Simple/Lite
 frontend exclusions, existing immutable assets, latest and owner trees are preserved.
+
+Committed provenance note: the source retains the last fully verified Upstream
+integration v1.79.0 / 821c7b71823573a756de00418acb25118ede1c9c in its machine-readable
+UPSTREAM fields. The selected v1.80.1 adaptation and its exact SHA remain in
+the dated ledger above. The publication record matches the actual committed
+UPSTREAM fields; no source tag or provenance history was rewritten.
