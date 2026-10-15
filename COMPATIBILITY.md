@@ -4,6 +4,159 @@ This document records verified source compatibility for each Custom Cabinet
 baseline and Release Bundle. Tags and commit SHAs are immutable technical
 identifiers, not public branding.
 
+## Актуальная граница задачи — решение владельца 2026-10-15
+
+**Upstream Bot принимаем как рабочую основу.** Текущий план — exact Custom Cabinet
+на тестовом адресе, подключение к существующему API и проверка frontend/Telegram.
+Широкие backend/payment-handler/SDK/RBAC пункты в датированных evidence — история
+их scope, а не новые задачи для текущего продолжения. Их статусы сохранены;
+применимые frontend/Installer/Release gates остаются обязательными. Актуальный
+frontend остаток находится в начале [CONTEXT.md](CONTEXT.md).
+
+## Текущий frontend test staging — 2026-10-15
+
+Exact0aa20cd manifest/284 файла уже подаются через существующий Caddy в отдельной
+папке; все публичные HTTPS bytes совпали с прошедшей сборкой. API/health и managed
+backend config сохранены, restarts/containers/DB fixtures0. Guest Chrome320/375/1280,
+оферта/reload/возврат и API connection PASS. Владелец15 октября решил пропустить
+реальный Telegram/device gate: **SKIPPED_OWNER_ACCEPTED**, не PASS. Текущий frontend
+готов к подготовке релиза с этим ограничением; clean exact source/CI/publication/
+new Bundle smoke ещё требуются. Не разворачивать тот же frontend и не тестировать
+backend заново. Широкий S9 ниже остаётся датированным PARTIAL.
+[Readiness/waiver](docs/releases/FRONTEND_RELEASE_READINESS_2026.10.15.md).
+[Frontend staging evidence](docs/frontend-staging-20261015.md).
+
+## Current Scoped v5 Evidence (through 2026-10-15)
+
+The dated rows below retain their original verification scope. Later results
+are consolidated here; **full S9/live remains PARTIAL**, no public Bundle or
+production compatibility for the new adaptation is claimed.
+
+| Area | Verified scope / limit |
+| --- | --- |
+| Custom Cabinet sandbox | Same 284-file uncommitted artifact; native Email auth, real YooKassa test success/callback/one credit, declined-card no-credit and 8 concurrent duplicate service calls PASS; initial-delivery concurrency and remaining merchant flows unverified |
+| Auth / roles / devices | Owner Telegram Chrome login, four preset role assignment/revocation cycles and 99 HTTPS assertions PASS in scope; full RBAC/ABAC unverified; owner confirmed Mini App launch on Android/iOS only |
+| Extended native role coverage | 34 additional HTTPS assertions / 8 permission states PASS: own custom-role CRUD, grant boundaries, multi-role union, actual expiry, deactivate/reactivate, revoke/reassign/delete cascade on the same token; two ORM fixture accounts with native HTTPS login, no manual JWT |
+| Native ABAC policy scope | 31 HTTPS checks, 29 expected statuses matched / 2 failed: deny still applies from an expired assignment or inactive carrier role despite exclusion from the permission response. Native source trace/negative controls confirmed; L-ABAC-01/02 OPEN, targeted policy gate FAIL, no backend changes |
+| First-local payment race fixture | Eight separate native sessions attempted; six provider-confirmed handlers overlapped before credit. Balance0→5000/transaction0→1/linked payment PASS in that observed scope; two provider reads failed, intended eight-success profile NOT_PASS. Existing test provider object in separate DB/Redis, not actual initial merchant/HTTPS delivery; L-PAY-API-01 OPEN |
+| Native session recovery / logout | 35/35 HTTPS expectations matched: three native setup logins and 32 selected401/403/422/recovery cases; four concurrent refreshes, revoked replay denial and session/account isolation. Owned DB-expiry/blocked-status controls restored; refresh-only logout leaves unexpired access valid, no rotation. API-only, not automatic compiled UI/JWT lifetime/Telegram recovery proof |
+| Compiled browser recovery follow-up | Two frontend startup/return fixes; final284-file manifest `024382a677dc952f64364425698eb8766260ebc5cdbb0360c1592170874c8df9`. Seven genuine native-API browser stages and two mocked regressions PASS. Local frontend + TLS API proxy, not new deployed Bundle/Telegram proof |
+| Canceled payment authority / local recovery | Real previously declined sandbox object is now canceled/unpaid, reason insufficient_funds. Three new native service stages PASS: false success/paid claims, sequential repeat and missing local-row restore, balance0/transactions0/subscriptions0 and one canceled5000-kopek/RUB record. Initial SDK lookup failed before fixtures/stages; read-only2/2 recovery allowed one unstarted run. L-PAY-API-01 OPEN; actual merchant HTTPS cancellation still unverified |
+| Native loopback HTTPS callback layer |14/14 selected TLS/HTTP checks PASS: certificate trust/hostname, source-header/body guards and four barrier-started native callback requests4×200 with overlapping handler intervals. Genuine provider revalidation, no credit/canceled row. Operator requests with trusted-forwarded IP fixture, not actual merchant origin or stock Caddy/main.py/public callback proof |
+| Current merchant/receiver readiness audit | Owner-authenticated Merchant Profile test shop matches private test credentials; historical HTTPS URL/current expanded Caddy host and four selected events match. Same URL GET404; parent env YooKassa disabled/no shop/key, no DB overrides. E-PAY-STAND-01 is a current test-environment blocker after sandbox cleanup, not invalidation of the earlier real50 RUB callback PASS |
+| Genuine public canceled merchant callback | Selected scope PASS: one owner-authorized new declined sandbox50 RUB invoice; actual payment.canceled05:33:02 UTC15 Oct/native IP PASS/owned ID/native200, independent canceled/unpaid5000/RUB/balance0/transactions0/subs0/no transaction link. Earlier pending state resolved without backend changes. Owned cleanup/exact rollback independent postflight06:57:13 UTC PASS; parent preserved, temporary receiver removed, whole parent cleanup SKIPPED_OWNER_REQUEST. No new Bundle/full S9/capture/refund/concurrency claim. See [public callback result](docs/compatibility-evidence-v1801-bot-v5-public-callback-20261015.md) |
+| Follow-up source gates |1084 unit PASS with explicit `--maxWorkers=2 --testTimeout=10000`, build/both TS and focused Biome PASS. Default5s unit follow-up runs FAIL on unchanged audience-test timing; no default-policy publication PASS. Old398 cases apply only to the original artifact; full new browser matrix NOT_RUN |
+| Full compiled browser matrix15 October |1146 PASS/35 configured SKIP/0 FAIL/no retries, five existing viewport projects, final284-file manifest `0aa20cd0f035ec41fd4f0270a1b4e94f04a0bd03075d92e3493334728bd170d0`. Five test-contract corrections exposed/fixed a loading-height defect in Skeleton/Dashboard;10 limited/unlimited geometry cases preserve4px allowance. Local API fixtures only; earlier NOT_RUN row is historical14 October scope. Build/both TS/focused Biome PASS;1084 unit PASS with2 workers/10s, ordinary unit1076 PASS/8 FAIL in six unchanged files, default-policy NOT_PASS. No full live/Release claim. [Evidence](docs/compatibility-evidence-v1801-bot-v5-browser-matrix-20261015.md) |
+| Later local ordinary unit15 October |PASS: ordinary `npm test`,1084 tests/176 files, unchanged5s timeout; only Vitest config caps workers at2 as existing CI already does. Controlled original-source run had1082 PASS/2 FAIL with13 overlapping modules; changing only worker cap gave1084 PASS. Final ordinary command has no CLI overrides/reporters. Build/both TS/focused Biome PASS; exact284-file browser artifact unchanged,1146/35 browser evidence retained without rerun. This closes the current local unit gap, not full repository lint/CI/publication/live readiness. [Evidence](docs/compatibility-evidence-v1801-bot-v5-unit-default-20261015.md) |
+| Autonomous native remainder15 October |PASS in scope:8 functional +1 setup stage on exact0aa20cd compiled artifact/genuine TLS API, legal language/fallback/cache, inactive reminder CRUD/warm cache, WS reconnect/unsaved form, owned recipient preview, real15-minute access expiry and native refresh. Read-only Remnawave connection200/connected. Current methods Stars only; public test entry module differs from exact candidate, menu normalized origin/path correct. Owned fixtures removed; independent postflight/native403 restoration PASS. Full repository Biome now PASS after semantic-preserving historical JSON formatting (40 warnings/5 infos remain); source/schema549 API declarations include one known unused wrapper. Full S9/live/Release PARTIAL/BLOCKED; exact remaining conditions documented. [Evidence](docs/compatibility-evidence-v1801-bot-v5-remaining-20261015.md) |
+| Native Installer lifecycle | Exact Installer `75c49bec9c2a764e123fc0ef675f8c45fc22a1ab`, Bot `5bda3c56f0afd9f4813e9c6fa48934948b05ebae`, PG15/Redis7, Ubuntu24.04: ten same-version stages PASS with terminal transport recovery; that run's source-integrity/cleanup PASS |
+| Native cross-version transition | Bot `877690a7039d1326b2c00eda3e297879b80c0678`/0127 → `5bda3c56f0afd9f4813e9c6fa48934948b05ebae`/0131: verified injected rollback to old runtime/dump/0127, then committed update; two users/balances and one synthetic legacy transaction preserved; four stages PASS, native exit0 |
+| Cabinet in both Installer runs | Published reference `bundle-v2026.10.10.1`, source `1d046656fbb01a928fd54a28694e10105d4185f8`, artifact `a3f119a4548d7f49067406e1a4e15f3020d1eeff1da00490130e1600ec40d0b0`; new uncommitted adaptation was not retested by those runs |
+| Last recorded test VPS state | Cross-version cleanup `SKIPPED_OWNER_REQUEST`, runtime left running for owner reinstall; no fresh state after reinstall, final DB/root archives or transition image-integrity probe |
+| Remaining boundary | Remnawave read-only, Panel writes0; PG18, post-upgrade-write retention on rollback, full live and new public Bundle smoke unverified; publication evidence not accepted, no commit/Release/production |
+
+See [sandbox evidence](docs/compatibility-evidence-v1801-bot-v5-sandbox-20261014.md),
+[extended role evidence](docs/compatibility-evidence-v1801-bot-v5-rbac-extended-20261014.md),
+[ABAC evidence and two OPEN limitations](docs/compatibility-evidence-v1801-bot-v5-abac-20261014.md),
+[first-local payment race scope](docs/compatibility-evidence-v1801-bot-v5-payment-race-20261014.md),
+[native auth recovery scope](docs/compatibility-evidence-v1801-bot-v5-auth-recovery-20261014.md),
+[compiled browser recovery/fix scope](docs/compatibility-evidence-v1801-bot-v5-browser-recovery-20261014.md),
+[canceled payment/local recovery scope](docs/compatibility-evidence-v1801-bot-v5-payment-state-20261014.md),
+[native HTTPS callback lab scope](docs/compatibility-evidence-v1801-bot-v5-callback-https-20261014.md),
+[current payment readiness/known issues audit](docs/compatibility-evidence-v1801-bot-v5-current-payment-audit-20261014.md),
+[native lifecycle](../installer/docs/bot-v5-pg15-lifecycle-20261014.md) and
+[native cross-version transition](../installer/docs/bot-v5-pg15-transition-20261014.md).
+Previously successful frontend/schema/browser gates were not rerun.
+After the new role probe, independent postflight confirmed the same running
+transition stack, known fingerprint, healthy/restart0/OOMfalse, unchanged
+configuration/images/core non-fixture data and removal of only the new fixtures
+and temporary Email-auth DB flag. Entire VPS cleanup remains skipped.
+The subsequent ABAC probe also removed only its new accounts/roles/assignments/
+policies and temporary flag; independent postflight confirmed unchanged native
+runtime/configuration and healthy services. Prior99/34 role checks were not rerun.
+The payment fixture's new DB/Redis/worker were also removed; independent
+postflight preserved the original stack/core records/configuration/images.
+Provider read diagnosis found serial2/3 and parallel8/8 confirmations with
+ReadTimeout→SDK AttributeError; it did not repeat or replace the financial run.
+Subsequent auth recovery removed only its new accounts/refresh rows and temporary
+Email-auth flag. Independent postflight 16:42:46 UTC preserved original
+core/refresh projections/configuration/images and healthy services; baseline
+Email login 403 restored. Thirty-five new expectations matched, API-only scope;
+browser/physical-client recovery and existing OPEN limitations remain unverified.
+Later final browser recovery covered selected compiled UI401/refresh-only/
+transport/logout/relogin behavior; physical clients and wider recovery remain
+unverified. Its fixtures/temp flag were removed; independent postflight18:19:51
+UTC preserved original core/refresh/config/images and disabled login403. Parent
+VPS stays running; local bridge stopped. The dated original frontend rows below
+retain their original snapshot and cannot prove the new compiled bytes.
+The later canceled-payment probe used a separate empty schema-only DB/Redis and
+the same native image. Both attempts removed only their owned resources;
+independent postflight18:56:24 UTC preserved original core/config/images and
+healthy services. Read-only provider lookups/zero provider mutations; no source,
+frontend, role, lifecycle or prior financial-race reruns. Terminal canceled state
+and service no-credit/recovery are proved in scope, not actual merchant delivery.
+The HTTPS lab then removed its own DB/Redis/worker/control root/key/cert/listener.
+Postflight20:11:59 UTC preserved this stage's fresh-baseline core/config/images,
+healthy parent and Caddy/UFW. Its four operator callbacks are concurrent network
+requests, not provider-origin notifications or first paid credit. Earlier
+L-PAY-API-01/paid race limits remain unchanged.
+Read-only readiness audit21:05–21:14 UTC subsequently confirmed correct live
+merchant settings after owner sign-in, but the same target is currently404 and
+the parent has no configured YooKassa credentials/DB overrides. No new payment,
+provider call, runtime setting or closed suite rerun. Existing issues were
+reviewed from saved evidence/source; product findings and environment/readiness
+limits are separated. Earlier real merchant success remains PASS in its scope.
+
+## Locally Verified v1.80.1 Frontend Working Tree (2026-10-13)
+
+| Item | Identity / result |
+| --- | --- |
+| Receiving source | `1169e3cb964caec9a9500ace89bbb53b7e5a89df` plus existing owner changes and the applied 67-file adaptation |
+| Target Upstream Cabinet | `v1.80.1` / `a693d30ca6084b9a54b45a72294b99237841ef13` |
+| Intended unchanged Upstream Bot | `v5.0.0` / `5bda3c56f0afd9f4813e9c6fa48934948b05ebae`; targeted VPS startup/HTTPS/API PASS; full S9 PARTIAL |
+| Unit / TypeScript / build | PASS: 176 files, 1084 tests; both TS configurations; supported Node24.19.0 |
+| New behavior browser cases | PASS: 30 mocked compiled-artifact cases across 320/375/768/1024/1280 |
+| Full affected browser gate | Reused PASS: 398 cases, 0 failures, 14 configured skips; all source/test inputs and 284 rebuilt artifact files match the tested candidate |
+| Frontend Biome | PASS: 874 files; 0 errors, 0 warnings |
+| Full repository Biome | FAIL: three unchanged historical JSON format errors; 40 warnings / 5 infos from the baseline |
+| Release / production | NOT_RUN; no commit, tag, public Bundle or production deployment; temporary authorized VPS smoke cleaned |
+
+No new behavior is declared compatible with current Bot `v4.15.0` merely
+because mock tests pass. Audience endpoints require the new official Bot.
+DPI/BSCHEKER/Lite presentation stays excluded; official migrations remain
+untouched. Classic new auto-purchase and recurring cancellation discovery
+after flag-off remain OPEN. Detailed decisions and evidence are in
+[the candidate sync report](UPSTREAM_V1.80.1_SYNC_REPORT.md).
+
+## Targeted VPS Bot v5 Evidence (2026-10-13)
+
+| Item | Verified scope / limit |
+| --- | --- |
+| Native runtime | Ubuntu24.04.4, Python3.14.8, PG15.19/Redis7.4.10, Bot UID1000; main.py startup and unified processor health PASS |
+| Exact image / Cabinet | Bot image `sha256:43756146ee75c05e09cc0693af9a9cebc39523b1f39d01cadc183c8a3869bdd1`; exact Bot SHA above; 284-file compiled Cabinet identity `4aa5d6ba362760ebdd4f34f18f3a8f91f1de400b5736d1e74948c2d1579b2130` |
+| Actual HTTPS/API | 14 checks PASS: artifact/proxy, native JWT guest/user/admin, Marketer count-only and user-list denial, FAQ parameters, exact Cashera disabled403 |
+| Stability / cleanup | 60s, three healthy services, restarts0/OOMfalse; owned cleanup and independent postflight PASS; management38 files/config preserved |
+| Scope | Private uncommitted artifact, not public Bundle; native warnings recorded; full Installer lifecycle, payments/concurrency, full roles/physical Telegram NOT_VERIFIED |
+
+See [VPS runtime proof and limits](docs/compatibility-evidence-v1801-bot-v5-vps-runtime-20261013.md).
+Existing frontend and local schema/contracts gates were reused without reruns.
+
+## Partial Local Bot v5 Evidence (2026-10-13)
+
+| Item | Verified scope / limit |
+| --- | --- |
+| Exact Bot source | v5.0.0 / 5bda3c56f0afd9f4813e9c6fa48934948b05ebae; all1835 tracked files unchanged |
+| Local image | sha256:c1451a83c2d674e9c8bf4f9ac0f68a61f0844703d1618e3d17b158b65d50fcf3; source Dockerfile, Linux/amd64, Python3.14.8 |
+| PostgreSQL15.19 / Redis7.4.10 | PASS for fresh0131, official0127→0131, repeated migration, logical0127 restore with test data, CacheService set/get/getdel |
+| Selected upstream contracts | PASS: 172 tests, 0 failures/errors/skips; three required PostgreSQL cases ran; 38 deprecation warnings |
+| Local ASGI routes | PASS: six cases with source router/auth, real JWT/DB; audience admin/user/guest, FAQ language parameters, exact Cashera disabled403 |
+| Full S9 | PARTIAL: local run omitted full startup/proxy; subsequent targeted VPS proof above covers those checks. Installer lifecycle, real merchant/full roles/physical Telegram remain NOT_VERIFIED |
+
+The source/schema layer has local evidence on PG15; this does not prove that
+the entire v5 runtime or Installer lifecycle works on PG15, authorize PG18
+migration or close existing OPEN flows. The target compose stays untouched.
+See [the exact proof and remaining requirements](docs/compatibility-evidence-v1801-bot-v5-local-20261013.md).
+
 ## Open Classic Auto-Purchase Limitation (2026-09-30)
 
 Upstream Bot `v4.15.0` / `877690a7039d1326b2c00eda3e297879b80c0678`

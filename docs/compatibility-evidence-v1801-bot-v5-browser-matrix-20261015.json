@@ -1,0 +1,109 @@
+{
+  "kind": "full-local-compiled-cabinet-browser-matrix",
+  "date": "2026-10-15",
+  "result": "PASS_IN_SCOPE",
+  "browser_gate": "PASS",
+  "full_s9": "PARTIAL",
+  "full_live_gate": "BLOCKED",
+  "publication_gate": "NOT_PASS",
+  "identities": {
+    "custom_cabinet_head": "1169e3cb964caec9a9500ace89bbb53b7e5a89df",
+    "changes_uncommitted": true,
+    "upstream_cabinet_sha": "a693d30ca6084b9a54b45a72294b99237841ef13",
+    "intended_unchanged_bot_sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+    "initial_manifest_sha256": "024382a677dc952f64364425698eb8766260ebc5cdbb0360c1592170874c8df9",
+    "final_manifest_sha256": "0aa20cd0f035ec41fd4f0270a1b4e94f04a0bd03075d92e3493334728bd170d0",
+    "compiled_files": 284,
+    "manifest_order": "Unicode ascending relative paths; SHA256 two-space path LF",
+    "previous_artifact_zip_sha256": "9cf1ffa1c0132f246430ce0c11d15b27fe7c43c95ea584a46b9e3d2ca189171e"
+  },
+  "environment": {
+    "os": "Windows",
+    "node": "24.19.0",
+    "playwright_installed": "1.63.0",
+    "browser_channel": "chrome",
+    "browser_version": "155.0.8059.40",
+    "server": "Vite preview of compiled dist, loopback localhost4173",
+    "api_fixtures": true,
+    "workers": 2,
+    "retries": 0,
+    "geometry_test_inherited_viewport_overrides": "mobile320 to390; desktop1280 to1440",
+    "native_staging_or_physical_telegram_proof": false
+  },
+  "initial_matrix": { "passed": 1115, "skipped": 35, "failed": 26, "retained": true },
+  "initial_test_mismatches": {
+    "old_dashboard_selectors": 20,
+    "dev_only_locale_interception": 4,
+    "missing_sales_mode_in_fixture": 2
+  },
+  "runtime_fix": {
+    "files": ["src/components/dashboard/SubscriptionCardSkeleton.tsx", "src/pages/Dashboard.tsx"],
+    "problem": "Balance moved19-23px when limited subscription details replaced the skeleton",
+    "change": "Reserve progress/responsive metric/action heights using existing Skeleton utilities; no progress row for known unlimited summary",
+    "geometry_allowance_px_unchanged": 4,
+    "limited_unlimited_red": { "passed": 2, "failed": 8 },
+    "limited_unlimited_green": { "passed": 10, "failed": 0 }
+  },
+  "test_files": [
+    "tests/e2e/button-accents.spec.ts",
+    "tests/e2e/dashboard-loading.spec.ts",
+    "tests/e2e/i18n-startup.spec.ts",
+    "tests/e2e/issue04-tariff-pricing.spec.ts",
+    "tests/e2e/navigation.spec.ts"
+  ],
+  "final_matrix": {
+    "started_at_utc": "2026-10-15T07:51:28.240Z",
+    "finished_at_utc": "2026-10-15T08:03:00.172284+00:00",
+    "collected": 1181,
+    "passed": 1146,
+    "skipped": 35,
+    "failed": 0,
+    "flaky": 0,
+    "global_errors": 0,
+    "projects": {
+      "mobile-320": { "passed": 271, "skipped": 1 },
+      "mobile-375": { "passed": 207, "skipped": 1 },
+      "tablet-768": { "passed": 188, "skipped": 9 },
+      "desktop-1024": { "passed": 186, "skipped": 11 },
+      "desktop-1280": { "passed": 294, "skipped": 13 }
+    },
+    "limited_unlimited_geometry_passed": 10,
+    "session_recovery_passed": 10,
+    "report_sha256": "06c4d6a283b94a4a76d4a49221508092aacc34738e4285bb5de441122ebd374f",
+    "log_sha256": "53bf8af6930feadb224e5b9873ee355ad8eba78c3325eec0d477c3c83944f408",
+    "activity_event_local_proxy_errors": 173,
+    "zero_console_network_error_claim": false
+  },
+  "source_gates": {
+    "build_and_both_typescript": "PASS",
+    "focused_biome_seven_files": "PASS",
+    "diff_check": "PASS",
+    "default_unit": { "result": "FAIL", "passed": 1076, "failed": 8, "failed_files": 6 },
+    "bounded_unit": {
+      "result": "PASS",
+      "tests": 1084,
+      "files": 176,
+      "max_workers": 2,
+      "test_timeout_ms": 10000
+    },
+    "default_unit_failing_files_unchanged_from_session_start": true,
+    "default_unit_cause_or_fix_claim": false,
+    "full_repository_biome": "NOT_RERUN; historical JSON format errors remain"
+  },
+  "preservation": {
+    "initial_inventoried_files": 1265,
+    "final_gate_inputs_and_artifact_unchanged_during_run": true,
+    "previous_artifact_archived_and_verified": true,
+    "preview_listener_absent_after_run": true,
+    "owner_head_and_unrelated_work_preserved": true,
+    "backend_installer_site_unchanged": true,
+    "ssh_provider_panel_commit_release_production_operations": 0,
+    "closed_native_merchant_installer_gates_repeated": false
+  },
+  "remaining": [
+    "Default-policy source/publication gates",
+    "Full live integration, physical Telegram and device/accessibility coverage",
+    "Remaining merchant capture/refund/recurring/Cashera and initial paid concurrency",
+    "Recorded OPEN limitations; no backend implementation in scope"
+  ]
+}

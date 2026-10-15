@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -94,19 +94,26 @@ export default function Login() {
   const safeBottom = Math.max(safeAreaInset.bottom, contentSafeAreaInset.bottom);
 
   // Получаем URL для возврата после авторизации
+  const returnUrlRef = useRef<string | null>(null);
   const getReturnUrl = useCallback(() => {
+    // Both the submit handler and authenticated-state effect request this URL.
+    // Consume the storage fallback once, including when router state wins.
+    if (returnUrlRef.current !== null) return returnUrlRef.current;
+    const savedUrl = getAndClearReturnUrl();
     // Сначала проверяем state от React Router
     const stateFrom = (location.state as { from?: string })?.from;
     if (stateFrom && stateFrom !== '/login') {
-      return stateFrom;
+      returnUrlRef.current = stateFrom;
+      return returnUrlRef.current;
     }
     // Затем проверяем сохранённый URL в sessionStorage (от safeRedirectToLogin)
-    const savedUrl = getAndClearReturnUrl();
     if (savedUrl && savedUrl !== '/login') {
-      return savedUrl;
+      returnUrlRef.current = savedUrl;
+      return returnUrlRef.current;
     }
     // По умолчанию на главную
-    return '/';
+    returnUrlRef.current = '/';
+    return returnUrlRef.current;
   }, [location.state]);
 
   // Fetch branding with unified cache

@@ -56,6 +56,7 @@ import { DeviceReductionSheet } from '../components/subscription/sheets/DeviceRe
 import { TrafficTopupSheet } from '../components/subscription/sheets/TrafficTopupSheet';
 import { ServerManagementSheet } from '../components/subscription/sheets/ServerManagementSheet';
 import { DeleteSubscriptionSheet } from '../components/subscription/sheets/DeleteSubscriptionSheet';
+import { CasheraRecurringPanel } from '../components/subscription/manage/CasheraRecurringPanel';
 
 // Keep the location-management implementation ready for a possible future return.
 const SHOW_SERVER_MANAGEMENT_OPTION = false;
@@ -298,6 +299,12 @@ export default function Subscription({
   const lavaFeatureOff = isRecurringFeatureOff(purchaseOptions, 'lava_recurrent_enabled');
 
   const isTariffsMode = purchaseOptions?.sales_mode === 'tariffs';
+  const casheraEnabled =
+    Boolean(subscription?.tariff_id) &&
+    !subscription?.is_trial &&
+    purchaseOptions !== undefined &&
+    'cashera_recurrent_enabled' in purchaseOptions &&
+    purchaseOptions.cashera_recurrent_enabled === true;
 
   // SBP (Platega) recurring auto-payment status. Polls every 8s while a
   // payment is PENDING (waiting for bank-app confirmation) so the UI flips
@@ -326,6 +333,8 @@ export default function Subscription({
         openPaymentUrl(data.redirect_url, platform, openLink);
       }
       queryClient.invalidateQueries({ queryKey: ['sbp-recurring', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['lava-recurring', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['cashera-recurring', subscriptionId] });
       // Backend flips autopay_enabled off when SBP auto-pay is enabled.
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
     },
@@ -455,6 +464,8 @@ export default function Subscription({
       // Enabling balance-autopay cancels SBP auto-pay server-side — refresh so
       // the SBP block doesn't keep showing a now-stale 'active'/'pending' state.
       queryClient.invalidateQueries({ queryKey: ['sbp-recurring', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['lava-recurring', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['cashera-recurring', subscriptionId] });
     },
   });
 
@@ -1412,6 +1423,9 @@ export default function Subscription({
                     </div>
                   </div>
                 )}
+              {casheraEnabled && (!embedded || showAdditionalOptions) && (
+                <CasheraRecurringPanel enabled subscriptionId={subscriptionId} />
+              )}
             </div>
           );
         })()

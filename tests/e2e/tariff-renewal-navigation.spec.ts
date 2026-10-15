@@ -50,6 +50,8 @@ for (const salesMode of ['classic', 'tariffs']) {
       if (status === 'active') {
         await expect(renew).toContainText('Продление и смена тарифа');
         await expect(renew).not.toContainText('Подписка истекла');
+      } else {
+        await expect(renew).toContainText('Подписка истекла');
       }
       await expect(renew).toHaveAttribute('href', '/subscriptions/42/renew');
       await renew.click();

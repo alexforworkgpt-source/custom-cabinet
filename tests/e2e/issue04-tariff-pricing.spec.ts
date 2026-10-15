@@ -196,20 +196,32 @@ test('opens renewal period choice without charging the default month @critical-f
           is_highlighted: true,
         },
       ],
-      '/api/cabinet/subscription/purchase-options': { balance_kopeks: 0 },
+      '/api/cabinet/subscription/purchase-options': {
+        sales_mode: 'tariffs',
+        tariffs: [],
+        current_tariff_id: 1,
+        balance_kopeks: 0,
+        balance_label: '0 ₽',
+      },
     },
   });
 
   await page.goto('/subscriptions/42/renew');
-  const bestPeriod = page
-    .getByText('180 дней', { exact: true })
-    .locator('xpath=ancestor::button[1]');
-  await expect(bestPeriod.getByText('Выгодно', { exact: true })).toBeVisible();
-  await expect(bestPeriod).toHaveCSS('border-top-width', '2px');
+  const bestPeriod = page.getByRole('button', { name: /^180 дней Выгодно/ });
+  await expect(bestPeriod.getByRole('img', { name: 'Выгодно', exact: true })).toBeVisible();
+  await expect(bestPeriod).toContainText('2700.00 ₽');
+  await expect(bestPeriod).toContainText('450 ₽/мес');
+  expectNoMoneyMutation(apiRequests);
+  await page.getByRole('button', { name: /^30 дней/ }).click();
+  await expect(bestPeriod).toHaveAttribute('aria-pressed', 'false');
+  const unselectedBorder = await bestPeriod.evaluate(
+    (element) => getComputedStyle(element).borderTopColor,
+  );
   await bestPeriod.click();
   await expect(page.getByRole('button', { name: 'Продлить подписку' })).toBeVisible();
-  await expect(bestPeriod).toHaveCSS('border-top-width', '2px');
-  await expect(bestPeriod).toHaveCSS('box-shadow', /rgb\(.*\) 0px 0px 0px 2px inset/);
+  await expect(bestPeriod).toHaveAttribute('aria-pressed', 'true');
+  await expect(bestPeriod).toHaveCSS('border-top-style', 'solid');
+  await expect(bestPeriod).not.toHaveCSS('border-top-color', unselectedBorder);
 
   expectNoMoneyMutation(apiRequests);
   expect([...unexpectedApiRequests]).toEqual([]);

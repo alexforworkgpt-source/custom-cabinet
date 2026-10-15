@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router';
@@ -23,6 +23,7 @@ import {
 } from '@/components/admin/reminders/form';
 
 export default function AdminReminderEdit() {
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -140,7 +141,13 @@ export default function AdminReminderEdit() {
   const save = useMutation({
     mutationFn: (next: ReminderPayload) =>
       editId !== null ? adminRemindersApi.update(editId, next) : adminRemindersApi.create(next),
-    onSuccess: () => navigate('/admin/reminders'),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['admin-reminders'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin-reminder', editId] }),
+      ]);
+      navigate('/admin/reminders');
+    },
     onError: (failure: unknown) => {
       const status = isAxiosError(failure) ? failure.response?.status : undefined;
       const detailMessage =

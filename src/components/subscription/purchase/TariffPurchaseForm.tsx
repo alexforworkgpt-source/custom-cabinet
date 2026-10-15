@@ -13,6 +13,7 @@ import { pickBestValue } from '../../../utils/bestValue';
 import { PurchaseFundingNotice } from './PurchaseFundingNotice';
 import type { Tariff, TariffPeriod } from '../../../types';
 import { PeriodCardContent } from '../PeriodCardContent';
+import { CasheraPurchaseAction } from './CasheraPurchaseAction';
 
 // ──────────────────────────────────────────────────────────────────
 // TariffPurchaseForm
@@ -40,6 +41,7 @@ export interface TariffPurchaseFormProps {
   sbpPurchaseEnabled?: boolean;
   /** Оформление привязкой Lava доступно — показать вторую CTA. */
   lavaPurchaseEnabled?: boolean;
+  casheraPurchaseEnabled?: boolean;
   onBack: () => void;
 }
 
@@ -49,6 +51,7 @@ export function TariffPurchaseForm({
   balanceKopeks,
   sbpPurchaseEnabled = false,
   lavaPurchaseEnabled = false,
+  casheraPurchaseEnabled = false,
   onBack,
 }: TariffPurchaseFormProps) {
   const { t } = useTranslation();
@@ -61,6 +64,7 @@ export function TariffPurchaseForm({
   const { openLink, platform } = usePlatform();
   const ref = useRef<HTMLDivElement>(null);
   const purchaseInFlightRef = useRef(false);
+  const [casheraPurchasePending, setCasheraPurchasePending] = useState(false);
 
   const formatPrice = (kopeks: number) =>
     kopeks === 0
@@ -145,7 +149,9 @@ export function TariffPurchaseForm({
     <>
       <button
         onClick={() => sbpPurchaseMutation.mutate()}
-        disabled={sbpPurchaseMutation.isPending || purchaseMutation.isPending}
+        disabled={
+          sbpPurchaseMutation.isPending || purchaseMutation.isPending || casheraPurchasePending
+        }
         className="mt-2 w-full rounded-xl border border-accent-500/40 bg-accent-500/10 py-3 text-sm font-medium text-accent-400 transition-colors hover:bg-accent-500/20 disabled:opacity-50"
       >
         {sbpPurchaseMutation.isPending ? (
@@ -186,7 +192,9 @@ export function TariffPurchaseForm({
     <>
       <button
         onClick={() => lavaPurchaseMutation.mutate()}
-        disabled={lavaPurchaseMutation.isPending || purchaseMutation.isPending}
+        disabled={
+          lavaPurchaseMutation.isPending || purchaseMutation.isPending || casheraPurchasePending
+        }
         className="mt-2 w-full rounded-xl border border-accent-500/40 bg-accent-500/10 py-3 text-sm font-medium text-accent-400 transition-colors hover:bg-accent-500/20 disabled:opacity-50"
       >
         {lavaPurchaseMutation.isPending ? (
@@ -207,6 +215,26 @@ export function TariffPurchaseForm({
         </div>
       )}
     </>
+  );
+
+  const casheraPurchaseButton = casheraPurchaseEnabled && (
+    <CasheraPurchaseAction
+      tariffId={tariff.id}
+      disabled={
+        purchaseMutation.isPending ||
+        sbpPurchaseMutation.isPending ||
+        lavaPurchaseMutation.isPending
+      }
+      onPendingChange={setCasheraPurchasePending}
+      claimPurchase={() => {
+        if (purchaseInFlightRef.current) return false;
+        purchaseInFlightRef.current = true;
+        return true;
+      }}
+      releasePurchase={() => {
+        purchaseInFlightRef.current = false;
+      }}
+    />
   );
 
   // Smooth scroll the form into view when first mounted.
@@ -307,7 +335,7 @@ export function TariffPurchaseForm({
 
                 <button
                   onClick={submitPurchase}
-                  disabled={purchaseMutation.isPending}
+                  disabled={purchaseMutation.isPending || casheraPurchasePending}
                   aria-busy={purchaseMutation.isPending}
                   className="btn-primary w-full py-3"
                 >
@@ -323,6 +351,7 @@ export function TariffPurchaseForm({
 
                 {sbpPurchaseButton}
                 {lavaPurchaseButton}
+                {casheraPurchaseButton}
 
                 {purchaseMutation.isError && (
                   <div className="mt-3 text-center text-sm text-error-400">
@@ -726,7 +755,7 @@ export function TariffPurchaseForm({
 
                     <button
                       onClick={submitPurchase}
-                      disabled={purchaseMutation.isPending}
+                      disabled={purchaseMutation.isPending || casheraPurchasePending}
                       aria-busy={purchaseMutation.isPending}
                       className="btn-primary w-full py-3"
                     >
@@ -742,6 +771,7 @@ export function TariffPurchaseForm({
 
                     {sbpPurchaseButton}
                     {lavaPurchaseButton}
+                    {casheraPurchaseButton}
                   </>
                 );
               })()}

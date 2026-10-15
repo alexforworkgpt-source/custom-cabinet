@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router';
 import { adminRemindersApi, type ReminderResponse } from '@/api/adminReminders';
 import { AdminBackButton } from '@/components/admin';
 import { PermissionGate } from '@/components/auth/PermissionGate';
+import { Button } from '@/components/primitives/Button';
 import { EditIcon, PlusIcon, TrashIcon } from '@/components/icons';
 import { useNativeDialog } from '@/platform/hooks/useNativeDialog';
 
@@ -12,7 +13,12 @@ export default function AdminReminders() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const dialog = useNativeDialog();
-  const { data = [], isLoading } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['admin-reminders'],
     queryFn: adminRemindersApi.list,
   });
@@ -46,7 +52,15 @@ export default function AdminReminders() {
 
       <p className="text-sm text-dark-400">{t('admin.reminders.description')}</p>
       {isLoading && <p className="text-dark-400">…</p>}
-      {!isLoading && data.length === 0 && (
+      {isError && (
+        <div role="alert" className="flex flex-wrap items-center gap-3">
+          <p className="text-error-400">{t('admin.reminders.loadFailed')}</p>
+          <Button variant="secondary" size="sm" onClick={() => void refetch()}>
+            {t('common.retry')}
+          </Button>
+        </div>
+      )}
+      {!isLoading && !isError && data.length === 0 && (
         <p className="text-dark-400">{t('admin.reminders.empty')}</p>
       )}
 

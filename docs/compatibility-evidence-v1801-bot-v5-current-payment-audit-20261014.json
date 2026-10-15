@@ -1,0 +1,119 @@
+{
+  "kind": "read-only-current-test-payment-readiness-and-known-issues-audit",
+  "date_basis": "2026-10-14 UTC; 2026-10-15 Europe/Moscow",
+  "result": "CURRENT_TEST_RECEIVER_NOT_READY",
+  "full_s9": "PARTIAL",
+  "source_changes": false,
+  "identities": {
+    "bot_sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+    "runtime_image_id": "sha256:bf27d5f0e1b9ec0b46979be6536877ced98b00c822b32d1e03a80a4677da6205",
+    "installer_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+    "parent": "Existing owner-left test transition stack, not production"
+  },
+  "merchant_readback": {
+    "owner_authenticated_browser": true,
+    "checked_at_utc": "2026-10-14T21:11:57.147Z",
+    "test_shop_visible": true,
+    "shop_matches_saved_test_api_credentials": true,
+    "url_matches_original_sandbox_notification_url": true,
+    "url_matches_current_parent_caddy_application_host": true,
+    "https": true,
+    "callback_path": "/api/yookassa-webhook",
+    "selected_events": [
+      "payment.succeeded",
+      "payment.waiting_for_capture",
+      "payment.canceled",
+      "refund.succeeded"
+    ],
+    "settings_saved_or_modified": false,
+    "portal_configuration_result": "CORRECT_IN_OBSERVED_SCOPE"
+  },
+  "receiver_inspection": {
+    "checked_at_utc": "2026-10-14T21:05:46.179856+00:00",
+    "routing_confirmed_at_utc": "2026-10-14T21:14:20.389960+00:00",
+    "callback_https_get_status": 404,
+    "callback_json_not_found": true,
+    "tls_verification_disabled": false,
+    "same_url_get_reused_for_routing_confirmation": true,
+    "container_environment_yookassa_enabled": false,
+    "container_environment_shop_id_present": false,
+    "container_environment_secret_key_present": false,
+    "database_yookassa_override_rows": 0,
+    "container_environment_is_live_python_memory_introspection": false,
+    "comparison_reference": "Current expanded parent state/bot-stack.caddy application host, not TEST_APP_DOMAIN base value",
+    "configuration_core_images_preserved_during_each_read": true,
+    "parent_services_healthy": 3,
+    "restart_count": 0,
+    "oom_killed": false,
+    "known_ssh_key_matches": true,
+    "local_server_env_unchanged": true
+  },
+  "current_environment_finding": {
+    "id": "E-PAY-STAND-01",
+    "classification": "TEST_ENVIRONMENT_BLOCKER",
+    "status": "NOT_READY",
+    "finding": "Merchant still points to the expected URL, but current parent has no configured YooKassa receiver and the target returns404",
+    "cause_scope": "The earlier configured sandbox was removed; the left-running transition stack lacks merchant runtime credentials",
+    "product_regression_claim": false,
+    "prior_real_sandbox_success_invalidated": false,
+    "ordinary_50_rub_payment_repeated": false
+  },
+  "known_problem_review": {
+    "L-PAY-API-01": {
+      "status": "OPEN",
+      "evidence": "Saved native TLS/read timeout -> SDK None.status_code failure; later successful reads do not replace it",
+      "reproduced_again_in_this_audit": false
+    },
+    "L-ABAC-01": {
+      "status": "OPEN",
+      "finding": "Expired role assignment can continue applying its deny policy",
+      "evidence": "Previously confirmed native HTTPS case, no rerun"
+    },
+    "L-ABAC-02": {
+      "status": "OPEN",
+      "finding": "Inactive role can continue applying its deny policy",
+      "evidence": "Previously confirmed native HTTPS case, no rerun"
+    },
+    "classic_auto_purchase": {
+      "status": "OPEN",
+      "evidence": "Historical live v4.15 proof plus same producer/dispatcher mismatch in exact v5 source",
+      "v5_source_review": "purchase saves subscription_purchase; dispatcher supports other explicit modes and skips unknown mode",
+      "new_v5_live_subscription_panel_flow": "NOT_RUN; Panel remains read-only"
+    },
+    "yookassa_refund_event": {
+      "classification": "CONFIRMED_ROUTER_BEHAVIOR_WITH_UNVERIFIED_FULL_REFUND_FLOW",
+      "finding": "Merchant selects refund.succeeded; native router returns200 ignored for that event",
+      "real_refund_accounting_result": "NOT_VERIFIED"
+    },
+    "default_unit_time_budget": {
+      "classification": "VERIFICATION_LIMIT",
+      "default_5s_followup_runs": "NOT_PASS due unchanged audience-test timing",
+      "explicit_2_workers_10s_full_run": "1084_PASS",
+      "rerun_in_this_audit": false
+    }
+  },
+  "passed_evidence_reused": {
+    "real_merchant_50_rub_success_callback": "PASS_IN_ORIGINAL_2026_10_14_SANDBOX_SCOPE",
+    "one_5000_kopeks_credit_transaction": "PASS_IN_ORIGINAL_SCOPE",
+    "already_credited_eight_duplicate_service_calls": "PASS_IN_ORIGINAL_SCOPE",
+    "canceled_service_authority_recovery": "PASS_IN_SCOPE",
+    "closed_operator_tls_http_callbacks": "14_PASS_IN_SCOPE_NOT_MERCHANT_ORIGIN",
+    "new_genuine_merchant_delivery_from_this_audit": false
+  },
+  "not_verified_is_not_a_new_bug": [
+    "Eight-confirmed first paid credit and genuine concurrent initial HTTPS delivery",
+    "Actual canceled merchant HTTPS delivery after configured sandbox cleanup",
+    "Full capture/refund/recurring/Cashera and physical Mini App navigation",
+    "Full/default-policy publication gates, new public Bundle and production"
+  ],
+  "operations": {
+    "provider_api_calls": 0,
+    "callback_posts": 0,
+    "new_payments_refunds_captures": 0,
+    "merchant_setting_changes": 0,
+    "runtime_db_config_caddy_ufw_changes": 0,
+    "closed_gates_repeated": false,
+    "commit_release_production_actions": 0,
+    "whole_vps_cleanup": "SKIPPED_OWNER_REQUEST"
+  }
+}

@@ -6,6 +6,15 @@ export interface PolicySourceFile {
   content: string;
 }
 
+export function exclusionPolicyContent(file: PolicySourceFile): string {
+  if (file.path.replace(/\\/gu, '/') !== 'src/config/cabinetFeatureVisibility.ts')
+    return file.content;
+  return file.content.replace(
+    'const EXCLUDED_FEATURE_KEYS = /^(?:dpichecker|bschek|reachability)(?:$|[_:])/iu;',
+    '',
+  );
+}
+
 export interface PolicyViolation {
   path: string;
   marker: 'bschek' | 'reachability' | 'operator-assets';
@@ -19,7 +28,12 @@ const FORBIDDEN_MARKERS: ReadonlyArray<{
   { marker: 'reachability', pattern: /reachability/iu },
 ];
 
-const POLICY_FILES = new Set(['src/noBscheker.guard.test.ts', 'src/test/noBschekerGuard.ts']);
+const POLICY_FILES = new Set([
+  'src/noBscheker.guard.test.ts',
+  'src/test/noBschekerGuard.ts',
+  'src/noDpiChecker.guard.test.ts',
+  'src/test/noDpiCheckerGuard.ts',
+]);
 const SCANNED_DIRECTORIES = ['src', 'tests', 'public'];
 const SCANNED_ROOT_FILES = [
   '.env.example',
@@ -88,7 +102,7 @@ export function findNoBschekerPolicyViolations(
 ): PolicyViolation[] {
   return files.flatMap((file) => {
     const normalizedPath = normalizePath(file.path).toLowerCase();
-    const searchable = `${file.path}\n${file.content}`;
+    const searchable = `${file.path}\n${exclusionPolicyContent(file)}`;
     const violations = FORBIDDEN_MARKERS.filter(({ pattern }) => pattern.test(searchable)).map(
       ({ marker }) => ({ path: file.path, marker }),
     );

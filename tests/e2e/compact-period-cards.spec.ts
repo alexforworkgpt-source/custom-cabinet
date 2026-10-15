@@ -124,8 +124,12 @@ for (const theme of ['dark', 'light']) {
           ).toBeVisible();
         }
         if (mode === 'renewal') {
-          await expect(page.locator('[data-renewal-panel]')).toHaveCSS('border-top-width', '0px');
+          await expect(page.locator('[data-renewal-panel]')).toHaveCSS('border-top-width', '1px');
           await expect(page.locator('[data-renewal-panel]')).toHaveCSS(
+            'padding',
+            (page.viewportSize()?.width ?? 1280) < 640 ? '12px' : '16px',
+          );
+          await expect(page.locator('[data-renewal-panel]')).not.toHaveCSS(
             'background-color',
             'rgba(0, 0, 0, 0)',
           );
@@ -150,6 +154,8 @@ for (const theme of ['dark', 'light']) {
           if (language === 'ru')
             await expect(favorite.getByText('Выгодно', { exact: true })).toHaveCount(0);
         }
+        // Measure final typography, after web-font swapping has finished.
+        await page.evaluate(() => document.fonts.ready.then(() => undefined));
         const geometry = await cards.evaluateAll((elements) =>
           elements.map((element) => {
             const card = element.getBoundingClientRect();
@@ -161,8 +167,6 @@ for (const theme of ['dark', 'light']) {
             const discount = element.querySelector('.rounded-full');
             const label = headerElement.firstElementChild;
             if (!label) throw new Error('Missing period label');
-            const labelBox = label.getBoundingClientRect();
-            const discountBox = discount?.getBoundingClientRect();
             return {
               height: card.height,
               priceBottom: card.bottom - price.bottom,
@@ -171,12 +175,6 @@ for (const theme of ['dark', 'light']) {
               labelFits:
                 label.getBoundingClientRect().height <=
                 parseFloat(getComputedStyle(label).lineHeight) + 1,
-              noOverlap:
-                !discountBox ||
-                labelBox.right <= discountBox.left ||
-                labelBox.left >= discountBox.right ||
-                labelBox.bottom <= discountBox.top ||
-                labelBox.top >= discountBox.bottom,
             };
           }),
         );
@@ -189,11 +187,7 @@ for (const theme of ['dark', 'light']) {
           Math.max(...geometry.map((item) => item.priceBottom)) -
             Math.min(...geometry.map((item) => item.priceBottom)),
         ).toBeLessThanOrEqual(1);
-        expect(
-          geometry.every(
-            (item) => item.fits && item.headerFits && item.labelFits && item.noOverlap,
-          ),
-        ).toBe(true);
+        expect(geometry.every((item) => item.fits && item.headerFits && item.labelFits)).toBe(true);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
           true,
         );

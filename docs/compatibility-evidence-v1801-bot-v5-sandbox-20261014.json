@@ -1,0 +1,676 @@
+{
+  "date": "2026-10-14",
+  "recorded_at_utc": "2026-10-14T08:22:35.655457+00:00",
+  "status": "TARGETED_PASS_FULL_LIVE_PARTIAL",
+  "identity": {
+    "upstream_bot": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+    "upstream_cabinet": "a693d30ca6084b9a54b45a72294b99237841ef13",
+    "custom_cabinet_head": "1169e3cb964caec9a9500ace89bbb53b7e5a89df",
+    "custom_cabinet_uncommitted_tested_snapshot": true,
+    "artifact_manifest_sha256": "4aa5d6ba362760ebdd4f34f18f3a8f91f1de400b5736d1e74948c2d1579b2130",
+    "installer_template_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab"
+  },
+  "source_integrity": {
+    "checked_files": 810,
+    "differences": [],
+    "reference": "exact Bot v5 source archive 5bda3c56f0afd9f4813e9c6fa48934948b05ebae"
+  },
+  "payment": {
+    "provider_test": true,
+    "amount_kopeks": 5000,
+    "balance_kopeks": 5000,
+    "transaction_count": 1,
+    "success_status": "succeeded",
+    "declined_attempt": "insufficient_funds hosted test UI; no credit",
+    "second_payment_status": "pending",
+    "terminal_cancel_tested": false,
+    "recurring_tested": false,
+    "refund_tested": false
+  },
+  "callback": {
+    "native_webhook_events": [
+      {
+        "timestamp_utc": "2026-10-14 08:01:50",
+        "event": "native_https_webhook_received"
+      },
+      {
+        "timestamp_utc": "2026-10-14 08:01:50",
+        "event": "native_balance_credit_success"
+      }
+    ],
+    "public_untrusted_callback_status": 403,
+    "public_untrusted_callback_body": {
+      "status": "error",
+      "reason": "unknown_ip"
+    },
+    "skip_ip_check": false,
+    "auto_payment_check_enabled": false,
+    "runtime_source_modified": false
+  },
+  "duplicate_concurrency": {
+    "scope": "8 concurrent native service calls, independent DB sessions, real provider revalidation; already processed payment",
+    "first_delivery_race_tested": false,
+    "https_delivery_replay_tested": false,
+    "outcomes": [true, true, true, true, true, true, true, true],
+    "before": {
+      "balance_kopeks": 5000,
+      "transaction_count": 1
+    },
+    "after": {
+      "balance_kopeks": 5000,
+      "transaction_count": 1
+    },
+    "result": "PASS"
+  },
+  "native_auth": {
+    "ui_registration_login": "PASS",
+    "api_registration_login": "PASS",
+    "owner_telegram_google_chrome_login": "PASS",
+    "manual_jwt_minting": false,
+    "user_or_role_db_seeding": false,
+    "smtp_inbox_tested": false,
+    "email_verification_enabled_on_disposable_stage": false
+  },
+  "preset_roles": {
+    "http_assertions": 99,
+    "states": [
+      {
+        "role": "ordinary",
+        "level": 0,
+        "checks": [
+          {
+            "path": "/info/legal-consent",
+            "status": 200
+          },
+          {
+            "path": "/auth/email/register/standalone",
+            "status": 200
+          },
+          {
+            "path": "/auth/email/login",
+            "status": 200
+          },
+          {
+            "path": "/auth/me/permissions",
+            "status": 200
+          },
+          {
+            "path": "/admin/users?limit=1",
+            "status": 403
+          },
+          {
+            "path": "/admin/tickets/stats",
+            "status": 403
+          },
+          {
+            "path": "/admin/tickets/settings",
+            "status": 403
+          },
+          {
+            "path": "/admin/payments/stats",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/filters",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/audience/preview",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/audience/users?field=email_user&q=codex.rbac",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 401
+          }
+        ],
+        "audience": {}
+      },
+      {
+        "role": "Marketer",
+        "level": 30,
+        "checks": [
+          {
+            "path": "/auth/email/login",
+            "status": 200
+          },
+          {
+            "path": "/auth/me/permissions",
+            "status": 200
+          },
+          {
+            "path": "/admin/users?limit=1",
+            "status": 403
+          },
+          {
+            "path": "/admin/tickets/stats",
+            "status": 403
+          },
+          {
+            "path": "/admin/tickets/settings",
+            "status": 403
+          },
+          {
+            "path": "/admin/payments/stats",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/filters",
+            "status": 200
+          },
+          {
+            "path": "/admin/broadcasts/audience/preview",
+            "status": 200
+          },
+          {
+            "path": "/admin/broadcasts/audience/users?field=email_user&q=codex.rbac",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 401
+          }
+        ],
+        "audience": {
+          "count": 1,
+          "returned_users": 0
+        }
+      },
+      {
+        "role": "Support",
+        "level": 20,
+        "checks": [
+          {
+            "path": "/auth/email/login",
+            "status": 200
+          },
+          {
+            "path": "/auth/me/permissions",
+            "status": 200
+          },
+          {
+            "path": "/admin/users?limit=1",
+            "status": 200
+          },
+          {
+            "path": "/admin/tickets/stats",
+            "status": 200
+          },
+          {
+            "path": "/admin/tickets/settings",
+            "status": 403
+          },
+          {
+            "path": "/admin/payments/stats",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/filters",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/audience/preview",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/audience/users?field=email_user&q=codex.rbac",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 401
+          }
+        ],
+        "audience": {}
+      },
+      {
+        "role": "Moderator",
+        "level": 50,
+        "checks": [
+          {
+            "path": "/auth/email/login",
+            "status": 200
+          },
+          {
+            "path": "/auth/me/permissions",
+            "status": 200
+          },
+          {
+            "path": "/admin/users?limit=1",
+            "status": 200
+          },
+          {
+            "path": "/admin/tickets/stats",
+            "status": 200
+          },
+          {
+            "path": "/admin/tickets/settings",
+            "status": 200
+          },
+          {
+            "path": "/admin/payments/stats",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/filters",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/audience/preview",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/audience/users?field=email_user&q=codex.rbac",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 401
+          }
+        ],
+        "audience": {}
+      },
+      {
+        "role": "Admin",
+        "level": 100,
+        "checks": [
+          {
+            "path": "/auth/email/login",
+            "status": 200
+          },
+          {
+            "path": "/auth/me/permissions",
+            "status": 200
+          },
+          {
+            "path": "/admin/users?limit=1",
+            "status": 200
+          },
+          {
+            "path": "/admin/tickets/stats",
+            "status": 200
+          },
+          {
+            "path": "/admin/tickets/settings",
+            "status": 200
+          },
+          {
+            "path": "/admin/payments/stats",
+            "status": 200
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 200
+          },
+          {
+            "path": "/admin/broadcasts/filters",
+            "status": 200
+          },
+          {
+            "path": "/admin/rbac/assignments",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/assignments",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/audience/preview",
+            "status": 200
+          },
+          {
+            "path": "/admin/broadcasts/audience/users?field=email_user&q=codex.rbac",
+            "status": 200
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 401
+          }
+        ],
+        "audience": {
+          "count": 1,
+          "returned_users": 1
+        }
+      }
+    ],
+    "revocation": [
+      {
+        "previous_role": "Marketer",
+        "checks": [
+          {
+            "path": "/auth/me/permissions",
+            "status": 200
+          },
+          {
+            "path": "/admin/users?limit=1",
+            "status": 403
+          },
+          {
+            "path": "/admin/tickets/stats",
+            "status": 403
+          },
+          {
+            "path": "/admin/tickets/settings",
+            "status": 403
+          },
+          {
+            "path": "/admin/payments/stats",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/filters",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/audience/preview",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/audience/users?field=email_user&q=codex.rbac",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 401
+          }
+        ],
+        "existing_token_denied": true
+      },
+      {
+        "previous_role": "Support",
+        "checks": [
+          {
+            "path": "/auth/me/permissions",
+            "status": 200
+          },
+          {
+            "path": "/admin/users?limit=1",
+            "status": 403
+          },
+          {
+            "path": "/admin/tickets/stats",
+            "status": 403
+          },
+          {
+            "path": "/admin/tickets/settings",
+            "status": 403
+          },
+          {
+            "path": "/admin/payments/stats",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/filters",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/audience/preview",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/audience/users?field=email_user&q=codex.rbac",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 401
+          }
+        ],
+        "existing_token_denied": true
+      },
+      {
+        "previous_role": "Moderator",
+        "checks": [
+          {
+            "path": "/auth/me/permissions",
+            "status": 200
+          },
+          {
+            "path": "/admin/users?limit=1",
+            "status": 403
+          },
+          {
+            "path": "/admin/tickets/stats",
+            "status": 403
+          },
+          {
+            "path": "/admin/tickets/settings",
+            "status": 403
+          },
+          {
+            "path": "/admin/payments/stats",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/filters",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/audience/preview",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/audience/users?field=email_user&q=codex.rbac",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 401
+          }
+        ],
+        "existing_token_denied": true
+      },
+      {
+        "previous_role": "Admin",
+        "checks": [
+          {
+            "path": "/auth/me/permissions",
+            "status": 200
+          },
+          {
+            "path": "/admin/users?limit=1",
+            "status": 403
+          },
+          {
+            "path": "/admin/tickets/stats",
+            "status": 403
+          },
+          {
+            "path": "/admin/tickets/settings",
+            "status": 403
+          },
+          {
+            "path": "/admin/payments/stats",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/filters",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/audience/preview",
+            "status": 403
+          },
+          {
+            "path": "/admin/broadcasts/audience/users?field=email_user&q=codex.rbac",
+            "status": 403
+          },
+          {
+            "path": "/admin/rbac/roles",
+            "status": 401
+          }
+        ],
+        "existing_token_denied": true
+      }
+    ],
+    "full_rbac_abac_gate": "PARTIAL"
+  },
+  "final_data_state": {
+    "native_email_test_accounts": 2,
+    "temporary_active_assignments": 0,
+    "env_telegram_admin_preserved": true,
+    "env_admin_role_levels": [999],
+    "subscription_count": 0
+  },
+  "current_runtime": {
+    "runtime_state": "REMOVED",
+    "test_app_and_callback_served": false,
+    "merchant_ui_changed": false,
+    "owned_root_absent": true,
+    "owned_resources_absent": true,
+    "test_listeners_absent": true,
+    "management_files_unchanged": 222,
+    "caddy_baseline_restored": true,
+    "caddy_docker_active": true
+  },
+  "remnawave": {
+    "access": "READ_ONLY",
+    "panel_write_calls": 0,
+    "subscription_mutations_tested": false
+  },
+  "phone_miniapp": {
+    "date": "2026-10-14",
+    "source": "direct owner reply in this chat",
+    "owner_statement": "На андроид открылся, на IOS тоже открылся",
+    "android_miniapp_launch": "PASS_OWNER_CONFIRMED",
+    "ios_miniapp_launch": "PASS_OWNER_CONFIRMED",
+    "client_versions": null,
+    "navigation_home_balance_profile": "NOT_CONFIRMED",
+    "no_repeat_login": "NOT_CONFIRMED",
+    "full_initdata_flow": "NOT_VERIFIED",
+    "full_physical_telegram_gate": "PARTIAL"
+  },
+  "cleanup": {
+    "status": "OWNED_SANDBOX_CLEANUP_PASS",
+    "started_at_utc": "2026-10-14T09:05:01.238183+00:00",
+    "steps": [
+      {
+        "name": "verify-owner-inventory-baseline",
+        "status": "PASS"
+      },
+      {
+        "name": "preserve-disposable-database",
+        "status": "PASS"
+      },
+      {
+        "name": "preserve-native-bot-log",
+        "status": "PASS"
+      },
+      {
+        "name": "preserve-entire-owned-root",
+        "status": "PASS"
+      },
+      {
+        "name": "owned-runtime-cleanup",
+        "status": "PASS"
+      },
+      {
+        "name": "owned-test-webhook-cleanup",
+        "status": "PASS"
+      },
+      {
+        "name": "remove-owned-root-and-independent-postflight",
+        "status": "PASS"
+      }
+    ],
+    "preserved": {
+      "root_files": 2244,
+      "root_archive_bytes": 54244331,
+      "root_archive_sha256": "8a357e86e05026eb2fc0e49c1a432660df297e2e3f3d5bb5fcc1fe775a1ee975",
+      "database_dump_bytes": 541986
+    },
+    "telegram_postflight": {
+      "webhook_absent": true,
+      "pending_updates": 0,
+      "pending_updates_discarded": false
+    },
+    "independent_postflight": {
+      "owned_root_absent": true,
+      "owned_resources_absent": true,
+      "test_listeners_absent": true,
+      "management_files_unchanged": 222,
+      "caddy_baseline_restored": true,
+      "caddy_docker_active": true
+    },
+    "local_server_env_unchanged": true,
+    "finished_at_utc": "2026-10-14T09:05:40.490318+00:00"
+  },
+  "local_server_env_unchanged": true,
+  "previous_automated_gates_repeated": false,
+  "production_modified": false,
+  "public_release_created": false,
+  "remaining": [
+    "full Installer lifecycle / upgrade / rollback / recovery",
+    "first-delivery payment race",
+    "terminal canceled / recurring / capture / refund",
+    "full RBAC / ABAC / mutations / expiry / multiple roles",
+    "remaining physical Telegram auth/navigation/client-version coverage",
+    "full live visual / accessibility / device matrix"
+  ],
+  "updated_at_utc": "2026-10-14T09:07:20.273791+00:00",
+  "runtime_before_cleanup": {
+    "result": "PASS",
+    "services": [
+      {
+        "service": "bot",
+        "status": "running",
+        "health": "healthy",
+        "restart_count": 0,
+        "oom_killed": false
+      },
+      {
+        "service": "postgres",
+        "status": "running",
+        "health": "healthy",
+        "restart_count": 0,
+        "oom_killed": false
+      },
+      {
+        "service": "redis",
+        "status": "running",
+        "health": "healthy",
+        "restart_count": 0,
+        "oom_killed": false
+      }
+    ],
+    "management_files_unchanged": 222,
+    "cabinet_files_unchanged": 284,
+    "runtime_state": "RUNNING",
+    "cleanup": "PENDING_PHONE_CHECK"
+  }
+}

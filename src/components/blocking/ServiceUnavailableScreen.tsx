@@ -2,9 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { useBlockingStore } from '../../store/blocking';
+import { useAuthStore } from '../../store/auth';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { pingBackend, hasEverReachedBackend } from '../../api/health';
 import { HEALTH } from '../../config/constants';
+import { getAndClearReturnUrl, tokenStorage } from '../../utils/token';
 import { CloudWarningIcon, RestartIcon } from '@/components/icons';
 import { Button } from '@/components/primitives';
 import { cn } from '@/lib/utils';
@@ -25,16 +27,28 @@ export default function ServiceUnavailableScreen() {
   const isCheckingRef = useRef(false);
 
   const recover = useCallback(() => {
-    clearBlocking();
-    if (hasEverReachedBackend()) {
+    const needsSessionBootstrap =
+      !useAuthStore.getState().isAuthenticated && Boolean(tokenStorage.getRefreshToken());
+    if (hasEverReachedBackend() && !needsSessionBootstrap) {
       // The app was already loaded and merely covered by this overlay — its
       // routes/forms are still mounted with their state. Lift the overlay and
       // refetch instead of a hard reload that would discard unsaved input.
+      clearBlocking();
       void queryClient.invalidateQueries();
     } else {
       // The initial bootstrap never reached the backend (blank loader) — reload
       // to re-bootstrap cleanly now that it is back.
-      window.location.reload();
+      // Public queries may have succeeded while auth bootstrap failed. Reopen
+      // the saved same-origin route instead of leaving the session on Login.
+      const returnUrl = needsSessionBootstrap ? getAndClearReturnUrl() : null;
+      if (
+        returnUrl?.startsWith('/') &&
+        new URL(returnUrl, window.location.origin).origin === window.location.origin
+      ) {
+        window.location.replace(returnUrl);
+      } else {
+        window.location.reload();
+      }
     }
   }, [clearBlocking, queryClient]);
 

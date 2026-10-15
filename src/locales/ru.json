@@ -239,13 +239,13 @@
     "validUntil": "Действует до",
     "goToSubscription": "Перейти к подписке",
     "goToBalance": "Перейти к балансу",
-    "devicesAdded": "+{{count}} устройств",
+    "devicesAdded": "Добавлено устройств",
     "devicesPurchased": {
       "title": "Устройства добавлены"
     },
-    "totalDevices": "Всего устройств: {{count}}",
-    "totalTraffic": "Всего трафика: {{value}}",
-    "trafficAdded": "+{{value}} трафика",
+    "totalDevices": "Всего устройств",
+    "totalTraffic": "Всего трафика",
+    "trafficAdded": "Добавлено трафика",
     "trafficPurchased": {
       "title": "Трафик добавлен"
     }
@@ -939,7 +939,32 @@
     "statusActive": "Активна",
     "statusExpired": "Истекла",
     "statusLimited": "Ограничена",
-    "statusTrial": "Триал"
+    "statusTrial": "Триал",
+    "casheraRecurring": {
+      "title": "Автопродление Cashera",
+      "connect": "Подключить",
+      "confirm": "Подтвердить автосписания",
+      "cancel": "Отключить",
+      "confirmCancel": "Отключить автопродление Cashera? Подписка больше не будет продлеваться автоматически.",
+      "cancelled": "Автопродление Cashera отключено",
+      "enableError": "Не удалось подключить автопродление Cashera",
+      "cancelError": "Не удалось отменить автопродление Cashera",
+      "statusPending": "Ожидает подтверждения по ссылке",
+      "statusActive": "Активно",
+      "statusPastDue": "Платёж не прошёл — попробуйте снова",
+      "nextCharge": "следующее списание {{date}}",
+      "amountPerInterval": "{{amount}} ₽ {{interval}}",
+      "interval": {
+        "daily": "ежедневно",
+        "weekly": "еженедельно",
+        "monthly": "ежемесячно",
+        "yearly": "ежегодно"
+      },
+      "autopayHint": "Подписка будет автоматически продлеваться через Cashera",
+      "purchaseButton": "⚡ Оформить с автооплатой Cashera",
+      "purchaseHint": "Подтвердите автосписания по ссылке Cashera; дальше продления списываются автоматически.",
+      "purchaseTermsNote": "Сумму и период автосписаний определяет сервер. Они могут отличаться от выбранной покупки с баланса."
+    }
   },
   "balance": {
     "title": "Баланс",
@@ -1032,6 +1057,9 @@
       },
       "apple_iap": {
         "description": "Оплата через Apple In-App Purchase"
+      },
+      "cashera": {
+        "description": "СБП, карты, криптовалюта (Cashera)"
       }
     },
     "transactionHistory": "История операций",
@@ -1145,7 +1173,8 @@
       "goToBalance": "Перейти к балансу",
       "tryAgain": "Попробовать снова"
     },
-    "top_up": "Пополнить баланс"
+    "top_up": "Пополнить баланс",
+    "scanQrToPay": "Отсканируйте QR-код в приложении банка или откройте оплату"
   },
   "referral": {
     "title": "Реферальная программа",
@@ -2446,7 +2475,66 @@
       "categoryNews": "Новости",
       "categoryPromo": "Промо",
       "categorySystem": "Системные",
-      "stopping": "Останавливается…"
+      "stopping": "Останавливается…",
+      "audience": {
+        "authType": "Способ регистрации",
+        "join": "Связь условий",
+        "and": "И",
+        "or": "ИЛИ",
+        "field": "Параметр",
+        "comparison": "Сравнение",
+        "equals": "Равно",
+        "notEquals": "Не равно",
+        "value": "Значение",
+        "remove": "Удалить условие",
+        "add": "Добавить условие",
+        "loadError": "Не удалось загрузить получателей",
+        "recipientCount": "Получателей",
+        "showUsers": "Посмотреть список",
+        "users": "Получатели рассылки",
+        "empty": "Получателей нет",
+        "conditions": "Условия",
+        "noUsersPermission": "Нужно право на просмотр пользователей"
+      },
+      "atomic": {
+        "all": "Все пользователи",
+        "subscriptionStatus": "Статус подписки",
+        "active": "Активна",
+        "expired": "Истекла",
+        "subscriptionType": "Тип подписки",
+        "trial": "Триальная",
+        "paid": "Оплаченная",
+        "tariff": "Тариф",
+        "trafficZero": "Использованный трафик равен 0",
+        "trafficGt": "Использованный трафик больше",
+        "trafficLt": "Использованный трафик меньше",
+        "endPreset": "Окончание подписки: быстрый период",
+        "next3Days": "В ближайшие 3 дня",
+        "endDate": "Окончание подписки: дата",
+        "registrationPreset": "Регистрация: быстрый период",
+        "today": "Сегодня",
+        "last7Days": "За 7 дней",
+        "last30Days": "За 30 дней",
+        "registrationDate": "Дата регистрации",
+        "activityPreset": "Активность: быстрый период",
+        "activeToday": "Активен сегодня",
+        "inactive7Days": "Неактивен 7+ дней",
+        "inactive30Days": "Неактивен 30+ дней",
+        "activityDate": "Последняя активность: дата",
+        "source": "Источник регистрации",
+        "referral": "По рефералу",
+        "direct": "Напрямую",
+        "paidHistory": "Оплачивал раньше",
+        "telegramUsername": "Ник Telegram",
+        "searchUser": "Начните вводить и выберите пользователя",
+        "noUsers": "Пользователи не найдены",
+        "before": "До даты",
+        "after": "После даты",
+        "between": "Между датами",
+        "dateFrom": "Дата",
+        "dateTo": "До",
+        "gigabytes": "Гигабайты"
+      }
     },
     "pinnedMessages": {
       "title": "Закреплённые сообщения",
@@ -2560,7 +2648,8 @@
         "testInvalidTexts": "Исправьте тексты и сохраните",
         "ruRequired": "Заполните заголовок и текст на русском",
         "saveFailed": "Не удалось сохранить — проверьте поля"
-      }
+      },
+      "loadFailed": "Не удалось загрузить напоминания"
     },
     "channelSubscriptions": {
       "title": "Обязательные каналы",
@@ -2768,7 +2857,8 @@
         "iface_info": "Правовые документы",
         "iface_menu": "Кнопка меню",
         "sys_cabinet": "Кабинет",
-        "sys_other": "Прочие настройки"
+        "sys_other": "Прочие настройки",
+        "payments_cashera": "Cashera"
       },
       "presets": {
         "standard": "Стандарт",

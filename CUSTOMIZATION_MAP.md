@@ -1,5 +1,27 @@
 # Custom Cabinet Ownership Map
 
+## v1.80.1 Integrated Feature Seams
+
+- `src/components/broadcasts/audience*`, `AudienceConditionRow`,
+  `AudienceUserLookup`, `AudienceRecipientsPreview`, `BroadcastAudienceEditor`:
+  upstream audience contracts with Custom controls, ResponsiveOverlay and
+  permission-aware display; no duplicated backend audience calculation.
+- `src/hooks/useCasheraRecurring`, `CasheraRecurringPanel`,
+  `CasheraPurchaseAction`: the new provider inside existing subscription
+  management/purchase paths. Existing Dashboard, price and return contracts
+  remain Custom-owned.
+- `src/config/cabinetFeatureVisibility`: display-only exclusion policy for
+  settings and permission definitions; authorization data stays untouched.
+- `PurchaseCTAButton` preserves the owner's Classic hint and renewal routing.
+  Active/expired captions now match subscription status; legacy migration
+  does not receive the expired renewal hint.
+- `RenewalSummary` uses the existing canonical Card: mobile padding 12 px,
+  16 px from sm, one natural-flow panel for periods and summary. No new CSS
+  system or financial calculation was introduced.
+- Existing owner regression requirements remain covered; corrected fixtures,
+  exact price formatting assertions and stable geometry/transition checks are
+  recorded in [the integration report](UPSTREAM_V1.80.1_SYNC_REPORT.md).
+
 This map identifies which areas should stay close to Upstream Cabinet and which
 areas are expected to carry Custom Cabinet design and branding. It is a review
 guide, not permission to skip a file-level diff.
@@ -146,8 +168,6 @@ The classic purchase/renewal consistency change adds these hybrid seams:
   `RenewalSummary` groups period content with the payment summary inside `Card`
   on every screen size, with the standard 16px gap and no fixed panel or spacer.
   Renewal prices remain final server values; the banner never reapplies discounts.
-  Purchase and renewal use PeriodCardContent with a separate badge row;
-  compact-period browser checks reject overlapping badge/title text.
 - `useRenewalSelection` and `utils/renewalSelection` own session-only period
   intent, scoped to user/subscription and validated against fresh server state.
   They never persist price, balance or payment permission; auth logout clears it.
@@ -156,10 +176,6 @@ The classic purchase/renewal consistency change adds these hybrid seams:
   confirmed Bot floor-discount arithmetic. Long-period Classic options share
   `getMonthlyPriceKopeks` with renewal, using the discounted period price;
   `SubscriptionPurchase` groups the Classic wizard inside canonical `Card`.
-
-The compact subscription summary uses the existing Gift icon and short trial
-locale key in one trial badge. Management is inside the summary; connection
-actions stay below it. API callbacks and traffic refresh cooldown remain intact.
 
 ## Known High-Conflict Hotspots
 

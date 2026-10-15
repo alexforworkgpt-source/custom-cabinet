@@ -1,0 +1,136 @@
+{
+  "kind": "targeted-compiled-cabinet-native-api-browser-recovery-evidence",
+  "date": "2026-10-14",
+  "result": "PASS_IN_SCOPE",
+  "full_s9": "PARTIAL",
+  "full_live_gate": "BLOCKED",
+  "identities": {
+    "custom_cabinet_head": "1169e3cb964caec9a9500ace89bbb53b7e5a89df",
+    "custom_changes_uncommitted": true,
+    "upstream_cabinet_sha": "a693d30ca6084b9a54b45a72294b99237841ef13",
+    "bot_sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+    "installer_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+    "runtime_image_id": "sha256:bf27d5f0e1b9ec0b46979be6536877ced98b00c822b32d1e03a80a4677da6205",
+    "target_os": "ubuntu-24.04",
+    "postgres_major": 15,
+    "redis_major": 7,
+    "schema": "0131",
+    "original_compiled_manifest": "4aa5d6ba362760ebdd4f34f18f3a8f91f1de400b5736d1e74948c2d1579b2130",
+    "final_compiled_files": 284,
+    "final_compiled_manifest_sha256": "024382a677dc952f64364425698eb8766260ebc5cdbb0360c1592170874c8df9",
+    "manifest_order": "Unicode code-point ascending relative paths, SHA256 two-space path LF",
+    "source_component_sha256": "84fc10200a7e025fd0301c023cc80f8b9208c3d4c19d42d03ecdf00efeec16f5",
+    "source_login_sha256": "31aae8562d84ff3ed5729817d859fe09d0deb774a85ca285d779316d923c9b17",
+    "parent_cabinet_reference": "bundle-v2026.10.10.1; unchanged published reference"
+  },
+  "environment": {
+    "browser": "Chrome 155.0.8059.40",
+    "viewport": "1280x800",
+    "locale": "ru",
+    "compiled_frontend_location": "Loopback HTTP static server; secure-context browser storage",
+    "native_api_transport": "TLS-verified HTTPS to the existing disposable VPS",
+    "api_responses_mocked_in_native_browser_gate": false,
+    "source_instrumentation": false,
+    "websocket_transport": "Local TLS-verified tunnel to the native endpoint; not a full WS recovery gate",
+    "proxy_host_and_origin_rewritten": true,
+    "vps_cabinet_replaced": false,
+    "whole_staging_domain_or_installer_deployment_proved": false,
+    "telegram_widget": "Local-origin Bot domain invalid; Telegram auth not exercised"
+  },
+  "auth_fixture": {
+    "owned_native_orm_email_accounts": 2,
+    "actor_used_real_ui_password_login": true,
+    "email_verification_flag_is_fixture": true,
+    "native_gate_manual_jwt_minting": false,
+    "temporary_native_email_auth_db_flag_removed": true,
+    "original_email_auth_disabled": true
+  },
+  "fixed_frontend_defects": {
+    "F-RECOVERY-01": {
+      "original_result": "FAIL; recovered network left the preserved session on Login",
+      "cause": "Public API reachability was mistaken for completed session bootstrap",
+      "fix": "Rebootstrap incomplete preserved sessions on the saved same-origin route",
+      "final_result": "PASS_ON_FINAL_COMPILED_ARTIFACT"
+    },
+    "F-RECOVERY-02": {
+      "original_result": "FAIL; stored return could be consumed twice or retained when router state won",
+      "fix": "Cache the Login return destination for the current attempt and consume its fallback once",
+      "final_result": "PASS_ON_FINAL_COMPILED_ARTIFACT"
+    }
+  },
+  "final_native_browser_stages": {
+    "setup-native-ui-login": "PASS",
+    "automatic-refresh-after-native-401": "PASS",
+    "refresh-only-bootstrap": "PASS",
+    "transport-loss-and-auto-recovery": "PASS",
+    "ui-logout-clears-session": "PASS",
+    "revoked-session-protected-reopen": "PASS",
+    "ui-relogin-returns-to-profile": "PASS"
+  },
+  "final_native_browser_stage_count": 7,
+  "uncaught_browser_exceptions": 0,
+  "expected_console_errors": "Injected ERR_EMPTY_RESPONSE transport loss and native401 negative controls",
+  "transport_loss_scope": "Only the local API/health transport was interrupted; native VPS stayed running",
+  "native_gate_repetitions": "Each final stage once; earlier artifact failures retained; changed source/artifact justified rechecks",
+  "regression_tests": {
+    "path": "tests/e2e/session-recovery.spec.ts",
+    "mocked_api_boundary": true,
+    "tests": 2,
+    "red_session_bootstrap": "Expected profile; original artifact stayed on Login",
+    "red_login_return": "Expected profile; earlier Login implementation returned home",
+    "final_result": "2_PASS",
+    "mock_fixture_corrections_retained": true
+  },
+  "source_gates": {
+    "unit_tests": 1084,
+    "unit_files": 176,
+    "unit_result": "PASS_WITH_EXPLICIT_RUNNER_TIME_BUDGET",
+    "successful_unit_command": "npm test -- --maxWorkers=2 --testTimeout=10000",
+    "default_5s_unit_runs": "FAIL; follow-up runs timed out in unchanged audience tests",
+    "default_5s_gate_declared_pass": false,
+    "unit_assertions_or_audience_source_changed": false,
+    "npm_run_build": "PASS; both TypeScript configurations and Vite",
+    "focused_source_and_test_biome": "PASS; three changed files",
+    "full_repository_biome": "Not rerun; three historical JSON formatting errors retained",
+    "historical_398_browser_cases": "Not rerun; old artifact scope, not proof for the new bytes",
+    "full_new_browser_matrix": "NOT_RUN"
+  },
+  "cleanup": {
+    "postflight_at_utc": "2026-10-14T18:19:51.920806+00:00",
+    "owned_accounts": 0,
+    "owned_refresh_rows": 0,
+    "temporary_email_auth_db_flag_absent": true,
+    "restored_http_login_gate_status": 403,
+    "restored_http_login_gate_code": "email_auth_disabled",
+    "fixture_balances_zero": true,
+    "fixture_transactions": 0,
+    "fixture_subscriptions": 0,
+    "original_core_refresh_config_images_preserved": true,
+    "configuration_files_preserved": 5,
+    "services_healthy": 3,
+    "restarts": 0,
+    "oom_killed": false,
+    "local_server_env_unchanged": true,
+    "browser_storage_cleared": true,
+    "local_bridge_stopped": true,
+    "whole_transition_vps_cleaned": false,
+    "earlier_transition_cleanup": "SKIPPED_OWNER_REQUEST"
+  },
+  "unmodified_boundaries": {
+    "backend_source_api_migrations": true,
+    "installer_source": true,
+    "site": true,
+    "merchant_mutations": 0,
+    "panel_writes": 0,
+    "subscription_mutations": 0,
+    "commit_release_production_operations": 0
+  },
+  "remaining": [
+    "Actual elapsed JWT lifetime and physical Telegram session/device navigation",
+    "Full browser/visual/accessibility/loaded-form and WebSocket recovery coverage",
+    "Full RBAC/ABAC/global/resource/mutation coverage; L-ABAC-01/02 OPEN",
+    "First merchant/concurrent HTTPS payment callbacks and remaining merchant flows",
+    "L-PAY-API-01, Classic auto-purchase, Cashera flag-off/reload discovery",
+    "Default-policy publication gates, new public Bundle smoke and production transition"
+  ]
+}

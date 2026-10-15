@@ -1,3 +1,4 @@
+import { isCabinetFeatureVisible } from '../config/cabinetFeatureVisibility';
 import apiClient from './client';
 
 export interface SettingCategoryRef {
@@ -50,7 +51,7 @@ export const adminSettingsApi = {
     const response = await apiClient.get<SettingCategorySummary[]>(
       '/cabinet/admin/settings/categories',
     );
-    return response.data;
+    return response.data.filter(({ key }) => isCabinetFeatureVisible(key));
   },
 
   // Get all settings or settings for a specific category
@@ -59,7 +60,9 @@ export const adminSettingsApi = {
     const response = await apiClient.get<SettingDefinition[]>('/cabinet/admin/settings', {
       params,
     });
-    return response.data;
+    return response.data.filter(
+      ({ key, category }) => isCabinetFeatureVisible(key) && isCabinetFeatureVisible(category.key),
+    );
   },
 
   // Get a specific setting by key

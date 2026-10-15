@@ -225,13 +225,13 @@
     "validUntil": "معتبر تا",
     "goToSubscription": "رفتن به اشتراک",
     "goToBalance": "رفتن به موجودی",
-    "devicesAdded": "+{{count}} دستگاه",
+    "devicesAdded": "دستگاه‌های افزوده‌شده",
     "devicesPurchased": {
       "title": "دستگاه‌ها افزوده شدند"
     },
-    "totalDevices": "مجموع دستگاه‌ها: {{count}}",
-    "totalTraffic": "مجموع ترافیک: {{value}}",
-    "trafficAdded": "+{{value}} ترافیک",
+    "totalDevices": "مجموع دستگاه‌ها",
+    "totalTraffic": "مجموع ترافیک",
+    "trafficAdded": "ترافیک افزوده‌شده",
     "trafficPurchased": {
       "title": "ترافیک افزوده شد"
     }
@@ -827,6 +827,31 @@
     "trialUpgrade": {
       "description": "دوره آزمایشی شما به‌زودی تمام می‌شود. برای دسترسی بدون محدودیت یک تعرفه انتخاب کنید.",
       "title": "ارتقای اشتراک"
+    },
+    "casheraRecurring": {
+      "title": "تمدید خودکار Cashera",
+      "connect": "فعال‌سازی",
+      "confirm": "تأیید برداشت خودکار",
+      "cancel": "غیرفعال",
+      "confirmCancel": "تمدید خودکار Cashera غیرفعال شود؟ اشتراک دیگر به‌طور خودکار تمدید نمی‌شود.",
+      "cancelled": "تمدید خودکار Cashera غیرفعال شد",
+      "enableError": "فعال‌سازی تمدید خودکار Cashera ممکن نشد",
+      "cancelError": "لغو تمدید خودکار Cashera ممکن نشد",
+      "statusPending": "در انتظار تأیید از طریق لینک",
+      "statusActive": "فعال",
+      "statusPastDue": "پرداخت ناموفق بود — دوباره تلاش کنید",
+      "nextCharge": "برداشت بعدی {{date}}",
+      "amountPerInterval": "{{amount}} ₽ {{interval}}",
+      "interval": {
+        "daily": "روزانه",
+        "weekly": "هفتگی",
+        "monthly": "ماهانه",
+        "yearly": "سالانه"
+      },
+      "autopayHint": "اشتراک به‌طور خودکار از طریق Cashera تمدید می‌شود",
+      "purchaseButton": "⚡ خرید با پرداخت خودکار Cashera",
+      "purchaseHint": "برداشت خودکار را از طریق لینک Cashera تأیید کنید؛ سپس تمدیدها خودکار برداشت می‌شوند.",
+      "purchaseTermsNote": "مبلغ و دوره پرداخت خودکار را سرور تعیین می‌کند و ممکن است با خرید انتخاب‌شده از موجودی متفاوت باشد."
     }
   },
   "balance": {
@@ -878,6 +903,9 @@
       },
       "apple_iap": {
         "description": "پرداخت از طریق Apple In-App Purchase"
+      },
+      "cashera": {
+        "description": "SBP، کارت‌ها، رمزارز (Cashera)"
       }
     },
     "transactionHistory": "تاریخچه تراکنش‌ها",
@@ -989,7 +1017,8 @@
       "goToBalance": "مشاهده موجودی",
       "tryAgain": "تلاش مجدد"
     },
-    "top_up": "افزایش موجودی"
+    "top_up": "افزایش موجودی",
+    "scanQrToPay": "کد QR را در برنامه بانک اسکن کنید یا صفحه پرداخت را باز کنید"
   },
   "referral": {
     "title": "برنامه معرفی",
@@ -1946,7 +1975,66 @@
       "selectEmailFilter": "مخاطبان ایمیل را انتخاب کنید",
       "selectEmailFilterPlaceholder": "فیلتر را انتخاب کنید...",
       "singleUser": "فقط {{name}}",
-      "telegramSection": "ارسال انبوه تلگرام"
+      "telegramSection": "ارسال انبوه تلگرام",
+      "audience": {
+        "authType": "روش ثبت‌نام",
+        "join": "ارتباط شرط‌ها",
+        "and": "و",
+        "or": "یا",
+        "field": "پارامتر",
+        "comparison": "مقایسه",
+        "equals": "برابر است با",
+        "notEquals": "برابر نیست با",
+        "value": "مقدار",
+        "remove": "حذف شرط",
+        "add": "افزودن شرط",
+        "loadError": "بارگذاری گیرندگان ناموفق بود",
+        "recipientCount": "گیرندگان",
+        "showUsers": "مشاهده فهرست",
+        "users": "گیرندگان پیام",
+        "empty": "گیرنده‌ای وجود ندارد",
+        "conditions": "شرط‌ها",
+        "noUsersPermission": "نیاز به مجوز مشاهده کاربران"
+      },
+      "atomic": {
+        "all": "همه کاربران",
+        "subscriptionStatus": "وضعیت اشتراک",
+        "active": "فعال",
+        "expired": "منقضی‌شده",
+        "subscriptionType": "نوع اشتراک",
+        "trial": "آزمایشی",
+        "paid": "پرداختی",
+        "tariff": "تعرفه",
+        "trafficZero": "مصرف ترافیک برابر با صفر",
+        "trafficGt": "مصرف ترافیک بیشتر از",
+        "trafficLt": "مصرف ترافیک کمتر از",
+        "endPreset": "پایان اشتراک: بازه سریع",
+        "next3Days": "در ۳ روز آینده",
+        "endDate": "تاریخ پایان اشتراک",
+        "registrationPreset": "ثبت‌نام: بازه سریع",
+        "today": "امروز",
+        "last7Days": "۷ روز گذشته",
+        "last30Days": "۳۰ روز گذشته",
+        "registrationDate": "تاریخ ثبت‌نام",
+        "activityPreset": "فعالیت: بازه سریع",
+        "activeToday": "امروز فعال",
+        "inactive7Days": "بیش از ۷ روز غیرفعال",
+        "inactive30Days": "بیش از ۳۰ روز غیرفعال",
+        "activityDate": "تاریخ آخرین فعالیت",
+        "source": "منبع ثبت‌نام",
+        "referral": "از طریق معرفی",
+        "direct": "مستقیم",
+        "paidHistory": "قبلاً پرداخت کرده",
+        "telegramUsername": "نام کاربری تلگرام",
+        "searchUser": "برای یافتن و انتخاب کاربر تایپ کنید",
+        "noUsers": "کاربری یافت نشد",
+        "before": "قبل از تاریخ",
+        "after": "بعد از تاریخ",
+        "between": "بین دو تاریخ",
+        "dateFrom": "تاریخ",
+        "dateTo": "تا",
+        "gigabytes": "گیگابایت"
+      }
     },
     "pinnedMessages": {
       "title": "پیام‌های سنجاق‌شده",
@@ -2060,7 +2148,8 @@
         "testInvalidTexts": "متن‌ها را اصلاح و ذخیره کنید",
         "ruRequired": "عنوان و متن روسی را پر کنید",
         "saveFailed": "ذخیره ناموفق بود — فیلدها را بررسی کنید"
-      }
+      },
+      "loadFailed": "بارگیری یادآوری‌ها ناموفق بود"
     },
     "channelSubscriptions": {
       "title": "کانال‌های اجباری",
@@ -2313,7 +2402,8 @@
         "iface_info": "اسناد حقوقی",
         "iface_menu": "دکمه منو",
         "sys_cabinet": "کابین",
-        "sys_other": "سایر تنظیمات"
+        "sys_other": "سایر تنظیمات",
+        "payments_cashera": "Cashera"
       },
       "categories": {
         "CABINET": "کابین",

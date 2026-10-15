@@ -1,0 +1,149 @@
+{
+  "kind": "targeted-native-canceled-payment-state-recovery-evidence",
+  "date": "2026-10-14",
+  "result": "PASS_IN_SCOPE_WITH_PROVIDER_READ_LIMIT",
+  "full_s9": "PARTIAL",
+  "full_live_gate": "BLOCKED",
+  "identities": {
+    "bot_sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+    "installer_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+    "runtime_image_id": "sha256:bf27d5f0e1b9ec0b46979be6536877ced98b00c822b32d1e03a80a4677da6205",
+    "target_os": "ubuntu-24.04",
+    "postgres_major": 15,
+    "redis_major": 7,
+    "schema": "0131",
+    "sdk_version": "3.12.1; same previously identified native image",
+    "parent_cabinet": "Unchanged published reference from bundle-v2026.10.10.1",
+    "compiled_custom_cabinet_retested": false
+  },
+  "provider_observation": {
+    "object": "Previously declined owned sandbox payment, reused read-only",
+    "test": true,
+    "status": "canceled",
+    "paid": false,
+    "amount_kopeks": 5000,
+    "currency": "RUB",
+    "cancellation_reason": "insufficient_funds",
+    "direct_https_get_calls": 1,
+    "new_payment_created": false,
+    "provider_mutation_calls": 0,
+    "successful_credited_object_reset_or_replayed": false
+  },
+  "first_attempt": {
+    "result": "NOT_PASS_PROVIDER_READ",
+    "completed_service_stages": 0,
+    "stopped_before_fixture_user_payment_creation": true,
+    "schema_only_database_was_created_then_removed": true,
+    "trace": "TLS handshake timeout -> ReadTimeout -> SDK AttributeError on absent response.status_code",
+    "raw_private_log_sha256": "0623a585a8fbb40df8c538986ed607998255aea9c4c09bdbb6bc626f5b3415a4",
+    "owned_database_and_containers_removed": true,
+    "result_reclassified_as_pass": false
+  },
+  "read_only_diagnosis": {
+    "unchanged_native_sdk_reads": 2,
+    "confirmed_canceled_unpaid_reads": 2,
+    "elapsed_seconds": [0.44, 0.656],
+    "database_calls": 0,
+    "provider_mutation_calls": 0,
+    "sdk_or_native_timeouts_modified": false,
+    "deterministic_root_cause_confirmed": false,
+    "permission_for_one_unstarted_service_run": "Verified recovery plus zero prior service stages and removed owned resources"
+  },
+  "isolation": {
+    "separate_empty_database": true,
+    "schema_only_clone": "0131; no original business rows",
+    "separate_empty_redis": true,
+    "short_lived_same_image_worker": true,
+    "native_orm_user_and_pending_payment": true,
+    "provider_metadata_target_user_recreated_only_in_owned_database": true,
+    "parent_stack_restarted_or_reconfigured": false,
+    "public_ports_caddy_ufw_changed": false,
+    "bot_instance_passed": false,
+    "native_test_timeout_wrapper_preserved": true,
+    "sdk_or_handlers_mocked_by_test": false
+  },
+  "successful_attempt": {
+    "result": "PASS_IN_SCOPE",
+    "service_stages": 3,
+    "native_provider_read_log_entries": 4,
+    "raw_private_log_sha256": "a6665f99603a16231cdbc8bfba5eaf5931c8149eccb43da72111a305ee9e66a9",
+    "stages": {
+      "forged-success-payload-authoritative-unpaid-status": "PASS",
+      "replayed-unpaid-notification-authoritative-status": "PASS",
+      "missing-local-row-native-provider-backed-recovery": "PASS"
+    },
+    "false_notification_claims": {
+      "paid": true,
+      "amount": "9999.99",
+      "currency": "USD",
+      "metadata_target": "Unrelated synthetic ID"
+    },
+    "initial_state": {
+      "balance_kopeks": 0,
+      "transaction_count": 0,
+      "payment_count": 1,
+      "payment_status": "pending",
+      "is_paid": false,
+      "transaction_linked": false,
+      "amount_kopeks": 5000,
+      "currency": "RUB",
+      "subscriptions": 0
+    },
+    "state_after_each_successful_stage": {
+      "balance_kopeks": 0,
+      "transaction_count": 0,
+      "payment_count": 1,
+      "payment_status": "canceled",
+      "is_paid": false,
+      "transaction_linked": false,
+      "amount_kopeks": 5000,
+      "currency": "RUB",
+      "subscriptions": 0
+    },
+    "owned_row_absence_asserted_before_native_restore": true,
+    "all_native_calls_returned_true": true,
+    "terminal_canceled_service_scope_proved": true,
+    "real_merchant_canceled_delivery_proved": false,
+    "simultaneous_https_callbacks": false,
+    "service_scenarios_repeated": false
+  },
+  "remaining_provider_read_limit": {
+    "id": "L-PAY-API-01",
+    "status": "OPEN",
+    "later_reads_replace_failed_first_attempt": false,
+    "old_eight_success_financial_race_gate_changed": false
+  },
+  "cleanup": {
+    "owned_database_absent": true,
+    "owned_redis_and_worker_absent": true,
+    "independent_postflight": "PASS",
+    "postflight_at_utc": "2026-10-14T18:56:24.850881+00:00",
+    "original_core_projections_unchanged": true,
+    "configuration_files_preserved": 5,
+    "runtime_images_preserved": true,
+    "services_healthy": 3,
+    "restarts": 0,
+    "oom_killed": false,
+    "known_ssh_fingerprint_verified": true,
+    "local_server_env_unchanged": true,
+    "whole_transition_vps_cleaned": false,
+    "earlier_transition_cleanup": "SKIPPED_OWNER_REQUEST"
+  },
+  "source_and_scope": {
+    "backend_sdk_frontend_source_changed": false,
+    "new_full_image_integrity_gate": false,
+    "frontend_browser_unit_build_gates_repeated": false,
+    "installer_roles_abac_paid_duplicate_race_gates_repeated": false,
+    "panel_writes": 0,
+    "subscription_mutations": 0,
+    "provider_mutations": 0,
+    "commit_release_production_operations": 0
+  },
+  "not_verified": [
+    "Actual merchant-origin canceled HTTPS callback/IP/router delivery",
+    "Initial successful merchant and concurrent HTTPS payment deliveries",
+    "Capture/refund/recurring/Cashera and compiled payment-return UI",
+    "Full RBAC/ABAC/global/resource/mutation and physical Mini App coverage",
+    "Full/default-policy Release gates, new public Bundle smoke and production"
+  ]
+}

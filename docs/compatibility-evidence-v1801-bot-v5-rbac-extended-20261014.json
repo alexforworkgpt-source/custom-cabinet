@@ -1,0 +1,369 @@
+{
+  "kind": "targeted-native-https-rbac-evidence",
+  "result": "PASS_IN_SCOPE",
+  "full_s9": "PARTIAL",
+  "full_live_gate": "BLOCKED",
+  "identities": {
+    "bot_sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+    "installer_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+    "runtime_image_id": "sha256:bf27d5f0e1b9ec0b46979be6536877ced98b00c822b32d1e03a80a4677da6205",
+    "target_os": "ubuntu-24.04",
+    "cabinet_reference": {
+      "bundle": "bundle-v2026.10.10.1",
+      "artifact_sha256": "a3f119a4548d7f49067406e1a4e15f3020d1eeff1da00490130e1600ec40d0b0",
+      "artifact_url": "https://github.com/alexforworkgpt-source/installer/releases/download/bundle-v2026.10.10.1/cabinet-dist.tar.gz",
+      "backend_contract": "1",
+      "repository": "https://github.com/alexforworkgpt-source/custom-cabinet.git",
+      "source_sha": "1d046656fbb01a928fd54a28694e10105d4185f8"
+    }
+  },
+  "auth": {
+    "native_https_email_password_login": true,
+    "accounts_seeded_via_native_orm": true,
+    "email_verified_flag_is_fixture": true,
+    "controller_role_is_fixture": true,
+    "controller_role_level": 90,
+    "controller_permissions": ["roles:*", "users:read", "payments:read"],
+    "manual_token_minting": false,
+    "actor_relogin_after_role_changes": false,
+    "owner_env_superadmin_modified": false,
+    "registration_smtp_inbox_retested": false
+  },
+  "initial_attempt": {
+    "result": "NOT_PASS_ENVIRONMENT_GATE",
+    "login_status": 403,
+    "detail_code": "email_auth_disabled",
+    "owned_fixtures_removed": true
+  },
+  "temporary_configuration": {
+    "original_stored_email_auth_flag": null,
+    "original_environment_email_auth_enabled": false,
+    "temporary_database_flag": true,
+    "native_crud_used": true,
+    "source_or_env_files_modified": false,
+    "bot_restarted": false,
+    "original_setting_restored": true
+  },
+  "http_assertions": 34,
+  "checks": [
+    {
+      "case": "controller-native-login",
+      "method": "POST",
+      "path": "/auth/email/login",
+      "status": 200
+    },
+    {
+      "case": "actor-native-login",
+      "method": "POST",
+      "path": "/auth/email/login",
+      "status": 200
+    },
+    {
+      "case": "before-custom-roles",
+      "method": "GET",
+      "path": "/auth/me/permissions",
+      "status": 200
+    },
+    {
+      "case": "custom-create-grant-not-held",
+      "method": "POST",
+      "path": "/admin/rbac/roles",
+      "status": 403
+    },
+    {
+      "case": "custom-create-grant-invalid",
+      "method": "POST",
+      "path": "/admin/rbac/roles",
+      "status": 400
+    },
+    {
+      "case": "custom-create-own-level",
+      "method": "POST",
+      "path": "/admin/rbac/roles",
+      "status": 403
+    },
+    {
+      "case": "custom-create-actor-denied",
+      "method": "POST",
+      "path": "/admin/rbac/roles",
+      "status": 403
+    },
+    {
+      "case": "custom-create-reader",
+      "method": "POST",
+      "path": "/admin/rbac/roles",
+      "status": 201
+    },
+    {
+      "case": "custom-create-payer",
+      "method": "POST",
+      "path": "/admin/rbac/roles",
+      "status": 201
+    },
+    {
+      "case": "custom-create-reader",
+      "method": "POST",
+      "path": "/admin/rbac/roles",
+      "status": 409
+    },
+    {
+      "case": "assign-custom-reader",
+      "method": "POST",
+      "path": "/admin/rbac/assignments",
+      "status": 201
+    },
+    {
+      "case": "assign-custom-expiring",
+      "method": "POST",
+      "path": "/admin/rbac/assignments",
+      "status": 201
+    },
+    {
+      "case": "multiple-role-union-existing-token",
+      "method": "GET",
+      "path": "/auth/me/permissions",
+      "status": 200
+    },
+    {
+      "case": "multiple-role-users-allowed",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "status": 200
+    },
+    {
+      "case": "multiple-role-payments-allowed",
+      "method": "GET",
+      "path": "/admin/payments/stats",
+      "status": 200
+    },
+    {
+      "case": "wildcard-escalation-denied",
+      "method": "PUT",
+      "path": "/admin/rbac/roles/{id}",
+      "status": 403
+    },
+    {
+      "case": "level-escalation-denied",
+      "method": "PUT",
+      "path": "/admin/rbac/roles/{id}",
+      "status": 403
+    },
+    {
+      "case": "custom-metadata-update",
+      "method": "PUT",
+      "path": "/admin/rbac/roles/{id}",
+      "status": 200
+    },
+    {
+      "case": "expired-role-removed-existing-token",
+      "method": "GET",
+      "path": "/auth/me/permissions",
+      "status": 200
+    },
+    {
+      "case": "surviving-role-users-allowed",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "status": 200
+    },
+    {
+      "case": "expired-role-payments-denied",
+      "method": "GET",
+      "path": "/admin/payments/stats",
+      "status": 403
+    },
+    {
+      "case": "deactivate-custom-role",
+      "method": "PUT",
+      "path": "/admin/rbac/roles/{id}",
+      "status": 200
+    },
+    {
+      "case": "inactive-role-removed-existing-token",
+      "method": "GET",
+      "path": "/auth/me/permissions",
+      "status": 200
+    },
+    {
+      "case": "inactive-role-users-denied",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "status": 403
+    },
+    {
+      "case": "reactivate-custom-role",
+      "method": "PUT",
+      "path": "/admin/rbac/roles/{id}",
+      "status": 200
+    },
+    {
+      "case": "reactivated-role-existing-token",
+      "method": "GET",
+      "path": "/auth/me/permissions",
+      "status": 200
+    },
+    {
+      "case": "revoke-custom-assignment",
+      "method": "DELETE",
+      "path": "/admin/rbac/assignments/{id}",
+      "status": 200
+    },
+    {
+      "case": "custom-revocation-existing-token",
+      "method": "GET",
+      "path": "/auth/me/permissions",
+      "status": 200
+    },
+    {
+      "case": "reassign-revoked-custom-role",
+      "method": "POST",
+      "path": "/admin/rbac/assignments",
+      "status": 201
+    },
+    {
+      "case": "reassigned-custom-role-existing-token",
+      "method": "GET",
+      "path": "/auth/me/permissions",
+      "status": 200
+    },
+    {
+      "case": "delete-assigned-custom-role",
+      "method": "DELETE",
+      "path": "/admin/rbac/roles/{id}",
+      "status": 200
+    },
+    {
+      "case": "deleted-role-cascade-existing-token",
+      "method": "GET",
+      "path": "/auth/me/permissions",
+      "status": 200
+    },
+    {
+      "case": "deleted-role-users-denied",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "status": 403
+    },
+    {
+      "case": "delete-expired-custom-role",
+      "method": "DELETE",
+      "path": "/admin/rbac/roles/{id}",
+      "status": 200
+    }
+  ],
+  "permission_phases": [
+    {
+      "case": "before-custom-roles",
+      "effective_role_count": 0,
+      "permissions": [],
+      "role_level": 0
+    },
+    {
+      "case": "multiple-role-union-existing-token",
+      "effective_role_count": 2,
+      "permissions": ["payments:read", "users:read"],
+      "role_level": 20
+    },
+    {
+      "case": "expired-role-removed-existing-token",
+      "effective_role_count": 1,
+      "permissions": ["users:read"],
+      "role_level": 10
+    },
+    {
+      "case": "inactive-role-removed-existing-token",
+      "effective_role_count": 0,
+      "permissions": [],
+      "role_level": 0
+    },
+    {
+      "case": "reactivated-role-existing-token",
+      "effective_role_count": 1,
+      "permissions": ["users:read"],
+      "role_level": 10
+    },
+    {
+      "case": "custom-revocation-existing-token",
+      "effective_role_count": 0,
+      "permissions": [],
+      "role_level": 0
+    },
+    {
+      "case": "reassigned-custom-role-existing-token",
+      "effective_role_count": 1,
+      "permissions": ["users:read"],
+      "role_level": 10
+    },
+    {
+      "case": "deleted-role-cascade-existing-token",
+      "effective_role_count": 0,
+      "permissions": [],
+      "role_level": 0
+    }
+  ],
+  "expiry_wait_seconds": 24.441978,
+  "cleanup": {
+    "owned_accounts_absent": true,
+    "owned_roles_absent": true,
+    "non_fixture_core_data_unchanged": true,
+    "temporary_email_auth_setting_removed": true,
+    "independent_postflight": {
+      "owned_user_count": 0,
+      "owned_role_count": 0,
+      "owned_assignment_count": 0,
+      "temporary_email_auth_setting_absent": true,
+      "effective_email_auth_enabled_restored": false,
+      "restored_http_login_gate_status": 403,
+      "restored_http_login_gate_code": "email_auth_disabled"
+    },
+    "configuration_files_unchanged": true,
+    "runtime_images_unchanged": true,
+    "local_server_env_unchanged": true,
+    "entire_transition_vps_cleaned": false,
+    "runtime_left_running": true
+  },
+  "services_after": [
+    {
+      "service": "bot",
+      "status": "running",
+      "health": "healthy",
+      "restart_count": 0,
+      "oom_killed": false
+    },
+    {
+      "service": "postgres",
+      "status": "running",
+      "health": "healthy",
+      "restart_count": 0,
+      "oom_killed": false
+    },
+    {
+      "service": "redis",
+      "status": "running",
+      "health": "healthy",
+      "restart_count": 0,
+      "oom_killed": false
+    }
+  ],
+  "panel_write_calls": 0,
+  "payment_create_calls": 0,
+  "subscription_mutation_calls": 0,
+  "backend_source_modified": false,
+  "previous_99_http_assertions_repeated": false,
+  "frontend_unit_build_browser_repeated": false,
+  "schema_lifecycle_transition_repeated": false,
+  "public_release_created": false,
+  "production_modified": false,
+  "raw_private_log_sha256": "b100178c35d8cd7bc8d531319447f37f9b6e9db230bfda74e42e4f2c927a8317",
+  "private_receipts": "workspace .scratch/bedolaga-v5-rbac-extended-20261014/",
+  "checked_at_utc": "2026-10-14T13:40:41.458030+00:00",
+  "postflight_at_utc": "2026-10-14T13:42:53.074804+00:00",
+  "remaining": [
+    "full ABAC/custom policies/resource restrictions",
+    "all mutation endpoints and wider multi-role combinations",
+    "full physical Telegram navigation/client-version coverage",
+    "first-delivery payment concurrency and remaining merchant flows",
+    "Panel writes blocked by read-only access",
+    "new Custom Cabinet public Bundle gate"
+  ]
+}

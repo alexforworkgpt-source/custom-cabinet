@@ -203,27 +203,31 @@ test('uses restrained accent states for key secondary actions', async ({ page })
 
     const refreshButton = page.locator('[data-traffic-refresh]');
     const trafficPercentage = page.locator('[data-traffic-percentage]');
-    const trafficCard = page.getByRole('region', { name: 'Traffic Usage' });
+    const trafficCard = page.getByRole('region', { name: 'Subscription active', exact: true });
     await expect(trafficPercentage).toHaveText('99%');
     expect(
       await trafficCard.evaluate((element) => element.scrollWidth <= element.clientWidth),
     ).toBe(true);
-    const [refreshBox, percentageBox] = await Promise.all([
+    const [refreshBox, percentageBox, cardBox] = await Promise.all([
       refreshButton.boundingBox(),
       trafficPercentage.boundingBox(),
+      trafficCard.boundingBox(),
     ]);
-    if (!refreshBox || !percentageBox) {
+    if (!refreshBox || !percentageBox || !cardBox) {
       throw new Error('Traffic refresh and percentage must have measurable layout boxes');
     }
-    expect(refreshBox.x + refreshBox.width).toBeLessThanOrEqual(percentageBox.x);
-    expect(
-      Math.abs(refreshBox.y + refreshBox.height / 2 - (percentageBox.y + percentageBox.height / 2)),
-    ).toBeLessThanOrEqual(6);
+    expect(refreshBox.width).toBeGreaterThanOrEqual(44);
+    expect(refreshBox.height).toBeGreaterThanOrEqual(44);
+    for (const box of [refreshBox, percentageBox]) {
+      expect(box.x).toBeGreaterThanOrEqual(cardBox.x);
+      expect(box.x + box.width).toBeLessThanOrEqual(cardBox.x + cardBox.width);
+    }
+    expect(refreshBox.y + refreshBox.height).toBeLessThanOrEqual(percentageBox.y);
 
     const manageSubscription = page.getByRole('button', { name: 'Manage subscription' });
     await expect(manageSubscription).toHaveCSS('border-top-width', '1px');
-    await expect(manageSubscription).toHaveClass(/bg-\[color-mix/);
-    await expect(manageSubscription).toHaveClass(/text-accent-400/);
+    await expect(manageSubscription).toHaveClass(/bg-champagne-50\/5/);
+    await expect(manageSubscription).toHaveClass(/text-champagne-50/);
     await expect(manageSubscription.locator('svg')).toHaveCount(1);
 
     const copyLink = page.getByRole('button', { name: 'Copy link' });

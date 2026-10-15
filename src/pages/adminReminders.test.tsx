@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -33,7 +33,17 @@ function renderPage() {
 describe('AdminReminders permissions', () => {
   afterEach(() => {
     cleanup();
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+  });
+
+  it('shows a retryable failure instead of an empty list and recovers on retry', async () => {
+    api.list.mockRejectedValueOnce(new Error('Unavailable')).mockResolvedValueOnce([]);
+    renderPage();
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.queryByText('admin.reminders.empty')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'common.retry' }));
+    expect(await screen.findByText('admin.reminders.empty')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('keeps create, edit, toggle and delete unavailable with read-only permission', async () => {

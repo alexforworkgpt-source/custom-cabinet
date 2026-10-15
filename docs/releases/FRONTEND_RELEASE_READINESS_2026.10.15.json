@@ -1,0 +1,47 @@
+{
+  "kind": "frontend-release-preparation-readiness-with-owner-device-waiver",
+  "date": "2026-10-15",
+  "result": "FRONTEND_READY_FOR_RELEASE_PREPARATION_WITH_ACCEPTED_DEVICE_SKIP",
+  "owner_decision": {
+    "quote": "Узкая проверка тг и устрйоств прпоустим, к релизу в целом готовы?",
+    "device_gate": "SKIPPED_OWNER_ACCEPTED",
+    "physical_signed_telegram_or_device_pass_claim": false,
+    "scope": "Current release-preparation task based on the tested candidate, not all future releases"
+  },
+  "candidate": {
+    "custom_cabinet_head": "1169e3cb964caec9a9500ace89bbb53b7e5a89df",
+    "uncommitted_work_present": true,
+    "compiled_manifest_sha256": "0aa20cd0f035ec41fd4f0270a1b4e94f04a0bd03075d92e3493334728bd170d0",
+    "files": 284,
+    "upstream_bot_working_baseline": true,
+    "new_backend_acceptance_testing_required_by_this_task": false
+  },
+  "verified_frontend": {
+    "ordinary_unit_passed": 1084,
+    "unit_files": 176,
+    "build_both_typescript": "PASS",
+    "full_biome": "PASS_WITH_40_WARNINGS_5_INFOS",
+    "compiled_browser_passed": 1146,
+    "configured_browser_skips": 35,
+    "public_exact_files_verified": 284,
+    "public_guest_viewports": [320, 375, 1280],
+    "public_api_connection": "PASS",
+    "closed_gates_repeated_for_this_decision": false
+  },
+  "release_package": {
+    "clean_reviewed_source_commit_and_record": "PENDING",
+    "exact_source_ci_node24_node26_codeql_publication": "NOT_RUN_FOR_NEW_SOURCE",
+    "new_bundle_public_verification_and_installation_smoke": "NOT_RUN",
+    "lifecycle_reuse": "Subject to exact protected identities and proof scope",
+    "test_frontend_override_must_not_mask_bundle_smoke": true,
+    "publication_or_production_authorized_by_readiness_question": false
+  },
+  "current_test_stand": {
+    "frontend_override_retained": true,
+    "rollback_or_cleanup_executed_for_waiver": false,
+    "deployment_journal_initial_label": "FRONTEND_READY_WAITING_DEVICE",
+    "journal_label_does_not_reopen_waived_device_gate": true
+  },
+  "historical_open_blocked_results_preserved": true,
+  "next_step": "Prepare the named release package after applicable owner authorization; do not ask for waived phone checks"
+}

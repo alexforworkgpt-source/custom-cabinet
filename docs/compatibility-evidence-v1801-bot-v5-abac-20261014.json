@@ -1,0 +1,405 @@
+{
+  "kind": "targeted-native-https-abac-evidence",
+  "result": "FAIL_WITH_CONFIRMED_LIMITATIONS",
+  "harness_result": "PARTIAL_WITH_CONFIRMED_LIMITATIONS",
+  "probe_exit_code": 0,
+  "probe_exit_zero_is_not_gate_pass": true,
+  "full_s9": "PARTIAL",
+  "full_live_gate": "BLOCKED",
+  "identities": {
+    "bot_sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+    "bot_repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "runtime_image_id": "sha256:bf27d5f0e1b9ec0b46979be6536877ced98b00c822b32d1e03a80a4677da6205",
+    "installer_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+    "cabinet_reference": {
+      "bundle": "bundle-v2026.10.10.1",
+      "artifact_sha256": "a3f119a4548d7f49067406e1a4e15f3020d1eeff1da00490130e1600ec40d0b0",
+      "artifact_url": "https://github.com/alexforworkgpt-source/installer/releases/download/bundle-v2026.10.10.1/cabinet-dist.tar.gz",
+      "backend_contract": "1",
+      "repository": "https://github.com/alexforworkgpt-source/custom-cabinet.git",
+      "source_sha": "1d046656fbb01a928fd54a28694e10105d4185f8"
+    },
+    "target_os": "ubuntu-24.04",
+    "images": {
+      "postgres": "postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23",
+      "redis": "redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2"
+    }
+  },
+  "http_checks": 31,
+  "expectations_met": 29,
+  "expectations_not_met": 2,
+  "checks": [
+    {
+      "case": "native-controller-login",
+      "method": "POST",
+      "path": "/auth/email/login",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "native-actor-login",
+      "method": "POST",
+      "path": "/auth/email/login",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "create-owned-reader",
+      "method": "POST",
+      "path": "/admin/rbac/roles",
+      "expected_status": 201,
+      "actual_status": 201,
+      "expectation_met": true
+    },
+    {
+      "case": "create-owned-policy-carrier",
+      "method": "POST",
+      "path": "/admin/rbac/roles",
+      "expected_status": 201,
+      "actual_status": 201,
+      "expectation_met": true
+    },
+    {
+      "case": "assign-reader-for-policy-test",
+      "method": "POST",
+      "path": "/admin/rbac/assignments",
+      "expected_status": 201,
+      "actual_status": 201,
+      "expectation_met": true
+    },
+    {
+      "case": "initial-base-permission",
+      "method": "GET",
+      "path": "/auth/me/permissions",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "no-policy-users-allowed",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "matched-role-deny",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 403,
+      "actual_status": 403,
+      "expectation_met": true
+    },
+    {
+      "case": "different-resource-does-not-deny",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "different-action-does-not-deny",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "inactive-policy-does-not-deny",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "resource-action-wildcards-deny",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 403,
+      "actual_status": 403,
+      "expectation_met": true
+    },
+    {
+      "case": "current-utc-time-window-denies",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 403,
+      "actual_status": 403,
+      "expectation_met": true
+    },
+    {
+      "case": "empty-time-window-does-not-deny",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "actual-client-ip-deny",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 403,
+      "actual_status": 403,
+      "expectation_met": true
+    },
+    {
+      "case": "nonmatching-client-ip-does-not-deny",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "higher-allow-does-not-override-deny",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 403,
+      "actual_status": 403,
+      "expectation_met": true
+    },
+    {
+      "case": "allow-policy-cannot-grant-missing-rbac-permission",
+      "method": "GET",
+      "path": "/admin/payments/stats",
+      "expected_status": 403,
+      "actual_status": 403,
+      "expectation_met": true
+    },
+    {
+      "case": "unassigned-role-policy-does-not-deny",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "assign-expiring-policy-carrier",
+      "method": "POST",
+      "path": "/admin/rbac/assignments",
+      "expected_status": 201,
+      "actual_status": 201,
+      "expectation_met": true
+    },
+    {
+      "case": "active-policy-carrier-state",
+      "method": "GET",
+      "path": "/auth/me/permissions",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "active-policy-carrier-denies",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 403,
+      "actual_status": 403,
+      "expectation_met": true
+    },
+    {
+      "case": "expired-role-absent-from-permission-response",
+      "method": "GET",
+      "path": "/auth/me/permissions",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "expired-role-policy-should-no-longer-deny",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 200,
+      "actual_status": 403,
+      "expectation_met": false
+    },
+    {
+      "case": "remove-expired-carrier-negative-control",
+      "method": "DELETE",
+      "path": "/admin/rbac/assignments/{id}",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "removing-expired-assignment-restores-access",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "reassign-carrier-for-inactive-role-policy-test",
+      "method": "POST",
+      "path": "/admin/rbac/assignments",
+      "expected_status": 201,
+      "actual_status": 201,
+      "expectation_met": true
+    },
+    {
+      "case": "deactivate-policy-carrier",
+      "method": "PUT",
+      "path": "/admin/rbac/roles/{id}",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "inactive-role-absent-from-permission-response",
+      "method": "GET",
+      "path": "/auth/me/permissions",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    },
+    {
+      "case": "inactive-role-policy-should-no-longer-deny",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 200,
+      "actual_status": 403,
+      "expectation_met": false
+    },
+    {
+      "case": "removing-owned-policy-restores-access",
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "expected_status": 200,
+      "actual_status": 200,
+      "expectation_met": true
+    }
+  ],
+  "permission_states": [
+    {
+      "case": "initial-base-permission",
+      "effective_role_count": 1,
+      "permissions": ["users:read"],
+      "role_level": 10
+    },
+    {
+      "case": "active-policy-carrier-state",
+      "effective_role_count": 2,
+      "permissions": ["users:read"],
+      "role_level": 20
+    },
+    {
+      "case": "expired-role-absent-from-permission-response",
+      "effective_role_count": 1,
+      "permissions": ["users:read"],
+      "role_level": 10
+    },
+    {
+      "case": "inactive-role-absent-from-permission-response",
+      "effective_role_count": 1,
+      "permissions": ["users:read"],
+      "role_level": 10
+    }
+  ],
+  "limitations": [
+    {
+      "case": "expired-role-policy-should-no-longer-deny",
+      "expected_status": 200,
+      "actual_status": 403
+    },
+    {
+      "case": "inactive-role-policy-should-no-longer-deny",
+      "expected_status": 200,
+      "actual_status": 403
+    }
+  ],
+  "negative_controls": {
+    "revoking_expired_assignment_restores_users_read": true,
+    "removing_policy_on_inactive_role_restores_users_read": true
+  },
+  "source_trace": {
+    "permission_aggregation": "UserRoleCRUD.get_user_permissions excludes expires_at <= now and inactive AdminRole",
+    "policy_role_selection": "PermissionService.check_permission uses UserRoleCRUD.get_user_roles; that query filters only UserRole.is_active, not expiry or AdminRole.is_active",
+    "policy_query": "AccessPolicyCRUD.get_policies_for_user selects active policies for those role IDs"
+  },
+  "fixture_scope": {
+    "native_orm_accounts_and_verified_email_flags": true,
+    "controller_role_fixture": true,
+    "policy_native_crud": true,
+    "native_https_password_login": true,
+    "same_actor_token_used": true,
+    "manual_token_minting": false,
+    "global_policy_changes": 0,
+    "actual_client_ip_checked": true,
+    "client_ip_version": 4,
+    "client_ip_value_published": false,
+    "temporary_email_auth_db_setting_restored": true
+  },
+  "expiry_wait_seconds": 15.78932,
+  "cleanup": {
+    "owned_accounts_absent": true,
+    "owned_roles_absent": true,
+    "non_fixture_core_data_unchanged": true,
+    "temporary_email_auth_setting_removed": true,
+    "owned_policies_absent": true,
+    "independent_postflight": {
+      "owned_counts": {
+        "users": 0,
+        "roles": 0,
+        "policies": 0,
+        "assignments": 0
+      },
+      "original_email_gate_restored": true
+    },
+    "configuration_files_unchanged": true,
+    "runtime_images_unchanged": true,
+    "entire_vps_cleaned": false,
+    "runtime_left_running": true
+  },
+  "services_after": [
+    {
+      "service": "bot",
+      "status": "running",
+      "health": "healthy",
+      "restart_count": 0,
+      "oom_killed": false
+    },
+    {
+      "service": "postgres",
+      "status": "running",
+      "health": "healthy",
+      "restart_count": 0,
+      "oom_killed": false
+    },
+    {
+      "service": "redis",
+      "status": "running",
+      "health": "healthy",
+      "restart_count": 0,
+      "oom_killed": false
+    }
+  ],
+  "backend_source_modified": false,
+  "frontend_source_modified": false,
+  "panel_write_calls": 0,
+  "payment_create_calls": 0,
+  "subscription_mutation_calls": 0,
+  "previous_99_and_34_role_suites_repeated": false,
+  "frontend_schema_browser_lifecycle_transition_gates_repeated": false,
+  "public_release_created": false,
+  "production_modified": false,
+  "raw_private_log_sha256": "d120cc99392fc9c6dbbf0723afc2618ac85f85527b1c92c8397abb31caeb0f37",
+  "private_receipts": "workspace .scratch/bedolaga-v5-abac-20261014/",
+  "checked_at_utc": "2026-10-14T15:17:16.740960+00:00",
+  "postflight_at_utc": "2026-10-14T15:18:24.804568+00:00",
+  "remaining": [
+    "confirmed expired/inactive role policy limitations remain OPEN within unchanged Upstream Bot boundary",
+    "full ABAC matrix/global policies/mutation endpoints not verified",
+    "remaining merchant/first-delivery concurrency/physical Mini App checks",
+    "Panel mutations blocked by read-only access",
+    "new public Bundle/public smoke not performed"
+  ]
+}

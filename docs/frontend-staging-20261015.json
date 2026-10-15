@@ -1,0 +1,87 @@
+{
+  "kind": "exact-custom-cabinet-public-frontend-staging",
+  "date": "2026-10-15",
+  "result": "PUBLIC_FRONTEND_READY_DEVICE_CHECK_SKIPPED_BY_OWNER",
+  "permanent_owner_decision": "Upstream Bot принимаем как рабочую основу",
+  "scope": "Custom Cabinet frontend, existing API connection and test conditions only",
+  "policy_documents_validated": 8,
+  "identities": {
+    "custom_cabinet_head": "1169e3cb964caec9a9500ace89bbb53b7e5a89df",
+    "owner_work_uncommitted_and_preserved": true,
+    "compiled_manifest_sha256": "0aa20cd0f035ec41fd4f0270a1b4e94f04a0bd03075d92e3493334728bd170d0",
+    "compiled_files": 284,
+    "index_sha256": "eb87ff28c95c4b3a8b55f11298feda1117fb43a616a050fd5fec71d2d0853d2d",
+    "packet_sha256": "fdd5994a6cd132cb76395797f69193da77de73790a6205f20ca2e83ec5db3cc4",
+    "unchanged_upstream_bot_sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae"
+  },
+  "deployment": {
+    "ready_at_utc": "2026-10-15T13:56:39.023751+00:00",
+    "method": "Existing Caddy static file serving from separate owned folder",
+    "original_caddy_saved_with_node_metadata": true,
+    "api_health_cabinet_service_routes_preserved": true,
+    "managed_cabinet_and_release_state_replaced": false,
+    "frontend_override_active": true,
+    "new_containers_ports_backend_restarts_db_fixtures_provider_operations": 0,
+    "live_caddy_sha256": "c9494de6f582425cf78c8f3dbd92753c949be97f20008988fd503ceebdea2e0d"
+  },
+  "public_verification": {
+    "result": "PASS",
+    "checked_at_utc": "2026-10-15T13:57:24.546664+00:00",
+    "https_files_with_exact_hash": 284,
+    "spa_routes": 4,
+    "missing_asset_status": 404,
+    "cache_control": "no-store",
+    "artifact_header_matches_manifest": true,
+    "branding_languages_health_native_json_http": 200,
+    "branding_languages_body_hashes_match_preflight": true,
+    "frontend_artifact_header_absent_on_api": true
+  },
+  "public_browser": {
+    "result": "PASS_IN_SCOPE",
+    "checked_at_utc": "2026-10-15T14:02:04.748Z",
+    "chrome_version": "155.0.8059.40",
+    "viewports": [320, 375, 1280],
+    "horizontal_overflow": false,
+    "protected_guest_entry_redirect": "login",
+    "public_offer_reload_and_return": "PASS",
+    "api_mocked": false,
+    "guest_remained_unauthenticated": true,
+    "uncaught_exceptions": 0,
+    "signed_telegram_or_physical_device_proof": false
+  },
+  "post_observe": {
+    "result": "PASS",
+    "checked_at_utc": "2026-10-15T14:03:35.102212+00:00",
+    "original_containers_images_restart_counts_preserved": true,
+    "managed_config_hashes_preserved": 5,
+    "frontend_override_active": true
+  },
+  "reused_closed_proofs": {
+    "ordinary_unit_tests": 1084,
+    "compiled_browser_passed": 1146,
+    "compiled_browser_configured_skips": 35,
+    "application_e2e_dependency_inputs_unchanged": true,
+    "closed_payment_callback_lifecycle_backend_suites_repeated": false
+  },
+  "state_for_next_chat": {
+    "journal": "FRONTEND_READY_WAITING_DEVICE",
+    "journal_label_is_initial_deployment_state_not_current_device_todo": true,
+    "device_gate": "SKIPPED_OWNER_ACCEPTED",
+    "device_pass_claim": false,
+    "frontend_retained": true,
+    "rollback": "PREPARED_NOT_EXECUTED; controller rollback restores original serving and retains owned packet",
+    "stage_cleanup": "NOT_RUN_FRONTEND_RETAINED",
+    "whole_parent_cleanup": "SKIPPED_OWNER_REQUEST",
+    "next_step": "Named release-package preparation and required gates after applicable authorization; no repeated device request",
+    "temporary_frontend_override_must_not_mask_new_bundle_smoke": true,
+    "new_backend_acceptance_testing": false,
+    "historical_open_blocked_statuses_preserved": true
+  },
+  "boundaries": {
+    "upstream_bot_code_api_business_migration_sdk_changes": 0,
+    "direct_database_queries_or_manual_fixtures_in_this_frontend_stage": 0,
+    "new_payments_or_provider_mutations": 0,
+    "site_changes": 0,
+    "commit_push_release_production_operations": 0
+  }
+}

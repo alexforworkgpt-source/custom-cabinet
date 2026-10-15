@@ -1,10 +1,35 @@
 # Custom Cabinet Repository
 
+- **Upstream Bot принимаем как рабочую основу.** Текущая задача — Custom Cabinet,
+  его подключение к существующему API и правильность условий тестирования.
+  Не превращать её в самостоятельный аудит/проверку backend, внутренних платежных
+  обработчиков, SDK или полной backend RBAC/ABAC-матрицы. При несовпадении сначала
+  проверять наш frontend, exact artifact, URL/proxy/auth и тестовые данные/настройки.
+  Старые OPEN/BLOCKED сохранять как исторические ограничения, не как новый backend
+  todo и не как PASS. Обязательные применимые frontend/Release gates сохраняются.
+  Прочитать актуальный scope в начале `CONTEXT.md` до выбора следующей проверки.
+- Выполнять доступные frontend/connection проверки подряд, без запроса
+  «продолжать?» после каждого этапа; отдельно запросить только действительно
+  необходимые действия владельца, доступы или авторизацию новых операций.
+- Backend — постоянная граница проекта: не изменять исходный код Upstream Bot,
+  его API, бизнес-логику или миграции БД; не создавать backend fork или patches.
+  Не предлагать и не обсуждать решения, требующие таких изменений, и не включать
+  их в планы, ADR или задачи. Custom Cabinet адаптируется к существующему API
+  и поведению неизменённого Upstream Bot. Если frontend-only решение невозможно,
+  кратко зафиксировать ограничение без предложения исправлять backend и без
+  добавления такого исправления в условия завершения frontend/Release задачи.
+  Это правило не отменяет обязательные проверки и не превращает OPEN/BLOCKED
+  ограничения в PASS.
 - Preserve `LICENSE`, exact upstream URLs and the provenance in `UPSTREAM.md`.
 - Do not publish build output, local environment files, screenshots or agent
   working data.
 - Keep functional and visual customization separate from repository maintenance.
-- Run `npm test`, `npm run type-check` and `npm run build` after source changes.
+- Run `npm test` and `npm run build` after source changes. The current build
+  invokes the full `type-check` script, including `tsconfig.node.json`, so a
+  separate successful `npm run type-check` is not required in the same check
+  cycle. If build stops invoking that full check or only `build:docker` runs,
+  run `npm run type-check` explicitly. Documentation-only changes need focused
+  documentation validation instead of frontend tests/build.
 - Before any Upstream Cabinet integration, read and follow `UPSTREAM_SYNC.md`,
   `CUSTOMIZATION_MAP.md` and `COMPATIBILITY.md`.
 - Treat every integration as a three-way comparison between the previous exact
@@ -27,6 +52,19 @@
   data by default.
 - Treat `BLOCKED` as not verified, never as `PASS`; keep a tested rollback source
   before production deployment.
+- Follow `RELEASE_PROCESS.md` for project publication and Installer
+  `docs/deployment-procedure.md` for Bundle/deployment coordination. Cabinet-only
+  releases reuse the exact unchanged Installer source and trusted lifecycle;
+  run Cabinet gates and targeted new Bundle smoke/cleanup. Preserve tested tags,
+  existing assets, owner local changes, `latest` and settings. Execute the named
+  operations within one package authorization without repeated questions;
+  production is separately authorized through root production runbook.
+- For Cabinet-only release preparation, use Installer
+  `docs/cabinet-only-release-checklist.md`. Do not add another full local Linux
+  Node 24/26 matrix solely to repeat the publication CI. Keep its actual exact
+  source gates, both Node test versions, and one final compiled-artifact browser
+  gate: current CI does not run Playwright. New source/artifact or changed test
+  inputs invalidate affected evidence; old PASS does not prove a new candidate.
 
 ## Agent skills
 
@@ -126,6 +164,10 @@ Vite проксирует `/api` и `/health` на `http://localhost:8080`. На
 Для browser-проверки без настоящего backend используй `npm run test:e2e`:
 Playwright сам запускает Vite на `http://localhost:4173` и подменяет API
 тестовыми ответами.
+
+Для интерактивной проверки полного локального API-мокапа, включая тестовые
+платежи, подключение, тарифы и права `super_admin`, следуй инструкции
+[`docs/agents/full-local-api-mock.md`](docs/agents/full-local-api-mock.md).
 
 ## Стиль общения с пользователем
 

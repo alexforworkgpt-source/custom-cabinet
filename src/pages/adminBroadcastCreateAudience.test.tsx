@@ -21,6 +21,9 @@ const api = vi.hoisted(() => ({
   getButtons: vi.fn(),
   preview: vi.fn(),
   previewEmail: vi.fn(),
+  previewAudience: vi.fn(),
+  searchAudienceUsers: vi.fn(),
+  getTariffs: vi.fn(),
   createCombined: vi.fn(),
 }));
 
@@ -44,6 +47,13 @@ beforeEach(() => {
     count: target === 'user_42' ? 0 : 3,
   }));
   api.createCombined.mockResolvedValue({ id: 900 });
+  api.getTariffs.mockResolvedValue({ tariffs: [] });
+  api.previewAudience.mockImplementation(async ({ audience }) => ({
+    count: audience.conditions[0]?.value === '42' ? 0 : 3,
+    offset: 0,
+    limit: 50,
+    users: [],
+  }));
 });
 
 afterEach(cleanup);
@@ -66,7 +76,43 @@ async function renderPage(entry: string | { pathname: string; search: string; st
 }
 
 describe('AdminBroadcastCreate email audiences', () => {
-  it('opens a direct-user email preset, previews zero deliverable recipients and sends to user_<id>', async () => {
+  it('keeps the accepted Telegram job identifiable and retries only Email after a partial failure', async () => {
+    api.createCombined
+      .mockResolvedValueOnce({ id: 900 })
+      .mockRejectedValueOnce({ response: { data: { detail: 'Email failed' } } })
+      .mockResolvedValueOnce({ id: 901 });
+    await renderPage('/admin/broadcasts/create');
+    fireEvent.click(screen.getByText('admin.broadcasts.enableEmail'));
+    await screen.findByRole('option', { name: 'admin.broadcasts.filterGroups.promo_group' });
+    for (const field of screen.getAllByRole('combobox', {
+      name: 'admin.broadcasts.audience.field',
+    })) {
+      fireEvent.change(field, { target: { value: 'basic' } });
+    }
+    fireEvent.change(screen.getByPlaceholderText('admin.broadcasts.messageTextPlaceholder'), {
+      target: { value: 'Hello' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('admin.broadcasts.emailSubjectPlaceholder'), {
+      target: { value: 'Subject' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('admin.broadcasts.emailContentPlaceholder'), {
+      target: { value: '<p>Hello</p>' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'admin.broadcasts.send' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /900/ }).getAttribute('href')).toBe(
+      '/admin/broadcasts/900',
+    );
+    expect(api.createCombined).toHaveBeenCalledTimes(2);
+    fireEvent.click(screen.getByRole('button', { name: 'admin.broadcasts.send' }));
+    await waitFor(() => expect(api.createCombined).toHaveBeenCalledTimes(3));
+    expect(api.createCombined.mock.calls.map(([request]) => request.channel)).toEqual([
+      'telegram',
+      'email',
+      'email',
+    ]);
+  });
+  it('opens a direct-user email preset and sends its stable internal ID as an audience rule', async () => {
     await renderPage({
       pathname: '/admin/broadcasts/create',
       search: '?email_user=42',
@@ -74,10 +120,15 @@ describe('AdminBroadcastCreate email audiences', () => {
     });
 
     await waitFor(() =>
-      expect(api.previewEmail).toHaveBeenCalledWith('user_42', expect.anything()),
+      expect(api.previewAudience).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channel: 'email',
+          audience: { conditions: [expect.objectContaining({ field: 'email_user', value: '42' })] },
+        }),
+      ),
     );
-    expect(await screen.findByText('admin.broadcasts.singleUser:egor@example.com')).toBeTruthy();
-    expect(await screen.findByText(/^0 admin\.broadcasts\.recipients$/)).toBeTruthy();
+    expect(await screen.findByDisplayValue('egor@example.com')).toBeTruthy();
+    expect(await screen.findByText('0')).toBeTruthy();
 
     fireEvent.change(screen.getByPlaceholderText('admin.broadcasts.emailSubjectPlaceholder'), {
       target: { value: 'Тема' },
@@ -89,7 +140,19 @@ describe('AdminBroadcastCreate email audiences', () => {
 
     await waitFor(() =>
       expect(api.createCombined).toHaveBeenCalledWith(
-        expect.objectContaining({ channel: 'email', target: 'user_42' }),
+        expect.objectContaining({
+          channel: 'email',
+          audience: {
+            conditions: [
+              expect.objectContaining({
+                field: 'email_user',
+                value: '42',
+                operator: 'eq',
+                join: null,
+              }),
+            ],
+          },
+        }),
         expect.anything(),
       ),
     );
@@ -98,19 +161,31 @@ describe('AdminBroadcastCreate email audiences', () => {
   it('keeps a direct-user target identifiable after reload without router state', async () => {
     await renderPage('/admin/broadcasts/create?email_user=42');
 
-    expect(await screen.findByText('admin.broadcasts.singleUser:#42')).toBeTruthy();
+    expect(await screen.findByDisplayValue('#42')).toBeTruthy();
   });
 
-  it('offers promo_group_<id> as a separate email audience group', async () => {
+  it('offers promo_group_<id> through the email audience rule editor', async () => {
     await renderPage('/admin/broadcasts/create');
     fireEvent.click(screen.getByText('admin.broadcasts.enableEmail'));
-    fireEvent.click(await screen.findByText('admin.broadcasts.selectEmailFilterPlaceholder'));
+    fireEvent.click(screen.getByText('admin.broadcasts.enableTelegram'));
 
-    expect(await screen.findByText('admin.broadcasts.filterGroups.promo_group')).toBeTruthy();
-    fireEvent.click(screen.getByText('Продвинутый'));
+    await screen.findByRole('option', { name: 'admin.broadcasts.filterGroups.promo_group' });
+    fireEvent.change(screen.getByRole('combobox', { name: 'admin.broadcasts.audience.field' }), {
+      target: { value: 'promo_group' },
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: 'admin.broadcasts.audience.value' }), {
+      target: { value: 'promo_group_7' },
+    });
 
     await waitFor(() =>
-      expect(api.previewEmail).toHaveBeenCalledWith('promo_group_7', expect.anything()),
+      expect(api.previewAudience).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channel: 'email',
+          audience: {
+            conditions: [expect.objectContaining({ field: 'promo_group', value: 'promo_group_7' })],
+          },
+        }),
+      ),
     );
   });
 

@@ -14,6 +14,10 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.test.{ts,tsx}'],
+    // Как в CI: массовый параллельный запуск jsdom замедляет первые импорты
+    // до таймаута и оставляет запоздавшую работу между тестами. Лимит времени
+    // не увеличиваем — ограничиваем только конкуренцию за ресурсы.
+    maxWorkers: 2,
     environment: 'node',
     // Node >= 25 включает web storage по умолчанию и заводит собственный
     // globalThis.localStorage, отдающий undefined без --localstorage-file.
