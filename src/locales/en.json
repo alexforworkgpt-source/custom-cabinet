@@ -231,13 +231,13 @@
     "validUntil": "Valid until",
     "goToSubscription": "Go to Subscription",
     "goToBalance": "Go to Balance",
-    "devicesAdded": "+{{count}} devices",
+    "devicesAdded": "Devices added",
     "devicesPurchased": {
       "title": "Devices added"
     },
-    "totalDevices": "Total devices: {{count}}",
-    "totalTraffic": "Total traffic: {{value}}",
-    "trafficAdded": "+{{value}} traffic",
+    "totalDevices": "Total devices",
+    "totalTraffic": "Total traffic",
+    "trafficAdded": "Traffic added",
     "trafficPurchased": {
       "title": "Traffic added"
     }
@@ -911,7 +911,32 @@
     "statusActive": "Active",
     "statusExpired": "Expired",
     "statusLimited": "Limited",
-    "statusTrial": "Trial"
+    "statusTrial": "Trial",
+    "casheraRecurring": {
+      "title": "Cashera auto-renewal",
+      "connect": "Connect",
+      "confirm": "Confirm auto-charges",
+      "cancel": "Turn off",
+      "confirmCancel": "Turn off Cashera auto-renewal? The subscription will no longer renew automatically.",
+      "cancelled": "Cashera auto-renewal turned off",
+      "enableError": "Could not connect Cashera auto-renewal",
+      "cancelError": "Could not cancel Cashera auto-renewal",
+      "statusPending": "Waiting for confirmation via the link",
+      "statusActive": "Active",
+      "statusPastDue": "Payment failed — please try again",
+      "nextCharge": "next charge {{date}}",
+      "amountPerInterval": "{{amount}} ₽ {{interval}}",
+      "interval": {
+        "daily": "daily",
+        "weekly": "weekly",
+        "monthly": "monthly",
+        "yearly": "yearly"
+      },
+      "autopayHint": "Your subscription will renew automatically via Cashera",
+      "purchaseButton": "⚡ Subscribe with Cashera auto-pay",
+      "purchaseHint": "Confirm auto-charges via the Cashera link; renewals are then charged automatically.",
+      "purchaseTermsNote": "The server sets the recurring amount and period. They may differ from the selected balance purchase."
+    }
   },
   "balance": {
     "title": "Balance",
@@ -1004,6 +1029,9 @@
       },
       "apple_iap": {
         "description": "Pay via Apple In-App Purchase"
+      },
+      "cashera": {
+        "description": "SBP, cards, crypto (Cashera)"
       }
     },
     "transactionHistory": "Transaction History",
@@ -1117,7 +1145,8 @@
       "goToBalance": "Go to Balance",
       "tryAgain": "Try Again"
     },
-    "top_up": "Top up balance"
+    "top_up": "Top up balance",
+    "scanQrToPay": "Scan the QR code in your banking app or open the payment page"
   },
   "referral": {
     "title": "Referral Program",
@@ -2421,7 +2450,66 @@
       "categoryNews": "News",
       "categoryPromo": "Promo",
       "categorySystem": "System",
-      "stopping": "Stopping…"
+      "stopping": "Stopping…",
+      "audience": {
+        "authType": "Registration method",
+        "join": "Condition connector",
+        "and": "AND",
+        "or": "OR",
+        "field": "Field",
+        "comparison": "Comparison",
+        "equals": "Equals",
+        "notEquals": "Does not equal",
+        "value": "Value",
+        "remove": "Remove condition",
+        "add": "Add condition",
+        "loadError": "Could not load recipients",
+        "recipientCount": "Recipients",
+        "showUsers": "View list",
+        "users": "Broadcast recipients",
+        "empty": "No recipients",
+        "conditions": "Conditions",
+        "noUsersPermission": "Requires permission to view users"
+      },
+      "atomic": {
+        "all": "All users",
+        "subscriptionStatus": "Subscription status",
+        "active": "Active",
+        "expired": "Expired",
+        "subscriptionType": "Subscription type",
+        "trial": "Trial",
+        "paid": "Paid",
+        "tariff": "Plan",
+        "trafficZero": "Used traffic equals 0",
+        "trafficGt": "Used traffic greater than",
+        "trafficLt": "Used traffic less than",
+        "endPreset": "Subscription end: quick period",
+        "next3Days": "Within the next 3 days",
+        "endDate": "Subscription end: date",
+        "registrationPreset": "Registration: quick period",
+        "today": "Today",
+        "last7Days": "Last 7 days",
+        "last30Days": "Last 30 days",
+        "registrationDate": "Registration date",
+        "activityPreset": "Activity: quick period",
+        "activeToday": "Active today",
+        "inactive7Days": "Inactive for 7+ days",
+        "inactive30Days": "Inactive for 30+ days",
+        "activityDate": "Last activity: date",
+        "source": "Registration source",
+        "referral": "Referral",
+        "direct": "Direct",
+        "paidHistory": "Paid before",
+        "telegramUsername": "Telegram username",
+        "searchUser": "Type to find and select a user",
+        "noUsers": "No users found",
+        "before": "Before date",
+        "after": "After date",
+        "between": "Between dates",
+        "dateFrom": "Date",
+        "dateTo": "To",
+        "gigabytes": "Gigabytes"
+      }
     },
     "pinnedMessages": {
       "title": "Pinned Messages",
@@ -2535,7 +2623,8 @@
         "testInvalidTexts": "Fix the texts and save",
         "ruRequired": "Fill in the Russian title and text",
         "saveFailed": "Failed to save — check the fields"
-      }
+      },
+      "loadFailed": "Failed to load reminders"
     },
     "channelSubscriptions": {
       "title": "Required Channels",
@@ -2752,7 +2841,8 @@
         "iface_info": "Legal documents",
         "iface_menu": "Menu button",
         "sys_cabinet": "Cabinet",
-        "sys_other": "Other settings"
+        "sys_other": "Other settings",
+        "payments_cashera": "Cashera"
       },
       "categories": {
         "CABINET": "Cabinet",

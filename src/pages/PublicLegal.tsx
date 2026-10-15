@@ -20,7 +20,7 @@ const DOC_CONFIG: Record<
     queryKey: string;
     titleKey: string;
     titleFallback: string;
-    fetch: () => Promise<{ content: string; updated_at: string | null }>;
+    fetch: (language?: string) => Promise<{ content: string; updated_at: string | null }>;
   }
 > = {
   offer: {
@@ -47,13 +47,14 @@ const DOC_CONFIG: Record<
 // footer. Reads the same public /cabinet/info endpoints the authenticated Info page
 // uses, so the pages are reachable before login instead of bouncing to /login.
 export default function PublicLegal({ doc }: PublicLegalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = (i18n.language ?? '').split('-')[0];
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const config = DOC_CONFIG[doc];
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['public-legal', config.queryKey],
-    queryFn: config.fetch,
+    queryKey: ['public-legal', config.queryKey, locale],
+    queryFn: () => config.fetch(locale),
     staleTime: 5 * 60 * 1000,
   });
 

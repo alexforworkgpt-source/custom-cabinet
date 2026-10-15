@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -92,6 +92,9 @@ function LocationProbe() {
 }
 
 beforeEach(() => {
+  // Keep dated API fixtures independent of the host clock without freezing async timers.
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-09-14T00:00:00Z'));
   getUsers.mockReset();
   observerCallback = null;
   window.localStorage.clear();
@@ -105,7 +108,10 @@ beforeEach(() => {
   } as unknown as typeof IntersectionObserver;
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 async function renderPage(initial = '/admin/users') {
   const AdminUsers = (await import('./AdminUsers')).default;
@@ -186,19 +192,22 @@ describe('AdminUsers v1.79 behavior', () => {
     expect(getUsers.mock.calls[1][0]).toMatchObject({ offset: 50 });
   });
 
-  it('marks grace, tariff count and only a fresh VPN online timestamp', async () => {
+  it('marks only unexpired grace, tariff count and a fresh VPN online timestamp', async () => {
     getUsers.mockResolvedValue(
       page(
         [
           user(1, {
             online_at: new Date(Date.now() - 5_000).toISOString(),
-            grace_until: new Date(Date.now() + 86_400_000).toISOString(),
+            grace_until: '2026-10-02T00:00:00Z',
             subscriptions: [
               { id: 1, tariff_name: 'A' },
               { id: 2, tariff_name: 'B' },
             ] as UserListItem['subscriptions'],
           }),
-          user(2, { online_at: new Date(Date.now() - 120_000).toISOString() }),
+          user(2, {
+            online_at: new Date(Date.now() - 120_000).toISOString(),
+            grace_until: '2026-09-13T00:00:00Z',
+          }),
         ],
         2,
       ),
@@ -206,8 +215,12 @@ describe('AdminUsers v1.79 behavior', () => {
     await renderPage();
 
     await screen.findByText('Имя1');
-    expect(screen.getByText('admin.users.connectedNow')).toBeTruthy();
-    expect(screen.getByText('admin.users.subscriptionChips.graceUntil')).toBeTruthy();
-    expect(screen.getByText('admin.users.moreTariffs')).toBeTruthy();
+    const firstUser = within(screen.getByRole('button', { name: /Имя1/ }));
+    const secondUser = within(screen.getByRole('button', { name: /Имя2/ }));
+    expect(firstUser.getByText('admin.users.connectedNow')).toBeTruthy();
+    expect(firstUser.getByText('admin.users.subscriptionChips.graceUntil')).toBeTruthy();
+    expect(firstUser.getByText('admin.users.moreTariffs')).toBeTruthy();
+    expect(secondUser.queryByText('admin.users.connectedNow')).toBeNull();
+    expect(secondUser.queryByText('admin.users.subscriptionChips.graceUntil')).toBeNull();
   });
 });

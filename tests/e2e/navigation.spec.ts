@@ -285,8 +285,8 @@ test('keeps subscription compatibility routes on the unified Dashboard', async (
   await page.keyboard.press('Escape');
   await expect(managementDialog).toBeHidden();
   await expect(page).toHaveURL('/?sub=7');
-  await expect(page.getByRole('heading', { name: 'Traffic Usage' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Traffic Usage' })).toHaveCount(1);
+  await expect(page.getByRole('region', { name: 'Subscription active' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Subscription active' })).toHaveCount(1);
   const compactPlanName = page.getByText('Unified plan', { exact: true }).last();
   await expect(compactPlanName).toBeVisible();
   await expect(compactPlanName.locator('..')).not.toHaveAttribute('href');

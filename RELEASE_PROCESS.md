@@ -1,25 +1,11 @@
 # Отдельный Release Custom Cabinet
 
-Status: workflow опубликован и проверен настоящими GitHub runs 2026-10-02.
-Stable reference: `cabinet-v2026.10.02.1` / `bundle-v2026.10.02.1`.
-Данные разделов с датой 2026-10-01 ниже относятся к исторической подготовке.
-
-## Выпуск дизайна 2026-10-03
-
-Кандидат `cabinet-v2026.10.03.1` подготовлен из isolated source
-`3b6255597f5ad5270136dd1f683fed980b925a66`; tree
-`8422dc4a2ab015b6025200a3f8c417fa912c38de`.
-Reviewed record: `releases/records/cabinet-v2026.10.03.1.json`.
-Ограниченное compatibility evidence:
-`releases/evidence/compatibility-design-3b62555-877690a7-20261003.md`.
-Installer `installer-v2026.10.02` / `75c49bec9c2a764e123fc0ef675f8c45fc22a1ab`
-и принятое lifecycle evidence переиспользуются при прежних identities/contracts.
-Новый Bundle `bundle-v2026.10.03.1` сначала публикуется как candidate,
-проходит public-byte verification и отдельную disposable installation,
-затем metadata promotion Cabinet и Bundle. Состояние публикации и фактический
-smoke фиксируются в отдельных completion/evidence документах, не в tagged source.
-`latest`, production, прежние tags/Releases/assets и owner working copies
-сохраняются. Production transition требует отдельного разрешения.
+Status: действующий процесс; первый primary выпуск завершён 2026-10-02.
+`cabinet-v2026.10.02.1` stable на source
+`8fb8cbec19d651fcfaee3bce32621031b3e69965`;
+[exact source CI/publication](https://github.com/alexforworkgpt-source/custom-cabinet/actions/runs/37026262757) SUCCESS.
+Общий порядок выпуска и отдельного deployment — Installer
+`docs/deployment-procedure.md`; production runbook находится в корне workspace.
 
 Custom Cabinet Release фиксирует версию исходников и известные ограничения.
 Release Bundle в репозитории Installer содержит готовый frontend и проверенный
@@ -65,9 +51,32 @@ Release Bundle в репозитории Installer содержит готовы
    Предыдущий Installer Release можно использовать повторно, если его код
    не менялся. Кандидат Bundle может проверяться до stable project Releases.
    Перед stable Bundle оба project Releases должны стать stable на exact SHA.
-   В Installer локально подготовлен отдельный `Promote Release Bundle`:
+   В Installer используется отдельный `Promote Release Bundle`:
    порядок и durable evidence описаны в `docs/bundle-promotion-evidence.md`
-   проекта Installer. Его настоящий запуск на GitHub ещё не проверен.
+   проекта Installer. Первый primary Bundle promotion прошёл SUCCESS 2026-10-02.
+   Для Cabinet-only изменения неизменный Installer Release и exact lifecycle
+   evidence переиспользуются; новый Bundle требует своего targeted smoke.
+
+## Подготовка без повторных полных прогонов
+
+Для Cabinet-only выпуска применять Installer
+`docs/cabinet-only-release-checklist.md` вместе с общим deployment procedure.
+После source changes выполнить `npm test` и `npm run build`: последний уже
+включает полный `type-check`. Дополнительный полный локальный прогон на обеих
+Linux Node 24/26 не нужен только ради дублирования publication CI. Встроенные
+source-gates/CodeQL, обе версии Node в tests и approvals остаются обязательными.
+
+Текущий CI не запускает Playwright. Один финальный browser gate выполнить на
+точном compiled artifact до stable: локальном с последующим byte equality
+публичному архиву либо уже скачанном candidate. Не повторять тот же полный
+набор через Vite dev и public artifact при неизменных bytes, test inputs и
+scope. Изменения source, общих компонентов/стилей, окружения или тестов требуют
+повторной проверки затронутого покрытия. Mocks не доказывают live integrations.
+
+Независимость компиляций подтверждать по checklist: второй Docker build может
+использовать кэш. Не считать планируемый Actions run выполненным gate и не
+пропускать targeted smoke именно нового публичного Bundle. Evidence/docs
+обновляются после tested source; source tags и существующие assets сохраняются.
 
 ## Формат reviewed record
 
@@ -121,17 +130,19 @@ evidence допускает публичный GitHub Actions run URL или Git
 Защита этой ветки и environment `production-release` — внешние настройки;
 workflow не создаёт approval rules и сам по себе их не гарантирует.
 
-Read-only проверка GitHub API на 2026-10-01: в Custom Cabinet список environments
-и repository rulesets пуст. `production-release` и защита новых tag prefixes
-должны быть отдельно настроены и проверены до первого внешнего запуска по ADR.
-Настройки здесь не изменялись. Branch protection и native immutability будущих
-Releases этой проверкой не подтверждены.
+На первом primary выпуске 2026-10-02 проверены native immutable Releases,
+защита `cabinet-v*` от update/delete, main через PR без force-push/delete и bypass.
+Независимых branch approvals 0; существующий `production-release` требует owner
+approval, допускает self-review и запрещает admin bypass. Exact source Actions
+и environment approval выполнены. Перед следующим выпуском сверить актуальные
+защиты, не менять настройки и не обходить approvals.
 
 Unit tests, mock/browser tests и build не заменяют живую проверку оплаты,
 Telegram, panel, продления и совместимости с выбранным Bot. Отсутствующее
 покрытие остаётся `BLOCKED` либо явно принятым владельцем ограничением,
 но не записывается как PASS. BSCHEKER и Simple/Lite Mode остаются исключёнными;
-classic auto-purchase остаётся OPEN до отдельного подтверждённого backend fix.
+classic auto-purchase остаётся принятым OPEN ограничением. Backend fix не входит
+в задачи или условия завершения выпуска; backend постоянно неизменен.
 
 ## Сохранение Releases и повторное использование
 
@@ -147,6 +158,31 @@ Cabinet candidate в stable повторным запуском. Такой пе
 promotion workflow пока не подготовлен; Bundle promotion не переводит Cabinet
 Release в stable автоматически.
 
+### Metadata-only перевод Custom Cabinet в stable
+
+1. **В задаче выпуска:** подтвердить разрешение на конкретный пакет и принятые
+   ограничения. Перед переводом нового Cabinet завершить source gates,
+   независимую проверку public metadata и targeted smoke нового Bundle.
+   Это связывает stable статус с фактической проверкой пакета.
+2. **В GitHub API Custom Cabinet:** прочитать Release по ID и dereferenced tag;
+   сверить exact source SHA, `draft=false`, `prerelease=true`, `immutable=true`,
+   notes, asset IDs/names/sizes/digests/URLs и прежний `latest`.
+   Сохранить снимок до изменения; при несовпадении остановиться.
+3. **Для этого Release ID:** выполнить `PATCH /repos/<owner>/<repository>/releases/<id>`
+   только с JSON `{"prerelease": false, "make_latest": "false"}`.
+   Это меняет статус без повторной публикации и замены assets.
+4. **В GitHub API:** повторно прочитать Release и `latest`; подтвердить stable,
+   immutable и прежние notes/tag/source/assets/latest. Если Release уже stable,
+   сверить те же bindings без повторного PATCH. Сохранить receipt и затем
+   выполнить отдельный guarded promotion Bundle в Installer.
+
+Одно разрешение на перечисленные операции конкретного пакета достаточно;
+рутинные шаги не требуют повторных вопросов. Разрешение на Release не означает
+разрешения на production, `latest` или GitHub settings. Backend source/API/
+миграции и выбранный Upstream Bot SHA сохраняются. Исторические Releases
+не перепубликовывать; evidence/docs добавлять после source отдельными commits,
+не перемещая tested source tag.
+
 Исторический стабильный Cabinet Release разрешено использовать в новых Bundles
 без добавления в него нового JSON. Если меняется Bot, новую совместимость
 подтверждают в evidence нового Bundle; старый Cabinet Release не редактируют.
@@ -157,17 +193,11 @@ tag/SHA, фактическая новая дата публикации, ссы
 
 ## Проверка локальной подготовки
 
-Актуальный выполненный выпуск: `cabinet-v2026.10.03.1` и
-`bundle-v2026.10.03.1`, stable, из точного Cabinet source
-`3b6255597f5ad5270136dd1f683fed980b925a66`. Linux Actions, публичные bytes,
-браузерная проверка скачанного artifact и disposable installation завершены.
-Installer `installer-v2026.10.02` и его принятое lifecycle evidence
-переиспользованы по неизменному protected tuple. `latest` и старые Releases
-сохранены; production не обновлялся. Подробности и сохранённые ограничения:
-[итог выпуска](docs/releases/design-release-20261003.1.md),
-[live-check report](docs/releases/LIVE_CHECK_REPORT_2026.10.03.1.md).
-Следующие абзацы — исторический snapshot подготовки 2026-10-01, а не статус
-завершённого выпуска 2026-10-03.
+Следующие записи — исторические результаты подготовки 2026-10-01, не текущий
+статус процесса. Первый primary выпуск на `8fb8cbe…` прошёл actual Linux CI:
+991 frontend + 15 publication tests на каждом Node 24/26, lint/typecheck/build/
+CodeQL SUCCESS; metadata public download и последующий Bundle smoke/promotion
+прошли. Точные receipts — Installer `docs/primary-first-release-completion-20261002.json`.
 
 На 2026-10-01: 991 frontend tests PASS на Node 24.19.0 и 26.10.0
 с `--maxWorkers=2`; Node 24 type-check/build PASS. До release-правок обычный
@@ -186,9 +216,28 @@ Publication fixtures используют временные Git repositories и
 на Linux Debian 12 / Node 24.18.1 / Git 2.39.5 в контейнере без сети и host mounts.
 Это проверяет release scripts на Linux и не заменяет настоящий Actions run.
 
-Настоящие GitHub dispatch, Linux CI/CodeQL, review/environment permissions,
-immutability, public upload/download и живые integration gates здесь
-не выполнены. Локальная подготовка не разрешает push, tag, Release или deploy.
+После отдельного разрешения selective release-process commit
+`2c48c837505a5fb652b6fe8eeb4db9612e25ff5b` создан в чистой копии без прежних
+dirty application changes владельца; сохранён на локальной ветке
+`release/process-stage5-20261001`, без push. Его 12 publication fixtures PASS
+на Node 24.19.0. Прежние frontend gates выше относятся к dirty source владельца,
+а не к новому exact Actions proof этого commit.
+
+GitHub native immutable Releases включены; `cabinet-v*` защищён от update/delete,
+main требует PR и запрещает force-push/delete, bypass actors отсутствуют.
+Независимых branch approvals 0. Environment `production-release` требует owner
+approval, допускает self-review, admin bypass запрещён; разрешены `cabinet-v*`.
+Настройки повторно прочитаны API, но реальный Actions approval не проверен.
+Настоящие dispatch, exact Linux CI/CodeQL и public upload/download не выполнены.
+VPS lifecycle нового Installer с existing Cabinet `5ee46023…` не является
+runtime smoke Cabinet `2c48c837…`. Releases/production не изменялись.
+
+В следующем продолжении exact `2c48c837…` дополнительно прошёл local Linux
+gates: 947 frontend tests/159 files и 12 publication fixtures на Node 24.18.1
+и 26.10.0; Node 24 lint/format/type-check/build PASS с 40 lint warnings.
+`npm ci` использовал committed lockfile внутри контейнера; во время tests
+сеть и host mounts отсутствовали. Все 970 source files совпали с Git archive
+после gates; контейнер удалён. Это не actual Actions/CodeQL или public smoke.
 
 Официальные основания API/workflow:
 [Reuse workflows](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows),

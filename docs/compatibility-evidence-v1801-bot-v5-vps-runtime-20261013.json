@@ -1,0 +1,201 @@
+{
+  "date": "2026-10-13",
+  "status": "TARGETED_VPS_RUNTIME_PASS",
+  "s9": "PARTIAL_NOT_FULL_LIFECYCLE_OR_LIVE_PASS",
+  "authorization": "Owner explicitly authorized test startup and cleanup in this chat; disposable confirmation applied in memory only.",
+  "run_id": "cabv5-vps-20261013-bba0a9bf",
+  "started_at_moscow": "2026-10-13T22:39:52.975973+03:00",
+  "finished_at_moscow": "2026-10-13T22:45:16.602213+03:00",
+  "identities": {
+    "bot_tag": "v5.0.0",
+    "bot_sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+    "bot_image_id": "sha256:43756146ee75c05e09cc0693af9a9cebc39523b1f39d01cadc183c8a3869bdd1",
+    "bot_build": "Unchanged exact source archive; native Dockerfile and frozen uv.lock; actual revision label checked.",
+    "installer_template_source": {
+      "installer_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+      "installer_tree_sha": "6606a783904f81959441b846e757004530728908",
+      "archive_sha256": "eff17b515f9714dcefee88652d884e64598300941f3b9519d77bcf9e2e75752d"
+    },
+    "cabinet_artifact_identity": "4aa5d6ba362760ebdd4f34f18f3a8f91f1de400b5736d1e74948c2d1579b2130",
+    "cabinet_source_commit": null,
+    "cabinet_source_note": "Tested uncommitted working snapshot; no public Release Bundle created.",
+    "postgres": "postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23",
+    "redis": "redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2"
+  },
+  "environment": {
+    "os": "Ubuntu24.04.4/linux-amd64",
+    "docker": "29.9.0",
+    "compose": "5.6.0",
+    "python": "3.14.8",
+    "postgres": "15.19",
+    "redis": "7.4.10",
+    "bot_uid": 1000,
+    "schema": "0131 (native empty-database models + stamp, not migration chain replay)",
+    "test_subscriptions": 0,
+    "test_root": "/opt/bot-stack-integration-v5-20261013",
+    "providers": "disabled; no sandbox merchant inputs used"
+  },
+  "checks": {
+    "native_main_startup_summary": true,
+    "unified_lifespan_health": {
+      "status": "ok",
+      "bot_run_mode": "webhook",
+      "web_api_enabled": true,
+      "telegram_processor_enabled": true,
+      "telegram_processor_running": true,
+      "miniapp_static_mounted": true,
+      "payment_providers": {
+        "tribute": false,
+        "mulenpay": false,
+        "cryptobot": false,
+        "yookassa": false,
+        "pal24": false,
+        "wata": false,
+        "heleket": false,
+        "apple_iap": false,
+        "freekassa": false,
+        "riopay": false
+      }
+    },
+    "https_api": {
+      "status": "PASS",
+      "actual_https_checks": [
+        {
+          "path": "/",
+          "alias": null,
+          "status": 200
+        },
+        {
+          "path": "/assets/AdminApplicationReview-CgwjZT7V.js",
+          "alias": null,
+          "status": 200
+        },
+        {
+          "path": "/assets/DateField-xiMy4gMA.css",
+          "alias": null,
+          "status": 200
+        },
+        {
+          "path": "/profile",
+          "alias": null,
+          "status": 200
+        },
+        {
+          "path": "/health/unified",
+          "alias": null,
+          "status": 200
+        },
+        {
+          "path": "/api/cabinet/branding",
+          "alias": null,
+          "status": 200
+        },
+        {
+          "path": "/api/cabinet/admin/broadcasts/audience/preview",
+          "alias": null,
+          "status": 401
+        },
+        {
+          "path": "/api/cabinet/admin/broadcasts/audience/preview",
+          "alias": "user",
+          "status": 403
+        },
+        {
+          "path": "/api/cabinet/admin/broadcasts/audience/preview",
+          "alias": "admin",
+          "status": 200,
+          "count": 3,
+          "returned_users": 3
+        },
+        {
+          "path": "/api/cabinet/admin/broadcasts/audience/preview",
+          "alias": "marketer",
+          "status": 200,
+          "count": 3,
+          "returned_users": 0
+        },
+        {
+          "path": "/api/cabinet/info/faq?language=ru",
+          "alias": "user",
+          "status": 200
+        },
+        {
+          "path": "/api/cabinet/info/faq?language=en",
+          "alias": "user",
+          "status": 200
+        },
+        {
+          "path": "/api/cabinet/subscription/cashera-recurrent?subscription_id=710001",
+          "alias": "admin",
+          "status": 403
+        },
+        {
+          "path": "/api/cabinet/admin/broadcasts/audience/users?query=proof",
+          "alias": "marketer",
+          "status": 403
+        }
+      ],
+      "compiled_files_byte_verified": 284,
+      "payment_calls": 0,
+      "broadcast_send_calls": 0
+    },
+    "observation_seconds": 60,
+    "containers_healthy": 3,
+    "restarts": 0,
+    "oom": false,
+    "native_panel_read": "Native startup read five server squads from the designated Panel into the isolated test DB; no Panel mutation test.",
+    "jwt_note": "Tokens issued by native helper for fixture users; real HTTPS/auth/DB/RBAC, no overrides. This does not prove login/OAuth/Telegram initData."
+  },
+  "native_log": {
+    "error_level_lines": 0,
+    "tracebacks": 0,
+    "warning_lines": 4,
+    "warnings": [
+      "Native empty DB bootstrap uses models + stamp head.",
+      "No registered env admin existed at initial bootstrap; fixture admin uses native legacy env access.",
+      "Native logo prewarm attempted a photo to the synthetic admin; Telegram rejected chat not found. Successful photo delivery is not claimed.",
+      "One webhook operation logged 1.38s; actor identifiers redacted; no physical client verification claimed."
+    ]
+  },
+  "cleanup": {
+    "owned_runtime": "PASS",
+    "test_webhook": "PASS",
+    "postflight": "PASS",
+    "independent_postflight": {
+      "status": "PASS",
+      "management_exact_runtime_files": 38,
+      "containers": 0,
+      "volumes": 0,
+      "networks": ["bridge", "host", "none"],
+      "test_root_absent": true,
+      "own_caddy_snippet_absent": true,
+      "test_ports_absent": true,
+      "test_webhook_absent": true,
+      "test_pending_updates": 0,
+      "management_launcher_present": true,
+      "caddy_active": true
+    },
+    "caddy": "Own snippet removed; original main configuration restored and validated.",
+    "own_runtime_image_tag": "removed after ownership-label check",
+    "shared_docker_cache": "retained; no global prune or deletion of unknown images/cache",
+    "local_server_env_unchanged": true
+  },
+  "not_verified": [
+    "Full Installer lifecycle for the new exact candidate; previous-to-new update/rollback/recovery.",
+    "All Bot v5 behavior on PG15 and any PG15-to-PG18 transition.",
+    "Real sandbox merchant/old providers, enabled recurring purchase/confirmation/cancel and duplicate/concurrent callbacks.",
+    "Complete role/ABAC matrix, media/proxy flows, actual login/OAuth, real subscription/panel identity/counts.",
+    "Physical Telegram Android/iOS and Mini App end-to-end flows."
+  ],
+  "open_limits": [
+    "Classic auto-purchase dispatcher gap",
+    "Cashera flag-off/reload cancellation discovery",
+    "Three unchanged historical full repository Biome JSON format errors"
+  ],
+  "repeated": {
+    "frontend_tests_build_browser": false,
+    "local_schema_restore_contract_tests": false
+  },
+  "source_or_production_changes": false,
+  "receipts": ".scratch/bedolaga-v5-runtime-20261013/cabv5-vps-20261013-bba0a9bf/"
+}

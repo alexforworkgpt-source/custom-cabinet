@@ -64,9 +64,9 @@ for (const language of ['ru', 'en', 'fa']) {
       await expect(page.locator('[data-renewal-info]')).toContainText('Нидерланды');
       const outerPanel = page.locator('[data-renewal-panel]');
       await expect(outerPanel.locator('[data-renewal-clearance]')).toHaveCount(0);
-      expect(await outerPanel.evaluate((element) => getComputedStyle(element).borderTopWidth)).toBe(
-        '0px',
-      );
+      expect(
+        await outerPanel.evaluate((element) => getComputedStyle(element).borderTopWidth),
+      ).not.toBe('0px');
       await expect(option).toHaveClass(/bento-card-hover/);
       if (language === 'ru') {
         await expect(
@@ -108,11 +108,19 @@ for (const language of ['ru', 'en', 'fa']) {
       await expect(outerPanel.locator('[data-renewal-summary]')).toHaveCount(1);
       await expect(page.locator('[data-renewal-clearance]')).toHaveCount(0);
       const summary = page.locator('[data-renewal-summary]');
-      const panel = await summary.boundingBox();
-      const last = await page.getByRole('button', { name: /^360 / }).boundingBox();
-      const gap = (panel?.y ?? 0) - ((last?.y ?? 0) + (last?.height ?? 0));
-      expect(gap).toBeGreaterThanOrEqual(0);
-      expect(gap).toBeLessThanOrEqual(20);
+      await expect(page.getByRole('button', { name: /^360 / })).toBeVisible();
+      await expect
+        .poll(() =>
+          summary.evaluate((element) => {
+            const last = element
+              .closest('[data-renewal-panel]')
+              ?.querySelector('section[aria-labelledby="renewal-period-label"] button:last-child');
+            if (!last) throw new Error('The last renewal period is missing');
+            const gap = element.getBoundingClientRect().top - last.getBoundingClientRect().bottom;
+            return gap >= 0 && gap <= 20;
+          }),
+        )
+        .toBe(true);
       await action.scrollIntoViewIfNeeded();
       await expect(action).toBeInViewport();
       await page.screenshot({

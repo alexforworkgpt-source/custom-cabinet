@@ -90,78 +90,84 @@ const subscription = {
   hide_subscription_link: false,
 };
 
-test('reveals subscription details before devices and link without moving balance', async ({
-  page,
-}, testInfo) => {
-  // The PRD's mobile geometry target is 390px; at 320px the action text wraps.
-  if ((page.viewportSize()?.width ?? 0) < 375)
-    await page.setViewportSize({ width: 390, height: 844 });
-  if (testInfo.project.name === 'desktop-1280') {
-    await page.setViewportSize({ width: 1440, height: 1000 });
-  }
-  const details = deferred();
-  const devices = deferred();
-  const link = deferred();
-  await prepareAuthenticatedPage(page, {
-    responses: {
-      '/api/cabinet/subscriptions': { subscriptions: [subscription], multi_tariff_enabled: true },
-      '/api/cabinet/subscription': { has_subscription: true, subscription },
-      '/api/cabinet/subscription/devices': { devices: [], total: 0, device_limit: 3 },
-      '/api/cabinet/subscription/connection-link': {
-        subscription_url: subscription.subscription_url,
-        display_link: subscription.subscription_url,
-        connect_mode: 'plain',
-        hide_link: false,
+for (const trafficLimit of [100, 0]) {
+  test(`reveals subscription details before devices and link without moving balance (${trafficLimit ? 'limited' : 'unlimited'})`, async ({
+    page,
+  }, testInfo) => {
+    // The PRD's mobile geometry target is 390px; at 320px the action text wraps.
+    if ((page.viewportSize()?.width ?? 0) < 375)
+      await page.setViewportSize({ width: 390, height: 844 });
+    if (testInfo.project.name === 'desktop-1280') {
+      await page.setViewportSize({ width: 1440, height: 1000 });
+    }
+    const details = deferred();
+    const devices = deferred();
+    const link = deferred();
+    const selectedSubscription = { ...subscription, traffic_limit_gb: trafficLimit };
+    await prepareAuthenticatedPage(page, {
+      responses: {
+        '/api/cabinet/subscriptions': {
+          subscriptions: [selectedSubscription],
+          multi_tariff_enabled: true,
+        },
+        '/api/cabinet/subscription': { has_subscription: true, subscription: selectedSubscription },
+        '/api/cabinet/subscription/devices': { devices: [], total: 0, device_limit: 3 },
+        '/api/cabinet/subscription/connection-link': {
+          subscription_url: subscription.subscription_url,
+          display_link: subscription.subscription_url,
+          connect_mode: 'plain',
+          hide_link: false,
+        },
+        '/api/cabinet/subscription/refresh-traffic': {
+          traffic_used_gb: 10,
+          traffic_used_percent: 10,
+          is_unlimited: trafficLimit === 0,
+        },
       },
-      '/api/cabinet/subscription/refresh-traffic': {
-        traffic_used_gb: 10,
-        traffic_used_percent: 10,
-        is_unlimited: false,
-      },
-    },
-  });
-  await page.route(/\/api\/cabinet\/subscription(?:\?|$)/, async (route) => {
-    await details.promise;
-    await route.fallback();
-  });
-  await page.route('**/api/cabinet/subscription/devices**', async (route) => {
-    await devices.promise;
-    await route.fallback();
-  });
-  await page.route('**/api/cabinet/subscription/connection-link**', async (route) => {
-    await link.promise;
-    await route.fallback();
-  });
+    });
+    await page.route(/\/api\/cabinet\/subscription(?:\?|$)/, async (route) => {
+      await details.promise;
+      await route.fallback();
+    });
+    await page.route('**/api/cabinet/subscription/devices**', async (route) => {
+      await devices.promise;
+      await route.fallback();
+    });
+    await page.route('**/api/cabinet/subscription/connection-link**', async (route) => {
+      await link.promise;
+      await route.fallback();
+    });
 
-  await page.goto('/?sub=7');
-  await expect(page.getByRole('heading', { name: 'Traffic usage' })).toBeVisible();
-  await expect(page.getByText('Selected plan')).toHaveCount(0);
-  const balanceCard = page.getByRole('link', { name: /Balance/ }).first();
-  const beforeDetails = (await balanceCard.boundingBox())?.y;
-  details.release();
-  await expect(page.getByText('Selected plan')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Manage subscription' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Copy Link' })).toHaveCount(0);
+    await page.goto('/?sub=7');
+    await expect(page.getByRole('heading', { name: 'Your Subscription' })).toBeVisible();
+    await expect(page.getByText('Selected plan')).toHaveCount(0);
+    const balanceCard = page.getByRole('link', { name: /Balance/ }).first();
+    const beforeDetails = (await balanceCard.boundingBox())?.y;
+    details.release();
+    await expect(page.getByText('Selected plan')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Manage subscription' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Copy Link' })).toHaveCount(0);
 
-  const before = (await balanceCard.boundingBox())?.y;
-  devices.release();
-  await expect(page.getByRole('button', { name: /Set Up VPN/ })).toBeVisible();
-  const afterDevices = (await balanceCard.boundingBox())?.y;
-  link.release();
-  await expect(page.getByRole('button', { name: 'Copy Link' })).toBeVisible();
-  const afterLink = (await balanceCard.boundingBox())?.y;
-  if (
-    beforeDetails === undefined ||
-    before === undefined ||
-    afterDevices === undefined ||
-    afterLink === undefined
-  ) {
-    throw new Error('Balance must remain visible during subscription loading');
-  }
-  expect(Math.abs(before - beforeDetails)).toBeLessThanOrEqual(4);
-  expect(Math.abs(afterDevices - before)).toBeLessThanOrEqual(4);
-  expect(Math.abs(afterLink - afterDevices)).toBeLessThanOrEqual(4);
-});
+    const before = (await balanceCard.boundingBox())?.y;
+    devices.release();
+    await expect(page.getByRole('button', { name: /Set Up VPN/ })).toBeVisible();
+    const afterDevices = (await balanceCard.boundingBox())?.y;
+    link.release();
+    await expect(page.getByRole('button', { name: 'Copy Link' })).toBeVisible();
+    const afterLink = (await balanceCard.boundingBox())?.y;
+    if (
+      beforeDetails === undefined ||
+      before === undefined ||
+      afterDevices === undefined ||
+      afterLink === undefined
+    ) {
+      throw new Error('Balance must remain visible during subscription loading');
+    }
+    expect(Math.abs(before - beforeDetails)).toBeLessThanOrEqual(4);
+    expect(Math.abs(afterDevices - before)).toBeLessThanOrEqual(4);
+    expect(Math.abs(afterLink - afterDevices)).toBeLessThanOrEqual(4);
+  });
+}
 
 test('ends balance loading on error and shows the real value after retry', async ({ page }) => {
   await prepareAuthenticatedPage(page, {
@@ -218,9 +224,9 @@ test('ends subscription loading on error and restores the card after retry', asy
     .getByRole('alert')
     .filter({ hasText: 'Subscription data could not be loaded' });
   await expect(error).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Traffic usage' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Subscription active' })).toHaveCount(0);
   await error.getByRole('button', { name: 'Retry' }).click();
-  await expect(page.getByRole('heading', { name: 'Traffic usage' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Subscription active' })).toBeVisible();
   expect(attempts).toBeGreaterThanOrEqual(2);
 });
 

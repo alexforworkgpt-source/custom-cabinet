@@ -2,7 +2,11 @@ import { useTranslation } from 'react-i18next';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
 /** Reserve the same status, metrics, management, connection and link areas as the loaded card. */
-export default function SubscriptionCardSkeleton() {
+export default function SubscriptionCardSkeleton({
+  showTrafficProgress = true,
+}: {
+  showTrafficProgress?: boolean;
+}) {
   const { t } = useTranslation();
   return (
     <SkeletonGroup className="space-y-3">
@@ -18,7 +22,7 @@ export default function SubscriptionCardSkeleton() {
         <div className="mt-2 grid grid-cols-2 border-t border-dark-700/60 pt-3" aria-hidden="true">
           <div className="min-w-0 pe-3 sm:pe-5">
             <Skeleton className="mb-1 h-8 w-3/4 rounded-xl" />
-            <Skeleton className="h-8 w-20 rounded" />
+            <Skeleton className="h-8 w-20 rounded sm:h-9" />
             <Skeleton className="mt-1 h-4 w-24 rounded" />
           </div>
           <div className="min-w-0 border-s border-dark-700/60 ps-3 sm:ps-5">
@@ -26,7 +30,8 @@ export default function SubscriptionCardSkeleton() {
             <Skeleton className="h-8 w-full rounded" />
           </div>
         </div>
-        <Skeleton className="mt-3 min-h-11 w-full rounded-[14px]" />
+        {showTrafficProgress && <Skeleton className="mt-2 h-2 w-full rounded-full" />}
+        <Skeleton className="mt-3 h-12 w-full rounded-[14px]" />
       </section>
       <div
         className="flex min-h-[72px] items-center gap-3 rounded-[14px] bg-dark-900 p-3"

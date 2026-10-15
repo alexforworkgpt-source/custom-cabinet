@@ -88,6 +88,7 @@ describe('legacy subscription primary action', () => {
       '/subscription/purchase?subscriptionId=42',
     );
     expect(screen.getByText('subscription.cta.moveToTariff')).toBeTruthy();
+    expect(screen.queryByText('subscription.cta.renewHint')).toBeNull();
   });
 });
 
@@ -119,7 +120,7 @@ describe('tariff subscription primary action', () => {
       expect(screen.getByText('subscription.extend')).toBeTruthy();
       expect(
         screen.getByText(
-          status === 'active' ? 'subscription.cta.activeHint' : 'subscription.cta.expiredHint',
+          status === 'active' ? 'subscription.cta.activeHint' : 'subscription.cta.renewHint',
         ),
       ).toBeTruthy();
     },
@@ -165,6 +166,7 @@ describe('tariff subscription primary action', () => {
 
     expect(screen.getByRole('link').getAttribute('href')).toBe('/subscriptions/42/renew');
     expect(screen.getByText('subscription.extend')).toBeTruthy();
+    expect(screen.getByText('subscription.cta.activeHint')).toBeTruthy();
   });
 });
 

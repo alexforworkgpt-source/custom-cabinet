@@ -51,7 +51,7 @@ const featureDisabled = () =>
     response: { status: 403, data: { detail: 'Platega recurrent disabled' } },
   });
 
-const calls = { sbp: [] as number[], lava: [] as number[] };
+const calls = { sbp: [] as number[], lava: [] as number[], cashera: [] as number[] };
 const state = {
   purchaseOptions: {} as Record<string, unknown>,
   requiresTariff: false,
@@ -78,6 +78,10 @@ const subscription = (id: number) => ({
 
 vi.mock('@/api/subscription', () => ({
   subscriptionApi: {
+    getCasheraRecurring: (id: number) => {
+      calls.cashera.push(id);
+      return Promise.resolve({ status: 'none' });
+    },
     getSbpRecurring: (id: number) => {
       calls.sbp.push(id);
       return featureDisabled();
@@ -168,6 +172,11 @@ async function renderSavedCards() {
 }
 
 describe('страница подписки', () => {
+  it('does not probe the new provider when its support flag is absent', async () => {
+    calls.cashera.length = 0;
+    await renderSubscription();
+    expect(calls.cashera).toEqual([]);
+  });
   it('не спрашивает состояние автооплаты, когда она выключена', async () => {
     await renderSubscription();
 

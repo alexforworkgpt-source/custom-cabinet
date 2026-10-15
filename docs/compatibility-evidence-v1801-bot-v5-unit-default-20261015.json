@@ -1,0 +1,90 @@
+{
+  "kind": "local-default-unit-concurrency-recovery",
+  "date": "2026-10-15",
+  "result": "PASS_IN_SCOPE",
+  "local_ordinary_unit_gate": "PASS",
+  "full_s9": "PARTIAL",
+  "full_live_gate": "BLOCKED",
+  "publication_readiness": "NOT_CLAIMED",
+  "identities": {
+    "custom_cabinet_head": "1169e3cb964caec9a9500ace89bbb53b7e5a89df",
+    "owner_changes_uncommitted": true,
+    "upstream_cabinet_sha": "a693d30ca6084b9a54b45a72294b99237841ef13",
+    "intended_unchanged_bot_sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+    "compiled_manifest_sha256": "0aa20cd0f035ec41fd4f0270a1b4e94f04a0bd03075d92e3493334728bd170d0",
+    "compiled_files": 284,
+    "before_config_sha256": "8eaafa8e821fcb9487c6a3ff06663ea128bd5ce4b77516c0bc1e38e3c9e74ffc"
+  },
+  "environment": {
+    "os": "Windows",
+    "node": "24.19.0",
+    "vitest": "4.1.11",
+    "available_parallelism": 16,
+    "pool": "forks",
+    "isolate": true,
+    "test_timeout_ms": 5000,
+    "hook_timeout_ms": 10000
+  },
+  "diagnosis": {
+    "baseline": {
+      "result": "FAIL",
+      "passed": 1082,
+      "failed": 2,
+      "modules": 176,
+      "automatic_concurrency": true,
+      "observed_overlapping_module_intervals": 13,
+      "log_sha256": "0c3b8baff9e0708a1bb8744ac1f5133e0298d4a99c546374ab6e5e71d03aedfc"
+    },
+    "worker_only_control": {
+      "result": "PASS",
+      "passed": 1084,
+      "failed": 0,
+      "modules": 176,
+      "max_workers": 2,
+      "observed_overlapping_module_intervals": 2,
+      "test_timeout_ms": 5000,
+      "log_sha256": "70e7c8ceb8a908b2a7c29dbea361e34901569d74d4ae071a7aad4b3499c78f48"
+    },
+    "same_source_and_reporter_between_baseline_and_control": true,
+    "observed_trigger": "High automatic concurrency; first page test timeout then duplicate-DOM assertion",
+    "general_cancellation_defect_claimed": false
+  },
+  "change": {
+    "file": "vitest.config.ts",
+    "max_workers": 2,
+    "matches_existing_ci_worker_limit": true,
+    "application_or_test_assertions_changed": false,
+    "timeout_skip_retry_isolation_or_pool_changed": false
+  },
+  "final_ordinary_command": {
+    "command": "npm test",
+    "extra_arguments_or_diagnostic_reporters": false,
+    "result": "PASS",
+    "tests": 1084,
+    "files": 176,
+    "started_at_utc": "2026-10-15T08:28:49.485427+00:00",
+    "finished_at_utc": "2026-10-15T08:30:18.073540+00:00",
+    "log_sha256": "ba905c9a543c49c44fbc642656f7f500f4e48f950a1f73d5859d076ab6b3d2a5"
+  },
+  "other_checks": {
+    "build_both_typescript": "PASS",
+    "build_log_sha256": "ede0f3710bfe95c3805eb8ad0c1b54148c0d3172345f9c34f13bb6154a8272b4",
+    "focused_biome": "PASS",
+    "git_diff_check": "PASS",
+    "all_284_compiled_files_unchanged_after_build": true,
+    "previous_1146_pass_35_skip_browser_gate_reused_by_byte_identity": true,
+    "full_repository_biome_node26_linux_ci_publication_workflows": "NOT_RUN"
+  },
+  "preservation": {
+    "initial_inventoried_files": 1268,
+    "owner_head_unrelated_files_installer_preserved": true,
+    "earlier_failures_retained": true,
+    "closed_live_gates_repeated": false,
+    "remote_backend_provider_panel_commit_release_production_operations": 0
+  },
+  "remaining": [
+    "Full live integration and physical Telegram/device/accessibility coverage",
+    "Remaining merchant capture/refund/recurring/Cashera and initial paid concurrency",
+    "Recorded OPEN limits and applicable publication gates"
+  ]
+}

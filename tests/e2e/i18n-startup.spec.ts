@@ -27,7 +27,7 @@ async function delayEnglishDictionary(page: Page) {
     releaseRequest = resolve;
   });
 
-  await page.route('**/src/locales/en.json*', async (route) => {
+  await page.route(/\/(?:src\/locales\/en\.json|assets\/en-[^/]+\.js)(?:\?|$)/, async (route) => {
     markRequested();
     await released;
     await route.continue();

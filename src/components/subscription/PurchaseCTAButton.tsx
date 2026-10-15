@@ -54,14 +54,16 @@ export default function PurchaseCTAButton({
   const hintText = isClassicRenewal
     ? t('subscription.classicRenewHint')
     : isExpired
-      ? t('subscription.cta.expiredHint')
+      ? t(
+          !requiresTariff && (canRenewCurrentSubscription || isMultiTariff)
+            ? 'subscription.cta.renewHint'
+            : 'subscription.cta.expiredHint',
+        )
       : requiresTariff
         ? t('subscription.cta.moveToTariffHint')
         : isTrial
           ? t('subscription.cta.trialHint')
-          : isMultiTariff
-            ? t('subscription.cta.renewHint', 'Продление подписки')
-            : t('subscription.cta.activeHint');
+          : t('subscription.cta.activeHint');
 
   // Trial → purchase page (buy a real tariff, trial can't be renewed)
   // Paid classic, periodic tariff and multi-tariff → per-subscription renew page

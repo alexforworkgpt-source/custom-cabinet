@@ -1,4 +1,7 @@
-export type RecurringFeatureKey = 'platega_recurrent_enabled' | 'lava_recurrent_enabled';
+export type RecurringFeatureKey =
+  | 'platega_recurrent_enabled'
+  | 'lava_recurrent_enabled'
+  | 'cashera_recurrent_enabled';
 
 /** Старые Bot версии не присылают флаг: тогда сохраняем прежнюю 403-пробу. */
 export function isRecurringFeatureOff(purchaseOptions: unknown, key: RecurringFeatureKey): boolean {

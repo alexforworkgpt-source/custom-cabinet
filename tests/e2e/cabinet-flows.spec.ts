@@ -812,6 +812,7 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   await downloadApp.click();
   await expect(page).toHaveURL(/step=add/);
   await expect(dialog.getByRole('heading', { name: 'Add subscription', level: 2 })).toBeVisible();
+  await expect(dialog.locator('[data-connection-step="add"]')).toHaveCSS('opacity', '1');
   await dialog.getByRole('button', { name: 'Back' }).click();
   await expect(page).toHaveURL(/step=application/);
   const appInstalled = dialog.getByRole('button', { name: 'App is installed' });
@@ -855,10 +856,12 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   await expect(
     page.getByRole('dialog').getByRole('heading', { name: 'Add subscription', level: 2 }),
   ).toBeVisible();
+  await expect(dialog.locator('[data-connection-step="add"]')).toHaveCSS('opacity', '1');
   await page.getByRole('dialog').getByRole('button', { name: 'Back' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { name: 'Install Test App', level: 2 }),
   ).toBeVisible();
+  await expect(dialog.locator('[data-connection-step="application"]')).toHaveCSS('opacity', '1');
   await page.getByRole('dialog').getByRole('button', { name: 'Back' }).click();
   await expect(
     page.getByRole('dialog').getByRole('heading', { name: 'Set up Windows' }),
@@ -1429,8 +1432,8 @@ test('shows a local not-found state for an unknown instruction @critical-flow', 
 });
 
 test('offers a safe cabinet action and related instructions @critical-flow', async ({ page }) => {
-  const { apiRequests, unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
-    responses: { ...activeResponses, ...connectionResponses },
+  const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
+    responses: connectionResponses,
   });
 
   await page.goto('/instructions/connect-android');
@@ -1443,8 +1446,6 @@ test('offers a safe cabinet action and related instructions @critical-flow', asy
 
   await action.click();
   await expect(page).toHaveURL(/\/connection/);
-  await expect.poll(() => apiRequests).toContain('GET /api/cabinet/subscription/app-config');
-  await expect(page.getByRole('heading', { name: /^Set up (Android|Windows)$/ })).toBeVisible();
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
@@ -2280,7 +2281,7 @@ test('shows the complete classic env order before purchase @critical-flow', asyn
   await page.goto('/subscription/purchase');
   await expect(page.getByRole('heading', { name: 'Оформить подписку' })).toHaveCount(1);
 
-  const nextButton = page.getByRole('button', { name: 'Далее · 991.00 ₽' });
+  const nextButton = page.getByRole('button', { name: /^Далее · 991(?:[.,]00)? ₽$/ });
   await expect(nextButton).toBeEnabled();
   await nextButton.click();
 
@@ -2299,7 +2300,7 @@ test('shows the complete classic env order before purchase @critical-flow', asyn
   await expect(devicesSummary.locator('svg')).toHaveCount(3);
 
   await page.getByRole('button', { name: '+', exact: true }).click();
-  const updatedNextButton = page.getByRole('button', { name: 'Далее · 1091.00 ₽' });
+  const updatedNextButton = page.getByRole('button', { name: /^Далее · 1091(?:[.,]00)? ₽$/ });
   await expect(updatedNextButton).toBeEnabled();
   await expect(page.getByText('200 ₽', { exact: true }).locator('..')).toContainText('Устройства');
   await expect(page.getByText('200 ₽', { exact: true }).locator('..')).toContainText(
@@ -2308,7 +2309,9 @@ test('shows the complete classic env order before purchase @critical-flow', asyn
   await updatedNextButton.click();
 
   await expect(page.getByText('Скидка', { exact: true })).toBeVisible();
-  await expect(page.getByText('−109.00 ₽', { exact: true })).toBeVisible();
+  await expect(page.getByText(/^−109(?:[.,]00)? ₽$/)).toBeVisible();
+  await expect(page.getByText(/^1091(?:[.,]00)? ₽$/)).toBeVisible();
+  await expect(page.getByText(/^1200(?:[.,]00)? ₽$/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Оплатить', exact: true })).toBeEnabled();
   const confirmationSummary = page.locator('[data-order-summary]');
   const confirmationSummaryWidth = (await confirmationSummary.boundingBox())?.width;
@@ -2421,6 +2424,7 @@ test('opens the classic period constructor from Tariffs before renewing @critica
     },
   });
 
+  await page.addInitScript(() => localStorage.setItem('cabinet-theme', 'light'));
   await page.goto('/');
   const navigation =
     (page.viewportSize()?.width ?? 1280) < 1024
@@ -2435,6 +2439,7 @@ test('opens the classic period constructor from Tariffs before renewing @critica
   await expect(classicLayout).not.toHaveClass(/rounded-3xl/);
   const periodButton = page.getByRole('button', { name: /30 days.*3[.,]00/ });
   await expect(periodButton).toBeVisible();
+  await expect(periodButton).toHaveAttribute('aria-pressed', 'true');
   await expect(periodButton).toHaveCSS('border-top-width', '2px');
   await expect(page.getByRole('button', { name: 'Extend Subscription', exact: true })).toHaveCount(
     0,

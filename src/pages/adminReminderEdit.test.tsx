@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReminderResponse } from '@/api/adminReminders';
+import { PlatformProvider } from '@/platform/PlatformProvider';
 import { usePermissionStore } from '@/store/permissions';
 
 const { api } = vi.hoisted(() => ({
@@ -13,6 +14,7 @@ const { api } = vi.hoisted(() => ({
     update: vi.fn(),
     audience: vi.fn(),
     test: vi.fn(),
+    list: vi.fn(),
   },
 }));
 
@@ -22,20 +24,29 @@ vi.mock('react-i18next', () => ({
 vi.mock('@/api/adminReminders', () => ({ adminRemindersApi: api }));
 
 import AdminReminderEdit from './AdminReminderEdit';
+import AdminReminders from './AdminReminders';
 
-function renderAt(path: string) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function renderAt(path: string, cachedReminders?: ReminderResponse[]) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, staleTime: cachedReminders ? Infinity : 0 } },
+  });
+  if (cachedReminders) client.setQueryData(['admin-reminders'], cachedReminders);
   return {
     client,
     ...render(
       <QueryClientProvider client={client}>
-        <MemoryRouter initialEntries={[path]}>
-          <Routes>
-            <Route path="/admin/reminders/create" element={<AdminReminderEdit />} />
-            <Route path="/admin/reminders/:id/edit" element={<AdminReminderEdit />} />
-            <Route path="/admin/reminders" element={<div>list</div>} />
-          </Routes>
-        </MemoryRouter>
+        <PlatformProvider>
+          <MemoryRouter initialEntries={[path]}>
+            <Routes>
+              <Route path="/admin/reminders/create" element={<AdminReminderEdit />} />
+              <Route path="/admin/reminders/:id/edit" element={<AdminReminderEdit />} />
+              <Route
+                path="/admin/reminders"
+                element={cachedReminders ? <AdminReminders /> : <div>list</div>}
+              />
+            </Routes>
+          </MemoryRouter>
+        </PlatformProvider>
       </QueryClientProvider>,
     ),
   };
@@ -84,6 +95,23 @@ describe('AdminReminderEdit', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+  });
+
+  it('shows the saved reminder after returning to a previously cached list', async () => {
+    api.get.mockResolvedValue(baseReminder);
+    api.audience.mockResolvedValue({ bot: 1, cabinet: 1 });
+    const updated = { ...baseReminder, name: 'Обновлённое' };
+    api.update.mockResolvedValue(updated);
+    api.list.mockResolvedValue([updated]);
+    renderAt('/admin/reminders/5/edit', [baseReminder]);
+
+    await screen.findByDisplayValue('Существующее');
+    fireEvent.change(screen.getByLabelText('admin.reminders.form.name'), {
+      target: { value: 'Обновлённое' },
+    });
+    fireEvent.click(screen.getByText('admin.reminders.form.save'));
+    expect(await screen.findByText('Обновлённое')).toBeTruthy();
+    expect(screen.queryByText('Существующее')).toBeNull();
   });
 
   it('builds the audience request and saved payload from the public form', async () => {

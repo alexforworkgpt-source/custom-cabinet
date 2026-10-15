@@ -1,0 +1,199 @@
+{
+  "kind": "native-first-local-payment-processing-fixture",
+  "result": "PARTIAL_WITH_PROVIDER_READ_LIMIT",
+  "native_probe_result": "NOT_PASS",
+  "eight_delivery_gate": "NOT_PASS",
+  "financial_invariant": "PASS_IN_OBSERVED_SCOPE",
+  "full_s9": "PARTIAL",
+  "identities": {
+    "bot_sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+    "installer_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+    "native_image_id": "sha256:bf27d5f0e1b9ec0b46979be6536877ced98b00c822b32d1e03a80a4677da6205",
+    "sdk_version": "3.12.1",
+    "target_os": "ubuntu-24.04",
+    "images": {
+      "postgres": "postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23",
+      "redis": "redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2"
+    },
+    "cabinet_reference": {
+      "bundle": "bundle-v2026.10.10.1",
+      "artifact_sha256": "a3f119a4548d7f49067406e1a4e15f3020d1eeff1da00490130e1600ec40d0b0",
+      "artifact_url": "https://github.com/alexforworkgpt-source/installer/releases/download/bundle-v2026.10.10.1/cabinet-dist.tar.gz",
+      "backend_contract": "1",
+      "repository": "https://github.com/alexforworkgpt-source/custom-cabinet.git",
+      "source_sha": "1d046656fbb01a928fd54a28694e10105d4185f8"
+    }
+  },
+  "scope": "first local service processing of a native pending fixture; existing real succeeded test provider object",
+  "before": {
+    "balance_kopeks": 0,
+    "transaction_count": 0,
+    "payment_status": "pending",
+    "is_paid": false,
+    "transaction_linked": false,
+    "subscriptions": 0
+  },
+  "held_before_release": {
+    "balance_kopeks": 0,
+    "transaction_count": 0,
+    "payment_status": "pending",
+    "is_paid": false,
+    "transaction_linked": false,
+    "subscriptions": 0
+  },
+  "after": {
+    "balance_kopeks": 5000,
+    "transaction_count": 1,
+    "payment_status": "succeeded",
+    "is_paid": true,
+    "transaction_linked": true,
+    "subscriptions": 0
+  },
+  "attempted_native_deliveries": 8,
+  "independent_initial_db_sessions": 8,
+  "confirmed_waiting_sessions_before_release": 6,
+  "successful_native_deliveries": 6,
+  "unsuccessful_native_deliveries": 2,
+  "outcomes": [
+    {
+      "index": 0,
+      "returned": true,
+      "exception": null
+    },
+    {
+      "index": 1,
+      "returned": true,
+      "exception": null
+    },
+    {
+      "index": 2,
+      "returned": true,
+      "exception": null
+    },
+    {
+      "index": 3,
+      "returned": true,
+      "exception": null
+    },
+    {
+      "index": 4,
+      "returned": true,
+      "exception": null
+    },
+    {
+      "index": 5,
+      "returned": false,
+      "exception": null
+    },
+    {
+      "index": 6,
+      "returned": true,
+      "exception": null
+    },
+    {
+      "index": 7,
+      "returned": false,
+      "exception": null
+    }
+  ],
+  "financial_invariant_pass": true,
+  "all_eight_delivery_outcomes_pass": false,
+  "all_eight_overlap_proof_pass": false,
+  "isolation": {
+    "separate_empty_database": true,
+    "schema_only_copy_no_owner_rows": true,
+    "separate_empty_redis": true,
+    "same_native_image": true,
+    "postgres_row_lock_guard_is_external_fixture": true,
+    "handler_or_provider_call_monkeypatched_by_probe": false,
+    "native_upstream_timeout_wrapper_preserved": true,
+    "original_paid_payment_record_reset": false
+  },
+  "provider": {
+    "existing_real_succeeded_test_object_reused": true,
+    "amount_kopeks": 5000,
+    "test": true,
+    "new_provider_payment_created": false,
+    "provider_mutation_calls": 0,
+    "native_read_attempts_in_race_log": 9,
+    "real_first_provider_delivery": false,
+    "simultaneous_https_callbacks": false
+  },
+  "provider_read_diagnostic": {
+    "serial_confirmed": 2,
+    "serial_calls": 3,
+    "parallel_confirmed": 8,
+    "parallel_calls": 8,
+    "database_calls": 0,
+    "provider_mutation_calls": 0,
+    "race_fixture_repeated": false,
+    "initial_trace_classes": {
+      "ReadTimeout": 2,
+      "AttributeError": 2
+    },
+    "diagnostic_trace_classes": {
+      "ReadTimeout": 1,
+      "AttributeError": 1
+    },
+    "source_trace": "ReadTimeout has no HTTP response; installed SDK request exception path calls __handle_error(e.response=None), which dereferences status_code and raises AttributeError",
+    "deterministic_parallel_shared_client_cause_confirmed": false,
+    "limitation": "L-PAY-API-01 OPEN"
+  },
+  "targeted_source_integrity": {
+    "checked_files": 2,
+    "differences": [],
+    "reference": "raw Git blobs at exact Bot SHA; new SDK diagnostic scope, not full810-file image proof"
+  },
+  "cleanup": {
+    "owned_database_absent": true,
+    "owned_containers_absent": true,
+    "original_stack_core_configuration_images_unchanged": true,
+    "entire_vps_cleaned": false,
+    "independent_database_and_container_absence": true,
+    "original_stack_configuration_core_images_unchanged": true,
+    "local_server_env_unchanged": true,
+    "runtime_left_running": true
+  },
+  "services_after": [
+    {
+      "service": "bot",
+      "status": "running",
+      "health": "healthy",
+      "restart_count": 0,
+      "oom_killed": false
+    },
+    {
+      "service": "postgres",
+      "status": "running",
+      "health": "healthy",
+      "restart_count": 0,
+      "oom_killed": false
+    },
+    {
+      "service": "redis",
+      "status": "running",
+      "health": "healthy",
+      "restart_count": 0,
+      "oom_killed": false
+    }
+  ],
+  "backend_source_modified": false,
+  "frontend_source_modified": false,
+  "panel_write_calls": 0,
+  "subscription_mutation_calls": 0,
+  "previous_source_schema_browser_lifecycle_role_abac_gates_repeated": false,
+  "public_release_created": false,
+  "production_modified": false,
+  "native_raw_log_sha256": "5b12d1574390109c85f3cf982c4b062fa2a59369ca76485725cedff671249bd6",
+  "schema_only_clone_sha256": "3ae80765fbc77325dc82328eb17d4d953990bb037dc58dc7877f953850cec556",
+  "private_receipts": "workspace .scratch/bedolaga-v5-payment-race-20261014/",
+  "checked_at_utc": "2026-10-14T15:51:20.527232+00:00",
+  "postflight_at_utc": "2026-10-14T16:03:15.541954+00:00",
+  "remaining": [
+    "eight fully provider-confirmed first-local deliveries not proved by financial run",
+    "actual initial merchant payment and simultaneous HTTPS callbacks not tested",
+    "L-PAY-API-01 SDK transport-error reporting limit remains OPEN",
+    "ABAC L-ABAC-01/02 remain OPEN",
+    "remaining payment/capture/refund/recurring/physical-device/Panel/public-Bundle scopes"
+  ]
+}

@@ -128,7 +128,10 @@ beforeEach(() => {
   });
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 describe('AdminPromoGroups recalculation', () => {
   it('shows queued work, polls through completion, refreshes member counts and keeps the last result visible', async () => {
@@ -157,7 +160,8 @@ describe('AdminPromoGroups recalculation', () => {
   });
 
   it('starts a pass only for an editor and exposes a queued response', async () => {
-    api.startStatus = { ...idle, running: true, queued: true, reason: 'started from cabinet' };
+    const queued = { ...idle, running: true, queued: true, reason: 'started from cabinet' };
+    api.startStatus = queued;
     api.statuses = [idle];
     renderPage();
 
@@ -165,6 +169,9 @@ describe('AdminPromoGroups recalculation', () => {
       name: resolveRu('admin.promoGroups.recalculate') as string,
     });
     await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false));
+    api.statuses = [queued];
+    // Assert the mutation response independently of polling, which has separate tests.
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     fireEvent.click(button);
 
     await waitFor(() => expect(api.startCalls).toBe(1));

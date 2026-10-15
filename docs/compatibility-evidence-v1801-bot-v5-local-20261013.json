@@ -1,0 +1,287 @@
+{
+  "date": "2026-10-13",
+  "status": "LOCAL_SCHEMA_AND_SELECTED_CONTRACTS_PASS",
+  "s9": "PARTIAL_NOT_FULL_STAGING_PASS",
+  "source": {
+    "tag": "v5.0.0",
+    "sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+    "unchangedTrackedFiles": 1835,
+    "unchangedImageApplicationFiles": 941
+  },
+  "images": [
+    {
+      "name": "local/bedolaga-v5-proof:20261013",
+      "id": "sha256:c1451a83c2d674e9c8bf4f9ac0f68a61f0844703d1618e3d17b158b65d50fcf3",
+      "architecture": "amd64",
+      "os": "linux",
+      "revision": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae"
+    },
+    {
+      "name": "local/bedolaga-v5-proof-tests:20261013",
+      "id": "sha256:12c48191f6f5d0eda2638108cab8a950bc142dffee63b87270539776ac90c2d5",
+      "architecture": "amd64",
+      "os": "linux",
+      "revision": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae"
+    }
+  ],
+  "previousImage": {
+    "id": "sha256:f2e0b7e9210d95f8a7d315ea8eaf686bc8f67cc6fba62e52ad77225924e74ebd",
+    "digests": [
+      "local/bedolaga-upstream-bot@sha256:f2e0b7e9210d95f8a7d315ea8eaf686bc8f67cc6fba62e52ad77225924e74ebd"
+    ],
+    "revision": "877690a7039d1326b2c00eda3e297879b80c0678"
+  },
+  "postgresImage": {
+    "id": "sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23",
+    "digests": ["postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23"]
+  },
+  "redisImage": {
+    "id": "sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2",
+    "digests": ["redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2"]
+  },
+  "environment": {
+    "runtime": "Docker Desktop Linux/amd64 on local Windows host",
+    "python": "3.14.8",
+    "postgres": "postgres (PostgreSQL) 15.19",
+    "redis": "Redis server v=7.4.10 sha=00000000:0 malloc=jemalloc-5.3.0 bits=64 build=d70b7db78d693e15",
+    "providers": "disabled/fake credentials; no live merchant",
+    "externalServiceNetwork": "private Docker --internal network, no published ports",
+    "upstreamMount": "read-only for pytest",
+    "desktopInitialState": "stopped",
+    "desktopStopRequestedAfterProof": true
+  },
+  "schema": {
+    "fresh": "0131",
+    "upgrade": "0127 -> 0128 -> 0129 -> 0130 -> 0131",
+    "repeatedUpgrade": "PASS",
+    "testBalanceSubscriptionSentinels": "preserved",
+    "restore": "0127 with old unchanged Bot; sentinels preserved",
+    "backup": {
+      "bytes": 516381,
+      "sha256": "3b07d9a90bde28a97a3e8858706bd54a12554746f5146793c554c86fe4415af0"
+    },
+    "steps": [
+      {
+        "name": "fresh-v5",
+        "result": {
+          "mode": "migrate",
+          "revision": "0131",
+          "tables": 128,
+          "sentinel": [],
+          "subscription": [],
+          "redis_cache_roundtrip": true
+        }
+      },
+      {
+        "name": "baseline-v415",
+        "result": {
+          "mode": "migrate",
+          "revision": "0127",
+          "tables": 125,
+          "sentinel": [],
+          "subscription": []
+        }
+      },
+      {
+        "name": "baseline-seed",
+        "result": {
+          "mode": "seed",
+          "revision": "0127",
+          "tables": 125,
+          "sentinel": [[700001, 900001, 12345], [700002, 900002, 23456]],
+          "subscription": [[700001, 700001, "active", 100, 12.5, 2]]
+        }
+      },
+      {
+        "name": "upgrade-v5",
+        "result": {
+          "mode": "migrate",
+          "revision": "0131",
+          "tables": 128,
+          "sentinel": [[700001, 900001, 12345], [700002, 900002, 23456]],
+          "subscription": [[700001, 700001, "active", 100, 12.5, 2]],
+          "redis_cache_roundtrip": true
+        }
+      },
+      {
+        "name": "upgraded-sentinels",
+        "result": {
+          "mode": "verify-seed",
+          "revision": "0131",
+          "tables": 128,
+          "sentinel": [[700001, 900001, 12345], [700002, 900002, 23456]],
+          "subscription": [[700001, 700001, "active", 100, 12.5, 2]]
+        }
+      },
+      {
+        "name": "repeated-v5",
+        "result": {
+          "mode": "migrate",
+          "revision": "0131",
+          "tables": 128,
+          "sentinel": [[700001, 900001, 12345], [700002, 900002, 23456]],
+          "subscription": [[700001, 700001, "active", 100, 12.5, 2]],
+          "redis_cache_roundtrip": true
+        }
+      },
+      {
+        "name": "repeated-sentinels",
+        "result": {
+          "mode": "verify-seed",
+          "revision": "0131",
+          "tables": 128,
+          "sentinel": [[700001, 900001, 12345], [700002, 900002, 23456]],
+          "subscription": [[700001, 700001, "active", 100, 12.5, 2]]
+        }
+      },
+      {
+        "name": "restored-v415",
+        "result": {
+          "mode": "migrate",
+          "revision": "0127",
+          "tables": 125,
+          "sentinel": [[700001, 900001, 12345], [700002, 900002, 23456]],
+          "subscription": [[700001, 700001, "active", 100, 12.5, 2]]
+        }
+      },
+      {
+        "name": "restored-sentinels",
+        "result": {
+          "mode": "verify-seed",
+          "revision": "0127",
+          "tables": 125,
+          "sentinel": [[700001, 900001, 12345], [700002, 900002, 23456]],
+          "subscription": [[700001, 700001, "active", 100, 12.5, 2]]
+        }
+      }
+    ]
+  },
+  "contracts": {
+    "existingUpstreamTests": 172,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "warnings": 38,
+    "requiredPostgresCases": [
+      {
+        "name": "test_auth_condition_runs_on_postgres[telegram_only]",
+        "classname": "tests.database.test_user_reminder_conditions_postgres",
+        "skipped": false,
+        "failed": false
+      },
+      {
+        "name": "test_auth_condition_runs_on_postgres[email_only]",
+        "classname": "tests.database.test_user_reminder_conditions_postgres",
+        "skipped": false,
+        "failed": false
+      },
+      {
+        "name": "test_auth_condition_runs_on_postgres[single_method]",
+        "classname": "tests.database.test_user_reminder_conditions_postgres",
+        "skipped": false,
+        "failed": false
+      }
+    ],
+    "modules": [
+      "tests/cabinet/test_broadcast_audience.py",
+      "tests/cabinet/test_email_broadcast_scoped_targets.py",
+      "tests/cabinet/test_cashera_recurrent_routes.py",
+      "tests/cabinet/test_lava_recurrent_routes.py",
+      "tests/cabinet/test_admin_user_reminders.py",
+      "tests/cabinet/test_info_documents_language_fallback.py",
+      "tests/database/test_migration_chain.py",
+      "tests/database/test_user_reminder_conditions_postgres.py",
+      "tests/handlers/test_cashera_topup_flow.py",
+      "tests/services/test_cashera_recurrent.py",
+      "tests/services/test_payment_service_cashera.py",
+      "tests/services/test_cashera_import_cycle.py",
+      "tests/webserver/test_cashera_webhook.py"
+    ]
+  },
+  "http": [
+    {
+      "flow": "audience-preview",
+      "role": null,
+      "status": 401,
+      "body": {
+        "detail": "Authentication required"
+      }
+    },
+    {
+      "flow": "audience-preview",
+      "role": "user",
+      "status": 403,
+      "body": {
+        "detail": "Permission denied: No active roles assigned"
+      }
+    },
+    {
+      "flow": "audience-preview",
+      "role": "admin",
+      "status": 200,
+      "body": {
+        "count": 2,
+        "offset": 0,
+        "limit": 20,
+        "users": [
+          {
+            "id": 700001,
+            "username": "proof_admin",
+            "first_name": "Local proof",
+            "last_name": null,
+            "telegram_id": 900001,
+            "email": null
+          },
+          {
+            "id": 700002,
+            "username": "proof_user",
+            "first_name": "Local proof user",
+            "last_name": null,
+            "telegram_id": 900002,
+            "email": null
+          }
+        ]
+      }
+    },
+    {
+      "flow": "faq-language",
+      "language": "ru",
+      "status": 200
+    },
+    {
+      "flow": "faq-language",
+      "language": "en",
+      "status": 200
+    },
+    {
+      "flow": "cashera-disabled",
+      "status": 403,
+      "body": {
+        "detail": "Cashera recurrent disabled"
+      }
+    }
+  ],
+  "cleanup": {
+    "schemaObjects": [
+      "cabv5-proof-1791916692607-pg",
+      "cabv5-proof-1791916692607-redis",
+      "cabv5-proof-1791916692607-pgdata",
+      "cabv5-proof-1791916692607"
+    ],
+    "contractObjects": [
+      "cabv5-proof-1791917000307-pg",
+      "cabv5-proof-1791917000307-redis",
+      "cabv5-proof-1791917000307-pgdata",
+      "cabv5-proof-1791917000307"
+    ],
+    "remainingContainers": 0
+  },
+  "limits": [
+    "ASGI application with upstream Cabinet router/auth and real local DB; full main.py/lifespan/proxy/HTTPS not exercised",
+    "Full Installer lifecycle on exact Ubuntu target not run",
+    "Real Cashera merchant enable/purchase/callback/cancel and concurrency not verified",
+    "Full roles/Marketer and physical Telegram devices not verified",
+    "Classic auto-purchase and flag-off/reload cancellation discovery remain OPEN",
+    "No Release or production operation performed"
+  ]
+}

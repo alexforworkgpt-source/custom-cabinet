@@ -1,3 +1,4 @@
+import { isCabinetFeatureVisible } from '../config/cabinetFeatureVisibility';
 import apiClient from './client';
 
 export interface AdminRole {
@@ -170,7 +171,7 @@ export const rbacApi = {
 
   getPermissionRegistry: async (): Promise<PermissionSection[]> => {
     const response = await apiClient.get<PermissionSection[]>(`${BASE}/permissions`);
-    return response.data;
+    return response.data.filter(({ section }) => isCabinetFeatureVisible(section));
   },
 
   // --- RBAC Users ---
