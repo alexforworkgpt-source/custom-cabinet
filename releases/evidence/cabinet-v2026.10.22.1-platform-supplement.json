@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "kind": "cabinet-browser-platform-supplement",
+  "result": "PASS",
+  "cabinet_tag": "cabinet-v2026.10.22.1",
+  "cabinet_sha": "80be79d59791c330dae3fc5eac46d96d2e503357",
+  "bundle_tag": "bundle-v2026.10.22.1",
+  "artifact_sha256": "3b02860e5de08b1f7d6aae56777eeb1b4cb740dc6acfc8460fa449671fdbb8ed",
+  "product_source_and_assets_unchanged": true,
+  "test_environment_id": "cabinet-public-20261022-c63be8ccdf",
+  "deployment_outcome": "committed",
+  "deployment_receipt_file_mtime_utc": "2026-10-22T20:16:33+00:00",
+  "smoke_completed_file_mtime_utc": "2026-10-22T20:17:06+00:00",
+  "timestamp_provenance": "File mtimes preserved in the checksum-verified off-host control/project archives; not invented JSON timestamp fields.",
+  "native_log_sha256": "2f45574c081ef1014ce2d4e89f0b3f5be833eb77543ad53541439db0dbe31ae5",
+  "off_host_control_archive_sha256": "c562a052985a25cba54141db309e94bf4ba21cd15daa59adbdee8f4f41932deb",
+  "chromium_required_viewport_supplement": {
+    "stats": {
+      "startTime": "2026-10-22T21:09:34.183Z",
+      "duration": 327434.993,
+      "expected": 486,
+      "skipped": 3,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "projects": {
+      "mobile-320": {
+        "expected": 174,
+        "skipped": 0,
+        "unexpected": 0
+      },
+      "tablet-768": {
+        "expected": 128,
+        "skipped": 0,
+        "unexpected": 0
+      },
+      "desktop-1440x900": {
+        "expected": 184,
+        "skipped": 3,
+        "unexpected": 0
+      }
+    },
+    "failures": []
+  },
+  "supplemental_viewports": [[320, 568], [768, 1024], [1440, 900]],
+  "firefox_smoke": {
+    "stats": {
+      "startTime": "2026-10-22T21:15:02.423Z",
+      "duration": 288262.90599999996,
+      "expected": 78,
+      "skipped": 3,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "projects": {
+      "firefox-1280": {
+        "expected": 78,
+        "skipped": 3,
+        "unexpected": 0
+      }
+    },
+    "failures": []
+  },
+  "firefox_version": "155.0",
+  "firefox_revision": "1543",
+  "verification_scope": "Same public artifact. Original mobile project identity retained at320x568; Firefox uses positive scroll polling for async smooth scroll and1worker. No changed product/assertion thresholds/timeouts/retries.",
+  "firefox_measurement_diff_sha256": "0346490b8673efb76d161e030c6131a1407d858c5cfff314ad666ebc3665d5e8",
+  "physical_telegram_android_ios": "SKIPPED_OWNER_ACCEPTED_CURRENT_FIXED_PACKAGE",
+  "earlier_supplement_result": "558PASS/8SKIP/4FAIL retained as NOT_PASS, not overwritten",
+  "production": "NOT_CONNECTED_NOT_UPDATED"
+}

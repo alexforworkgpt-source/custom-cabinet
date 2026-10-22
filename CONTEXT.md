@@ -1,5 +1,36 @@
 # Custom Cabinet Context
 
+## Выпуск2026.10.22.1 завершён stable — 2026-10-22
+
+**RELEASED_STABLE_AND_VERIFIED:** `cabinet-v2026.10.22.1`, source
+`80be79d59791c330dae3fc5eac46d96d2e503357`, и **`bundle-v2026.10.22.1`**.
+Installerf1f301b/Bot5bda3c56/PG18 и protected contracts сохранены; trusted lifecycle
+переиспользован, полный цикл не повторялся. Исправлены R1–R3 и два дополнительных
+PR43 finding по catalogue/retry. SourcePR43/recordPR44/Installer evidencePR13 merged.
+
+Exact CI Node24/26 по1166unit/types/build/guards/lint PASS; CodeQL без новых IDs,
+audit15 OPEN/non-blocking (4moderate/10high/1critical). Final exact-public-artifact
+browser **1766PASS/35configuredSKIP/0FAIL/0flaky**,2workers/0retries; одна атомарная
+geometry sampling корректировка только в отдельной verification-copy, assertions/
+fixtures/timeouts/compiled bytes/source tag сохранены. После docs-review отдельно
+закрыты точные320×568/768×1024/1440×900:486PASS/3SKIP/0FAIL, и независимый Firefox155
+smoke:78PASS/3SKIP/0FAIL; тот же public archive. Environment/time smoke восстановлены
+из checksum-bound off-host receipts. Все8 public files, независимые uncached/Actions
+bytes, новый public Bundle smoke/owned cleanup PASS.
+287 public artifact files exact, PG18/schema0131; старые volumes/host files сохранены.
+Guarded promotion39850161557 SUCCESS; прежние Releases/assets/tags/latest/settings
+сохранены. Физический Telegram/Android/iOS **SKIPPED_OWNER_ACCEPTED именно для
+этого исправленного пакета**, не PASS. Остальные live OPEN/BLOCKED сохраняют scope.
+
+Archive `3b02860e5de08b1f7d6aae56777eeb1b4cb740dc6acfc8460fa449671fdbb8ed`,
+Bundle identity `517e663836e6e7fe5699e7b6f4f7f9253cd2275abefab524659b7e00f6fe9eca`.
+**Пакет готов к отдельному production-переходу; production не подключался и не
+обновлялся.** Основные owner HEAD/index сохранены: локальный HEAD0d04a822,
+исправления в рабочих файлах; публичный точный source80be79d5 принят в чистой копии.
+[Итог](docs/releases/RELEASE_COMPLETION_2026.10.22.1.md),
+[scope live-check](docs/releases/LIVE_CHECK_REPORT_2026.10.22.md).
+Ниже RUNNING/BLOCKED/PENDING относятся к более ранним состояниям подготовки.
+
 ## Исправления R1–R3 и продолжение выпуска — 2026-10-22
 
 После команды владельца «исправляй» исправлены три finding предыдущего review:

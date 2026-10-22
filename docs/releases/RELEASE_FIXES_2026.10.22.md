@@ -1,6 +1,8 @@
 # Исправления блокеров Custom Cabinet — 2026-10-22
 
-Статус: **IMPLEMENTED_LOCAL_CHECKS_PASS; RELEASE_ARTIFACT_GATE_PENDING**.
+Статус: **RELEASED_STABLE_AND_VERIFIED**. Ниже сохранена история исправлений и
+промежуточных проверок; окончательные1766PASS/35SKIP/0FAIL, public smoke/cleanup и
+stable promotion подтверждены в [итоговом отчёте](RELEASE_COMPLETION_2026.10.22.1.md).
 Продолжение [release review](RELEASE_REVIEW_2026.10.22.md) после команды владельца
 «исправляй». Исходная точка исправлений: `0d04a822a5a47953c047edd901a22ed1f0f7141a`.
 Дизайн остаётся принятым; меняются только подтверждённые ошибки и тестовые ожидания.
