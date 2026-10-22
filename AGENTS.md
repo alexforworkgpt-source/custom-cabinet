@@ -169,6 +169,20 @@ Playwright сам запускает Vite на `http://localhost:4173` и под
 платежи, подключение, тарифы и права `super_admin`, следуй инструкции
 [`docs/agents/full-local-api-mock.md`](docs/agents/full-local-api-mock.md).
 
+**Если пользователь просит «запустить мокап» или разные сценарии пользователя,
+сразу используй [быстрый запуск 28 сценариев](docs/agents/full-local-api-mock.md#scenario-quick-start).**
+Пункты15–28 — скидки/предложения; для их просмотра используй `LOCAL_PREVIEW_SCENARIO=32`
+(пункт15, активная скидка20%).
+Готовый entry: `.scratch/subscription-management-page/user-preview.mts`;
+launcher: `.scratch/subscription-management-page/launch-mock.cjs` (`vite` / `window`).
+Инструкция содержит точные команды, portable Node24.15.0, Chromium, логи и
+переключатель Mock Mode. Сначала проверь уже работающие процессы и порт 5173;
+не ищи помощники заново по всему `.scratch/`, не пересоздавай fixtures и не
+устанавливай `tsx`: этот entry запускается обычным Node24.15.0. Для простого
+запуска не повторяй сборку, весь e2e/28-state check или Release gates без
+изменений либо конкретной неисправности. API-подмена действует в отдельном
+окне helper Chromium, а не в произвольной вкладке браузера.
+
 ## Стиль общения с пользователем
 
 Пользователь — вайбкодер, а не профессиональный разработчик.

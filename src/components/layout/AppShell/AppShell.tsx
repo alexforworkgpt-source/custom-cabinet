@@ -34,7 +34,13 @@ import {
 } from '@/components/icons';
 
 import { MobileBottomNav } from './MobileBottomNav';
-import { isMobileNavScreen, mobileNavItems } from './mobileNavRoutes';
+import {
+  isMobileNavScreen,
+  mobileNavItems,
+  isNavItemActive,
+  type MobileNavItem,
+} from './mobileNavRoutes';
+import { useSubscriptionNavigation } from '@/hooks/useSubscriptionNavigation';
 import { AppHeader } from './AppHeader';
 import { LogoutButton } from '@/components/LogoutButton';
 import { useBackgroundConsumer } from '@/components/backgrounds/BackgroundHost';
@@ -89,21 +95,27 @@ export function AppShell({ children }: AppShellProps) {
     resetVirtualKeyboard();
   }, [location.pathname]);
 
-  const navItems = mobileNavItems();
+  const subscriptionNav = useSubscriptionNavigation(!isAdminRoute);
+  const navItems = mobileNavItems(subscriptionNav);
   const showMobileNav = isMobileNavScreen(location.pathname, navItems);
 
   // Desktop navigation — labels always visible (no hover-reveal gimmick)
   const desktopNav = [
     { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
-    { path: '/subscription/purchase', label: t('nav.tariffs'), icon: TariffsIcon },
+    {
+      ...subscriptionNav,
+      label: t(subscriptionNav.labelKey ?? `nav.${subscriptionNav.key}`),
+      icon: TariffsIcon,
+    },
     { path: '/support', label: t('nav.support'), icon: ChatIcon },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
   ];
 
   const isActive = (path: string) => {
     if (path === '/') {
-      return location.pathname === '/' || location.pathname.startsWith('/subscriptions');
+      return location.pathname === '/';
     }
+    if (path === subscriptionNav.path) return isNavItemActive(location.pathname, subscriptionNav);
     return location.pathname.startsWith(path);
   };
 
@@ -118,7 +130,21 @@ export function AppShell({ children }: AppShellProps) {
     label: string,
     Icon: React.ComponentType<{ className?: string }>,
     admin = false,
+    item?: MobileNavItem,
   ) => {
+    if (item?.pending || item?.onRetry)
+      return (
+        <button
+          key={path}
+          disabled={item.pending}
+          onClick={item.onRetry}
+          aria-busy={item.pending}
+          className="flex min-h-11 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-dark-400"
+        >
+          <Icon className="h-4 w-4" />
+          {label}
+        </button>
+      );
     const active = admin ? location.pathname.startsWith('/admin') : isActive(path);
     return (
       <Link
@@ -211,7 +237,15 @@ export function AppShell({ children }: AppShellProps) {
               всегда, без скролла/сжатия/сворачивания. Центрируется средней
               колонкой grid (justify-self-center), а не auto-margin'ами. */}
           <nav className="flex items-center gap-0.5 justify-self-center rounded-full border border-dark-800/70 bg-dark-900/50 p-1 shadow-sm backdrop-blur-sm">
-            {desktopNav.map((item) => renderNavLink(item.path, item.label, item.icon))}
+            {desktopNav.map((item) =>
+              renderNavLink(
+                item.path,
+                item.label,
+                item.icon,
+                false,
+                item.path === subscriptionNav.path ? subscriptionNav : undefined,
+              ),
+            )}
             {isAdmin && isAdminRoute && (
               <>
                 <div className="mx-1 h-5 w-px shrink-0 bg-dark-700/60" />

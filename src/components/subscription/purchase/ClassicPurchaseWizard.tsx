@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router';
+import { Navigate, useLocation, useNavigate } from 'react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { subscriptionApi } from '../../../api/subscription';
 import { useCurrency } from '../../../hooks/useCurrency';
@@ -62,6 +62,7 @@ export function ClassicPurchaseWizard({
   const queryClient = useQueryClient();
   const { formatAmount, currencySymbol } = useCurrency();
   const { applyPromoDiscount } = usePromoDiscount();
+  const hasPaidSubscription = !!subscription && !subscription.is_trial;
 
   const formatPrice = (kopeks: number) =>
     kopeks === 0
@@ -159,7 +160,12 @@ export function ClassicPurchaseWizard({
     isError: previewError,
     refetch: refetchPreview,
     summary,
-  } = useClassicPurchasePreview(currentSelection, selectedPeriod, subscriptionId, showPurchaseForm);
+  } = useClassicPurchasePreview(
+    currentSelection,
+    selectedPeriod,
+    subscriptionId,
+    showPurchaseForm && !hasPaidSubscription,
+  );
 
   const summaryPreview = summary?.preview;
   const previewTotal = preview
@@ -187,7 +193,10 @@ export function ClassicPurchaseWizard({
     : undefined;
 
   const purchaseMutation = useMutation({
-    mutationFn: () => subscriptionApi.submitPurchase(currentSelection, subscriptionId),
+    mutationFn: () => {
+      if (hasPaidSubscription) throw new Error('Use subscription renewal');
+      return subscriptionApi.submitPurchase(currentSelection, subscriptionId);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
       queryClient.invalidateQueries({ queryKey: ['purchase-options', subscriptionId] });
@@ -209,7 +218,14 @@ export function ClassicPurchaseWizard({
   });
 
   const submitPurchase = () => {
-    if (purchaseInFlightRef.current || previewLoading || previewError || !preview) return;
+    if (
+      hasPaidSubscription ||
+      purchaseInFlightRef.current ||
+      previewLoading ||
+      previewError ||
+      !preview
+    )
+      return;
     purchaseInFlightRef.current = true;
     purchaseMutation.mutate();
   };
@@ -252,6 +268,8 @@ export function ClassicPurchaseWizard({
         return t('subscription.stepConfirm');
     }
   };
+
+  if (hasPaidSubscription) return <Navigate to={`/subscriptions/${subscription.id}`} replace />;
 
   return (
     <section data-purchase-layout="classic">

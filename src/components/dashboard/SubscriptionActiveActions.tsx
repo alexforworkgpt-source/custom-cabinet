@@ -144,7 +144,6 @@ export function SubscriptionActiveActions({
 export function SubscriptionPrimaryAction({
   subscription,
   onManageSubscription,
-  managementOpen,
   neutralSurface = false,
 }: Pick<
   SubscriptionActiveActionsProps,
@@ -164,8 +163,6 @@ export function SubscriptionPrimaryAction({
       variant="outline"
       size={null}
       haptic={false}
-      aria-haspopup="dialog"
-      aria-expanded={managementOpen}
       onClick={onManageSubscription}
       className={
         neutralSurface

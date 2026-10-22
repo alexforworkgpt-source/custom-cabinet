@@ -9,7 +9,68 @@ const periods = [14, 30, 60, 90, 180, 360].map((days, index) => ({
   original_price_kopeks: [null, null, 19800, 29700, 59400, 118800][index],
 }));
 
-for (const language of ['ru', 'en', 'fa']) {
+test('renewal groups current terms and presents the exact shortfall with confirmation guidance @critical-flow', async ({
+  page,
+}) => {
+  const { apiRequests } = await prepareAuthenticatedPage(page, {
+    language: 'ru',
+    responses: {
+      ...responses,
+      '/api/cabinet/subscription': {
+        has_subscription: true,
+        subscription: {
+          ...subscription,
+          end_date: '2027-02-23T00:00:00Z',
+          traffic_limit_gb: 0,
+          device_limit: 2,
+          servers: [
+            { uuid: 'nl', name: 'Нидерланды' },
+            { uuid: 'de', name: 'Германия' },
+          ],
+        },
+      },
+      '/api/cabinet/subscription/purchase-options': {
+        ...responses['/api/cabinet/subscription/purchase-options'],
+        balance_kopeks: 10,
+      },
+      '/api/cabinet/subscription/renewal-options': [
+        { period_days: 30, price_kopeks: 14900, discount_percent: 0 },
+        { period_days: 360, price_kopeks: 148900, discount_percent: 0 },
+      ],
+    },
+  });
+  await page.addInitScript(() => {
+    Date.now = () => Date.parse('2026-10-20T00:00:00Z');
+  });
+  await page.goto('/subscriptions/42/renew');
+  const info = page.locator('[data-renewal-info]');
+  await expect(info.getByText('Текущая подписка действует', { exact: true })).toBeVisible();
+  await expect(info.getByText('Трафик', { exact: true }).locator('..')).toContainText('Безлимит');
+  await expect(info.getByText('Устройства', { exact: true }).locator('..')).toContainText(
+    '2 устройства',
+  );
+  await expect(info).toContainText('Нидерланды · Германия');
+  await expect(page.getByText('Дольше — выгоднее', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /^360 дней/ }).click();
+  const summary = page.locator('[data-renewal-summary]');
+  await expect(
+    summary.getByRole('heading', { name: 'Продление на 360 дней', exact: true }),
+  ).toBeVisible();
+  await expect(summary.locator('time')).toHaveAttribute('dateTime', '2028-02-18T00:00:00.000Z');
+  await expect(summary.getByText('К пополнению', { exact: true }).locator('..')).toContainText(
+    '1488.90',
+  );
+  await expect(summary.getByRole('note')).toContainText(
+    'После пополнения баланса подтвердите продление',
+  );
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  expect(
+    apiRequests.filter((request) => /^POST .*subscription\/(renew|purchase)/.test(request)),
+  ).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+for (const language of ['ru', 'en', 'fa', 'zh']) {
   for (const theme of ['light', 'dark', 'operator']) {
     test(`renewal design ${language} ${theme}`, async ({ page }, testInfo) => {
       await prepareAuthenticatedPage(page, {
@@ -60,21 +121,28 @@ for (const language of ['ru', 'en', 'fa']) {
       const option = page.getByRole('button', { name: /^30 / });
       await expect(option).toBeVisible();
       await expect(page.getByText(/Базовый юзер/)).toBeVisible();
-      await expect(page.locator('[data-renewal-info] svg')).toHaveCount(5);
+      await expect(page.locator('[data-renewal-info] svg')).toHaveCount(6);
       await expect(page.locator('[data-renewal-info]')).toContainText('Нидерланды');
       const outerPanel = page.locator('[data-renewal-panel]');
       await expect(outerPanel.locator('[data-renewal-clearance]')).toHaveCount(0);
+      expect(await outerPanel.evaluate((element) => getComputedStyle(element).borderTopWidth)).toBe(
+        '0px',
+      );
       expect(
-        await outerPanel.evaluate((element) => getComputedStyle(element).borderTopWidth),
-      ).not.toBe('0px');
+        await outerPanel.evaluate((element) => getComputedStyle(element).paddingInlineStart),
+      ).toBe('0px');
       await expect(option).toHaveClass(/bento-card-hover/);
       if (language === 'ru') {
         await expect(
           page.getByRole('heading', { name: 'Продлить подписку', exact: true }),
         ).toBeVisible();
         const info = page.locator('[data-renewal-info]');
-        await expect(info.locator('p', { hasText: 'Трафик:' })).not.toContainText('Устройства:');
-        await expect(info.locator('p', { hasText: 'Устройства:' })).toContainText('Устройства: 1');
+        await expect(info.getByText('Трафик', { exact: true }).locator('..')).not.toContainText(
+          'Устройства',
+        );
+        await expect(info.getByText('Устройства', { exact: true }).locator('..')).toContainText(
+          '1 устройство',
+        );
         await expect(page.getByRole('button', { name: /^90 / })).toContainText('267.30');
         await expect(page.locator('[data-renewal-info]')).toContainText('Безлимит');
       }

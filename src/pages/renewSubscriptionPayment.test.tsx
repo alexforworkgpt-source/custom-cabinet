@@ -84,6 +84,73 @@ afterEach(() => {
 });
 
 describe('classic renewal payment', () => {
+  it('estimates renewal of an expired subscription from the current instant', async () => {
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-20T00:00:00Z'));
+    try {
+      const current = await api.getSubscription();
+      api.getSubscription.mockResolvedValue({
+        subscription: {
+          ...current.subscription,
+          status: 'expired',
+          end_date: '2026-09-15T00:00:00Z',
+        },
+      });
+      renderRenewal();
+      fireEvent.click(await screen.findByRole('button', { name: /^30 subscription.days/ }));
+      await waitFor(() =>
+        expect(
+          document.querySelector('[data-renewal-summary] time')?.getAttribute('dateTime'),
+        ).toBe('2026-11-19T00:00:00.000Z'),
+      );
+      expect(api.renewSubscription).not.toHaveBeenCalled();
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it('omits the date estimate for an unrecognized end date while retaining server pricing', async () => {
+    const current = await api.getSubscription();
+    api.getSubscription.mockResolvedValue({
+      subscription: { ...current.subscription, end_date: 'unknown-date' },
+    });
+    renderRenewal();
+    fireEvent.click(await screen.findByRole('button', { name: /^30 subscription.days/ }));
+    await screen.findByRole('button', { name: 'dashboard.topUpBalance' });
+    expect(document.querySelector('[data-renewal-summary] time')).toBeNull();
+    expect(document.querySelector('[data-renewal-summary]')?.textContent).toContain('500');
+    expect(api.renewSubscription).not.toHaveBeenCalled();
+  });
+
+  it('shows the expected end date and exact funding shortfall without submitting', async () => {
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-20T00:00:00Z'));
+    try {
+      const current = await api.getSubscription();
+      api.getSubscription.mockResolvedValue({
+        subscription: { ...current.subscription, end_date: '2027-02-23T00:00:00Z' },
+      });
+      api.getRenewalOptions.mockResolvedValue([
+        { period_days: 360, price_kopeks: 148900, discount_percent: 0 },
+      ]);
+      api.getPurchaseOptions.mockResolvedValue({ sales_mode: 'classic', balance_kopeks: 10 });
+      renderRenewal();
+      fireEvent.click(await screen.findByRole('button', { name: /^360 subscription.days/ }));
+      await waitFor(() => {
+        const summary = document.querySelector('[data-renewal-summary]');
+        expect(summary?.querySelector('time')?.getAttribute('dateTime')).toBe(
+          '2028-02-18T00:00:00.000Z',
+        );
+        expect(summary?.textContent).toContain('1488.9');
+        expect(summary?.textContent).toContain('subscription.renewTopUpRequired');
+      });
+      expect(
+        screen.getByText('subscription.renewAfterFundingNotice').closest('[role="note"]'),
+      ).toBeTruthy();
+      expect(api.renewSubscription).not.toHaveBeenCalled();
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
   it.each(['getSubscription', 'getRenewalOptions', 'getPurchaseOptions'] as const)(
     'shows a retryable error for %s instead of empty options or zero balance',
     async (method) => {

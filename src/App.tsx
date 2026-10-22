@@ -58,6 +58,8 @@ import Dashboard from './pages/Dashboard';
 
 // User pages - lazy load
 const SubscriptionPurchase = lazyWithRetry(() => import('./pages/SubscriptionPurchase'));
+const SubscriptionManagement = lazyWithRetry(() => import('./pages/SubscriptionPage'));
+const Subscriptions = lazyWithRetry(() => import('./pages/Subscriptions'));
 const SavedCards = lazyWithRetry(() => import('./pages/SavedCards'));
 const Referral = lazyWithRetry(() => import('./pages/Referral'));
 const Support = lazyWithRetry(() => import('./pages/Support'));
@@ -361,7 +363,7 @@ function App() {
           element={
             <ProtectedRoute>
               <LazyPage>
-                <Dashboard />
+                <Subscriptions />
               </LazyPage>
             </ProtectedRoute>
           }
@@ -371,7 +373,9 @@ function App() {
           element={
             <ProtectedRoute>
               <LazyPage>
-                <Dashboard />
+                <RemountOnParam name="subscriptionId">
+                  <SubscriptionManagement />
+                </RemountOnParam>
               </LazyPage>
             </ProtectedRoute>
           }

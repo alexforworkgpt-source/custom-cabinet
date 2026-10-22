@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ClassicPurchaseWizard } from '@/components/subscription/purchase/ClassicPurchaseWizard';
 import type { ClassicPurchaseOptions, PurchasePreview } from '@/types';
+import { PlatformProvider } from '@/platform/PlatformProvider';
 
 const api = vi.hoisted(() => ({ previewPurchase: vi.fn(), submitPurchase: vi.fn() }));
 const promo = vi.hoisted(() => ({ percent: 90 }));
@@ -113,13 +114,15 @@ function fixture(
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   render(
     <QueryClientProvider client={client}>
-      <MemoryRouter>
-        <ClassicPurchaseWizard
-          classicOptions={options}
-          subscription={null}
-          subscriptionId={undefined}
-        />
-      </MemoryRouter>
+      <PlatformProvider>
+        <MemoryRouter>
+          <ClassicPurchaseWizard
+            classicOptions={options}
+            subscription={null}
+            subscriptionId={undefined}
+          />
+        </MemoryRouter>
+      </PlatformProvider>
     </QueryClientProvider>,
   );
   return { client, preview };

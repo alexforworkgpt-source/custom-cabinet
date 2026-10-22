@@ -411,6 +411,14 @@
     "validUntil": "معتبر تا {{date}}"
   },
   "subscription": {
+    "devicePayment": {
+      "alreadyApplied": "محدودیت انتخاب‌شده از قبل اعمال شده است. نیازی به خرید دوباره نیست.",
+      "changed": "شرایط تغییر کرده است. اطلاعات فعلی را بررسی و دوباره تأیید کنید.",
+      "loadError": "به‌روزرسانی شرایط خرید ممکن نشد. دوباره تلاش کنید.",
+      "unavailable": "تغییر تعداد دستگاه‌ها با شرایط نمایش‌داده‌شده در دسترس نیست.",
+      "cartSaved": "سرور یک سبد جداگانه برای دستگاه‌ها ذخیره کرده است. ادامه این پرداخت ممکن نیست؛ به مدیریت اشتراک بازگردید.",
+      "unknownResult": "نتیجه خرید تأیید نشده است. پیش از انتخاب دوباره، اشتراک را به‌روزرسانی کنید."
+    },
     "title": "اشتراک",
     "currentPlan": "پلن فعلی",
     "status": "وضعیت",
@@ -497,6 +505,17 @@
     "renewOptionsLoadError": "بارگذاری دوره‌های تمدید ناموفق بود",
     "chooseRenewalPeriod": "یک دوره انتخاب کنید",
     "renewCurrentEnd": "اشتراک فعلی: تا {{date}}",
+    "renewCurrentValid": "اشتراک فعلی معتبر است",
+    "renewExpiredValid": "اشتراک معتبر بود",
+    "renewUntil": "تا {{date}}",
+    "renewLongerBetter": "مدت بیشتر، مقرون‌به‌صرفه‌تر",
+    "renewOrderTitle": "تمدید برای {{period}}",
+    "renewProjectedEnd": "تاریخ پایان مورد انتظار: {{date}}",
+    "renewTopUpRequired": "مبلغ مورد نیاز برای افزایش موجودی",
+    "renewAfterFundingNotice": "پس از افزایش موجودی، اگر تمدید هنوز انجام نشده است، آن را تأیید کنید.",
+    "renewDevicesActiveHint": "خرید دستگاه‌های بیشتر به‌صورت جداگانه در «گزینه‌های اضافی» انجام می‌شود.",
+    "renewDevicesExpiredHint": "برای افزودن دستگاه، ابتدا اشتراک را تمدید کنید و سپس «گزینه‌های اضافی» را باز کنید.",
+    "renewDevicesMaxHint": "به حداکثر تعداد دستگاه رسیده‌اید.",
     "renewSelectionReset": "اشتراک یا دوره‌ها تغییر کرده است. دوره را دوباره انتخاب کنید.",
     "renewTopUpHint": "{{amount}} به موجودی اضافه کنید، سپس تمدید را تأیید کنید.",
     "classicRenewHint": "تمدید با تنظیمات فعلی اشتراک",
@@ -652,7 +671,7 @@
     },
     "promoGroup": {
       "yourGroup": "گروه شما: {{name}}",
-      "personalDiscountsApplied": "تخفیف‌های شخصی بر قیمت‌ها اعمال شده است"
+      "personalDiscountsApplied": "شرایط گروه شما"
     },
     "tariff": {
       "perDay": "/ روز",
@@ -786,7 +805,8 @@
       "expiredHint": "یک تعرفه انتخاب و پرداخت کنید",
       "trialHint": "ترافیک و دستگاه بیشتر",
       "moveToTariff": "انتقال به تعرفه",
-      "moveToTariffHint": "اشتراک پیش از معرفی تعرفه‌ها خریداری شده"
+      "moveToTariffHint": "اشتراک پیش از معرفی تعرفه‌ها خریداری شده",
+      "renewUnavailable": "تمدید در وضعیت فعلی اشتراک در دسترس نیست."
     },
     "dailyAutoCharge": "برداشت خودکار روزانه",
     "defaultName": "اشتراک",
@@ -5546,6 +5566,12 @@
     "expiresIn": "منقضی می‌شود در",
     "source": "منبع",
     "useNow": "همین الان استفاده کن",
+    "actions": { "chooseSubscription": "انتخاب اشتراک" },
+    "navigation": {
+      "unavailable": "امکان انجام عملیات تأیید نشد. اطلاعات را تازه کنید و دوباره تلاش کنید.",
+      "changed": "اشتراک انتخاب‌شده یا حساب تغییر کرده است. انتخاب خود را بررسی و دوباره تلاش کنید.",
+      "expired": "این تخفیف دیگر در دسترس نیست. پیشنهادها را تازه کنید."
+    },
     "discountApplied": "تخفیف اعمال شد",
     "time": {
       "days": "روز",
@@ -5561,6 +5587,7 @@
       "serverAccess_other": "دسترسی به {{count}} سرور",
       "additionalServers": "دسترسی به سرورهای اضافی",
       "activateDiscountHint": "تخفیف خرید اشتراک را فعال کنید",
+      "specialOfferHint": "پیشنهاد ویژه برای حساب شما",
       "activationFailed": "فعال‌سازی پیشنهاد ناموفق بود",
       "discountActiveTitle": "تخفیف {{percent}}% فعال است",
       "statusActive": "فعال",

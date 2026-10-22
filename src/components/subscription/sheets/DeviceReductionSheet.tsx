@@ -5,6 +5,7 @@ import { subscriptionApi } from '../../../api/subscription';
 import { getErrorMessage } from '../../../utils/subscriptionHelpers';
 import { ChevronRightIcon } from '../../icons';
 import { deviceUnavailableText } from '../deviceReasons';
+import { subscriptionActionStyles as styles } from './subscriptionActionStyles';
 
 // ──────────────────────────────────────────────────────────────────
 // Reduce-devices sheet. Self-owns the reduction-info query + mutation;
@@ -23,6 +24,7 @@ export interface DeviceReductionSheetProps {
   targetDeviceLimit: number;
   onTargetDeviceLimitChange: (n: number) => void;
   isDark: boolean;
+  compactOnMobile?: boolean;
 }
 
 export function DeviceReductionSheet({
@@ -34,6 +36,7 @@ export function DeviceReductionSheet({
   targetDeviceLimit,
   onTargetDeviceLimitChange,
   isDark,
+  compactOnMobile = false,
 }: DeviceReductionSheetProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -63,44 +66,38 @@ export function DeviceReductionSheet({
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
       queryClient.invalidateQueries({ queryKey: ['devices', subscriptionId] });
       queryClient.invalidateQueries({ queryKey: ['device-reduction-info', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['device-price'] });
+      queryClient.invalidateQueries({ queryKey: ['purchase-options'] });
+      queryClient.invalidateQueries({ queryKey: ['renewal-options'] });
       onClose();
     },
   });
 
   if (!open) {
     return (
-      <button
-        onClick={onOpen}
-        className={`w-full rounded-xl border p-4 text-left transition-colors ${isDark ? 'border-dark-700/50 bg-dark-800/50 hover:border-dark-600' : 'border-champagne-300/60 bg-champagne-200/40 hover:border-champagne-400'}`}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium text-dark-100">
+      <button onClick={onOpen} className={styles.trigger(isDark, compactOnMobile)}>
+        <div className={styles.row(compactOnMobile)}>
+          <div className={styles.text(compactOnMobile)}>
+            <div className={styles.title(compactOnMobile)}>
               {t('subscription.additionalOptions.reduceDevices')}
             </div>
-            <div className="mt-1 text-sm text-dark-400">
+            <div className={styles.description(compactOnMobile)}>
               {t('subscription.additionalOptions.reduceDevicesDescription')}
             </div>
           </div>
-          <ChevronRightIcon className="text-dark-400" />
+          <ChevronRightIcon className={styles.chevron(compactOnMobile)} />
         </div>
       </button>
     );
   }
 
   return (
-    <div
-      className={`rounded-xl border p-5 ${isDark ? 'border-dark-700/50 bg-dark-800/50' : 'border-champagne-300/60 bg-champagne-200/40'}`}
-    >
-      <div className="mb-4 flex items-center justify-between">
+    <div className={styles.panel(isDark)}>
+      <div className={styles.header}>
         <h3 className="font-medium text-dark-100">
           {t('subscription.additionalOptions.reduceDevicesTitle')}
         </h3>
-        <button
-          onClick={onClose}
-          className="text-sm text-dark-400 hover:text-dark-200"
-          aria-label={t('common.close', 'Close')}
-        >
+        <button onClick={onClose} className={styles.close} aria-label={t('common.close', 'Close')}>
           ✕
         </button>
       </div>
@@ -114,8 +111,8 @@ export function DeviceReductionSheet({
           )}
         </div>
       ) : deviceReductionInfo ? (
-        <div className="space-y-4">
-          <div className="flex items-center justify-center gap-6">
+        <div className={styles.fields}>
+          <div className={styles.counter}>
             <button
               onClick={() =>
                 onTargetDeviceLimitChange(

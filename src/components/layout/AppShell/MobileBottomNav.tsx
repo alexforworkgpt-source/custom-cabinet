@@ -8,12 +8,15 @@ import { HIDDEN_UNDER_KEYBOARD, useVirtualKeyboard } from '@/hooks/useVirtualKey
 
 import { HomeIcon, TariffsIcon, ChatIcon, UserIcon } from './icons';
 import type { MobileNavItem, MobileNavKey } from './mobileNavRoutes';
+import { isNavItemActive } from './mobileNavRoutes';
 
 type NavIcon = React.ComponentType<{ className?: string }>;
 
 const ICONS: Record<MobileNavKey, NavIcon> = {
   dashboard: HomeIcon,
   tariffs: TariffsIcon,
+  subscription: TariffsIcon,
+  subscriptions: TariffsIcon,
   support: ChatIcon,
   profile: UserIcon,
 };
@@ -34,10 +37,7 @@ export function MobileBottomNav({
   const { haptic } = usePlatform();
   const isKeyboardOpen = useVirtualKeyboard();
 
-  const isActive = (path: string) =>
-    path === '/'
-      ? location.pathname === '/' || location.pathname.startsWith('/subscriptions')
-      : location.pathname.startsWith(path);
+  const isActive = (item: MobileNavItem) => isNavItemActive(location.pathname, item);
 
   const handleNavClick = () => {
     haptic.impact('light');
@@ -63,18 +63,31 @@ export function MobileBottomNav({
       <div className="flex justify-around">
         {items.map((item) => {
           const Icon = ICONS[item.key];
+          if (item.pending || item.onRetry)
+            return (
+              <button
+                key={item.key}
+                disabled={item.pending}
+                onClick={item.onRetry}
+                className="flex min-w-[56px] flex-1 flex-col items-center justify-center px-3 py-2.5 text-xs text-dark-400"
+                aria-busy={item.pending}
+              >
+                <Icon className="mb-1 h-5 w-5" />
+                {t(item.labelKey ?? `nav.${item.key}`)}
+              </button>
+            );
           return (
             <Link
               key={item.path}
               to={item.path}
               onClick={handleNavClick}
-              aria-current={isActive(item.path) ? 'page' : undefined}
+              aria-current={isActive(item) ? 'page' : undefined}
               className={cn(
                 'relative flex min-w-[56px] flex-1 shrink-0 flex-col items-center justify-center rounded-2xl px-3 py-2.5 transition-all duration-200',
-                isActive(item.path) ? 'text-accent-400' : 'text-dark-400 hover:text-dark-200',
+                isActive(item) ? 'text-accent-400' : 'text-dark-400 hover:text-dark-200',
               )}
             >
-              {isActive(item.path) && (
+              {isActive(item) && (
                 <motion.div
                   layoutId="bottom-nav-active"
                   className="absolute inset-0 rounded-2xl bg-accent-500/15"
@@ -88,7 +101,7 @@ export function MobileBottomNav({
                 </span>
               )}
               <span className="relative z-10 mt-1 whitespace-nowrap text-xs">
-                {t(`nav.${item.key}`)}
+                {t(item.labelKey ?? `nav.${item.key}`)}
               </span>
             </Link>
           );

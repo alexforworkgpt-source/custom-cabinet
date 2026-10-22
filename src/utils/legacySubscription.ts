@@ -14,6 +14,27 @@ export function tariffSelectionPath(subscriptionId: number): string {
   return `/subscription/purchase?subscriptionId=${subscriptionId}`;
 }
 
+export type RenewableSubscription = Pick<
+  Subscription,
+  'status' | 'is_trial' | 'is_daily' | 'is_limited' | 'requires_tariff_selection' | 'tariff_id'
+>;
+
+/** Shared eligibility of the existing renewal flow, not a price or discount calculation. */
+export function canRenewSubscription(
+  subscription: RenewableSubscription | null | undefined,
+  isClassic: boolean,
+): boolean {
+  return Boolean(
+    subscription &&
+      !needsTariff(subscription) &&
+      (isClassic || subscription.tariff_id) &&
+      !subscription.is_trial &&
+      !subscription.is_daily &&
+      !subscription.is_limited &&
+      (subscription.status === 'active' || subscription.status === 'expired'),
+  );
+}
+
 export function showsAutopayToggle(
   subscription: Pick<Subscription, 'is_trial' | 'is_daily' | 'requires_tariff_selection'>,
 ): boolean {

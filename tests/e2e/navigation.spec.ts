@@ -194,7 +194,9 @@ test('/profile/accounts uses the standard card density without mobile overflow',
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('keeps subscription compatibility routes on the unified Dashboard', async ({ page }) => {
+test('opens subscription management as a normal page and returns to Dashboard', async ({
+  page,
+}) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
     responses: {
       '/api/cabinet/subscription': {
@@ -260,15 +262,15 @@ test('keeps subscription compatibility routes on the unified Dashboard', async (
     },
   });
 
-  await page.goto('/subscriptions/7');
-  const managementDialog = page.getByRole('dialog');
-  await expect(managementDialog).toBeVisible();
+  await page.goto('/?sub=7');
+  await page.getByRole('button', { name: 'Manage subscription', exact: true }).click();
+  await expect(page).toHaveURL('/subscriptions/7');
+  const managementDialog = page.locator('main');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(
-    managementDialog.getByRole('heading', { name: 'Manage subscription' }),
+    managementDialog.getByRole('heading', { name: 'Subscription', exact: true }),
   ).toBeVisible();
-  await expect(
-    managementDialog.getByRole('button', { name: 'Additional Options' }),
-  ).toHaveAttribute('aria-expanded', 'false');
+  await expect(managementDialog.getByRole('heading', { name: 'Additional Options' })).toBeVisible();
   await expect(managementDialog.getByRole('link', { name: /My Devices/ })).toBeVisible();
   expect(
     await managementDialog.evaluate((dialog) => {
@@ -282,8 +284,7 @@ test('keeps subscription compatibility routes on the unified Dashboard', async (
     }),
   ).toEqual({ horizontalOverflow: false, dialogWithinViewport: true });
 
-  await page.keyboard.press('Escape');
-  await expect(managementDialog).toBeHidden();
+  await page.goBack();
   await expect(page).toHaveURL('/?sub=7');
   await expect(page.getByRole('region', { name: 'Subscription active' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Subscription active' })).toHaveCount(1);
@@ -297,7 +298,7 @@ test('keeps subscription compatibility routes on the unified Dashboard', async (
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('canonicalizes an unknown subscription compatibility route', async ({ page }) => {
+test('shows an unknown subscription without silently selecting another one', async ({ page }) => {
   await prepareAuthenticatedPage(page, {
     responses: {
       '/api/cabinet/subscriptions': {
@@ -325,7 +326,9 @@ test('canonicalizes an unknown subscription compatibility route', async ({ page 
   });
 
   await page.goto('/subscriptions/999');
-  await expect(page).toHaveURL('/?sub=7');
+  await expect(page).toHaveURL('/subscriptions/999');
+  await expect(page.getByRole('heading', { name: 'Subscription not found' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Extend Subscription/ })).toHaveCount(0);
 });
 
 test('exposes the web renewal back link as a full-size accessible target', async ({ page }) => {

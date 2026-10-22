@@ -13,6 +13,7 @@ import { hasLegacySubscription } from '../utils/legacySubscription';
 import SubscriptionListCard from '../components/subscription/SubscriptionListCard';
 import TrialOfferCard from '../components/dashboard/TrialOfferCard';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { WebBackButton } from '@/components/WebBackButton';
 
 function EmptyState({ onBuy }: { onBuy: () => void }) {
   const { t } = useTranslation();
@@ -55,17 +56,28 @@ export default function Subscriptions() {
   const refreshUser = useAuthStore((state) => state.refreshUser);
   const [trialError, setTrialError] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isSuccess, isError, refetch } = useQuery({
     queryKey: ['subscriptions-list'],
     queryFn: () => subscriptionApi.getSubscriptions(),
     staleTime: 30_000,
     refetchOnMount: 'always',
+    retry: false,
   });
 
   const subscriptions = data?.subscriptions ?? [];
   const hasLegacy = hasLegacySubscription(subscriptions);
   const isMultiTariff = data?.multi_tariff_enabled ?? false;
-  const hasNoSubscriptions = !isLoading && subscriptions.length === 0;
+  const hasNoSubscriptions = isSuccess && subscriptions.length === 0;
+  const purchaseQuery = useQuery({
+    queryKey: ['purchase-options'],
+    queryFn: () => subscriptionApi.getPurchaseOptions(),
+    enabled: isSuccess && subscriptions.length > 0,
+    staleTime: 0,
+    retry: false,
+  });
+  const canBrowse =
+    purchaseQuery.data?.sales_mode === 'tariffs' ||
+    (purchaseQuery.isSuccess && subscriptions.every((sub) => sub.is_trial));
   // Есть ли хотя бы одна НАСТОЯЩАЯ (платная, не триал) живая подписка. От этого
   // зависит CTA: «+ Купить ещё» — только если уже есть платная; иначе показываем
   // явную «Посмотреть тарифы и купить подписку» (триал/истёкшие — это ещё не покупка).
@@ -114,11 +126,12 @@ export default function Subscriptions() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
+        <WebBackButton to="/" />
         <h1 className="truncate text-xl font-bold" style={{ color: g.text }}>
           {t('subscriptions.title', 'Мои подписки')}
         </h1>
         {/* «+ Купить ещё» — только если уже есть платная активная подписка */}
-        {!isLoading && hasActivePaid && !hasLegacy && (
+        {!isLoading && isMultiTariff && canBrowse && hasActivePaid && !hasLegacy && (
           <button
             onClick={() => navigate('/subscription/purchase')}
             className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-colors"
@@ -136,7 +149,7 @@ export default function Subscriptions() {
 
       {/* Есть подписки, но платной активной нет (только триал/истёкшие) —
           даём ЯВНУЮ primary-кнопку покупки: мы продаём подписки. */}
-      {!isLoading && subscriptions.length > 0 && !hasActivePaid && !hasLegacy && (
+      {!isLoading && canBrowse && subscriptions.length > 0 && !hasActivePaid && !hasLegacy && (
         <button
           onClick={() => navigate('/subscription/purchase')}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent-500 p-3.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-600"
@@ -147,6 +160,22 @@ export default function Subscriptions() {
       )}
 
       {/* Loading */}
+      {(isError || purchaseQuery.isError) && (
+        <div role="alert" className="space-y-3 rounded-xl bg-error-400/10 p-4 text-error-400">
+          <p>
+            {t(
+              isError ? 'dashboard.subscriptionLoadError' : 'subscription.paymentOptionsLoadError',
+            )}
+          </p>
+          <button
+            className="btn-secondary"
+            disabled={purchaseQuery.isFetching}
+            onClick={() => (isError ? refetch() : purchaseQuery.refetch())}
+          >
+            {t('common.retry')}
+          </button>
+        </div>
+      )}
       {isLoading && (
         <SkeletonGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {[1, 2].map((i) => (
@@ -195,7 +224,9 @@ export default function Subscriptions() {
             <SubscriptionListCard
               key={sub.id}
               subscription={sub}
-              onClick={() => navigate(`/subscriptions/${sub.id}`)}
+              onClick={() =>
+                navigate(`/subscriptions/${sub.id}`, { state: { backTo: '/subscriptions' } })
+              }
             />
           ))}
         </div>

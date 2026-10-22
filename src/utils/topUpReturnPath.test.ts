@@ -28,12 +28,17 @@ describe('top-up exit destination', () => {
 });
 
 describe('closing a ready payment', () => {
+  it('returns a device funding task to the normal management page', () => {
+    expect(
+      getReadyTopUpClosePath('/subscriptions/42?section=additional-options&action=devices', [42]),
+    ).toBe('/subscriptions/42');
+  });
   it.each([
-    ['/subscriptions/42/renew?period=90', '/?sub=42'],
-    ['/subscriptions/42?section=additional-options', '/?sub=42'],
-    ['/subscriptions/42?overlay=devices', '/?sub=42'],
-    ['/subscription/42', '/?sub=42'],
-    ['/subscription/purchase?subscriptionId=42', '/?sub=42'],
+    ['/subscriptions/42/renew?period=90', '/subscriptions/42'],
+    ['/subscriptions/42?section=additional-options', '/subscriptions/42'],
+    ['/subscriptions/42?overlay=devices', '/subscriptions/42'],
+    ['/subscription/42', '/subscriptions/42'],
+    ['/subscription/purchase?subscriptionId=42', '/subscriptions/42'],
     ['/subscription/purchase', '/'],
     ['/?sub=42&overlay=devices', '/?sub=42'],
     ['/connection?sub=42', '/?sub=42'],
@@ -56,7 +61,7 @@ describe('closing a ready payment', () => {
     expect(getReadyTopUpClosePath('/subscriptions/42/renew', [1, 2])).toBe('/');
     expect(getReadyTopUpClosePath('/subscription/purchase?subscriptionId=42', [])).toBe('/');
     expect(getReadyTopUpClosePath('/subscriptions/42?section=additional-options', [42])).toBe(
-      '/?sub=42',
+      '/subscriptions/42',
     );
   });
 });

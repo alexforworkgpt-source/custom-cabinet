@@ -12,15 +12,29 @@ interface Props {
   onSelect: (period: number) => void;
 }
 
+export function RenewalPeriodHeading({ showHint = true }: { showHint?: boolean }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+      <h2 id="renewal-period-label" className="text-lg font-semibold text-dark-100">
+        {t('subscription.chooseRenewalPeriod')}
+      </h2>
+      {showHint && (
+        <p className="ms-auto text-end text-xs text-dark-400">
+          {t('subscription.renewLongerBetter')}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function RenewalOptions({ options, selectedPeriod, disabled, onSelect }: Props) {
   const { t } = useTranslation();
   const { formatAmount, currencySymbol } = useCurrency();
   const price = (kopeks: number) => `${formatAmount(kopeks / 100)} ${currencySymbol}`;
   return (
     <section aria-labelledby="renewal-period-label" className="space-y-3">
-      <h2 id="renewal-period-label" className="text-lg font-semibold text-dark-100">
-        {t('subscription.chooseRenewalPeriod')}
-      </h2>
+      <RenewalPeriodHeading showHint={options.length > 1} />
       {options.length === 0 ? (
         <Card>
           <p className="text-sm text-dark-400">{t('subscription.noRenewalOptions')}</p>

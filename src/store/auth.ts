@@ -22,6 +22,7 @@ import {
 import { usePermissionStore } from './permissions';
 import { safeLocal } from '../utils/safeStorage';
 import { clearRenewalSelections } from '../utils/renewalSelection';
+import { clearDeviceIntents } from '../utils/deviceIntent';
 
 export interface TelegramWidgetData {
   id: number;
@@ -118,6 +119,7 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         clearRenewalSelections();
+        clearDeviceIntents();
         const refreshToken = tokenStorage.getRefreshToken();
         if (refreshToken) {
           authApi.logout(refreshToken).catch(() => {});

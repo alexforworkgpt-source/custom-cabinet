@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BestValueBadge } from './BestValueBadge';
+import { Skeleton } from '../ui/skeleton';
 
 interface Props {
   label: ReactNode;
@@ -12,6 +13,7 @@ interface Props {
   discountClassName?: string;
   highlighted?: boolean;
   compactHighlight?: boolean;
+  loading?: boolean;
 }
 
 /** Presentation only: callers retain pricing and selection behavior. */
@@ -25,6 +27,7 @@ export function PeriodCardContent({
   discountClassName = 'bg-success-500 text-white',
   highlighted,
   compactHighlight = false,
+  loading = false,
 }: Props) {
   const { t } = useTranslation();
   const priceCaption =
@@ -38,7 +41,7 @@ export function PeriodCardContent({
     <>
       <span className="flex items-start justify-between gap-0.5 sm:gap-1.5">
         <span className="min-w-0 break-words text-xs font-semibold leading-5 text-dark-100 min-[375px]:text-sm sm:text-base sm:leading-6">
-          {label}
+          {loading ? <Skeleton className="h-5 w-16 sm:h-6" /> : label}
         </span>
         <span
           className={`flex shrink-0 items-center sm:gap-1 ${compactHighlight ? 'gap-0' : 'gap-0.5'}`}
@@ -56,12 +59,16 @@ export function PeriodCardContent({
       {highlighted && !compactHighlight && <BestValueBadge className="mt-1 self-start" />}
       <span className="mt-auto block pt-2">
         <span className="block break-words text-xl font-semibold leading-7 text-accent-400 sm:text-2xl sm:leading-8">
-          {price}
+          {loading ? <Skeleton className="h-7 w-24 sm:h-8" /> : price}
         </span>
         <span className="block min-h-4 text-xs leading-4 text-dark-500 line-through">
-          {originalPrice}
+          {loading ? <Skeleton className="h-4 w-16" /> : originalPrice}
         </span>
-        <div className="min-h-4 text-xs leading-4 text-dark-400">{priceCaption}</div>
+        <div
+          className={`min-h-4 text-xs leading-4 ${monthlyPrice != null || periodDays === 30 ? 'text-success-400' : 'text-dark-400'}`}
+        >
+          {loading ? <Skeleton className="h-4 w-20" /> : priceCaption}
+        </div>
       </span>
     </>
   );

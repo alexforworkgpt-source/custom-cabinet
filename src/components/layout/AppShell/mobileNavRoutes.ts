@@ -3,11 +3,20 @@
  * rules are adapted here without replacing the local four-item information
  * architecture.
  */
-export type MobileNavKey = 'dashboard' | 'tariffs' | 'support' | 'profile';
+export type MobileNavKey =
+  | 'dashboard'
+  | 'tariffs'
+  | 'subscription'
+  | 'subscriptions'
+  | 'support'
+  | 'profile';
 
 export interface MobileNavItem {
   readonly key: MobileNavKey;
   readonly path: string;
+  readonly labelKey?: string;
+  readonly pending?: boolean;
+  readonly onRetry?: () => void;
 }
 
 const ITEMS: readonly MobileNavItem[] = [
@@ -17,8 +26,21 @@ const ITEMS: readonly MobileNavItem[] = [
   { key: 'profile', path: '/profile' },
 ];
 
-export function mobileNavItems(): readonly MobileNavItem[] {
-  return ITEMS;
+export function mobileNavItems(subscriptionItem?: MobileNavItem): readonly MobileNavItem[] {
+  return subscriptionItem
+    ? ITEMS.map((item) => (item.key === 'tariffs' ? subscriptionItem : item))
+    : ITEMS;
+}
+
+export function isNavItemActive(
+  pathname: string,
+  item: Pick<MobileNavItem, 'key' | 'path'>,
+): boolean {
+  if (item.key === 'dashboard') return pathname === '/';
+  if (item.key === 'subscription' || item.key === 'subscriptions') {
+    return pathname === '/subscriptions' || pathname.startsWith('/subscriptions/');
+  }
+  return pathname.startsWith(item.path);
 }
 
 function withoutTrailingSlash(pathname: string): string {

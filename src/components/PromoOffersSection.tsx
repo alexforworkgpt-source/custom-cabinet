@@ -1,83 +1,31 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
-import { promoApi, type PromoOffer } from '../api/promo';
+import { promoApi } from '../api/promo';
 import { getApiErrorMessage } from '../utils/api-error';
-import { ClockIcon, CheckIcon, XCircleIcon } from './icons';
+import { ClockIcon, CheckIcon } from './icons';
 import { useDestructiveConfirm } from '@/platform/hooks/useNativeDialog';
 import { Card } from '@/components/data-display/Card';
-
-// Helper functions
-const formatTimeLeft = (
-  expiresAt: string,
-  t: (key: string, options?: Record<string, unknown>) => string,
-): string => {
-  const now = new Date();
-  // Ensure UTC parsing - if no timezone specified, assume UTC
-  let expires: Date;
-  if (expiresAt.includes('Z') || expiresAt.includes('+') || expiresAt.includes('-', 10)) {
-    expires = new Date(expiresAt);
-  } else {
-    // No timezone - treat as UTC
-    expires = new Date(`${expiresAt}Z`);
-  }
-  const diffMs = expires.getTime() - now.getTime();
-
-  if (diffMs <= 0) return t('promo.offers.expired');
-
-  const hours = Math.floor(diffMs / (1000 * 60 * 60));
-  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
-  if (hours > 24) {
-    const days = Math.floor(hours / 24);
-    return `${days} ${t('promo.time.days')}`;
-  }
-  if (hours > 0) {
-    return `${hours}${t('promo.time.hours')} ${minutes}${t('promo.time.minutes')}`;
-  }
-  return `${minutes}${t('promo.time.minutes')}`;
-};
-
-const getOfferIcon = (effectType: string, discountPercent?: number | null) => {
-  if (effectType === 'test_access') return <span className="text-2xl">🚀</span>;
-  if (discountPercent) return <span className="text-2xl">🏷️</span>;
-  return <span className="text-2xl">🎁</span>;
-};
-
-const getOfferTitle = (
-  offer: PromoOffer,
-  t: (key: string, options?: Record<string, unknown>) => string,
-): string => {
-  if (offer.effect_type === 'test_access') {
-    return t('promo.offers.testAccess');
-  }
-  if (offer.discount_percent) {
-    return t('promo.offers.discountPercent', { percent: offer.discount_percent });
-  }
-  return t('promo.offers.specialOffer');
-};
-
-const getOfferDescription = (
-  offer: PromoOffer,
-  t: (key: string, options?: Record<string, unknown>) => string,
-): string => {
-  if (offer.effect_type === 'test_access') {
-    const squads = offer.extra_data?.test_squad_uuids?.length || 0;
-    return squads > 0
-      ? t('promo.offers.serverAccess', { count: squads })
-      : t('promo.offers.additionalServers');
-  }
-  return t('promo.offers.activateDiscountHint');
-};
+import { useDiscountAction } from '../hooks/useDiscountAction';
+import type { DiscountNavigationContext } from '../utils/discountAction';
+import { ActiveDiscountBanner, UnavailableDiscountBanner } from './promo/ActiveDiscountBanner';
+import { usePromoAvailability } from '../hooks/usePromoAvailability';
+import { invalidatePromoState } from '../utils/invalidatePromoState';
+import { isCurrentPromoOffer } from '../utils/promoExpiry';
+import {
+  formatOfferTimeLeft as formatTimeLeft,
+  getOfferDescription,
+  getOfferIcon,
+  getOfferTitle,
+} from './promo/offerPresentation';
 
 interface PromoOffersSectionProps {
   className?: string;
+  context: DiscountNavigationContext;
 }
 
-export default function PromoOffersSection({ className = '' }: PromoOffersSectionProps) {
+export default function PromoOffersSection({ className = '', context }: PromoOffersSectionProps) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const confirmDeactivate = useDestructiveConfirm();
   const [claimingId, setClaimingId] = useState<number | null>(null);
@@ -85,28 +33,26 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Fetch available offers
-  const { data: offers = [] } = useQuery({
+  const { data: offers = [], isFetching: offersRefreshing } = useQuery({
     queryKey: ['promo-offers'],
     queryFn: promoApi.getOffers,
     staleTime: 30000,
   });
 
   // Fetch active discount
-  const { data: activeDiscount } = useQuery({
+  const { data: activeDiscount, isFetching: discountRefreshing } = useQuery({
     queryKey: ['active-discount'],
     queryFn: promoApi.getActiveDiscount,
     staleTime: 30000,
   });
+  const availability = usePromoAvailability(activeDiscount, offers);
+  const discountNavigation = useDiscountAction(context, availability.currentDiscount);
 
   // Claim offer mutation
   const claimMutation = useMutation({
     mutationFn: promoApi.claimOffer,
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['promo-offers'] });
-      queryClient.invalidateQueries({ queryKey: ['active-discount'] });
-      queryClient.invalidateQueries({ queryKey: ['subscription'] });
-      queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
-      queryClient.invalidateQueries({ queryKey: ['purchase-options'] });
+      invalidatePromoState(queryClient);
       queryClient.invalidateQueries({ queryKey: ['balance'] });
       setSuccessMessage(result.message);
       setClaimingId(null);
@@ -135,10 +81,7 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['active-discount'] });
-      queryClient.invalidateQueries({ queryKey: ['promo-offers'] });
-      queryClient.invalidateQueries({ queryKey: ['subscription'] });
-      queryClient.invalidateQueries({ queryKey: ['purchase-options'] });
+      invalidatePromoState(queryClient);
 
       setSuccessMessage(t('promo.deactivate.success'));
       setTimeout(() => setSuccessMessage(null), 5000);
@@ -158,17 +101,21 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
   });
 
   const handleClaim = (offerId: number) => {
+    discountNavigation.clearError();
+    const offer = offers.find((item) => item.id === offerId);
+    if (!offer || !isCurrentPromoOffer(offer)) {
+      setErrorMessage(t('promo.navigation.expired'));
+      invalidatePromoState(queryClient);
+      return;
+    }
     setClaimingId(offerId);
     setErrorMessage(null);
     setSuccessMessage(null);
     claimMutation.mutate(offerId);
   };
 
-  const handleUseNow = () => {
-    navigate('/subscription/purchase');
-  };
-
   const handleDeactivateClick = async () => {
+    discountNavigation.clearError();
     setErrorMessage(null);
     setSuccessMessage(null);
 
@@ -185,76 +132,62 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
   };
 
   // Filter unclaimed and active offers
-  const availableOffers = offers.filter((o) => o.is_active && !o.is_claimed);
+  const { availableOffers } = availability;
 
   // Don't render if no offers and no active discount
   if (
     availableOffers.length === 0 &&
-    !activeDiscount?.is_active &&
+    !availability.currentDiscount &&
+    !availability.unavailableDiscount &&
     !successMessage &&
-    !errorMessage
+    !errorMessage &&
+    !discountNavigation.error
   ) {
     return null;
   }
 
   return (
-    <div className={`space-y-4 ${className}`}>
+    <div className={`space-y-4 ${className}`} data-promo-offers>
       {/* Active Discount Banner with actions */}
-      {activeDiscount?.is_active && activeDiscount.discount_percent > 0 && (
-        <Card
-          size="lg"
-          className="border-success-500/30 bg-gradient-to-br from-success-500/10 to-accent-500/5"
-        >
-          <div className="flex flex-col gap-4">
-            {/* Header */}
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-success-500/20 text-success-400">
-                <span className="text-2xl">🏷️</span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <h3 className="font-semibold text-dark-100">
-                    {t('promo.offers.discountActiveTitle', {
-                      percent: activeDiscount.discount_percent,
-                    })}
-                  </h3>
-                  <span className="rounded bg-success-500/20 px-2 py-0.5 text-xs font-bold text-success-400">
-                    -{activeDiscount.discount_percent}%
-                  </span>
-                </div>
-                <div className="flex items-center gap-4 text-sm text-dark-400">
-                  {activeDiscount.expires_at && (
-                    <div className="flex items-center gap-1">
-                      <ClockIcon />
-                      <span>
-                        {t('promo.offers.expires', {
-                          time: formatTimeLeft(activeDiscount.expires_at, t),
-                        })}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <button
-                onClick={handleUseNow}
-                className="flex-1 rounded-xl bg-gradient-to-r from-success-500 to-success-600 px-4 py-2.5 font-semibold text-white shadow-lg shadow-success-500/25 transition-all hover:from-success-400 hover:to-success-500 active:from-success-600 active:to-success-700"
-              >
-                {t('promo.useNow')}
-              </button>
-              <button
-                onClick={handleDeactivateClick}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-dark-600/50 bg-dark-900/50 px-4 py-2.5 text-sm text-dark-400 transition-colors hover:border-error-500/30 hover:bg-error-500/10 hover:text-error-400"
-              >
-                <XCircleIcon className="h-4 w-4" />
-                <span>{t('promo.deactivate.button')}</span>
-              </button>
-            </div>
-          </div>
-        </Card>
+      {activeDiscount && availability.currentDiscount && (
+        <ActiveDiscountBanner
+          discount={activeDiscount}
+          now={availability.now}
+          label={t(
+            discountNavigation.pending ||
+              discountNavigation.action.kind === 'loading' ||
+              discountNavigation.action.kind === 'needs-mode'
+              ? 'common.loading'
+              : discountNavigation.error || discountNavigation.action.kind === 'retry'
+                ? 'common.retry'
+                : discountNavigation.action.labelKey,
+          )}
+          disabled={
+            discountNavigation.pending ||
+            claimingId !== null ||
+            discountNavigation.action.kind === 'loading' ||
+            discountNavigation.action.kind === 'needs-mode'
+          }
+          pending={discountNavigation.pending}
+          onUse={() => {
+            setErrorMessage(null);
+            void discountNavigation.openDiscount();
+          }}
+          onDeactivate={() => {
+            void handleDeactivateClick();
+          }}
+          deactivating={deactivateMutation.isPending}
+        />
+      )}
+      {availability.unavailableDiscount && (
+        <UnavailableDiscountBanner
+          refreshing={discountRefreshing || offersRefreshing}
+          deactivating={deactivateMutation.isPending}
+          onRefresh={() => invalidatePromoState(queryClient)}
+          onDeactivate={() => {
+            void handleDeactivateClick();
+          }}
+        />
       )}
 
       {/* Success/Error Messages */}
@@ -265,9 +198,12 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
         </div>
       )}
 
-      {errorMessage && (
-        <div className="rounded-xl border border-error-500/30 bg-error-500/10 p-4 text-error-400">
-          {errorMessage}
+      {(errorMessage || discountNavigation.error) && (
+        <div
+          role="alert"
+          className="rounded-xl border border-error-500/30 bg-error-500/10 p-4 text-error-400"
+        >
+          {errorMessage || discountNavigation.error}
         </div>
       )}
 
@@ -298,7 +234,9 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
                     <div className="flex items-center gap-1 text-xs text-dark-500">
                       <ClockIcon />
                       <span>
-                        {t('promo.offers.remaining', { time: formatTimeLeft(offer.expires_at, t) })}
+                        {t('promo.offers.remaining', {
+                          time: formatTimeLeft(offer.expires_at, t, availability.now),
+                        })}
                       </span>
                     </div>
                     <button

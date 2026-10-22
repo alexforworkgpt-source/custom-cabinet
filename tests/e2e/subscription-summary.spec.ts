@@ -181,5 +181,12 @@ test('management, connection and link controls keep their order and transitions 
   expect(connectBox && copyBox && connectBox.y + connectBox.height <= copyBox.y).toBe(true);
   await manage.click();
   await expect(page).toHaveURL('/subscriptions/42');
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Подписка', exact: true })).toBeVisible();
+  await expect(
+    page.locator('[data-subscription-overview]').getByRole('heading', {
+      name: unlimitedSubscription.tariff_name,
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 });

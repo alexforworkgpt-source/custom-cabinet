@@ -5,6 +5,7 @@ import { getErrorMessage } from '../../../utils/subscriptionHelpers';
 import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
 import { ChevronRightIcon } from '../../icons';
 import type { PurchaseOptions, Subscription } from '../../../types';
+import { subscriptionActionStyles as styles } from './subscriptionActionStyles';
 
 // ──────────────────────────────────────────────────────────────────
 // Buy-traffic sheet. Self-owns the packages query + purchase mutation;
@@ -25,6 +26,7 @@ export interface TrafficTopupSheetProps {
   onSelectedTrafficPackageChange: (gb: number | null) => void;
   purchaseOptions: PurchaseOptions | undefined;
   isDark: boolean;
+  compactOnMobile?: boolean;
 }
 
 export function TrafficTopupSheet({
@@ -37,6 +39,7 @@ export function TrafficTopupSheet({
   onSelectedTrafficPackageChange,
   purchaseOptions,
   isDark,
+  compactOnMobile = false,
 }: TrafficTopupSheetProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -66,33 +69,28 @@ export function TrafficTopupSheet({
 
   if (!open) {
     return (
-      <button
-        onClick={onOpen}
-        className={`w-full rounded-xl border p-4 text-left transition-colors ${isDark ? 'border-dark-700/50 bg-dark-800/50 hover:border-dark-600' : 'border-champagne-300/60 bg-champagne-200/40 hover:border-champagne-400'}`}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium text-dark-100">
+      <button onClick={onOpen} className={styles.trigger(isDark, compactOnMobile)}>
+        <div className={styles.row(compactOnMobile)}>
+          <div className={styles.text(compactOnMobile)}>
+            <div className={styles.title(compactOnMobile)}>
               {t('subscription.additionalOptions.buyTraffic')}
             </div>
-            <div className="mt-1 text-sm text-dark-400">
+            <div className={styles.description(compactOnMobile)}>
               {t('subscription.additionalOptions.currentTrafficLimit', {
                 limit: subscription.traffic_limit_gb,
                 used: subscription.traffic_used_gb.toFixed(1),
               })}
             </div>
           </div>
-          <ChevronRightIcon className="text-dark-400" />
+          <ChevronRightIcon className={styles.chevron(compactOnMobile)} />
         </div>
       </button>
     );
   }
 
   return (
-    <div
-      className={`rounded-xl border p-5 ${isDark ? 'border-dark-700/50 bg-dark-800/50' : 'border-champagne-300/60 bg-champagne-200/40'}`}
-    >
-      <div className="mb-4 flex items-center justify-between">
+    <div className={styles.panel(isDark)}>
+      <div className={styles.header}>
         <h3 className="font-medium text-dark-100 outline-none" tabIndex={-1} autoFocus>
           {t('subscription.additionalOptions.buyTrafficTitle')}
         </h3>
@@ -101,7 +99,7 @@ export function TrafficTopupSheet({
             onClose();
             onSelectedTrafficPackageChange(null);
           }}
-          className="text-sm text-dark-400 hover:text-dark-200"
+          className={styles.close}
           aria-label={t('common.close', 'Close')}
         >
           ✕
@@ -109,7 +107,7 @@ export function TrafficTopupSheet({
       </div>
 
       <div
-        className={`mb-4 rounded-lg p-2 text-xs ${isDark ? 'bg-dark-700/30 text-dark-500' : 'bg-champagne-300/40 text-champagne-600'}`}
+        className={`mb-3 rounded-lg p-2 text-xs sm:mb-4 ${isDark ? 'bg-dark-700/30 text-dark-500' : 'bg-champagne-300/40 text-champagne-600'}`}
       >
         ⚠️ {t('subscription.additionalOptions.trafficWarning')}
       </div>
@@ -119,13 +117,13 @@ export function TrafficTopupSheet({
           {t('subscription.additionalOptions.trafficUnavailable')}
         </div>
       ) : (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+        <div className={styles.fields}>
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
             {trafficPackages.map((pkg) => (
               <button
                 key={pkg.gb}
                 onClick={() => onSelectedTrafficPackageChange(pkg.gb)}
-                className={`rounded-xl border p-4 text-center transition-all ${
+                className={`min-w-0 rounded-xl border p-3 text-center transition-all sm:p-4 ${
                   selectedTrafficPackage === pkg.gb
                     ? 'border-accent-500 bg-accent-500/10'
                     : isDark

@@ -96,6 +96,8 @@ function expectNoMoneyMutation(apiRequests: string[]) {
 test('shows one daily quote and best-value purchase choices in dark and light themes @critical-flow', async ({
   page,
 }) => {
+  // Keep this active-discount fixture before its explicit expiry, independent of the run date.
+  await page.clock.setFixedTime(new Date('2026-09-01T12:00:00Z'));
   const daily = tariff(7, 'Суточный', {
     description: 'Цена за день',
     dailyPriceKopeks: 1_200,

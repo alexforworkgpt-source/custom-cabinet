@@ -82,4 +82,15 @@ describe('calculatePromoDiscount', () => {
       }).price,
     ).toBe(8_500);
   });
+
+  it('ignores an expired account discount while preserving the server group price', () => {
+    expect(
+      calculatePromoDiscount(8_000, 10_000, {
+        discount_percent: 20,
+        source: 'offer',
+        expires_at: '2020-01-01T00:00:00Z',
+        is_active: true,
+      }),
+    ).toEqual({ price: 8_000, original: 10_000, percent: 20, isPromoGroup: true });
+  });
 });

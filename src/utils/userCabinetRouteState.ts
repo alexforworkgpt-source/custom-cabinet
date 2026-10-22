@@ -1,10 +1,4 @@
-export type UserCabinetOverlay =
-  | 'subscription'
-  | 'devices'
-  | 'connection'
-  | 'balance'
-  | 'topup'
-  | null;
+export type UserCabinetOverlay = 'devices' | 'connection' | 'balance' | 'topup' | null;
 
 export interface UserCabinetRouteState {
   overlay: UserCabinetOverlay;
@@ -55,7 +49,7 @@ export function getUserCabinetRouteState(pathname: string, search: string): User
       };
     }
     return {
-      overlay: 'subscription',
+      overlay: null,
       subscriptionId,
       subscriptionSection:
         params.get('section') === 'additional-options' ? 'additional-options' : undefined,

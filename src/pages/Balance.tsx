@@ -18,6 +18,7 @@ import { ChevronDownIcon, ChevronRightIcon, CreditCardIcon, WalletIcon } from '@
 import { staggerContainer, staggerItem } from '@/components/motion/transitions';
 import { isPaidStatus, isFailedStatus } from '../utils/paymentStatus';
 import { transactionTypeBadge, transactionTypeLabelKey } from '../utils/transactionType';
+import { invalidatePromoState } from '../utils/invalidatePromoState';
 
 export default function Balance() {
   const { t } = useTranslation();
@@ -126,11 +127,10 @@ export default function Balance() {
         setPromocode('');
         setPromoSelectSubs(null);
         setPromoSelectCode(null);
+        invalidatePromoState(queryClient);
         await refetchBalance();
         await refreshUser();
         queryClient.invalidateQueries({ queryKey: ['transactions'] });
-        queryClient.invalidateQueries({ queryKey: ['purchase-options'] });
-        queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
       }
     } catch (error: unknown) {
       // Backend returns a structured error: detail = { code, message }. We map

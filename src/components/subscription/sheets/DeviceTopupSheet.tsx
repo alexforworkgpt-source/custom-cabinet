@@ -1,17 +1,17 @@
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { subscriptionApi } from '../../../api/subscription';
 import { getErrorMessage } from '../../../utils/subscriptionHelpers';
 import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
 import { ChevronRightIcon } from '../../icons';
 import type { PurchaseOptions, Subscription } from '../../../types';
 import { deviceUnavailableText } from '../deviceReasons';
+import { useDevicePurchase } from '@/hooks/useDevicePurchase';
+import { formatDateOrRaw } from '@/utils/format';
+import { subscriptionActionStyles as styles } from './subscriptionActionStyles';
 
 // ──────────────────────────────────────────────────────────────────
-// Buy-devices sheet. Self-owns its devicePrice query + purchase mutation;
-// parent only passes the subscription / id / open state and the shared
-// purchaseOptions (which it already holds for sibling sheets and balance
-// gating).
+// Existing buy-devices presentation. useDevicePurchase owns fresh server terms,
+// scoped local intent and explicit payment confirmation. purchaseOptions remains
+// accepted for compatibility with existing management callers; balance is re-read.
 //
 // Extracted from Subscription.tsx to drop ~190 lines from the god page.
 // ──────────────────────────────────────────────────────────────────
@@ -26,6 +26,7 @@ export interface DeviceTopupSheetProps {
   onDevicesToAddChange: (n: number) => void;
   purchaseOptions: PurchaseOptions | undefined;
   isDark: boolean;
+  compactOnMobile?: boolean;
 }
 
 export function DeviceTopupSheet({
@@ -36,75 +37,76 @@ export function DeviceTopupSheet({
   subscriptionId,
   devicesToAdd,
   onDevicesToAddChange,
-  purchaseOptions,
   isDark,
+  compactOnMobile = false,
 }: DeviceTopupSheetProps) {
-  const { t } = useTranslation();
-  const queryClient = useQueryClient();
+  const { t, i18n } = useTranslation();
+  const {
+    priceQuery,
+    purchaseMutation: devicePurchaseMutation,
+    buy,
+    prepareFunding,
+    notice,
+    needsSelection,
+    selectDevices,
+    balance,
+    ready,
+    checking,
+    supported,
+    failedQuery,
+    currentSubscription,
+  } = useDevicePurchase({
+    open,
+    subscription,
+    subscriptionId,
+    devicesToAdd,
+    onDevicesToAddChange,
+    onClose,
+  });
+  const devicePriceData = priceQuery.data;
+  const canReselectDevices =
+    devicePriceData?.reason_code === 'can_add_limited' && (devicePriceData.can_add ?? 0) > 0;
 
   const formatPrice = (kopeks: number) => {
     const rubles = kopeks / 100;
     return rubles % 1 === 0 ? `${rubles} ₽` : `${rubles.toFixed(2)} ₽`;
   };
 
-  const { data: devicePriceData } = useQuery({
-    queryKey: ['device-price', devicesToAdd, subscriptionId],
-    queryFn: () => subscriptionApi.getDevicePrice(devicesToAdd, subscriptionId),
-    enabled: open && !!subscription,
-  });
-
-  const devicePurchaseMutation = useMutation({
-    mutationFn: () => subscriptionApi.purchaseDevices(devicesToAdd, subscriptionId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
-      queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
-      queryClient.invalidateQueries({ queryKey: ['devices', subscriptionId] });
-      queryClient.invalidateQueries({ queryKey: ['device-price'] });
-      queryClient.invalidateQueries({ queryKey: ['balance'] });
-      onClose();
-      onDevicesToAddChange(1);
-    },
-  });
-
   if (!open) {
     return (
-      <button
-        onClick={onOpen}
-        className={`w-full rounded-xl border p-4 text-left transition-colors ${isDark ? 'border-dark-700/50 bg-dark-800/50 hover:border-dark-600' : 'border-champagne-300/60 bg-champagne-200/40 hover:border-champagne-400'}`}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium text-dark-100">
+      <button onClick={onOpen} className={styles.trigger(isDark, compactOnMobile)}>
+        <div className={styles.row(compactOnMobile)}>
+          <div className={styles.text(compactOnMobile)}>
+            <div className={styles.title(compactOnMobile)}>
               {t('subscription.additionalOptions.buyDevices')}
             </div>
-            <div className="mt-1 text-sm text-dark-400">
+            <div className={styles.description(compactOnMobile)}>
               {t('subscription.additionalOptions.currentDeviceLimit', {
                 count: subscription.device_limit,
               })}
             </div>
           </div>
-          <ChevronRightIcon className="text-dark-400" />
+          <ChevronRightIcon className={styles.chevron(compactOnMobile)} />
         </div>
       </button>
     );
   }
 
   return (
-    <div
-      className={`rounded-xl border p-5 ${isDark ? 'border-dark-700/50 bg-dark-800/50' : 'border-champagne-300/60 bg-champagne-200/40'}`}
-    >
-      <div className="mb-4 flex items-center justify-between">
+    <div className={styles.panel(isDark)}>
+      <div className={styles.header}>
         <h3 className="font-medium text-dark-100">{t('subscription.buyDevices')}</h3>
         <button
           onClick={onClose}
-          className="text-sm text-dark-400 hover:text-dark-200"
+          disabled={checking || devicePurchaseMutation.isPending}
+          className={styles.close}
           aria-label={t('common.close', 'Close')}
         >
           ✕
         </button>
       </div>
 
-      {devicePriceData?.available === false ? (
+      {devicePriceData?.available === false && !canReselectDevices ? (
         <div className="py-4 text-center text-sm text-dark-400">
           {deviceUnavailableText(
             t,
@@ -113,12 +115,40 @@ export function DeviceTopupSheet({
           )}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className={styles.fields}>
+          {devicePriceData?.available === false && (
+            <p role="status" className="text-center text-sm text-dark-400">
+              {deviceUnavailableText(
+                t,
+                devicePriceData,
+                'subscription.additionalOptions.devicesUnavailable',
+              )}
+            </p>
+          )}
+          <div className="space-y-1 text-center text-sm text-dark-300">
+            <p>
+              {t('subscription.additionalOptions.currentDeviceLimit', {
+                count: currentSubscription.device_limit,
+              })}
+              {' → '}
+              {t('subscription.additionalOptions.newDeviceLimit', {
+                count: currentSubscription.device_limit + devicesToAdd,
+              })}
+            </p>
+            <p>
+              {t('subscription.expiresAt')}:{' '}
+              {formatDateOrRaw(currentSubscription.end_date, i18n?.language ?? 'ru', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </p>
+          </div>
           {/* Device counter */}
-          <div className="flex items-center justify-center gap-6">
+          <div className={styles.counter}>
             <button
-              onClick={() => onDevicesToAddChange(Math.max(1, devicesToAdd - 1))}
-              disabled={devicesToAdd <= 1}
+              onClick={() => selectDevices(Math.max(1, devicesToAdd - 1))}
+              disabled={devicesToAdd <= 1 || checking || devicePurchaseMutation.isPending}
               className="btn-secondary flex h-12 w-12 items-center justify-center !p-0 text-2xl"
               aria-label={t('subscription.additionalOptions.decrementDevices', 'Уменьшить')}
             >
@@ -131,12 +161,16 @@ export function DeviceTopupSheet({
               </div>
             </div>
             <button
-              onClick={() => onDevicesToAddChange(devicesToAdd + 1)}
+              onClick={() => selectDevices(devicesToAdd + 1)}
               disabled={
-                devicePriceData?.max_device_limit
+                checking ||
+                devicePurchaseMutation.isPending ||
+                devicePriceData?.available === false ||
+                devicesToAdd >= 100 ||
+                (devicePriceData?.max_device_limit
                   ? (devicePriceData.current_device_limit || 0) + devicesToAdd >=
                     devicePriceData.max_device_limit
-                  : false
+                  : false)
               }
               className="btn-secondary flex h-12 w-12 items-center justify-center !p-0 text-2xl"
               aria-label={t('subscription.additionalOptions.incrementDevices', 'Увеличить')}
@@ -204,29 +238,32 @@ export function DeviceTopupSheet({
 
           {/* Insufficient balance */}
           {devicePriceData?.available &&
-            purchaseOptions &&
+            ready &&
+            supported &&
+            balance !== undefined &&
             devicePriceData.total_price_kopeks &&
-            devicePriceData.total_price_kopeks > purchaseOptions.balance_kopeks && (
+            devicePriceData.total_price_kopeks > balance && (
               <InsufficientBalancePrompt
-                missingAmountKopeks={
-                  devicePriceData.total_price_kopeks - purchaseOptions.balance_kopeks
-                }
+                missingAmountKopeks={devicePriceData.total_price_kopeks - balance}
                 compact
-                onBeforeTopUp={async () => {
-                  await subscriptionApi.saveDevicesCart(devicesToAdd, subscriptionId);
-                }}
+                returnTo={`/subscriptions/${subscriptionId ?? subscription.id}?section=additional-options&action=devices`}
+                onBeforeTopUp={prepareFunding}
               />
             )}
 
           <button
-            onClick={() => devicePurchaseMutation.mutate()}
+            onClick={buy}
             disabled={
               devicePurchaseMutation.isPending ||
+              !ready ||
+              !supported ||
+              checking ||
+              needsSelection ||
               !devicePriceData?.available ||
               !!(
                 devicePriceData?.total_price_kopeks &&
-                purchaseOptions &&
-                devicePriceData.total_price_kopeks > purchaseOptions.balance_kopeks
+                balance !== undefined &&
+                devicePriceData.total_price_kopeks > balance
               )
             }
             className="btn-primary w-full py-3"
@@ -243,6 +280,24 @@ export function DeviceTopupSheet({
           {devicePurchaseMutation.isError && (
             <div className="text-center text-sm text-error-400">
               {getErrorMessage(devicePurchaseMutation.error)}
+            </div>
+          )}
+          {notice && (
+            <p role="status" className="text-sm text-dark-300">
+              {t(notice)}
+            </p>
+          )}
+          {ready && !supported && devicePriceData?.available && (
+            <p role="alert" className="text-sm text-dark-300">
+              {t('subscription.devicePayment.unavailable')}
+            </p>
+          )}
+          {failedQuery && (
+            <div role="alert" className="space-y-2 text-sm text-error-400">
+              <p>{t('subscription.devicePayment.loadError')}</p>
+              <button className="btn-secondary" onClick={() => failedQuery.refetch()}>
+                {t('common.retry')}
+              </button>
             </div>
           )}
         </div>

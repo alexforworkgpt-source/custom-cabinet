@@ -90,12 +90,9 @@ for (const { route, label } of sections) {
     const back = main.getByRole('link', { name: 'Back', exact: true });
     await expect(back).toBeVisible();
     await expect(back).toHaveAttribute('href', '/profile');
-    const size = await back.evaluate((link) => ({
-      width: link.offsetWidth,
-      height: link.offsetHeight,
-    }));
-    expect(size.width).toBeGreaterThanOrEqual(44);
-    expect(size.height).toBeGreaterThanOrEqual(44);
+    await expect
+      .poll(() => back.evaluate((link) => Math.min(link.offsetWidth, link.offsetHeight)))
+      .toBeGreaterThanOrEqual(44);
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
