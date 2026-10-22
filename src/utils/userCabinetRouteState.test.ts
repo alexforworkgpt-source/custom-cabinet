@@ -29,16 +29,16 @@ describe('getUserCabinetRouteState', () => {
     expect(getUserCabinetRouteState('/balance', '')).toEqual({ overlay: 'balance' });
   });
 
-  it('opens subscription management from its compatibility route', () => {
+  it('keeps subscription management outside the overlay while retaining its id', () => {
     expect(getUserCabinetRouteState('/subscriptions/7', '')).toEqual({
-      overlay: 'subscription',
+      overlay: null,
       subscriptionId: 7,
     });
   });
 
   it('opens additional subscription options from an explicit section link', () => {
     expect(getUserCabinetRouteState('/subscriptions/7', '?section=additional-options')).toEqual({
-      overlay: 'subscription',
+      overlay: null,
       subscriptionId: 7,
       subscriptionSection: 'additional-options',
     });
@@ -93,8 +93,8 @@ describe('getDirectCabinetBackPath', () => {
     );
   });
 
-  it('closes directly opened subscription management', () => {
-    expect(getDirectCabinetBackPath('/subscriptions/7', '')).toBe('/?sub=7');
+  it('leaves ordinary management back navigation to its page', () => {
+    expect(getDirectCabinetBackPath('/subscriptions/7', '')).toBeNull();
   });
 
   it('moves through direct connection steps before closing the overlay', () => {

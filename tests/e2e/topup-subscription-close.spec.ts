@@ -21,9 +21,9 @@ const paymentResponses = {
 };
 
 for (const [returnTo, destination] of [
-  ['/subscriptions/42/renew', '/?sub=42'],
-  ['/subscriptions/42?section=additional-options', '/?sub=42'],
-  ['/subscription/purchase?subscriptionId=42', '/?sub=42'],
+  ['/subscriptions/42/renew', '/subscriptions/42'],
+  ['/subscriptions/42?section=additional-options', '/subscriptions/42'],
+  ['/subscription/purchase?subscriptionId=42', '/subscriptions/42'],
   ['/subscription/purchase', '/'],
   ['/subscriptions/99/renew', '/'],
 ]) {
@@ -79,7 +79,7 @@ test('full renewal flow closes a ready payment and retains the renewal selection
   await page.getByRole('button', { name: 'Пополнить', exact: true }).click();
   await expect(page.getByText('Ссылка на оплату готова')).toBeVisible();
   await page.getByRole('button', { name: 'Close', exact: true }).click();
-  await expect(page).toHaveURL('/?sub=42');
+  await expect(page).toHaveURL('/subscriptions/42');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(
     apiRequests.filter((request) => request === 'POST /api/cabinet/balance/topup'),
@@ -133,7 +133,7 @@ for (const openDirect of [false, true]) {
       };
       host.Telegram?.WebView?.receiveEvent('back_button_pressed');
     });
-    await expect(page).toHaveURL('/?sub=42');
+    await expect(page).toHaveURL('/subscriptions/42');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     expect(
       await page.evaluate(() => sessionStorage.getItem('topup_pending_payment')),

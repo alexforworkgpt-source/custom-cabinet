@@ -1,5 +1,208 @@
 # Custom Cabinet Ownership Map
 
+## Dashboard-style subscription identity — 2026-10-22
+
+- `subscription/SubscriptionIdentityBadges` is the shared read-only heading for
+  SubscriptionOverviewCard and RenewalSubscriptionInfo. Typography/badge geometry
+  match the unchanged Dashboard reference; light/dark colors use the normal
+  conditions surface tokens. Full tariff text and semantic h2 remain available.
+- The existing overview status precedence is preserved. Active trial has one
+  gift badge; expired/disabled/limited/paused states remain explicit. Route pages
+  retain all data, eligibility, prices and actions; the heading makes no requests.
+- The management skeleton follows the badges; renewal's existing read-only
+  conditions preview reuses the updated real view. Motion stays unchanged.
+- Owner cancelled group-banner addition/reordering; its placement is preserved.
+  [Local verification](docs/subscription-identity-badges-20261022.md):1161unit,
+  build/types/Biome and470compiled browser cases PASS;16card captures.
+
+## Mobile action density — 2026-10-22
+
+- Owner approved packages A/B: below640px embedded management opts into compact
+  action presentation; sm and larger preserve existing dimensions. No foundation
+  Card/Button/Switch defaults, global CSS, colors or animation contracts changed.
+- `PurchaseCTAPresentation` owns the read-only geometry shared by the actual CTA
+  and `SubscriptionPurchaseSkeleton`. Applicable captions reserve wrapping space
+  while sales_mode is unknown; link/route/readiness remain in PurchaseCTAButton.
+- `sheets/subscriptionActionStyles` shares only trigger/form classes. Existing
+  device/traffic/reduction components retain their queries, guards and mutations.
+  Open traffic form density also applies to its existing Dashboard consumer.
+- `SubscriptionAutopayToggle` separates a mobile52×44 hit area from its unchanged
+  52×28 track. Subscription owns the same mutation; embedded Card padding is local.
+  DeviceLimitPanel locally raises its mobile add-slots target to44px.
+- [Exact local proof](docs/mobile-interface-density-20261022.md):1161 unit,
+  479compiled browser/17configured skips, build/types/Biome PASS;16measurements
+  and9captures. No new financial or backend acceptance scope.
+
+## Permanently visible additional options — 2026-10-21
+
+- Owner requested removal of the collapse interaction. `Subscription` renders a
+  static h2 and the existing actions, preserving subscription/feature guards and
+  explicit individual form/confirmation state. Success closes forms, not the section.
+- The existing `initiallyOpenAdditionalOptions` prop/section URL now requests scroll
+  to an always-visible section. Its cancellable frame scheduling runs after route
+  scroll restoration/closing-overlay focus. API contracts stay unchanged.
+- Management skeleton reserves the expanded action structure with existing primitives.
+  Balance-autopay remains below; provider UI no longer depends on collapse state.
+- [Local proof](.scratch/additional-options-20261021/IMPLEMENTATION_REPORT.md):1161
+  unit,313 compiled browser/5 configured skips,4 visual cases, build/types/Biome PASS.
+
+## Context-aware discount actions — 2026-10-21
+
+- `discountAction` owns readonly destination policy; `canRenewSubscription` is shared
+  with the existing PurchaseCTAButton guard. Dashboard supplies explicit selection,
+  owned records and full-subscription readiness instead of treating its first-record
+  fallback as a user's explicit choice.
+- `useDiscountAction` owns fresh GET/ownership/selection/account checks and pending/
+  retry before navigation. It performs no purchase mutation. PromoOffersSection
+  retains claim and source-specific deactivation, composing presentation from
+  `components/promo/ActiveDiscountBanner` and `offerPresentation`.
+- `promoExpiry` owns UTC deadline checks; `usePromoAvailability` owns the mounted
+  clock and one readonly refresh per expired benefit/account/deadline. `useNow` keeps
+  its existing default behavior with optional timer enable/cleanup.
+- `invalidatePromoState` marks existing discount/group/subscription/quote caches
+  stale after benefit changes. `usePromoDiscount` filters expired account discounts;
+  existing group prices/rounding and authoritative flow-specific quotes remain.
+- Group-link subtitles and unknown-effect copy are neutral in all four locales.
+  [Exact local proof](docs/discount-banners-implementation-20261021.md):1161 unit,
+  821 browser/5 configured skips,32 capture cases, build/both TypeScript/Biome PASS.
+  The pending proposal wording in the dated audit section below is historical.
+
+## Management order and discount audit — 2026-10-20
+
+- `SubscriptionPage` intentionally has no visible web back control beside H1;
+  existing history/source metadata, devices close and native Back remain owned
+  by the page/router. Tests use browser Back for leaving management.
+- `SubscriptionAutopayToggle` extracts the existing display-only balance toggle;
+  `Subscription` still owns its mutation and `showsAutopayToggle` guard. Embedded
+  management places its Card after Additional options. Standalone composes the
+  same toggle in its existing settings; empty embedded settings chrome is omitted.
+  `SubscriptionManagementSkeleton` follows the new section order.
+- Discount handlers were audited, not modified. The proposed state-aware Use now
+  resolver/expiry/cache changes remain pending owner acceptance:
+  [audit](docs/discount-banners-audit-20261020.md).
+  Current UI proof:1139 unit/147 focused browser/build/both TypeScript/Biome PASS.
+
+## Renewal and purchase loading — 2026-10-20
+
+- `usePurchaseContext` owns the existing display-only group query and banner
+  readiness. Query URL/key/30s cache stay the same; optional metadata has no retry
+  so its error fails open instead of holding the layout. Inline tariff groups
+  avoid that query; paid-classic/invalid/unsupported contexts retain their guards.
+- `PurchaseContextBanners` is now pure presentation of the resolved context.
+  Both route pages retain real headers during loading and use `SubscriptionFlowSkeleton`.
+- `PeriodOptionsSkeleton` reuses `PeriodCardContent`'s opt-in loading rendering,
+  typography and responsive period-grid density. No selectable prices or actions
+  are manufactured. The catalogue skeleton follows its own card structure;
+  unknown sales mode/count remains a neutral placeholder until API data arrives.
+- `SubscriptionFlowSkeleton` only accepts read-only conditions as geometry preview:
+  invisible/aria-hidden template plus canonical Skeleton. Financial actions must
+  not be added to that preview. Actual mutations remain in route/form owners.
+- [Latest exact proof](.scratch/purchase-loading-20261020/IMPLEMENTATION_REPORT.md):
+  344 browser and65 focused unit/build/both TypeScript/Biome PASS; aggregate unit
+  retains2 admin audience failures, NOT_PASS.
+
+## Management loading seams — 2026-10-20
+
+- `SubscriptionManagementSkeleton` owns the embedded management loading shape,
+  without the heading already owned by `SubscriptionPage`. It reuses Card,
+  Skeleton/SkeletonGroup and the same256px minimum as `SubscriptionOverviewCard`.
+- `PurchaseCTAButton` accepts opt-in `loading`/`reserveSpace` presentation props.
+  Loading exposes a status skeleton rather than a live link; the existing daily
+  multi-tariff visibility rule still applies first. Management opts into96/80px
+  reserved action height on the painted HoverBorderGradient, not on an oversized
+  invisible Link. Its child fills the surface; the following devices gap stays16px.
+  Route/price decisions retain their existing owners.
+- `Subscription` keeps its query gates and exposes pending devices as a subtitle
+  skeleton, reserving unavailable text for a completed missing/error result.
+  Standalone legacy page loading keeps its existing PageSkeleton.
+- [Exact loading proof](.scratch/subscription-loading-20261020/IMPLEMENTATION_REPORT.md):
+  80 focused unit/239 focused browser/build/both TypeScript/Biome PASS; aggregate
+  unit1129 PASS/2 existing admin audience FAIL, NOT_PASS.
+
+## Compact management overview — 2026-10-20
+
+- Owner explicitly approved a compact overview above the existing management CTA.
+  `SubscriptionOverviewCard` owns plan/status presentation, reusing Card, existing
+  badge variants, `planTitle` and date formatting. `Subscription` supplies its
+  already-loaded subscription only in embedded management, without a new query.
+- `SubscriptionConditions` owns the shared read-only date/traffic/device/server
+  layout. `RenewalSubscriptionInfo` composes it with the existing device guidance;
+  management composes it with title/status and requests flag-only server display.
+  Existing `getFlagEmoji` uses API country codes, falling back to the server name;
+  native tooltips retain names. Financial logic and API clients remain unchanged.
+- [ADR 0004](docs/adr/0004-subscription-management-page.md) records this follow-up
+  after the earlier compact correction. Current proof:54 focused unit and97 focused
+  browser PASS, build/both TypeScript/Biome PASS. Aggregate unit/browser retain
+  unrelated test timeouts and are NOT_PASS; exact scope is in
+  [the report](.scratch/subscription-overview-20261020/IMPLEMENTATION_REPORT.md).
+
+## Renewal structure and funding notices — 2026-10-20
+
+- Shared `PeriodCardContent` uses existing `text-success-400` for monthly-price
+  captions in renewal, classic purchase and tariff purchase. Sub-month period-only
+  captions retain neutral text. Callers retain all price calculations.
+  [Latest color proof: 1116 unit, 90 compact-period browser PASS](.scratch/renewal-structure-20261020/MONTHLY_PRICE_COLOR.md).
+- `utils/renewalDeviceGuidance` selects display-only active/expired/known-maximum
+  device guidance; `RenewalSubscriptionInfo` renders it with the existing
+  `FundingNotice` accent wash, border and InfoIcon. Owner refinement removes the
+  repeated sentence about retaining the device count in RU/EN/FA/ZH. Its traffic
+  label reuses Dashboard's `ChartIcon`. The route supplies the optional classic device maximum
+  from existing purchase options; no device-price request or pricing rule is added.
+  Trial/daily/tariff-selection-required/unlimited/unsupported inactive states omit
+  this paragraph; traffic-limited subscriptions are not treated as expired.
+  [Latest proof: 1116 unit, 92 browser, 14 visual PASS](.scratch/renewal-structure-20261020/DEVICE_GUIDANCE.md).
+- `RenewalSummary` keeps an ordinary `space-y-4` container around the period
+  heading/grid and the independent summary Card; the former outer Card and its
+  border/padding are intentionally removed. Period controls and payment contracts
+  remain owned by their existing components.
+- `RenewalSubscriptionInfo` composes the shared `SubscriptionConditions` and
+  renewal-specific guidance; `RenewalOptions` owns the period-heading hint.
+  Both reuse existing Card, tokens and utility classes.
+  The traffic/device insets use existing `bg-accent-500/10`, matching the secondary
+  accent wash in FundingNotice. Owner refinement supersedes the intermediate
+  gray `bg-dark-700/50`; the original `bg-dark-800/50` was barely visible.
+- `RenewalSummary` owns the selected-term/server-price hierarchy, balance,
+  shortfall display and existing payment CTA. `RenewSubscription` remains the
+  API/mutation owner; `utils/renewalPreview` supplies a display-only expected end
+  date, never a payment amount or authoritative subscription state.
+- `FundingNotice` owns the shared informational Card and optional action slot.
+  `PurchaseFundingNotice`, `InsufficientBalancePrompt` and `GiftSubscription`
+  supply existing messages/actions and retain return paths and amount handling.
+  Reuse covers classic/tariff/daily purchase and applicable renewal, devices,
+  traffic, tariff change, servers, daily resume and gifts. API errors retain their
+  error presentation rather than becoming informational notes.
+- RU/EN/FA/ZH keys belong to the existing localization system. No global styles,
+  alternate design system, dependency changes or backend changes are introduced.
+- Initial local proof before the inset-background correction: 1102 unit PASS; build/both TypeScript PASS; affected compiled
+  browser 320 PASS/5 configured SKIP, plus four final visual captures.
+  [Exact identities and evidence](.scratch/renewal-structure-20261020/IMPLEMENTATION_REPORT.md).
+  [Later background correction](.scratch/renewal-structure-20261020/BACKGROUND_FIX.md):
+  build/both TypeScript PASS, 80 renewal browser and 10 visual PASS; full unit
+  1100 PASS/2 FAIL in the unchanged admin audience test file, not a full unit PASS.
+  Subsequent accent-wash refinement: 1102 unit PASS, build/both TypeScript PASS,
+  80 renewal browser and 10 visual PASS on the new exact artifact; see the
+  report's `accent-follow-up` section for its identities.
+
+## Subscription page seams — 2026-10-20
+
+- `SubscriptionPage` owns normal-page header/back context and the temporary
+  devices overlay. Existing `Subscription` keeps subscription API/settings/actions;
+  it is no longer mounted as Dashboard's primary management overlay.
+- `Subscriptions` is the normal list route, with explicit loading/error handling
+  and ID-preserving entry into management. Existing Card/Back primitives remain.
+- `useSubscriptionNavigation` resolves the single shared contextual menu slot;
+  `mobileNavRoutes` supplies matching active-state and four-item navigation rules.
+- `SubscriptionPurchase` and `ClassicPurchaseWizard` guard paid classic contexts;
+  existing renewal remains the API owner for renewal with current device limits.
+- `useDevicePurchase` owns fresh quote/balance/subscription checks and explicit
+  confirmation. `deviceIntent` persists user/subscription-scoped intent only;
+  `DeviceTopupSheet` retains the existing presentation and server quote display.
+- `topUpReturnPath` separates the existing payment-result destination from closing
+  a prepared subscription payment into its normal management page.
+- [ADR 0004](docs/adr/0004-subscription-management-page.md) records the narrow
+  presentation change. No second pricing engine, backend patch, global style
+  system or parallel Simple/Lite presentation is introduced.
+
 ## v1.80.1 Integrated Feature Seams
 
 - `src/components/broadcasts/audience*`, `AudienceConditionRow`,
@@ -15,9 +218,9 @@
 - `PurchaseCTAButton` preserves the owner's Classic hint and renewal routing.
   Active/expired captions now match subscription status; legacy migration
   does not receive the expired renewal hint.
-- `RenewalSummary` uses the existing canonical Card: mobile padding 12 px,
-  16 px from sm, one natural-flow panel for periods and summary. No new CSS
-  system or financial calculation was introduced.
+- Historical v1.80.1 `RenewalSummary` used one outer canonical Card. The owner's
+  2026-10-20 refinement removes that outer wrapper, retaining the independent
+  summary Card and natural-flow period grid; see the current seams above.
 - Existing owner regression requirements remain covered; corrected fixtures,
   exact price formatting assertions and stable geometry/transition checks are
   recorded in [the integration report](UPSTREAM_V1.80.1_SYNC_REPORT.md).

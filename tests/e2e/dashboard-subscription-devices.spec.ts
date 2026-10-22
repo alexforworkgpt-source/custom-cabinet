@@ -203,18 +203,18 @@ test('opens device management for a full limit and keeps delete, add-slots, Back
   await manageDevices.click();
   await dialog.getByRole('button', { name: 'Buy more devices' }).click();
   await expect(page).toHaveURL('/subscriptions/7?section=additional-options');
-  const managementDialog = page.getByRole('dialog');
+  const managementDialog = page.locator('main');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(
-    managementDialog.getByRole('heading', { name: 'Manage subscription' }),
+    managementDialog.getByRole('heading', { name: 'Subscription', exact: true }),
   ).toBeVisible();
-  const additionalOptions = managementDialog.getByRole('button', { name: 'Additional Options' });
-  await expect(additionalOptions).toHaveAttribute('aria-expanded', 'true');
+  const additionalOptions = managementDialog.getByRole('heading', { name: 'Additional Options' });
+  await expect(additionalOptions).toBeVisible();
   await expect(managementDialog.getByRole('button', { name: 'Buy more devices' })).toBeInViewport();
   await expect(managementDialog.getByRole('button', { name: /Squad management/ })).toHaveCount(0);
 
-  await page.keyboard.press('Escape');
+  await page.goBack();
   await expect(page).toHaveURL('/?sub=7');
-  await expect(manageDevices).toBeFocused();
 
   await manageDevices.click();
   await expect(page).toHaveURL('/?sub=7&overlay=devices');

@@ -1,38 +1,18 @@
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router';
-import { promoApi } from '../../../api/promo';
-import type { PurchaseOptions, Subscription, Tariff } from '../../../types';
-import { GiftIcon, TariffsIcon } from '../../icons';
+import type { PurchaseContext } from '../../../hooks/usePurchaseContext';
+import { UsersIcon, TariffsIcon } from '../../icons';
 
 interface PurchaseContextBannersProps {
-  subscription: Subscription | null;
-  purchaseOptions: PurchaseOptions;
-  tariffs: Tariff[];
-  showPromoGroup: boolean;
+  context: PurchaseContext;
 }
 
-export function PurchaseContextBanners({
-  subscription,
-  purchaseOptions,
-  tariffs,
-  showPromoGroup,
-}: PurchaseContextBannersProps) {
+export function PurchaseContextBanners({ context }: PurchaseContextBannersProps) {
   const { t } = useTranslation();
   const location = useLocation();
-  const tariffPromoGroupName = tariffs.find((tariff) => tariff.promo_group_name)?.promo_group_name;
-  const { data: promoGroupDiscounts } = useQuery({
-    queryKey: ['promo-group-discounts'],
-    queryFn: promoApi.getGroupDiscounts,
-    enabled: showPromoGroup && !tariffPromoGroupName,
-    staleTime: 30_000,
-  });
-  const promoGroupName = tariffPromoGroupName ?? promoGroupDiscounts?.group_name;
-  const isExpiredTariffSubscription =
-    purchaseOptions.sales_mode === 'tariffs' && purchaseOptions.subscription_is_expired === true;
-  const showTrialUpgrade = subscription?.is_trial && !isExpiredTariffSubscription;
+  const { promoGroupName, showTrialUpgrade } = context;
 
-  if (!showTrialUpgrade && !(showPromoGroup && promoGroupName)) return null;
+  if (!showTrialUpgrade && !promoGroupName) return null;
 
   return (
     <div className="space-y-4">
@@ -54,7 +34,7 @@ export function PurchaseContextBanners({
         </div>
       )}
 
-      {showPromoGroup && promoGroupName && (
+      {promoGroupName && (
         <Link
           to="/info"
           state={{
@@ -64,7 +44,7 @@ export function PurchaseContextBanners({
           className="flex items-center gap-3 rounded-xl border border-success-500/40 bg-success-500/15 p-3 transition-colors hover:border-success-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success-500"
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success-500/25 text-success-400">
-            <GiftIcon className="h-5 w-5" />
+            <UsersIcon className="h-5 w-5" />
           </div>
           <div>
             <div className="text-sm font-medium text-success-400">

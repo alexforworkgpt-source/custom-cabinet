@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Subscription } from '@/types';
 import PurchaseCTAButton from './PurchaseCTAButton';
+import { PlatformProvider } from '@/platform/PlatformProvider';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -36,6 +37,40 @@ const subscription = (overrides: Partial<Subscription> = {}): Subscription => ({
 });
 
 afterEach(cleanup);
+
+describe('subscription action loading', () => {
+  it('keeps the financial link unavailable until its current conditions are ready', () => {
+    const { rerender } = render(
+      <MemoryRouter>
+        <PurchaseCTAButton subscription={subscription()} isClassic loading reserveSpace />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('status').getAttribute('aria-busy')).toBe('true');
+    expect(screen.queryByRole('link')).toBeNull();
+    rerender(
+      <MemoryRouter>
+        <PurchaseCTAButton subscription={subscription()} isClassic reserveSpace />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/subscriptions/42/renew');
+  });
+
+  it('does not introduce a loading action where active multi-tariff daily renewal is hidden', () => {
+    render(
+      <MemoryRouter>
+        <PurchaseCTAButton
+          subscription={subscription({ is_daily: true })}
+          isMultiTariff
+          loading
+          reserveSpace
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+});
 
 describe('legacy subscription primary action', () => {
   it('opens tariff selection for the same subscription instead of renewal', () => {
@@ -127,7 +162,6 @@ describe('tariff subscription primary action', () => {
   );
 
   it.each([
-    ['trial', { is_trial: true }],
     ['daily', { is_daily: true }],
     ['limited', { is_limited: true }],
     ['pending', { status: 'pending' }],
@@ -139,6 +173,21 @@ describe('tariff subscription primary action', () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole('link').getAttribute('href')).toBe('/subscription/purchase');
+  });
+
+  it.each([false, true])('keeps the selected trial ID when classic=%s', (isClassic) => {
+    render(
+      <MemoryRouter>
+        <PurchaseCTAButton
+          subscription={subscription({ id: 43, is_trial: true, tariff_id: 7 })}
+          isClassic={isClassic}
+          isMultiTariff
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link').getAttribute('href')).toBe(
+      '/subscription/purchase?subscriptionId=43',
+    );
   });
 
   it('preserves explicit tariff selection even when a tariff ID is present', () => {
@@ -204,20 +253,35 @@ describe('classic subscription renewal action', () => {
     expect(screen.getByText('subscription.extend')).toBeTruthy();
   });
 
+  it('preserves trial purchase in single-subscription classic mode', () => {
+    render(
+      <MemoryRouter>
+        <PurchaseCTAButton subscription={subscription({ is_trial: true })} isClassic />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link').getAttribute('href')).toBe(
+      '/subscription/purchase?subscriptionId=42',
+    );
+  });
+
   it.each([
-    ['trial', { is_trial: true }],
     ['daily', { is_daily: true }],
     ['limited', { is_limited: true }],
     ['pending', { status: 'pending' }],
     ['disabled', { status: 'disabled' }],
-  ])('preserves the purchase route for %s in single-subscription mode', (_case, overrides) => {
-    render(
-      <MemoryRouter>
-        <PurchaseCTAButton subscription={subscription(overrides)} isClassic />
-      </MemoryRouter>,
-    );
-    expect(screen.getByRole('link').getAttribute('href')).toBe('/subscription/purchase');
-  });
+  ])(
+    'shows unavailable renewal instead of a purchase loop for paid classic %s',
+    (_case, overrides) => {
+      render(
+        <MemoryRouter>
+          <PurchaseCTAButton subscription={subscription(overrides)} isClassic />
+        </MemoryRouter>,
+        { wrapper: PlatformProvider },
+      );
+      expect(screen.queryByRole('link')).toBeNull();
+      expect(screen.getByRole('note').textContent).toBe('subscription.cta.renewUnavailable');
+    },
+  );
 
   it('keeps new classic purchase available when no subscription exists', () => {
     render(

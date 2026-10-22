@@ -199,7 +199,7 @@ const enabledReferralTerms = {
   max_commission_payments: 0,
 };
 
-test('keeps subscription management and Connection as compact as Balance', async ({
+test('keeps management usable as a page and Connection as compact as Balance', async ({
   page,
 }, testInfo) => {
   test.skip(
@@ -231,23 +231,18 @@ test('keeps subscription management and Connection as compact as Balance', async
   if (!balanceBox) throw new Error('Balance overlay must have a visible bounding box');
 
   await page.goto('/subscriptions/1');
-  const managementDialog = page.getByRole('dialog');
-  const additionalOptions = managementDialog.getByRole('button', { name: 'Additional Options' });
-  await expect(additionalOptions).toHaveAttribute('aria-expanded', 'false');
+  const managementDialog = page.locator('main');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const additionalOptions = managementDialog.getByRole('heading', { name: 'Additional Options' });
+  await expect(additionalOptions).toBeVisible();
+  await expect(managementDialog.getByRole('button', { name: 'Additional Options' })).toHaveCount(0);
   await expect(
     managementDialog.getByRole('link', { name: /Extend Subscription/ }),
   ).toBeInViewport();
   await expect(managementDialog.getByRole('link', { name: /My Devices/ })).toBeInViewport();
-  await expect(managementDialog.getByRole('switch', { name: 'Auto-renew' })).toBeInViewport();
-  await expect(additionalOptions).toBeInViewport();
-  await expect(managementDialog.getByRole('button', { name: 'Reissue Subscription' })).toHaveCount(
-    0,
-  );
-  await expect
-    .poll(async () => (await managementDialog.boundingBox())?.height ?? Number.POSITIVE_INFINITY)
-    .toBeLessThanOrEqual(balanceBox.height + 16);
-  await additionalOptions.click();
-  await expect(additionalOptions).toHaveAttribute('aria-expanded', 'true');
+  await expect(managementDialog.getByRole('switch', { name: 'Auto-renew' })).toBeVisible();
+  await expect(additionalOptions).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await expect(
     managementDialog.getByRole('button', { name: 'Reissue Subscription' }),
   ).toBeVisible();
@@ -368,7 +363,7 @@ test.describe('unified dashboard states', () => {
     });
 
     await page.goto('/');
-    const subscriptionSelector = page.getByLabel('Subscriptions');
+    const subscriptionSelector = page.getByRole('combobox', { name: 'Subscriptions' });
     await expect(subscriptionSelector).toHaveCount(1);
     await subscriptionSelector.selectOption('2');
     await expect(page).toHaveURL('/?sub=2');
@@ -588,7 +583,7 @@ test('opens complete subscription management on the Dashboard @desktop-flow', as
 
   const summary = page.getByRole('region', { name: 'Traffic Usage' });
   const managementTrigger = page.getByRole('button', { name: 'Manage subscription' });
-  await expect(managementTrigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(managementTrigger).not.toHaveAttribute('aria-haspopup', 'dialog');
   await expect(page.getByText(activeSubscription.subscription_url, { exact: true })).toBeVisible();
   await expect(page.getByText(activeSubscription.tariff_name, { exact: true })).toHaveCount(1);
   const balanceCard = page.getByRole('link', { name: /Balance/ });
@@ -612,7 +607,8 @@ test('opens complete subscription management on the Dashboard @desktop-flow', as
 
   await managementTrigger.click();
   await expect(page).toHaveURL('/subscriptions/1');
-  const managementDialog = page.getByRole('dialog');
+  const managementDialog = page.locator('main');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(managementDialog).toBeVisible();
   await expect(
     managementDialog.getByText(activeSubscription.subscription_url, { exact: true }),
@@ -632,22 +628,15 @@ test('opens complete subscription management on the Dashboard @desktop-flow', as
     throw new Error('Expected subscription management actions to have measurable bounds');
   }
   expect(renewalBox.y).toBeLessThan(autoRenewBox.y);
-  const additionalOptions = managementDialog.getByRole('button', { name: 'Additional Options' });
-  await expect(additionalOptions).toHaveAttribute('aria-expanded', 'false');
-  await expect(managementDialog.getByRole('button', { name: 'Reissue Subscription' })).toHaveCount(
-    0,
-  );
-  await additionalOptions.click();
-  await expect(additionalOptions).toHaveAttribute('aria-expanded', 'true');
+  await expect(managementDialog.getByRole('heading', { name: 'Additional Options' })).toBeVisible();
+  await expect(managementDialog.getByRole('button', { name: 'Additional Options' })).toHaveCount(0);
   await expect(
     managementDialog.getByRole('button', { name: 'Reissue Subscription' }),
   ).toBeVisible();
 
-  await page.keyboard.press('Escape');
-  await expect(managementDialog).toBeHidden();
+  await page.goBack();
   await expect(page).toHaveURL('/?sub=1');
-  await expect(managementTrigger).toHaveAttribute('aria-expanded', 'false');
-  await expect(managementTrigger).toBeFocused();
+  await expect(managementTrigger).toBeVisible();
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
@@ -671,7 +660,7 @@ test('manages Devices from subscription management and returns to it @critical-f
   });
 
   await page.goto('/subscriptions/1');
-  const managementDialog = page.getByRole('dialog');
+  const managementDialog = page.locator('main');
   const devicesLink = managementDialog.getByRole('link', { name: /My Devices/ });
   await expect(devicesLink).toContainText('Connected devices: 1');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
@@ -684,7 +673,7 @@ test('manages Devices from subscription management and returns to it @critical-f
   await page.goBack();
   await expect(page).toHaveURL('/subscriptions/1');
   await expect(
-    managementDialog.getByRole('heading', { name: 'Manage subscription' }),
+    managementDialog.getByRole('heading', { name: 'Subscription', exact: true }),
   ).toBeVisible();
   await managementDialog.getByRole('link', { name: /My Devices/ }).click();
   await expect(page).toHaveURL('/subscriptions/1?overlay=devices');
@@ -711,11 +700,19 @@ test('manages Devices from subscription management and returns to it @critical-f
   const renameButton = dialog.getByRole('button', { name: 'Rename' });
   const deleteButton = dialog.getByRole('button', { name: 'Delete device' });
   const deviceRow = dialog.getByText('Home laptop', { exact: true }).locator('xpath=ancestor::li');
-  const [rowBox, renameBox, deleteBox] = await Promise.all([
-    deviceRow.boundingBox(),
-    renameButton.boundingBox(),
-    deleteButton.boundingBox(),
-  ]);
+  // Sample all three boxes in the same frame: the mobile Sheet is still moving.
+  const { rowBox, renameBox, deleteBox } = await deviceRow.evaluate((row) => {
+    const box = (element: Element | null) => {
+      if (!element) return null;
+      const rect = element.getBoundingClientRect();
+      return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+    };
+    return {
+      rowBox: box(row),
+      renameBox: box(row.querySelector('button[aria-label="Rename"]')),
+      deleteBox: box(row.querySelector('button[aria-label="Delete device"]')),
+    };
+  });
   if (!rowBox || !renameBox || !deleteBox) {
     throw new Error('Device row and icon actions must have visible bounding boxes');
   }
@@ -735,14 +732,10 @@ test('manages Devices from subscription management and returns to it @critical-f
   await page.keyboard.press('Escape');
   await expect(page).toHaveURL('/subscriptions/1');
   await expect(
-    managementDialog.getByRole('heading', { name: 'Manage subscription' }),
+    managementDialog.getByRole('heading', { name: 'Subscription', exact: true }),
   ).toBeVisible();
   await expect(managementDialog.getByRole('link', { name: /My Devices/ })).toBeVisible();
-  expect(
-    await page.evaluate(() =>
-      document.querySelector('[role="dialog"]')?.contains(document.activeElement),
-    ),
-  ).toBe(true);
+  await expect(managementDialog.getByRole('link', { name: /My Devices/ })).toBeFocused();
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
@@ -907,16 +900,8 @@ test('centers Russian overlay headers at 320 px @critical-flow', async ({ page }
   await expect(dialog.locator('[data-selected-platform] svg')).toHaveCount(2);
 
   await page.goto('/subscriptions/1');
-  const subscriptionDialog = page.getByRole('dialog');
-  await expect(subscriptionDialog.getByRole('heading', { name: 'Управление подпиской' })).toHaveCSS(
-    'text-align',
-    'center',
-  );
-  await expect(
-    subscriptionDialog.getByText(
-      'Срок действия, автопродление и дополнительные возможности подписки.',
-    ),
-  ).toHaveCSS('text-align', 'center');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Подписка', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     await page.evaluate(() => window.innerWidth),
   );
@@ -2000,7 +1985,8 @@ test('shows a load failure on an expanded subscription route @desktop-flow', asy
 
   await page.goto('/subscriptions/1');
   await expect(page).toHaveURL('/subscriptions/1');
-  const managementDialog = page.getByRole('dialog');
+  const managementDialog = page.locator('main');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(managementDialog).toBeVisible();
   await expect(
     managementDialog.getByText('Subscription data could not be loaded. Please try again.'),
@@ -2331,7 +2317,7 @@ test('shows the complete classic env order before purchase @critical-flow', asyn
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('opens the classic period constructor from Tariffs before renewing @critical-flow', async ({
+test('opens paid classic management from Subscription and renews without the purchase constructor @critical-flow', async ({
   page,
 }) => {
   const expiredSubscription = {
@@ -2340,6 +2326,8 @@ test('opens the classic period constructor from Tariffs before renewing @critica
     is_active: false,
     is_expired: true,
     days_left: 0,
+    tariff_id: null,
+    device_limit: 1,
   };
   const { apiRequests, unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
     responses: {
@@ -2421,6 +2409,18 @@ test('opens the classic period constructor from Tariffs before renewing @critica
         has_subscription: true,
         subscription: expiredSubscription,
       },
+      '/api/cabinet/subscriptions': {
+        subscriptions: [expiredSubscription],
+        multi_tariff_enabled: false,
+      },
+      '/api/cabinet/subscription/renewal-options': [
+        { period_days: 30, price_kopeks: 30000, price_rubles: 300, discount_percent: 0 },
+      ],
+      '/api/cabinet/subscription/renew': {
+        message: 'Subscription renewed',
+        new_end_date: '2027-01-24T00:00:00Z',
+        amount_paid_kopeks: 30000,
+      },
     },
   });
 
@@ -2430,20 +2430,15 @@ test('opens the classic period constructor from Tariffs before renewing @critica
     (page.viewportSize()?.width ?? 1280) < 1024
       ? page.locator('nav:visible')
       : page.locator('header:visible nav');
-  const tariffsLink = navigation.getByRole('link', { name: 'Tariffs', exact: true });
+  const tariffsLink = navigation.getByRole('link', { name: 'Subscription', exact: true });
   await tariffsLink.click();
-  await expect(page).toHaveURL('/subscription/purchase');
+  await expect(page).toHaveURL('/subscriptions/1');
   const classicLayout = page.locator('[data-purchase-layout="classic"]');
-  await expect(classicLayout).toBeVisible();
-  await expect(classicLayout).not.toHaveAttribute('style');
-  await expect(classicLayout).not.toHaveClass(/rounded-3xl/);
-  const periodButton = page.getByRole('button', { name: /30 days.*3[.,]00/ });
+  await expect(classicLayout).toHaveCount(0);
+  await page.getByRole('link', { name: /Extend Subscription/ }).click();
+  await expect(page).toHaveURL('/subscriptions/1/renew');
+  const periodButton = page.getByRole('button', { name: /^30 days/ });
   await expect(periodButton).toBeVisible();
-  await expect(periodButton).toHaveAttribute('aria-pressed', 'true');
-  await expect(periodButton).toHaveCSS('border-top-width', '2px');
-  await expect(page.getByRole('button', { name: 'Extend Subscription', exact: true })).toHaveCount(
-    0,
-  );
   expect(
     apiRequests.filter((request) => request === 'POST /api/cabinet/subscription/renew'),
   ).toEqual([]);
@@ -2452,14 +2447,17 @@ test('opens the classic period constructor from Tariffs before renewing @critica
   ).toEqual([]);
 
   await periodButton.click();
-  await page.getByRole('button', { name: /^Next · / }).click();
   const purchaseButton = page.getByRole('button', { name: 'Pay', exact: true });
   await expect(purchaseButton).toBeEnabled();
-  await purchaseButton.dblclick();
-  await expect(page).toHaveURL('/subscriptions');
+  await purchaseButton.click();
+  await expect(page).toHaveURL('/subscriptions/1');
   expect(
     apiRequests.filter((request) => request === 'POST /api/cabinet/subscription/purchase'),
+  ).toHaveLength(0);
+  expect(
+    apiRequests.filter((request) => request === 'POST /api/cabinet/subscription/renew'),
   ).toHaveLength(1);
+  expect(apiRequests).not.toContain('POST /api/cabinet/subscription/purchase-preview');
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 

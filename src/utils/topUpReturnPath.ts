@@ -24,9 +24,9 @@ export function getReadyTopUpClosePath(
   const isPurchase = url.pathname === '/subscription/purchase';
   const legacySubscription = isPurchase ? null : /^\/subscription\/([^/]+)\/?$/.exec(url.pathname);
   const closeSubscription = (id?: number) =>
-    getCabinetClosePath(
-      id && (!availableSubscriptionIds || availableSubscriptionIds.includes(id)) ? id : undefined,
-    );
+    id && (!availableSubscriptionIds || availableSubscriptionIds.includes(id))
+      ? `/subscriptions/${id}`
+      : '/';
   if (subscription || legacySubscription || isPurchase) {
     const id =
       subscription?.[1] ?? legacySubscription?.[1] ?? url.searchParams.get('subscriptionId');
@@ -36,5 +36,12 @@ export function getReadyTopUpClosePath(
     );
   }
   const route = getUserCabinetRouteState(url.pathname, url.search);
-  return route.overlay ? closeSubscription(route.subscriptionId) : safe;
+  return route.overlay
+    ? getCabinetClosePath(
+        route.subscriptionId &&
+          (!availableSubscriptionIds || availableSubscriptionIds.includes(route.subscriptionId))
+          ? route.subscriptionId
+          : undefined,
+      )
+    : safe;
 }

@@ -1,4 +1,5 @@
 import type { ActiveDiscount } from '../api/promo';
+import { isCurrentDiscount } from './promoExpiry';
 
 export interface PromoDiscountResult {
   price: number;
@@ -14,7 +15,8 @@ export function calculatePromoDiscount(
 ): PromoDiscountResult {
   const promoGroupOriginal = existingOriginalPrice ?? 0;
   const hasExisting = promoGroupOriginal > priceKopeks;
-  const discountPercent = activeDiscount?.is_active ? activeDiscount.discount_percent : 0;
+  const discountPercent =
+    activeDiscount && isCurrentDiscount(activeDiscount) ? activeDiscount.discount_percent : 0;
   const hasPromo = Boolean(discountPercent);
 
   if (!hasExisting && !hasPromo) {

@@ -406,6 +406,14 @@
     "validUntil": "有效期至 {{date}}"
   },
   "subscription": {
+    "devicePayment": {
+      "alreadyApplied": "所选设备上限已生效，无需重复购买。",
+      "changed": "条件已更改，请查看最新信息并重新确认。",
+      "loadError": "无法刷新购买条件，请重试。",
+      "unavailable": "当前显示的条件不支持更改设备数量。",
+      "cartSaved": "服务器已保存独立的设备购物车。此付款流程无法继续，请返回订阅管理。",
+      "unknownResult": "购买结果尚未确认，请先刷新订阅再重新选择。"
+    },
     "title": "订阅",
     "currentPlan": "当前套餐",
     "status": "状态",
@@ -492,6 +500,17 @@
     "renewOptionsLoadError": "无法加载续订周期",
     "chooseRenewalPeriod": "选择周期",
     "renewCurrentEnd": "当前订阅有效期至 {{date}}",
+    "renewCurrentValid": "当前订阅有效",
+    "renewExpiredValid": "订阅曾有效",
+    "renewUntil": "至 {{date}}",
+    "renewLongerBetter": "期限越长，越划算",
+    "renewOrderTitle": "续费 {{period}}",
+    "renewProjectedEnd": "预计到期日期：{{date}}",
+    "renewTopUpRequired": "需充值金额",
+    "renewAfterFundingNotice": "充值后，若续费尚未完成，请确认续费。",
+    "renewDevicesActiveHint": "如需增加设备，请在“附加选项”中单独购买。",
+    "renewDevicesExpiredHint": "如需增加设备，请先续费订阅，再打开“附加选项”。",
+    "renewDevicesMaxHint": "已达到设备数量上限。",
     "renewSelectionReset": "订阅或可用周期已更改，之前的选择已清除。请重新选择周期。",
     "renewTopUpHint": "充值 {{amount}}，然后确认续订。",
     "classicRenewHint": "使用当前订阅设置续费",
@@ -647,7 +666,7 @@
     },
     "promoGroup": {
       "yourGroup": "您的组：{{name}}",
-      "personalDiscountsApplied": "个人折扣已应用于价格"
+      "personalDiscountsApplied": "您所在组的条件"
     },
     "tariff": {
       "perDay": "/ 天",
@@ -781,7 +800,8 @@
       "expiredHint": "选择套餐并付款",
       "trialHint": "更多流量和设备",
       "moveToTariff": "切换到套餐",
-      "moveToTariffHint": "订阅购买于套餐推出之前"
+      "moveToTariffHint": "订阅购买于套餐推出之前",
+      "renewUnavailable": "当前订阅状态下无法续订。"
     },
     "dailyAutoCharge": "每日自动扣费",
     "defaultName": "订阅",
@@ -5535,6 +5555,12 @@
     "expiresIn": "到期时间",
     "source": "来源",
     "useNow": "立即使用",
+    "actions": { "chooseSubscription": "选择订阅" },
+    "navigation": {
+      "unavailable": "无法确认可用操作。请刷新数据后重试。",
+      "changed": "所选订阅或账号已更改。请检查选择后重试。",
+      "expired": "此折扣已不可用。请刷新优惠。"
+    },
     "discountApplied": "折扣已应用",
     "time": {
       "days": "天",
@@ -5550,6 +5576,7 @@
       "serverAccess_other": "访问 {{count}} 台服务器",
       "additionalServers": "访问额外服务器",
       "activateDiscountHint": "激活订阅折扣",
+      "specialOfferHint": "您的账号专属优惠",
       "activationFailed": "无法激活优惠",
       "discountActiveTitle": "{{percent}}% 折扣已激活",
       "statusActive": "有效",

@@ -107,8 +107,13 @@ test('classic management renews with the selected period before top-up @critical
   await expect(renew).toHaveAttribute('href', '/subscriptions/42/renew');
   await renew.click();
   await expect(page).toHaveURL('/subscriptions/42/renew');
-  await expect(page.getByText('Трафик: 100 ГБ', { exact: true })).toBeVisible();
-  await expect(page.getByText('Устройства: 3', { exact: true })).toBeVisible();
+  const currentTerms = page.locator('[data-renewal-info]');
+  await expect(currentTerms.getByText('Трафик', { exact: true }).locator('..')).toContainText(
+    '100 ГБ',
+  );
+  await expect(currentTerms.getByText('Устройства', { exact: true }).locator('..')).toContainText(
+    '3 устройства',
+  );
   await page.getByRole('button', { name: /^90 дней/ }).click();
   const topUp = page.getByRole('button', { name: 'Пополнить баланс', exact: true });
   await expect(topUp).toHaveCount(1);

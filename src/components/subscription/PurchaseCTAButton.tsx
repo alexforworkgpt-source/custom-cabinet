@@ -1,9 +1,14 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { HoverBorderGradient } from '../ui/hover-border-gradient';
-import { ChevronRightIcon, TariffsIcon } from '@/components/icons';
 import type { Subscription } from '../../types';
-import { needsTariff, tariffSelectionPath } from '../../utils/legacySubscription';
+import {
+  canRenewSubscription,
+  needsTariff,
+  tariffSelectionPath,
+} from '../../utils/legacySubscription';
+import { SubscriptionPurchaseSkeleton } from './SubscriptionManagementSkeleton';
+import { PurchaseCTAPresentation } from './PurchaseCTAPresentation';
+import { FundingNotice } from './FundingNotice';
 
 interface PurchaseCTAButtonProps {
   subscription: Subscription | null;
@@ -11,12 +16,18 @@ interface PurchaseCTAButtonProps {
   isMultiTariff?: boolean;
   /** Explicit sales mode from purchase-options; a missing tariff alone is ambiguous. */
   isClassic?: boolean;
+  loading?: boolean;
+  reserveSpace?: boolean;
+  compactOnMobile?: boolean;
 }
 
 export default function PurchaseCTAButton({
   subscription,
   isMultiTariff = false,
   isClassic = false,
+  loading = false,
+  reserveSpace = false,
+  compactOnMobile = false,
 }: PurchaseCTAButtonProps) {
   const { t } = useTranslation();
 
@@ -26,20 +37,11 @@ export default function PurchaseCTAButton({
   const isTrial = subscription?.is_trial;
   const isDaily = subscription?.is_daily;
   const requiresTariff = needsTariff(subscription);
-  const canRenewCurrentSubscription =
-    !!subscription &&
-    !requiresTariff &&
-    (isClassic || !!subscription.tariff_id) &&
-    !isTrial &&
-    !isDaily &&
-    !subscription.is_limited &&
-    (subscription.status === 'active' || subscription.status === 'expired');
+  const canRenewCurrentSubscription = canRenewSubscription(subscription, isClassic);
   const isClassicRenewal = canRenewCurrentSubscription && isClassic && !subscription?.tariff_id;
 
   // Daily tariffs renew automatically — no manual renewal button needed in multi-tariff
   if (isMultiTariff && isDaily && !isExpired) return null;
-
-  const accentColor = isExpired ? 'rgb(var(--color-critical-500))' : 'rgb(var(--color-accent-400))';
 
   const buttonText = requiresTariff
     ? t('subscription.cta.moveToTariff')
@@ -71,51 +73,51 @@ export default function PurchaseCTAButton({
   const linkTo =
     requiresTariff && subscription?.id
       ? tariffSelectionPath(subscription.id)
-      : isTrial
-        ? '/subscription/purchase'
+      : isTrial && subscription?.id
+        ? tariffSelectionPath(subscription.id)
         : (isMultiTariff || canRenewCurrentSubscription) && subscription?.id
           ? `/subscriptions/${subscription.id}/renew`
           : '/subscription/purchase';
 
+  // Reserve both existing captions while sales_mode is unknown. This is only
+  // geometry: no guessed mode, financial link or API permission is exposed.
+  const ambiguousClassic = subscription && !subscription.tariff_id && !isTrial && !requiresTariff;
+  const content = (
+    <PurchaseCTAPresentation
+      title={buttonText}
+      hint={hintText}
+      expired={isExpired}
+      reserveSpace={reserveSpace}
+      compactOnMobile={compactOnMobile}
+      geometryTitles={
+        ambiguousClassic ? [t('subscription.extend'), t('subscription.getSubscription')] : []
+      }
+      geometryHints={
+        ambiguousClassic
+          ? [
+              t('subscription.classicRenewHint'),
+              t(
+                isExpired
+                  ? isMultiTariff
+                    ? 'subscription.cta.renewHint'
+                    : 'subscription.cta.expiredHint'
+                  : 'subscription.cta.activeHint',
+              ),
+            ]
+          : []
+      }
+    />
+  );
+
+  if (loading) return <SubscriptionPurchaseSkeleton>{content}</SubscriptionPurchaseSkeleton>;
+
+  if (isClassic && subscription && !isTrial && !requiresTariff && !canRenewCurrentSubscription) {
+    return <FundingNotice>{t('subscription.cta.renewUnavailable')}</FundingNotice>;
+  }
+
   return (
     <Link to={linkTo} className="block">
-      <HoverBorderGradient
-        accentColor={accentColor}
-        duration={4}
-        className="group relative w-full cursor-pointer overflow-hidden rounded-2xl"
-      >
-        <div
-          className="relative flex items-center justify-between rounded-[14px] px-5 py-4 transition-colors duration-300"
-          style={{
-            background: isExpired
-              ? 'linear-gradient(135deg, rgba(255,59,92,0.08), rgba(255,107,53,0.06))'
-              : 'linear-gradient(135deg, rgba(var(--color-accent-400), 0.08), rgba(var(--color-accent-400), 0.06))',
-          }}
-        >
-          {/* Left: icon + text */}
-          <div className="flex items-center gap-3">
-            {/* Tariffs icon */}
-            <div
-              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
-              style={{
-                background: isExpired
-                  ? 'rgba(255,59,92,0.12)'
-                  : 'rgba(var(--color-accent-400), 0.12)',
-                color: accentColor,
-              }}
-            >
-              <TariffsIcon className="h-[18px] w-[18px]" />
-            </div>
-            <div>
-              <div className="text-[15px] font-semibold text-dark-50">{buttonText}</div>
-              <div className="text-[12px] text-dark-400">{hintText}</div>
-            </div>
-          </div>
-
-          {/* Right: chevron */}
-          <ChevronRightIcon className="h-5 w-5 flex-shrink-0 text-dark-500 transition-transform duration-300 group-hover:translate-x-1" />
-        </div>
-      </HoverBorderGradient>
+      {content}
     </Link>
   );
 }

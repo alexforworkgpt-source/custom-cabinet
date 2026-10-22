@@ -47,7 +47,6 @@ const TopUpMethodSelect = lazy(() => import('./TopUpMethodSelect'));
 const TopUpAmount = lazy(() => import('./TopUpAmount'));
 const Balance = lazy(() => import('./Balance'));
 const DevicesPanel = lazy(() => import('@/components/dashboard/DevicesPanel'));
-const SubscriptionManagement = lazy(() => import('./Subscription'));
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -144,7 +143,7 @@ export default function Dashboard() {
   });
 
   const subscription = subscriptionResponse?.subscription ?? null;
-  const managementOpen = routeState.overlay === 'subscription';
+  const managementOpen = false;
 
   const { data: connectionLink, isLoading: isConnectionLinkLoading } = useQuery({
     queryKey: ['connection-link', selectedSubscriptionId],
@@ -444,30 +443,6 @@ export default function Dashboard() {
   };
 
   const overlayContent = (() => {
-    if (routeState.overlay === 'subscription' && overlaySubscriptionId) {
-      if (subscriptionError) {
-        return (
-          <div className="rounded-2xl border border-error-500/30 bg-error-500/10 p-5" role="alert">
-            <p className="text-sm text-error-400">{t('dashboard.subscriptionLoadError')}</p>
-            <button
-              type="button"
-              className="mt-3 min-h-11 rounded-xl bg-dark-800 px-4 text-sm font-medium text-dark-100"
-              onClick={() => void refetchSubscription()}
-            >
-              {t('common.retry')}
-            </button>
-          </div>
-        );
-      }
-      return (
-        <SubscriptionManagement
-          key={overlaySubscriptionId}
-          embedded
-          selectedSubscriptionId={overlaySubscriptionId}
-          initiallyOpenAdditionalOptions={routeState.subscriptionSection === 'additional-options'}
-        />
-      );
-    }
     if (routeState.overlay === 'devices' && overlaySubscriptionId) {
       return (
         <DeviceLimitPanel
@@ -482,7 +457,7 @@ export default function Dashboard() {
               ? () =>
                   navigate(`/subscriptions/${overlaySubscriptionId}?section=additional-options`, {
                     replace: true,
-                    state: { cabinetOverlayParent: true },
+                    state: { backTo: getCabinetClosePath(overlaySubscriptionId) },
                   })
               : undefined
           }
@@ -504,30 +479,26 @@ export default function Dashboard() {
   })();
 
   const overlayTitle =
-    routeState.overlay === 'subscription'
-      ? t('dashboard.manageSubscription')
-      : routeState.overlay === 'connection'
-        ? t('subscription.connection.title')
-        : routeState.overlay === 'topup'
-          ? t('balance.topUp')
-          : routeState.overlay === 'balance'
-            ? t('balance.title')
-            : routeState.overlay === 'devices'
-              ? t('subscription.myDevices')
-              : t('subscription.title');
+    routeState.overlay === 'connection'
+      ? t('subscription.connection.title')
+      : routeState.overlay === 'topup'
+        ? t('balance.topUp')
+        : routeState.overlay === 'balance'
+          ? t('balance.title')
+          : routeState.overlay === 'devices'
+            ? t('subscription.myDevices')
+            : t('subscription.title');
 
   const overlayDescription =
-    routeState.overlay === 'subscription'
-      ? t('dashboard.overlayDescriptions.subscription')
-      : routeState.overlay === 'connection'
-        ? t('dashboard.overlayDescriptions.connection')
-        : routeState.overlay === 'devices'
-          ? t('dashboard.overlayDescriptions.devices')
-          : routeState.overlay === 'balance'
-            ? t('dashboard.overlayDescriptions.balance')
-            : routeState.overlay === 'topup'
-              ? t('dashboard.overlayDescriptions.topup')
-              : '';
+    routeState.overlay === 'connection'
+      ? t('dashboard.overlayDescriptions.connection')
+      : routeState.overlay === 'devices'
+        ? t('dashboard.overlayDescriptions.devices')
+        : routeState.overlay === 'balance'
+          ? t('dashboard.overlayDescriptions.balance')
+          : routeState.overlay === 'topup'
+            ? t('dashboard.overlayDescriptions.topup')
+            : '';
 
   return (
     <div
@@ -639,7 +610,7 @@ export default function Dashboard() {
           devicesOpen={routeState.overlay === 'devices'}
           onManageSubscription={() =>
             navigate(`/subscriptions/${subscription.id}`, {
-              state: { cabinetOverlayParent: true },
+              state: { backTo: getCabinetClosePath(subscription.id) },
             })
           }
           managementOpen={managementOpen}
@@ -682,7 +653,7 @@ export default function Dashboard() {
           devicesOpen={routeState.overlay === 'devices'}
           onManageSubscription={() =>
             navigate(`/subscriptions/${subscription.id}`, {
-              state: { cabinetOverlayParent: true },
+              state: { backTo: getCabinetClosePath(subscription.id) },
             })
           }
           managementOpen={managementOpen}
@@ -731,7 +702,18 @@ export default function Dashboard() {
       )}
 
       {/* Promo Offers */}
-      <PromoOffersSection />
+      <PromoOffersSection
+        context={{
+          subscriptions: multiSubData?.subscriptions,
+          selectedSubscriptionId:
+            Number.isSafeInteger(requestedSubscriptionId) && requestedSubscriptionId > 0
+              ? requestedSubscriptionId
+              : undefined,
+          subscription,
+          listError: subscriptionsError,
+          subscriptionError,
+        }}
+      />
 
       {/* Stats Grid */}
       <StatsGrid
@@ -785,7 +767,6 @@ export default function Dashboard() {
         description={overlayDescription}
         restoreFocusTo={overlayTriggerRef.current}
         centerHeader={
-          routeState.overlay === 'subscription' ||
           routeState.overlay === 'connection' ||
           routeState.overlay === 'devices' ||
           routeState.overlay === 'balance' ||

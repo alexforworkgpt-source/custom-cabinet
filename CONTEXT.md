@@ -1,5 +1,454 @@
 # Custom Cabinet Context
 
+## Исправления R1–R3 и продолжение выпуска — 2026-10-22
+
+После команды владельца «исправляй» исправлены три finding предыдущего review:
+недоступное classic-продление больше не ведёт в purchase loop; trial CTA сохраняет
+выбранный ID; device quote с can_add_limited позволяет уменьшить восстановленную
+добавку и подтвердить её только по свежей допустимой цене. Два Cashera browser
+tests приведены к принятому UI.1166unit/45focused compiled browser/build/оба
+TypeScript/Biome PASS, широкий1781-case browser gate выполняется. Результаты
+неуспешных промежуточных запусков сохранены; код админки/таймауты не менялись.
+
+Для **текущего исправленного выпуска** владелец отдельно выбрал «Принять ограничение»:
+физический Telegram/Android/iOS **SKIPPED_OWNER_ACCEPTED**, не PASS. Продолжается
+ранее разрешённая Cabinet-only подготовка в отдельных копиях; source tag/новый
+Bundle ещё не опубликованы, production исключён. Ниже BLOCKED_FRONTEND описывает
+исходный0d04a822 до этих исправлений. [Текущий отчёт](docs/releases/RELEASE_FIXES_2026.10.22.md).
+
+## Проверка перед новым Release остановлена — 2026-10-22
+
+Владелец завершил дизайн и разрешил новый Cabinet-only выпуск/stable после gates,
+без production, с остановкой при реальном блокере. Проверен exact HEAD `0d04a822`
+(родитель `9d6b5831`) относительно Cabinet `cc17e371` из последнего stable Bundle
+`bundle-v2026.10.18.1`. В отдельной чистой копии1161unit/оба TypeScript/build/Biome
+PASS. Targeted compiled browser320/1280:4PASS/10FAIL/0SKIP/0flaky,0retries.
+Три frontend findings воспроизведены на обеих ширинах: limited classic CTA делает
+круг через purchase обратно в управление; trial CTA теряет выбранный ID (ветка
+существовала в stable, не новая регрессия); восстановленная докупка устройств
+после снижения максимума скрывает счётчик и не даёт уменьшить добавку. Ещё4FAIL —
+два прежних Cashera tests с устаревшими URL/accordion expectations; дизайн к ним
+не возвращать. Полный финальный Release browser gate **NOT_PASS**.
+
+Результат **BLOCKED_FRONTEND**, публикация остановлена по условию владельца.
+Новых commits/push/PR/tags/Releases/workflows/stable/smoke/SSH нет; production,
+Installer/site/backend и прежние assets/latest/settings сохранены. HEAD/index и
+исходные owner files сохранены, кроме этой записи и нового отчёта. Разрешение на
+пакет записано в отчёте; прежнее отсутствие разрешения в handoff — исторический факт.
+Продолжение: frontend-only R1–R3 + обновление двух browser tests, затем gates.
+Сохранить исторические release records из main в будущей чистой release-копии:
+рабочая ветка расходится со stable, нельзя переносить её tree с удалением истории.
+
+[Точные findings, воспроизведение и результаты](docs/releases/RELEASE_REVIEW_2026.10.22.md).
+Evidence: `.scratch/release-review-20261022/`, включая воспроизводимые probes/traces.
+Installer `f1f301b3`/trusted lifecycle предварительно сверены с прежним Bundle;
+новая publication binding ещё не выполнялась. Новый Bundle tag не создан,
+кандидат **не готов к production**.
+
+## Бейджи тарифа и trial как на Dashboard — 2026-10-22
+
+По запросу владельца основные карточки управления и продления используют общий
+read-only SubscriptionIdentityBadges:12px uppercase, compact badges и12px иконки;
+paid active — статус с точкой и тариф с TariffsIcon, active trial — один жёлтый
+«ПРОБНЫЙ» с GiftIcon. Pause/disabled/expired/limited сохраняют прежний приоритет;
+expired trial не становится активным. Dashboard не редактировался, длинные имена
+переносятся полностью, h2/fallback/условия/API/анимации сохранены. Skeleton согласован.
+
+1161unit/build/оба TypeScript/Biome PASS; final compiled browser470PASS/0SKIP/
+0FAIL/0flaky. Первый широкий468/2FAIL был из-за старого ожидания management dialog,
+тест приведён к принятой обычной странице без изменения flow или таймаутов.
+286files, artifact `c4e1897ea70bf93acd5dd75e78aba9f2c1a9798f50fc2fdbd96fec11a728b7d0`,
+source/test `37e0163ac465a33377929a487201d6bf8aecc0d268bb95238a94b15c62184eab`.
+[Точный scope и доказательства](docs/subscription-identity-badges-20261022.md).
+Владелец отменил добавление/перестановку блока группы: сохраняем прежнее размещение.
+
+## Единая иконка группы пользователя — 2026-10-22
+
+По разрешению владельца в PurchaseContextBanners и group banner GiftSubscription
+используется существующий UsersIcon вместо GiftIcon/SparklesIcon. Размеры, тексты,
+оформление и переход в «Статусы» сохранены.1161unit, build/оба TypeScript,
+focused Biome и20compiled group-navigation browser checks PASS.
+Локальные логи: `.scratch/group-icon-20261022/`. Это более поздняя icon-only
+правка;479browser/manifest ниже относятся к предыдущему density artifact.
+Владелец рассмотрел добавление блока на страницу подписки и перестановку на
+продлении, затем отменил предложение («Ладно не трогаем»). Существующее размещение
+сохраняется; это не ожидающая реализации задача. Замена иконок остаётся принятой.
+
+## Компактные мобильные действия и формы — 2026-10-22
+
+После согласования пакетов A/B управление подпиской уплотнено только ниже640px:
+CTA min72/auto, устройства min64, дополнительные действия text14/12 и p12/gap8;
+с640 прежние размеры. Shared read-only CTA layout согласует skeleton/ready без
+ранней финансовой ссылки, интервалы между секциями16px и анимации сохранены.
+Автопродление использует меньшие оболочки, прежний track52×28 и hit area52×44.
+Открытые формы p16/step12, close44, counters48; traffic form также на Dashboard.
+
+1161 unit PASS, build/оба TypeScript/Biome PASS (40 прежних warnings/5infos),
+compiled browser479 PASS/17 configured SKIP/0FAIL/0flaky. Дополнительно16 runtime
+замеров и9captures; RU375 исследованный участок760,5→614px,320→642,5px.
+Прежние неуспешные unit/helper attempts сохранены.286compiled files,
+artifact `7adde33aa2c7972b9f8ab4a278aab6416a1df047f6ea4f8ed4128287cdd9cab5`;
+source/test `738f462c277c0497a5b857cf8c71f7af5b0f86aa6596136739cf49b4a6acb937`.
+[Реализация, измерения и scope](docs/mobile-interface-density-20261022.md).
+Это локальная frontend-проверка; Release/production не выполнялись.
+
+## Дополнительные опции постоянно раскрыты — 2026-10-21
+
+По запросу владельца в `Subscription` заголовок дополнительных опций стал обычным
+h2 без кнопки/стрелки; доступные действия всегда видны при прежних guards. Удалены
+состояние раскрытия, collapse animation и закрытие всего раздела при success.
+Отдельные формы/подтверждения и feature guards сохранены, autopay остаётся ниже.
+`?section=additional-options` теперь только прокручивает к разделу после route
+scroll reset/закрытия устройства overlay; прежний prop сохраняет совместимость.
+Loading skeleton отражает раскрытую структуру. Это заменяет датированное поведение
+collapsed/expanded ниже; не возвращать accordion.
+
+1161 full unit PASS, build/оба TypeScript/Biome PASS; compiled browser313 PASS/
+5 configured SKIP/0 FAIL/0 flaky, ещё4 visual cases PASS.286 файлов:
+artifact `75a4a0abf49a2ea275e1015cc5b0866dc8f01b8779e6ee1205c2a69053877543`,
+source/test `29d200820e7a5fc1abf01a6ffdaf90e847ce214a95a7be6b6c351ef283f2d267`;
+до/после gate совпали. Старые неуспешные запуски сохранены в
+[локальном отчёте](.scratch/additional-options-20261021/IMPLEMENTATION_REPORT.md).
+
+## Интерактивные скидочные сценарии мокапа — 2026-10-21
+
+По замечанию владельца расширен существующий локальный helper: теперь28 состояний,
+пункты15–28 покрывают account скидку/TEST20/предложения/test_access/expiry и контекст
+подписки. До этой правки интерактивные14 состояний включали только скидки устройств;
+автоматические product browser tests не заменяли ручные fixtures.
+`mock-promo.mts` хранит локальную выгоду, routes реагируют на claim/activate/disable;
+тестовый quote30 дней99 ₽ →79.20 ₽, дополнения не получают account процент автоматически.
+`PROMO_STATES_CHECK=1` вместе с `USER_STATES_CHECK=1`:28 сценариев и14 скидочных
+проверок PASS; лог `.scratch/subscription-management-page/mock-promo-actions-final.log`.
+Для скидок стартовать готовый launcher с `LOCAL_PREVIEW_SCENARIO=32` (пункт15),
+подробности — [быстрый запуск](docs/agents/full-local-api-mock.md#scenario-quick-start).
+Это изменение mock helpers/инструкции; product source/test/artifact сохраняют proof ниже.
+
+## Контекстные действия скидок реализованы — 2026-10-21
+
+После разрешения владельца продолжить реализован единый discount resolver и fresh
+GET-проверка перед переходом. Обычная paid active/expired открывает своё продление,
+trial/legacy — применимый purchase с ID, daily/limited — управление; несколько без
+явного owned выбора — список. Pending/error не считается пустым аккаунтом.
+Общий renewal guard переиспользован, classic paid guard и API quotes сохранены.
+
+После промокода/claim/отключения обновляется кеш существующих readonly consumers.
+Истёкшая скидка/offer не допускает прежнее действие, время обновляется на открытой
+странице, истечение вызывает один readonly refresh без auto-clear. Общий discount
+helper также исключает истёкший account процент, не меняя server group price.
+RU/EN/FA/ZH: «Условия вашей группы», нейтральное описание неизвестного offer.
+Claim не покупает и остаётся на Dashboard; source-specific disable сохранён.
+
+**1161 full unit PASS**, build/оба TypeScript/Biome PASS (952 файла,40 прежних
+warnings/5 infos). Финальный compiled browser **821 PASS/5 configured SKIP/0 FAIL/
+0 flaky**, ещё32 banner capture cases PASS. Старые3 unit failures и11 browser
+failures сохранены историческими; browser tests приведены к ранее одобренному
+отсутствию web Back с сохранением проверок browser return. Unit timeout/код админки
+не менялись.286 файлов, artifact `5acf17d4770b8acc0bba52230b70595cac3cd03be33cb53b67b7ec9bf904cf35`,
+source/test `9bb6361076212c12be298d20e1c762776a44bb8650c9d2b59d0f0f26cca4f270`;
+до/после gate совпали. Это локальная реализация; записи «предложение ещё не одобрено»
+ниже относятся к состоянию аудита20 октября.
+[Реализация и точные проверки](docs/discount-banners-implementation-20261021.md).
+
+## Порядок страницы подписки и аудит скидок — 2026-10-20
+
+По запросу владельца на `/subscriptions/:id` убрана видимая WebBackButton возле
+H1. Browser/Telegram Back и контекст устройств сохранены и проверены; header
+не восстанавливать только ради прежних web-back tests. Balance-autopay toggle
+перемещён отдельной Card ниже Additional options, включая раскрытый блок.
+`SubscriptionAutopayToggle` переиспользует прежнюю презентацию/состояние pending;
+мутация остаётся в Subscription. Пустой старый settings wrapper не показывается,
+условия provider/traffic contents сохранены; loading skeleton переставлен так же.
+
+Проверки текущего UI: **1139 full unit PASS**,34 focused unit PASS, build/оба
+TypeScript/Biome PASS (939 файлов,40 прежних warnings/5 infos),147 focused
+management/overview/loading browser PASS. Админкод/таймауты/workers unit не менялись;
+прежние failed runs сохраняют свой исторический scope, не объявляются исправленными.
+286 compiled files, artifact manifest
+`1652266402acdd542ed9cf5e6111e23e0b8034c37260215cf78bca8238a8e8b7`,
+source/test manifest `77d9d308e19943059849c909776f1a8bfb005da591c4418f5d5ef293b167f8b5`.
+
+Отдельно выполнен **аудит всех discount surfaces**, не реализация новой маршрутизации.
+18 current-behavior browser cases +2 promocode-cache cases PASS на320/1280:
+Use now всегда generic purchase; paid classic уходит в management через guard,
+paid tariff остаётся в покупке, multi selected ID теряется и может показать
+«Новый тариф / Все тарифы уже куплены». Подтверждены stale-expiry CTA и отсутствие
+active-discount invalidation после промокода. Предложена state-aware матрица с
+текущими guards/owned ID/авторитетным API quote. **Предложение ещё не одобрено**;
+скидочные handlers/price logic этой задачей не менялись.
+[Аудит и рекомендации](docs/discount-banners-audit-20261020.md).
+[UI proof](.scratch/promo-banners-20261020/UI_IMPLEMENTATION_REPORT.md).
+
+## Зазор после действия продления — 2026-10-20
+
+По замечанию владельца устранена лишняя пустота между «Продлить подписку» и
+«Мои устройства»: резерв96/80px был на Link, а окрашенная Card оставалась ниже.
+В375px это давало37.5px видимого зазора, в1280 —21.5px вместо стандартных16px.
+Min-height перенесён на видимый HoverBorderGradient с растянутым содержимым;
+Link снова обычный block. Loading footprint сохранён, gap теперь16px (±1px).
+147 focused management/overview/loading browser PASS на пяти ширинах и двух темах,
+без skips/failures/flaky/retries; build/оба TypeScript/Biome PASS. Общий unit1139:
+1137 PASS/2 прежних admin audience FAIL, NOT_PASS.286 compiled files:
+artifact `a5e0c5d7f028ff463d514bb7b65a8144cc99ddeef2d9f4db7f11d6032797518a`,
+source/test `6141d2951f5d6ed7ea8c412e5f0a7d399592a270cd909d7bea03f52e46456af6`;
+до/после gate совпали. [Проверка зазора](.scratch/subscription-loading-20261020/IMPLEMENTATION_REPORT.md#painted-gap).
+
+## Скелетоны продления и покупки — 2026-10-20
+
+После отдельной проверки трёх сценариев (renewal/classic purchase/tariff catalogue)
+заменены generic PageSkeleton тела на `SubscriptionFlowSkeleton`: реальный H1/Back
+остаётся, периоды используют общий `PeriodCardContent` loading-view и тот же grid,
+каталог — свою responsive структуру. Пока sales_mode неизвестен, шаблон нейтральный;
+после options учитываются известный режим и количество карточек. Скелетон read-only
+условий продления резервирует геометрию уже загруженного RenewalSubscriptionInfo.
+
+Причина дополнительного скачка — поздний «Ваша группа»: раньше двигал содержимое
+на78–102px. Существующий group GET вынесен из Banner в `usePurchaseContext`:
+тот же URL/key/staleTime30s, готовность метаданных учитывается до показа тела.
+Optional group error завершается после одной попытки и не удерживает форму;
+неизвестная группа не выдумывается. Баннер стал pure presentation. Цены/скидки
+и финансовые query gates не пересчитывались этой правкой.
+
+Финальный exact artifact: **344 browser PASS/0 SKIP/0 FAIL/0 flaky**,4 workers,
+без retries;120 новых loading cases, остальные — existing period/preview/renewal/
+management regressions.65 focused unit PASS, build/оба TypeScript/Biome PASS
+(938 файлов,40 прежних warnings/5 infos). Общий unit1139:1137 PASS/2 прежних
+admin audience FAIL, **NOT_PASS**. Probe повторён320/1280: сдвиг при замене group
+placeholder на данные0px во всех трёх сценариях; это не общий CLS score.
+286 compiled files, artifact manifest
+`d2adf43477da4a247fa3aef59b6e48ee8387da595cecb1d3e25134e3a7c9bd68`,
+source/test manifest `5a80b1ed8a149a4a204c704c6e3d42846d4354d8352fac481e6262aa39657307`;
+до/после gate совпали.
+[Подробная проверка двух страниц](.scratch/purchase-loading-20261020/IMPLEMENTATION_REPORT.md).
+
+## Загрузка страницы «Подписка» без подтверждённых скачков — 2026-10-20
+
+На exact предыдущей overview-сборке воспроизведены: лишняя заглушка заголовка
+сдвигала overview на56px при загрузке full subscription; маленькая строка загрузки
+purchase-options меняла положение «Моих устройств» на40.5px (320) /22.5px (1280).
+В embedded management добавлен `SubscriptionManagementSkeleton` без второго
+заголовка; overview и его placeholder имеют min-height256px. Pending purchase
+использует отдельный скелетон, ready action резервирует96px до sm /80px от sm.
+Свежие финансовые условия по-прежнему обязательны до показа ссылки; на background
+refetch overview остаётся, а action заменяется скелетоном того же размера.
+Поздний devices query показывает скелетон счётчика вместо прежнего «Недоступно».
+
+Повтор того же phased API probe: overview и «Мои устройства» меняют позицию на
+**0px** между измеренными фазами320/1280. Это локальный geometry proof после
+готовности fonts, не обещание нулевого CLS при любом содержимом/сети.
+На новом artifact **239 focused browser PASS**, включая50 loading cases:
+light/dark ×320/375/768/1024/1280, cold/staggered, cached return, errors/retry.
+Допуск стабильности4px не повышался.80 focused unit/build/оба TypeScript/Biome PASS
+(40 прежних warnings/5 infos). Общий unit1131:1129 PASS/2 FAIL в прежних admin
+audience tests — **NOT_PASS**, не переоценивать как новый backend todo.
+286 compiled files, artifact manifest
+`07cb5b3cc5485b74bb9e5f1652be83b9bf3815ade149b8bd26e36b22bc77c261`,
+source/test manifest `1303baca2d72af21d5596a607eab5a2b8e4b64d657059cf4539ac212a39a9b0f`;
+до/после gate совпали.
+[Диагностика и проверка загрузки](.scratch/subscription-loading-20261020/IMPLEMENTATION_REPORT.md).
+
+## Компактная карточка на странице «Подписка» — 2026-10-20
+
+Владелец отдельно подтвердил добавление карточки над управлением на
+`/subscriptions/:id`: название тарифа/существующий fallback, статус, окончание,
+трафик, лимит устройств, серверы флагами. `SubscriptionOverviewCard` читает уже
+загруженную полную подписку в embedded management, до существующего CTA.
+`SubscriptionConditions` — общий read-only вид условий для карточки и продления;
+акцентные ячейки и ChartIcon сохранены. Флаги управления строятся существующим
+`getFlagEmoji(country_code)`, имя — fallback/tooltip. Продление сохраняет названия.
+Настройки/действия остаются в прежнем management. Это уточняет раннее решение
+compact correction ниже; полный Dashboard overview с VPN/таймером не возвращён.
+
+Функциональные проверки текущей версии: **54 focused unit PASS**, **97 focused
+management/overview browser PASS** без skips/failures/flaky, включая65 новых
+overview cases; build/оба TypeScript/Biome PASS (40 прежних warnings/5 infos).
+Общие gates **NOT_PASS**:1128 PASS/1 timeout в прежнем admin audience unit test;
+широкий browser390 PASS/5 configured SKIP/1 timeout Connection wizard (mobile).
+Отдельный повтор Connection wizard на текущих байтах2 PASS; это не превращает
+широкий run в PASS. Таймауты/assertions не ослаблялись; новые статусы проверены
+unit, active/expired/trial — в browser; темы light/dark/operator, RU/EN/FA/ZH,
+пять ширин320–1280.14 RU screenshots, часть визуально просмотрена.
+286 compiled files, artifact manifest
+`90b613b991ef35a0b3bf07e606187e436d7b31a1620e7a72e89d98070beda2e9`,
+source/test manifest `85d04ca71893ee9540ed43cfd43a06b1770c998f842c6e843f51bb730d314355`;
+до/после gate совпали. Это локальная реализация с указанными ограничениями общих
+проверок, не полный Release gate PASS.
+[Отчёт карточки и точные проверки](.scratch/subscription-overview-20261020/IMPLEMENTATION_REPORT.md).
+
+## Зелёная месячная цена в карточках периодов — 2026-10-20
+
+По просьбе владельца месячная стоимость под основной ценой в общем
+`PeriodCardContent` использует существующий `text-success-400`, включая адаптацию
+к светлой теме. Это действует в продлении, classic purchase и tariff purchase;
+«за14 дней» остаётся нейтральным, поскольку это не цена за месяц. Расчёты сохранены.
+Unit **1116 PASS**, build/оба TypeScript PASS, Biome0 errors/40 прежних warnings/
+5 infos. Compiled compact-period matrix **90 PASS/0 SKIP/0 FAIL/0 flaky**, без retries:
+3 режима ×2 темы ×3 языка ×5 ширин. Снимки RU320/1280 сохранены; четыре просмотрены.
+285 compiled files, artifact manifest
+`27b59dc295b6015fc4928d76c0277b368812cdea6acdb7e5ca70215f26f7456b`,
+source/test manifest `2dee8531f15f4f9d73191e1f8ca7fe028bd7c94691a043b90656a7aa38410489`;
+сверка до/после browser gate совпала.
+[Запись проверки цвета](.scratch/renewal-structure-20261020/MONTHLY_PRICE_COLOR.md).
+
+## Финальное оформление продления — 2026-10-20
+
+Последние уточнения владельца применены вместе: пояснение об устройствах теперь
+использует существующий `FundingNotice` (акцентный фон10%, тонкая рамка, InfoIcon),
+как рекомендация возле пополнения. Повтор «Количество устройств при продлении
+сохранится» удалён из всех трёх сообщений и RU/EN/FA/ZH; state/maximum rules прежние.
+Внешний Card вокруг «Выберите срок» и сетки периодов убран, общий контейнер теперь
+обычный div с существующими отступами; карточки периодов и итог оплаты сохранены.
+Иконка трафика — существующий `ChartIcon`, как в Dashboard SubscriptionCardActive.
+
+Итоговые gates: **1116 unit PASS**, build/оба TypeScript PASS,
+Biome 0 errors/40 прежних warnings/5 infos; **92 browser PASS** без retries/flaky,
+**14 visual PASS**. Первый browser run91 PASS/1 timeout сохранён; на тех же байтах
+следующий полный run92 PASS без увеличения timeout или retries.
+285 compiled files, artifact manifest
+`5d7cc055fb94b5546aba5102a67efd5f6ed9599fc61be0b4f7301c555e5a8168`,
+source/test manifest `0e00cc2abbe3cedf5f9b96c08e32ba434cfc5053a37494f1c0bd6effbdb62c38`;
+до/после gate совпали. Предыдущие варианты оформления ниже исторические.
+[Точные записи финального оформления](.scratch/renewal-structure-20261020/DEVICE_GUIDANCE.md#final-presentation).
+
+## Пояснение об устройствах при продлении — 2026-10-20
+
+По согласованному предложению владельца в карточке условий продления удалены
+«Продление с текущими параметрами» и RefreshIcon. Вместо них — обычный абзац
+без иконки: для действующей платной подписки поясняет отдельную докупку, для
+истёкшей — сначала продление, затем «Дополнительные опции». Известный достигнутый
+максимум получает отдельный текст без обещания докупки. При безлимите, trial,
+daily, обязательном выборе тарифа и прочем неподдержанном неактивном состоянии
+пояснение не показывается. Исчерпанный трафик сам по себе не равен expired.
+`renewalDeviceGuidance` выбирает только текст; maximum берётся из уже загруженного
+classic `purchase-options.devices.max`, для неизвестного максимума не выдумывается.
+Новых API-запросов, финансовых условий или изменений Upstream Bot нет.
+
+Текущие локальные gates: **1116 unit PASS**, build/оба TypeScript PASS,
+Biome 0 errors/40 прежних warnings/5 infos; **92 renewal browser PASS**, без
+SKIP/FAIL/flaky/retries; **14 visual captures PASS**. Браузерный scope: прежняя
+renewal locale/theme/viewport матрица и новые active/expired/known-max проверки
+на320/1280; active visual — пять ширин, expired —320/1280, light/dark.
+Первый unit run и первый browser run с устаревшим ожиданием пяти иконок сохранены;
+итоговый browser contract требует четыре после согласованного удаления иконки.
+Artifact manifest `94abdcf6603fd2380152e74d1390f4aa9f650ba290bf7ae257332e3ff595207c`,
+source/test manifest `8a1beb6b83b16743aada1232ec8af2fa2e729308a2799594beadc96eedfd8746`;
+285 compiled files, до/после browser gate совпали.
+[Реализация и доказательства](.scratch/renewal-structure-20261020/DEVICE_GUIDANCE.md).
+
+## Второстепенный акцентный фон условий — 2026-10-20
+
+По уточнению владельца серый фон «Трафика» / «Устройств» заменён на существующий
+`bg-accent-500/10` в `RenewalSubscriptionInfo`. Это мягкая заливка акцентного цвета,
+уже используемая в FundingNotice, без рамки выбранного действия. Два изменения
+классов; прочие стили и финансовые контракты сохранены. Серое решение ниже — история.
+
+На новом exact artifact: **1102 unit PASS**, build/оба TypeScript PASS,
+Biome 0 errors/40 прежних warnings/5 infos; **80 renewal browser PASS** и
+**10 visual captures PASS**, без SKIP/FAIL/flaky. Пять ширин320–1280,
+ru/en/fa/zh и operator coverage в renewal suites; снимки light/dark просмотрены.
+Текущий успешный unit run относится к новому снимку; прежние два admin FAIL
+ниже сохраняются как факты предыдущего запуска, админка этой задачей не менялась.
+Artifact manifest `c9398073518219d4d98d721716a8a4a230a180f9e1cdf2838ba3bd9b775efd81`,
+source/test manifest `a96cdad2e7f9cde01195491ff661b4eb15ecc990919e1e20cb9c1f89ee5a22b5`;
+285 compiled files, до/после browser gate совпали.
+[Актуальная запись заливки](.scratch/renewal-structure-20261020/BACKGROUND_FIX.md#accent-follow-up).
+
+## Видимый фон условий продления — 2026-10-20
+
+По замечанию владельца в `RenewalSubscriptionInfo` усилен фон двух блоков
+«Трафик» / «Устройства»: существующий `bg-dark-800/50` заменён на `bg-dark-700/50`.
+Измерение browser styles показало причину: прежний surface почти совпадал с общей
+Card; новый оттенок заметен в обеих темах и следует операторской палитре.
+Это styling-only изменение двух классов, без денежных или API-изменений.
+
+Новый build/оба TypeScript и Biome (0 errors/40 прежних warnings/5 infos) PASS.
+На новом exact artifact: **80 renewal browser PASS/0 SKIP/0 FAIL/0 flaky**,
+**10 visual captures PASS** (320/375/768/1024/1280 × light/dark); locale/operator
+coverage включён в renewal suites. Полный unit run — **1100 PASS/2 FAIL** в
+`adminBroadcastCreateAudience.test.tsx`; повтор этого файла сохранил два сбоя,
+27 payment renewal tests PASS. Полный unit gate сейчас **NOT_PASS**;
+исторические 1102 PASS ниже не доказывают новый снимок.
+Artifact manifest `b7c3c4954a0baeb501651eccfa1aaf397e7e9f42338c8f28b5079886f1233cf6`,
+source/test manifest `f9c6052df66b7d352b7b8bc92b577f326062dfd068242244d408dff49672b9d3`;
+285 compiled files, до/после browser gate совпали.
+[Исправление фона и границы проверки](.scratch/renewal-structure-20261020/BACKGROUND_FIX.md).
+
+## Структура продления и подсказки пополнения — 2026-10-20
+
+После compact correction ниже завершено локальное улучшение `/subscriptions/:id/renew`
+по референсам владельца в существующей дизайн-системе: условия подписки сгруппированы,
+выбор периода дополнен «Дольше — выгоднее», итог показывает срок, серверную цену,
+ожидаемую дату окончания, баланс и отдельное «К пополнению». Ожидаемая дата — только
+предпросмотр; подтверждение и финансовые условия остаются за существующим API.
+
+Общий `FundingNotice` переиспользуется в продлении, покупке classic/tariff/daily,
+подарках и через `InsufficientBalancePrompt` в устройствах, трафике, смене тарифа,
+серверах и возобновлении daily. Это информационные подсказки; ошибки API сохраняют
+свой статус. Пояснение продления учитывает возможное автопродление после пополнения:
+«После пополнения баланса подтвердите продление, если оно ещё не выполнено.»
+Компактная страница управления, денежные запросы и Upstream Bot сохранены.
+
+Локальный gate до последующего исправления фона выше: **1102 unit PASS**, build/оба TypeScript PASS,
+полный Biome — 0 errors/40 прежних warnings/5 infos (924 файла); affected compiled
+browser **320 PASS/5 configured SKIP/0 FAIL/0 flaky**, без retries. Viewport:
+320/375/768/1024/1280; renewal locales ru/en/fa/zh, темы light/dark/operator;
+Telegram Back эмулирован. 4 final visual captures (320/1280 × light/dark) PASS.
+Node24.15.0/npm11.12.1. 285 compiled files:
+
+- artifact manifest: `12209c5ad006128f74a32e818836f3938f9c2a99dae2603bbac26e98d7f75f39`;
+- source/test manifest: `26d7386f26bc6d1dad7c9000728f25b43f45c6145f50227e4f0a0c9668d4abb6`.
+
+Снимки до/после browser gate и при закрытии задачи совпали. Предыдущие failed runs
+сохранены; старые compact proof ниже относятся к прежним байтам.
+[Итог и точные записи проверок](.scratch/renewal-structure-20261020/IMPLEMENTATION_REPORT.md).
+Статус — **IMPLEMENTED_FRONTEND_VERIFIED**, локально; не новый live/payment/device
+PASS или Release. В интерактивном API-мокапе изменения доступны через текущий Vite.
+
+## Локальная реализация страниц подписок — 2026-10-20
+
+По PRD «Страница управления подпиской и раздельная оплата срока и устройств»
+завершена frontend-only реализация через TDD. Статус: **IMPLEMENTED_FRONTEND_VERIFIED**.
+Это локальный код, не новый Release или production.
+
+Список и управление подпиской становятся обычными страницами; контекстный пункт
+«Тарифы / Подписка / Подписки» использует успешно загруженные подписки. Платная
+classic-подписка направляется в управление и существующее продление с текущими
+параметрами. Существующая докупка устройств получает отдельный ручной return flow
+с серверной котировкой и локальным намерением без сохранения новой add_devices
+корзины. Upstream Bot остаётся неизменным. Граница сохранённой серверной корзины
+фиксируется как ограничение API, без backend-задачи.
+
+После замечания владельца исправлен лишний большой обзор на странице управления:
+в оболочке обычной страницы используется прежнее компактное содержимое management,
+без карточки «Текущий тариф», трафика, подключения и таймера. Автопродление,
+«Продлить», «Мои устройства» и дополнительные опции сохранены. Причина — ранее
+передавался только `hideHeader`, но не существующий `embedded` presentation flag.
+
+[ADR 0004](docs/adr/0004-subscription-management-page.md) уточняет прежнее
+overlay-решение только для списка/управления подпиской. Root CONTEXT остаётся
+источником актуального production baseline. Старые отчёты ниже сохраняют даты
+и scope; старые browser PASS не доказывают новый код.
+
+Исторические gates compact correction: **1099 unit PASS**, build/оба TypeScript/полный Biome PASS
+(40 прежних warnings/5 infos); affected compiled browser **297 PASS/5 configured
+SKIP/0 FAIL**, без retries/flaky, viewport 320/375/768/1024/1280, Telegram Back
+эмулирован. 2 новых compact visual captures PASS. 285 compiled files,
+artifact manifest `db9f060e38f25df4568c478774048f69d8fb41f8d59a1d3b73e89c28eb514248`,
+source/test manifest `93e6041995d9b3f69e102bffadd370c5686fb441db5ffa4bfe787668c7067886`.
+Снимки до/после gate совпали. Прежние failed runs сохранены в локальном отчёте;
+успешный финальный gate относится к исправленной версии.
+Основные финальные gates выполнены на совместимых **Node24.15.0/npm11.12.1**
+(официальная checksum-verified portable копия в OS temp). Системный24.11.1 ниже
+engine проекта. Текущие записи — compact-unit/build/browser-compact-fix;
+прежние292 PASS и e130d87 относятся к исходной полной сводке и не доказывают
+исправленные байты. Настройки ПК и project dependencies не менялись.
+[Текущее исправление и доказательства](.scratch/subscription-management-page/COMPACT_MANAGEMENT_FIX.md).
+[Исторический итог первой реализации](.scratch/subscription-management-page/IMPLEMENTATION_REPORT.md).
+Source commit/Release/production/реальных платежей0; owner HEAD сохранён,
+исходные public source inputs архивированы; последующие разрешённые изменения
+инструкций и compact correction зафиксированы отдельно. Удалённых baseline-файлов0.
+Это не новый physical Telegram/payment PASS.
+
 ## Актуальный scope владельца — 2026-10-15
 
 **Upstream Bot принимаем как рабочую основу.** Это постоянное решение, а не только

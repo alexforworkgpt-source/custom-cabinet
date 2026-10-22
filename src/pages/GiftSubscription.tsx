@@ -31,6 +31,7 @@ import { getApiErrorMessage } from '../utils/api-error';
 import { formatPrice } from '../utils/format';
 import { pickBestValue } from '../utils/bestValue';
 import { BestValueBadge } from '../components/subscription/BestValueBadge';
+import { FundingNotice } from '../components/subscription/FundingNotice';
 import { useCurrency } from '../hooks/useCurrency';
 import { WebBackButton } from '@/components/WebBackButton';
 import { usePlatform, useHaptic } from '@/platform';
@@ -39,6 +40,7 @@ import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import {
   SparklesIcon,
   GiftIcon,
+  UsersIcon,
   CheckIcon,
   CheckCircleIcon,
   KeyIcon,
@@ -590,7 +592,7 @@ function BuyTabContent({
           className="flex items-center gap-3 rounded-xl border border-success-500/30 bg-success-500/10 p-3 transition-colors hover:border-success-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success-500"
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success-500/20">
-            <SparklesIcon className="h-4 w-4 text-success-400" />
+            <UsersIcon className="h-4 w-4 text-success-400" />
           </div>
           <div>
             <div className="text-sm font-medium text-success-400">
@@ -698,9 +700,8 @@ function BuyTabContent({
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="rounded-xl border border-warning-500/20 bg-warning-500/5 p-3"
           >
-            <p className="text-sm text-warning-400">
+            <FundingNotice>
               {t('gift.insufficientBalance')}{' '}
               <Link
                 to="/balance"
@@ -708,7 +709,7 @@ function BuyTabContent({
               >
                 {t('gift.topUpBalance')}
               </Link>
-            </p>
+            </FundingNotice>
           </motion.div>
         )}
       </AnimatePresence>

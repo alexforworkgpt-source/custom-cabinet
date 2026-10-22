@@ -43,7 +43,12 @@ export function DeviceLimitPanel({
       {children}
 
       {canAddSlots && (
-        <Button fullWidth leftIcon={<PlusIcon className="h-4 w-4" />} onClick={onAddSlots}>
+        <Button
+          fullWidth
+          className="min-h-11 sm:min-h-0"
+          leftIcon={<PlusIcon className="h-4 w-4" />}
+          onClick={onAddSlots}
+        >
           {t('subscription.additionalOptions.buyDevices')}
         </Button>
       )}

@@ -37,6 +37,12 @@ for (const source of ['/subscription/purchase', '/subscriptions/42/renew', '/gif
       responses: {
         ...renewalResponses,
         ...loyaltyResponses,
+        ...(source === '/subscription/purchase'
+          ? {
+              '/api/cabinet/subscription': { has_subscription: false, subscription: null },
+              '/api/cabinet/subscriptions': { subscriptions: [], multi_tariff_enabled: false },
+            }
+          : {}),
         '/api/cabinet/subscription/purchase-options': classicPurchaseOptions,
         '/api/cabinet/subscription/purchase-preview': {
           total_price_kopeks: 9900,
@@ -68,6 +74,8 @@ for (const source of ['/subscription/purchase', '/subscriptions/42/renew', '/gif
     await page.route('**/cabinet/activity/events', (route) => route.fulfill({ json: {} }));
     await page.goto(source);
     const card = page.getByRole('link', { name: /Ваша группа: Базовый юзер/ });
+    await expect(card).toContainText('Условия вашей группы');
+    await expect(card).not.toContainText('скидки применены');
     await card.focus();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL('/info');

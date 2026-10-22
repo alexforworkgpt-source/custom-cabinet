@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router';
+import { Navigate, useSearchParams } from 'react-router';
 import { subscriptionApi } from '../api/subscription';
 import { WebBackButton } from '../components/WebBackButton';
 import { getGlassColors } from '../utils/glassTheme';
@@ -15,23 +15,33 @@ import { TariffPickerGrid } from '../components/subscription/purchase/TariffPick
 import { ClassicPurchaseWizard } from '../components/subscription/purchase/ClassicPurchaseWizard';
 import { PurchaseContextBanners } from '../components/subscription/purchase/PurchaseContextBanners';
 import { ExclamationIcon } from '@/components/icons';
-import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
+import { SubscriptionFlowSkeleton } from '../components/subscription/SubscriptionFlowSkeleton';
+import { usePurchaseContext } from '../hooks/usePurchaseContext';
 
 export default function SubscriptionPurchase() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const rawSubscriptionId = searchParams.get('subscriptionId');
-  const subscriptionId = rawSubscriptionId ? parseInt(rawSubscriptionId, 10) : undefined;
+  const subscriptionId =
+    rawSubscriptionId && /^\d+$/.test(rawSubscriptionId) ? Number(rawSubscriptionId) : undefined;
+  const invalidId =
+    rawSubscriptionId !== null && (!subscriptionId || !Number.isSafeInteger(subscriptionId));
   const { isDark } = useTheme();
   const g = getGlassColors(isDark);
 
   // Subscription query (shares cache with /subscription page)
-  const { data: subscriptionResponse, isLoading } = useQuery({
+  const {
+    data: subscriptionResponse,
+    isLoading,
+    isError: subscriptionError,
+    refetch: refetchSubscription,
+  } = useQuery({
     queryKey: ['subscription', subscriptionId],
     queryFn: () => subscriptionApi.getSubscription(subscriptionId),
     retry: false,
     staleTime: 0,
     refetchOnMount: 'always',
+    enabled: !invalidId,
   });
   const subscription = subscriptionResponse?.subscription ?? null;
 
@@ -55,11 +65,13 @@ export default function SubscriptionPurchase() {
     isTariffsMode && purchaseOptions && 'tariffs' in purchaseOptions ? purchaseOptions.tariffs : [];
 
   // Multi-tariff: check via subscriptions list query
-  const { data: multiSubData } = useQuery({
+  const multiSubQuery = useQuery({
     queryKey: ['subscriptions-list'],
     queryFn: () => subscriptionApi.getSubscriptions(),
     staleTime: 60_000,
+    retry: false,
   });
+  const multiSubData = multiSubQuery.data;
   const isMultiTariff = multiSubData?.multi_tariff_enabled ?? false;
 
   // (active promo discount + applyPromoDiscount live in usePromoDiscount;
@@ -90,6 +102,40 @@ export default function SubscriptionPurchase() {
     // (selectedTariffPeriod lives inside <TariffPurchaseForm> now; unmount clears it)
   };
   useCloseOnSuccessNotification(handleCloseAllModals);
+  const initiallyLoading =
+    isLoading || optionsLoading || (!isTariffsMode && multiSubQuery.isPending);
+  const paidClassic = classicOptions
+    ? subscription && !subscription.is_trial
+      ? subscription
+      : multiSubData?.subscriptions.find((sub) => !sub.is_trial)
+    : undefined;
+  const purchaseContext = usePurchaseContext({
+    subscription,
+    purchaseOptions,
+    tariffs,
+    showPromoGroup: !isTariffsMode || !showTariffPurchase,
+    enabled:
+      !invalidId &&
+      !initiallyLoading &&
+      !subscriptionError &&
+      !optionsError &&
+      (!classicOptions || !multiSubQuery.isError) &&
+      !paidClassic,
+  });
+  const pageHeader = (
+    <div className="flex items-center gap-3">
+      {subscriptionId && <WebBackButton to={`/subscriptions/${subscriptionId}`} />}
+      <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
+        {needsTariff(subscription)
+          ? t('subscription.cta.moveToTariff')
+          : isMultiTariff && !subscriptionId
+            ? t('subscription.newTariff', 'Новый тариф')
+            : !isMultiTariff && subscription?.is_daily && !subscription?.is_trial
+              ? t('subscription.switchTariff.title')
+              : t('subscription.getSubscription')}
+      </h1>
+    </div>
+  );
 
   // (switch preview query + switchTariffMutation moved into <SwitchTariffSheet>)
 
@@ -99,21 +145,29 @@ export default function SubscriptionPurchase() {
 
   // (classic-mode helpers moved into <ClassicPurchaseWizard>)
 
-  if (isLoading || optionsLoading) {
+  if (invalidId) return <Navigate to="/subscriptions" replace />;
+  if (initiallyLoading || purchaseContext.isLoading) {
     return (
-      <PageSkeleton leading={1} titleWidth="w-56">
-        <Skeleton variant="card" className="h-32" />
-        <Skeleton variant="card" count={2} className="h-40" />
-      </PageSkeleton>
+      <div className="space-y-6">
+        {pageHeader}
+        <SubscriptionFlowSkeleton
+          mode={purchaseOptions ? (isTariffsMode ? 'tariffs' : 'classic') : 'unknown'}
+          context={purchaseContext}
+          count={isTariffsMode ? tariffs.length : classicOptions?.periods.length}
+        />
+      </div>
     );
   }
 
-  if (optionsError || (!purchaseOptions && !optionsLoading)) {
+  if (
+    subscriptionError ||
+    (!isTariffsMode && multiSubQuery.isError) ||
+    optionsError ||
+    (!purchaseOptions && !optionsLoading)
+  ) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
-          {t('subscription.getSubscription')}
-        </h1>
+        {pageHeader}
         <div
           className="rounded-3xl p-6 text-center"
           style={{
@@ -125,7 +179,11 @@ export default function SubscriptionPurchase() {
             {t('subscription.loadError', 'Не удалось загрузить варианты подписки')}
           </p>
           <button
-            onClick={() => refetchOptions()}
+            onClick={() => {
+              if (subscriptionError) void refetchSubscription();
+              else if (multiSubQuery.isError) void multiSubQuery.refetch();
+              else void refetchOptions();
+            }}
             className="rounded-xl bg-accent-500 px-6 py-2 text-sm font-medium text-on-accent transition-colors hover:bg-accent-600"
           >
             {t('common.retry')}
@@ -135,30 +193,17 @@ export default function SubscriptionPurchase() {
     );
   }
 
+  if (subscriptionId && subscription?.id !== subscriptionId) {
+    return <Navigate to="/subscriptions" replace />;
+  }
+  if (paidClassic) return <Navigate to={`/subscriptions/${paidClassic.id}`} replace />;
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        {subscriptionId && <WebBackButton to={`/subscriptions/${subscriptionId}`} />}
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
-          {needsTariff(subscription)
-            ? t('subscription.cta.moveToTariff')
-            : isMultiTariff && !subscriptionId
-              ? t('subscription.newTariff', 'Новый тариф')
-              : !isMultiTariff && subscription?.is_daily && !subscription?.is_trial
-                ? t('subscription.switchTariff.title')
-                : t('subscription.getSubscription')}
-        </h1>
-      </div>
+      {pageHeader}
 
-      {purchaseOptions && (
-        <PurchaseContextBanners
-          subscription={subscription}
-          purchaseOptions={purchaseOptions}
-          tariffs={tariffs}
-          showPromoGroup={!isTariffsMode || !showTariffPurchase}
-        />
-      )}
+      {purchaseOptions && <PurchaseContextBanners context={purchaseContext} />}
 
       {/* Tariffs Section */}
       {isTariffsMode && tariffs.length > 0 && (

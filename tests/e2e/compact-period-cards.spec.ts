@@ -124,12 +124,9 @@ for (const theme of ['dark', 'light']) {
           ).toBeVisible();
         }
         if (mode === 'renewal') {
-          await expect(page.locator('[data-renewal-panel]')).toHaveCSS('border-top-width', '1px');
+          await expect(page.locator('[data-renewal-panel]')).toHaveCSS('border-top-width', '0px');
+          await expect(page.locator('[data-renewal-panel]')).toHaveCSS('padding', '0px');
           await expect(page.locator('[data-renewal-panel]')).toHaveCSS(
-            'padding',
-            (page.viewportSize()?.width ?? 1280) < 640 ? '12px' : '16px',
-          );
-          await expect(page.locator('[data-renewal-panel]')).not.toHaveCSS(
             'background-color',
             'rgba(0, 0, 0, 0)',
           );

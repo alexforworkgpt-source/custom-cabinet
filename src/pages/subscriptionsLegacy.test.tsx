@@ -38,6 +38,8 @@ vi.mock('@/api/subscription', () => ({
     getSubscriptions: () =>
       Promise.resolve({ subscriptions: [state.subscription], multi_tariff_enabled: true }),
     getTrialInfo: () => Promise.resolve({ is_available: false }),
+    getPurchaseOptions: () =>
+      Promise.resolve({ sales_mode: 'tariffs', tariffs: [], balance_kopeks: 0 }),
     activateTrial: () => Promise.resolve({}),
   },
 }));

@@ -171,7 +171,7 @@ test('Cashera QR preserves the payment and waits for an explicit external-link a
   await page.getByRole('dialog').screenshot({ path: testInfo.outputPath('cashera-qr.png') });
   await expect(page.getByRole('img', { name: /QR/ })).toBeVisible();
   await page.getByRole('button', { name: 'Close', exact: true }).click();
-  await expect(page).toHaveURL('/?sub=42');
+  await expect(page).toHaveURL('/subscriptions/42');
   expect(
     apiRequests.filter((request) => request === 'POST /api/cabinet/balance/topup'),
   ).toHaveLength(1);
@@ -224,7 +224,9 @@ test('Cashera management displays server RUB charges and cancels the same subscr
     },
   );
   await page.goto('/subscriptions/42');
-  await page.getByRole('button', { name: 'Additional options', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Additional options', exact: true }),
+  ).toBeVisible();
   await expect(page.getByText(/129.*₽/)).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('cashera-management.png'), fullPage: true });
   page.once('dialog', (dialog) => dialog.accept());

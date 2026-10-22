@@ -10,6 +10,7 @@ import {
   getSavedCartTopUpPath,
 } from '../utils/subscriptionHelpers';
 import { formatDateOrRaw } from '../utils/format';
+import { previewRenewalEndDate } from '../utils/renewalPreview';
 import { useHaptic } from '../platform';
 import { useAuthStore } from '../store/auth';
 import { useRenewalSelection } from '../hooks/useRenewalSelection';
@@ -17,7 +18,8 @@ import InsufficientBalancePrompt from '../components/InsufficientBalancePrompt';
 import { WebBackButton } from '../components/WebBackButton';
 import { Card } from '../components/data-display';
 import { Button } from '../components/primitives';
-import { PageSkeleton, Skeleton } from '../components/ui/skeleton';
+import { SubscriptionFlowSkeleton } from '../components/subscription/SubscriptionFlowSkeleton';
+import { usePurchaseContext } from '../hooks/usePurchaseContext';
 import { RenewalOptions } from '../components/subscription/renewal/RenewalOptions';
 import { RenewalSummary } from '../components/subscription/renewal/RenewalSummary';
 import { RenewalSubscriptionInfo } from '../components/subscription/renewal/RenewalSubscriptionInfo';
@@ -61,6 +63,14 @@ export default function RenewSubscription() {
   const ready = queries.every((query) => query.isSuccess && !query.isFetching);
   const isClassic = purchaseQuery.data?.sales_mode === 'classic';
   const balanceKopeks = purchaseQuery.data?.balance_kopeks;
+  const purchaseContext = usePurchaseContext({
+    subscription,
+    purchaseOptions: purchaseQuery.data,
+    tariffs: purchaseQuery.data?.sales_mode === 'tariffs' ? (purchaseQuery.data.tariffs ?? []) : [],
+    showPromoGroup: true,
+    enabled: queries.every((query) => query.isSuccess) && !needsTariff(subscription),
+  });
+  const loading = queries.some((query) => query.isLoading) || purchaseContext.isLoading;
   const { selectedPeriod, selectPeriod, clearSelection, selectionReset } = useRenewalSelection(
     userId,
     subId,
@@ -84,6 +94,7 @@ export default function RenewSubscription() {
       queryClient.invalidateQueries({ queryKey: ['renewal-options', subId] });
       queryClient.invalidateQueries({ queryKey: ['balance'] });
       queryClient.invalidateQueries({ queryKey: ['purchase-options', subId] });
+      queryClient.invalidateQueries({ queryKey: ['device-price'] });
       navigate(`/subscriptions/${subId}`, { replace: true });
     },
     onError: (err: unknown) => {
@@ -139,16 +150,6 @@ export default function RenewSubscription() {
   if (subscriptionQuery.isSuccess && !subscriptionQuery.isFetching && needsTariff(subscription)) {
     return <Navigate to={tariffSelectionPath(subId)} replace />;
   }
-  if (queries.some((query) => query.isLoading)) {
-    return (
-      <PageSkeleton leading={1} titleWidth="w-56" className="space-y-5">
-        <Skeleton variant="card" className="h-16" />
-        <div className="grid grid-cols-2 gap-3">
-          <Skeleton variant="card" count={4} className="h-28" />
-        </div>
-      </PageSkeleton>
-    );
-  }
   const failedQuery = subscriptionQuery.isError
     ? subscriptionQuery
     : purchaseQuery.isError
@@ -167,6 +168,10 @@ export default function RenewSubscription() {
     month: 'long',
     year: 'numeric',
   });
+  const projectedEndDate =
+    subscription && selectedOption && !subscription.is_trial && !subscription.is_daily
+      ? previewRenewalEndDate(subscription.end_date, selectedOption.period_days)
+      : null;
 
   return (
     <div className="space-y-4">
@@ -176,7 +181,26 @@ export default function RenewSubscription() {
           <h1 className="text-2xl font-bold text-dark-100">{t('subscription.extend')}</h1>
         </div>
       </div>
-      {failedQuery ? (
+      {loading ? (
+        <SubscriptionFlowSkeleton
+          mode="renewal"
+          context={purchaseContext}
+          count={optionsQuery.data?.length}
+          conditions={
+            subscription && purchaseQuery.isSuccess ? (
+              <RenewalSubscriptionInfo
+                subscription={subscription}
+                endDate={endDate}
+                maxDeviceLimit={
+                  purchaseQuery.data.sales_mode === 'classic'
+                    ? purchaseQuery.data.devices?.max
+                    : undefined
+                }
+              />
+            ) : undefined
+          }
+        />
+      ) : failedQuery ? (
         <Card>
           <div role="alert" className="space-y-3 text-sm text-error-400">
             <p>{t(loadErrorKey)}</p>
@@ -203,18 +227,18 @@ export default function RenewSubscription() {
         </Card>
       ) : (
         <>
-          <PurchaseContextBanners
-            subscription={subscription}
-            purchaseOptions={purchaseQuery.data}
-            tariffs={'tariffs' in purchaseQuery.data ? purchaseQuery.data.tariffs : []}
-            showPromoGroup
-          />
+          <PurchaseContextBanners context={purchaseContext} />
           <RenewalSubscriptionInfo
             subscription={subscription}
             endDate={endDate}
-            isClassic={isClassic}
+            maxDeviceLimit={
+              purchaseQuery.data.sales_mode === 'classic'
+                ? purchaseQuery.data.devices?.max
+                : undefined
+            }
           />
           <RenewalSummary
+            projectedEndDate={projectedEndDate}
             option={selectedOption}
             balanceKopeks={balanceKopeks}
             isClassic={isClassic}

@@ -106,25 +106,27 @@ function renderClassic() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/subscription/purchase?subscriptionId=42']}>
-        <Routes>
-          <Route
-            path="/subscription/purchase"
-            element={
-              <>
-                <ClassicPurchaseWizard
-                  classicOptions={classicOptions}
-                  subscription={null}
-                  subscriptionId={42}
-                />
-                <LocationProbe />
-              </>
-            }
-          />
-          <Route path="/balance/top-up" element={<LocationProbe />} />
-          <Route path="/subscriptions" element={<LocationProbe />} />
-        </Routes>
-      </MemoryRouter>
+      <PlatformProvider>
+        <MemoryRouter initialEntries={['/subscription/purchase?subscriptionId=42']}>
+          <Routes>
+            <Route
+              path="/subscription/purchase"
+              element={
+                <>
+                  <ClassicPurchaseWizard
+                    classicOptions={classicOptions}
+                    subscription={null}
+                    subscriptionId={42}
+                  />
+                  <LocationProbe />
+                </>
+              }
+            />
+            <Route path="/balance/top-up" element={<LocationProbe />} />
+            <Route path="/subscriptions" element={<LocationProbe />} />
+          </Routes>
+        </MemoryRouter>
+      </PlatformProvider>
     </QueryClientProvider>,
   );
 }

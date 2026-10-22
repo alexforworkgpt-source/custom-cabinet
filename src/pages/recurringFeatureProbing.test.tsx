@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -208,9 +208,9 @@ describe('страница подписки', () => {
     state.requiresTariff = true;
     await renderSubscription();
 
-    fireEvent.click(
-      screen.getByRole('button', { name: ru('subscription.additionalOptions.title') }),
-    );
+    expect(
+      screen.getByRole('heading', { name: ru('subscription.additionalOptions.title') }),
+    ).toBeTruthy();
 
     expect(screen.queryByText(ru('subscription.additionalOptions.buyDevices'))).toBeNull();
     expect(screen.queryByText(ru('subscription.additionalOptions.buyTraffic'))).toBeNull();

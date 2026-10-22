@@ -440,6 +440,14 @@
     "subscriptions": "Subscriptions"
   },
   "subscription": {
+    "devicePayment": {
+      "alreadyApplied": "The selected device limit is already set. No repeat purchase is needed.",
+      "changed": "The terms have changed. Review the current details and confirm again.",
+      "loadError": "Could not refresh the purchase terms. Please retry.",
+      "unavailable": "Changing devices on the displayed terms is unavailable.",
+      "cartSaved": "The server saved a separate device cart. This payment flow cannot continue; return to subscription management.",
+      "unknownResult": "The purchase result is unconfirmed. Refresh your subscription before choosing again."
+    },
     "title": "Subscription",
     "currentPlan": "Current Plan",
     "status": "Status",
@@ -501,7 +509,8 @@
       "activeHint": "Renewal and plan change",
       "renewHint": "Subscription expired — renew to continue using",
       "moveToTariff": "Switch to a plan",
-      "moveToTariffHint": "Bought before plans were introduced"
+      "moveToTariffHint": "Bought before plans were introduced",
+      "renewUnavailable": "Renewal is unavailable for the current subscription state."
     },
     "connectionInfo": "Connection Info",
     "copyLink": "Copy Link",
@@ -550,6 +559,17 @@
     "renewOptionsLoadError": "Could not load renewal periods",
     "chooseRenewalPeriod": "Choose a period",
     "renewCurrentEnd": "Current subscription: until {{date}}",
+    "renewCurrentValid": "Current subscription is valid",
+    "renewExpiredValid": "Subscription was valid",
+    "renewUntil": "until {{date}}",
+    "renewLongerBetter": "Longer terms, better value",
+    "renewOrderTitle": "Renewal for {{period}}",
+    "renewProjectedEnd": "Expected end date: {{date}}",
+    "renewTopUpRequired": "Amount to top up",
+    "renewAfterFundingNotice": "After topping up your balance, confirm the renewal if it has not already completed.",
+    "renewDevicesActiveHint": "Additional devices are purchased separately under Additional options.",
+    "renewDevicesExpiredHint": "To add devices, renew your subscription first, then open Additional options.",
+    "renewDevicesMaxHint": "The maximum device limit has been reached.",
     "renewSelectionReset": "Your previous selection was cleared because the subscription or available periods changed. Choose a period again.",
     "renewTopUpHint": "Top up {{amount}}, then confirm renewal.",
     "classicRenewHint": "Renew with your current subscription settings",
@@ -801,7 +821,7 @@
     },
     "promoGroup": {
       "yourGroup": "Your group: {{name}}",
-      "personalDiscountsApplied": "Personal discounts applied to prices"
+      "personalDiscountsApplied": "Your group’s terms"
     },
     "tariff": {
       "perDay": "/ day",
@@ -6172,6 +6192,12 @@
     "expiresIn": "Expires in",
     "source": "Source",
     "useNow": "Use discount now",
+    "actions": { "chooseSubscription": "Choose a subscription" },
+    "navigation": {
+      "unavailable": "Could not confirm an available action. Refresh the data and try again.",
+      "changed": "The selected subscription or account has changed. Check your selection and try again.",
+      "expired": "This discount is no longer available. Refresh the offers."
+    },
     "discountApplied": "Discount applied",
     "time": {
       "days": "d",
@@ -6187,6 +6213,7 @@
       "serverAccess_other": "Access to {{count}} servers",
       "additionalServers": "Access to additional servers",
       "activateDiscountHint": "Activate discount on subscription purchase",
+      "specialOfferHint": "A special offer for your account",
       "activationFailed": "Failed to activate offer",
       "discountActiveTitle": "{{percent}}% discount active",
       "statusActive": "Active",

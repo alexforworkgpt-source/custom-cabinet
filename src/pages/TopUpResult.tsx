@@ -326,6 +326,8 @@ export default function TopUpResult() {
       });
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
       queryClient.invalidateQueries({ queryKey: ['purchase-options'] });
+      queryClient.invalidateQueries({ queryKey: ['device-price'] });
+      queryClient.invalidateQueries({ queryKey: ['renewal-options'] });
       refreshUser();
     } else if (resolvedFailed) {
       cleanedUpRef.current = true;
