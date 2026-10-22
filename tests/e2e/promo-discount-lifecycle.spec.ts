@@ -145,9 +145,13 @@ test('an offer that expired between display and activation cannot be claimed', a
   });
   await page.goto('/');
   const activate = page.getByRole('button', { name: /Активировать$/ });
+  // Freeze interval-driven removal before advancing wall time so the stale click reaches the guard.
+  await page.clock.pauseAt(new Date('2026-10-21T12:00:30Z'));
   await expect(activate).toBeEnabled();
   await page.clock.setSystemTime(new Date('2026-10-21T12:02:00Z'));
   await activate.evaluate((button) => button.click());
+  await expect(page.getByRole('alert')).toBeVisible();
+  await page.clock.runFor(1000);
   await expect(activate).toHaveCount(0);
   expect(fixture.requests.filter(({ url }) => url.pathname.endsWith('/promo/claim'))).toEqual([]);
   fixture.expectNoPayment();
