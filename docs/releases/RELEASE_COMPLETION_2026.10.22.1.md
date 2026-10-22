@@ -59,6 +59,8 @@ Upstream provenance и release workflows не менялись.
 | Независимая компиляция | **PASS:** локальная Linux/amd64 `--no-cache` и реально исполненные npm ci/build в первом Actions build; второй workflow build мог использовать cache |
 | Публичные файлы | **8 файлов без токена, PASS:** наборы/размеры/hashes/checksums/source/tag/tree/provenance/archive safety |
 | Final exact-public-artifact browser | **1766 PASS/35 configured SKIP/0 FAIL/0 flaky**,1801 case,5 ширин,2workers,0retries |
+| Дополнение точных обязательных размеров | **486 PASS/3 SKIP/0 FAIL/0 flaky**,320×568/768×1024/1440×900; source/artifact не менялись |
+| Независимый Firefox smoke | **78 PASS/3 SKIP/0 FAIL/0 flaky**,Firefox155.0/revision1543,1worker/0retries |
 | Новый публичный Bundle install/smoke | **PASS/exit0:**141 Installer source files, PG18/schema0131,287 artifact files,health/публичные routes/webhook404/no-store |
 | Cleanup/postflight | **PASS:** только собственные новые ресурсы удалены; прежние volumes и management/Caddy/UFW/launcher/locator bytes/modes сохранены |
 | Stable promotion | **PASS**, metadata-only; source/tag/notes/assets/latest сохранены |
@@ -78,6 +80,18 @@ Tagged source и опубликованные assets не редактирова
 Прежние1741/35/5 и1765/35/1 runs остаются **NOT_PASS** своих входов. Промежуточные
 неуспешные unit/browser/controller попытки сохранены в локальном evidence;
 они не переименованы в успешные. Полный итог подтверждён новым фактическим run.
+
+После review итоговых docs точные недостающие viewport inputs и Firefox проверены
+отдельно, не перенесены из Chromium на другие размеры/engine. Все шесть обязательных
+размеров теперь покрыты в critical-page scope. В отдельной Firefox-копии положительный
+scroll predicate использует polling для asynchronous smooth scroll; продуктовые
+анимации и assertions не ослаблялись. Подробности и сохранённый первый неуспешный
+supplemental run — в [live-check report](LIVE_CHECK_REPORT_2026.10.22.md).
+
+Non-secret smoke environment ID: `cabinet-public-20261022-c63be8ccdf`;
+committed outcome receipt recorded2026-10-22T20:16:33Z, smoke completed20:17:06Z.
+Время восстановлено из mtimes checksum-verified off-host archive и связано с
+native receipts, без публикации credentials/URL.
 
 ## 4. Разрешения и ограничения
 

@@ -59,9 +59,21 @@ promotion record `dbdfbd958deac179fee20224548895b9f3efed83`.
 ## Environment
 
 Назначенная disposable Ubuntu24.04/linux-amd64; HTTPS routes проверены native
-smoke. URL и private locators оставлены в закрытом evidence. Отдельный deploy
-timestamp не записывался как новый факт: есть receipts smoke и publication.
-Pinned Chromium153; five viewports320–1280. Dark/light/operator и RU/EN/FA/ZH
+smoke. Non-secret environment ID: **`cabinet-public-20261022-c63be8ccdf`**.
+Deployment outcome receipt (`committed`) записан **2026-10-22T20:16:33Z**;
+smoke завершился **2026-10-22T20:17:06Z**. Это UTC mtimes соответствующих файлов
+в проверенной off-host копии, а не выдуманные поля времени в JSON receipt.
+SHA256 native log:
+`2f45574c081ef1014ce2d4e89f0b3f5be833eb77543ad53541439db0dbe31ae5`;
+control archive SHA256:
+`c562a052985a25cba54141db309e94bf4ba21cd15daa59adbdee8f4f41932deb`.
+Они связывают environment ID/time с конкретной установкой; credentials и private
+URL не публикуются.
+
+Pinned Chromium153 и отдельный Firefox155.0/revision1543. Основной gate имеет
+пять viewport projects; дополнительный public-artifact run проверил точные
+320×568,768×1024,1440×900. Вместе с375×812,1024×768,1280×800 основного run покрыты
+все шесть размеров обязательной viewport matrix. Dark/light/operator и RU/EN/FA/ZH
 проверены в соответствующих cases, без заявления полного декартова произведения.
 Physical Telegram clients не запускались; Google Fonts remote load не доказана.
 
@@ -81,6 +93,8 @@ R1–R5 описаны в release completion. Backend/API/business rules не м
 | `npm run type-check` | PASS | оба TypeScript проекта внутри build |
 | `npm run build` | PASS | local/CI; release Docker compile независим |
 | Browser automation | PASS в scoped mocks |1766/35/0;0flaky;2workers/0retries; atomic measurement-only verification copy |
+| Missing-size supplement | PASS |486/3/0,0flaky; точные320×568/768×1024/1440×900;2workers/0retries |
+| Independent Firefox smoke | PASS в configured cases |78/3/0,0flaky; Firefox155.0/revision1543;1worker/0retries |
 | Public install/smoke | PASS |287file hashes,141Installer source files,health/routes/owned cleanup |
 
 ## Test Accounts and Data
@@ -104,9 +118,10 @@ Live smoke использовал новую пустую disposable устан�
 
 | Matrix | Result | Scope / limitation |
 | --- | --- | --- |
-| Responsive/dark/light/operator/locales | PASS в configured cases |320/375/768/1024/1280; RU/EN/FA/ZH по suite |
+| Responsive | PASS в declared critical-page scope |320×568,375×812,768×1024,1024×768,1280×800,1440×900; основной и supplemental run |
+| Dark/light/operator/locales | PASS в configured cases |RU/EN/FA/ZH по suite, не полный cross-product |
 | Desktop/mobile Chromium | PASS | pinned153, emulated mobile viewports |
-| Desktop Firefox | NOT_RUN | отдельная проверка не заявляется |
+| Desktop Firefox | PASS в smoke scope |155.0/revision1543,78PASS/3configuredSKIP/0FAIL |
 | Physical Android/iOS Telegram | SKIPPED_OWNER_ACCEPTED | отдельное текущее решение владельца |
 
 ## Accessibility Results
@@ -116,6 +131,25 @@ Keyboard/focus/names/forms/dialogs/current-navigation/reduced-motion assertions
 общая матрица Zoom200% этим отчётом не заявляются и не переименовываются в PASS.
 
 ## Failure and Recovery Results
+
+Review PR45 выявил недостаточную идентификацию staging и отсутствующий1440×900
+в отчёте. Время/id восстановлены из checksum-verified private archives; недостающие
+viewport inputs фактически проверены на тех же public bytes, не объявлены PASS
+по результатам других размеров.
+
+Первый supplemental run558PASS/8SKIP/4FAIL сохранён как NOT_PASS. Один mobile case
+ошибочно определял ожидаемую ОС по стандартному имени project; конфигурация
+сохранила имя `mobile-320` при точном новом height568, не меняя app/UA/assertions.
+Ещё два Firefox failures были ошибками Browser.removeBrowserContext при teardown,
+один — мгновенным чтением scrollY до окончания асинхронного smooth scroll.
+Отдельная Firefox verification-copy сохраняет тот же `scrollY > 0` predicate,
+но измеряет его с polling; source tag/assets/assertion thresholds/timeouts/retries
+сохранены. На1worker полный заявленный Firefox smoke прошёл78/3/0; прежние failures
+не переписаны в PASS. Три configured skips сохранены, а не скрыты.
+
+Supplemental evidence: `browser-supplement-chrome-corrected.json`,
+`browser-supplement-firefox-verified.json`, `supplement-proof.json`,
+`firefox-verification-inputs.json` и measurement diff в закрытом release packet.
 
 Browser cases покрывают injected API/load/permission/session failures, refresh/
 retry, double-submit protection и mocked interrupted external return. R4/R5

@@ -12,8 +12,11 @@ Exact CI Node24/26 по1166unit/types/build/guards/lint PASS; CodeQL без но
 audit15 OPEN/non-blocking (4moderate/10high/1critical). Final exact-public-artifact
 browser **1766PASS/35configuredSKIP/0FAIL/0flaky**,2workers/0retries; одна атомарная
 geometry sampling корректировка только в отдельной verification-copy, assertions/
-fixtures/timeouts/compiled bytes/source tag сохранены. Все8 public files,
-независимые uncached/Actions bytes, новый public Bundle smoke/owned cleanup PASS.
+fixtures/timeouts/compiled bytes/source tag сохранены. После docs-review отдельно
+закрыты точные320×568/768×1024/1440×900:486PASS/3SKIP/0FAIL, и независимый Firefox155
+smoke:78PASS/3SKIP/0FAIL; тот же public archive. Environment/time smoke восстановлены
+из checksum-bound off-host receipts. Все8 public files, независимые uncached/Actions
+bytes, новый public Bundle smoke/owned cleanup PASS.
 287 public artifact files exact, PG18/schema0131; старые volumes/host files сохранены.
 Guarded promotion39850161557 SUCCESS; прежние Releases/assets/tags/latest/settings
 сохранены. Физический Telegram/Android/iOS **SKIPPED_OWNER_ACCEPTED именно для
