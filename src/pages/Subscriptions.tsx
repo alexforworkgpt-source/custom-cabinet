@@ -160,10 +160,18 @@ export default function Subscriptions() {
       )}
 
       {/* Loading */}
-      {isError && (
+      {(isError || purchaseQuery.isError) && (
         <div role="alert" className="space-y-3 rounded-xl bg-error-400/10 p-4 text-error-400">
-          <p>{t('dashboard.subscriptionLoadError')}</p>
-          <button className="btn-secondary" onClick={() => refetch()}>
+          <p>
+            {t(
+              isError ? 'dashboard.subscriptionLoadError' : 'subscription.paymentOptionsLoadError',
+            )}
+          </p>
+          <button
+            className="btn-secondary"
+            disabled={purchaseQuery.isFetching}
+            onClick={() => (isError ? refetch() : purchaseQuery.refetch())}
+          >
             {t('common.retry')}
           </button>
         </div>

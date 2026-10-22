@@ -29,22 +29,6 @@ export default function SubscriptionPurchase() {
   const { isDark } = useTheme();
   const g = getGlassColors(isDark);
 
-  // Subscription query (shares cache with /subscription page)
-  const {
-    data: subscriptionResponse,
-    isLoading,
-    isError: subscriptionError,
-    refetch: refetchSubscription,
-  } = useQuery({
-    queryKey: ['subscription', subscriptionId],
-    queryFn: () => subscriptionApi.getSubscription(subscriptionId),
-    retry: false,
-    staleTime: 0,
-    refetchOnMount: 'always',
-    enabled: !invalidId,
-  });
-  const subscription = subscriptionResponse?.subscription ?? null;
-
   // Purchase options
   const {
     data: purchaseOptions,
@@ -63,6 +47,22 @@ export default function SubscriptionPurchase() {
   const classicOptions = !isTariffsMode ? (purchaseOptions as ClassicPurchaseOptions) : null;
   const tariffs =
     isTariffsMode && purchaseOptions && 'tariffs' in purchaseOptions ? purchaseOptions.tariffs : [];
+  const subscriptionRequired = !isTariffsMode || subscriptionId !== undefined;
+  const {
+    data: subscriptionResponse,
+    isLoading,
+    isError: primarySubscriptionError,
+    refetch: refetchSubscription,
+  } = useQuery({
+    queryKey: ['subscription', subscriptionId],
+    queryFn: () => subscriptionApi.getSubscription(subscriptionId),
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    enabled: !invalidId && !!purchaseOptions && subscriptionRequired,
+  });
+  const subscription = subscriptionRequired ? (subscriptionResponse?.subscription ?? null) : null;
+  const subscriptionError = subscriptionRequired && primarySubscriptionError;
 
   // Multi-tariff: check via subscriptions list query
   const multiSubQuery = useQuery({
