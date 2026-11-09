@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { waitForRestingGeometry } from './entranceProbe';
 import { prepareAuthenticatedPage } from './cabinetTestHarness';
 
 const connectionUrl = 'https://example.test/selected-subscription-link';
@@ -52,8 +53,13 @@ test('opens the selected subscription QR next to Copy link and returns to Dashbo
   const qr = page.getByRole('button', { name: 'Open QR code', exact: true });
   await expect(copy).toBeVisible();
   await expect(qr).toBeVisible();
-  const copyBox = await copy.boundingBox();
-  const qrBox = await qr.boundingBox();
+  await waitForRestingGeometry(qr);
+  const [copyBox, qrBox] = await copy.or(qr).evaluateAll((elements) =>
+    elements.map((element) => {
+      const { x, y, width, height } = element.getBoundingClientRect();
+      return { x, y, width, height };
+    }),
+  );
   if (!copyBox || !qrBox) throw new Error('Both subscription actions must have layout boxes');
   expect(qrBox.width).toBeGreaterThanOrEqual(44);
   expect(qrBox.height).toBeGreaterThanOrEqual(44);
@@ -69,6 +75,7 @@ test('opens the selected subscription QR next to Copy link and returns to Dashbo
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(
     false,
   );
+  await waitForRestingGeometry(page.locator('main svg[width="280"][height="280"]'));
   await page.screenshot({ path: testInfo.outputPath('subscription-qr.png') });
 
   await page.getByRole('link', { name: 'Back', exact: true }).click();

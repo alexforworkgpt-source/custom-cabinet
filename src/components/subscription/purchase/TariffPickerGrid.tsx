@@ -1,3 +1,4 @@
+import { tariffTrafficLabel } from '@/utils/tariffTrafficLabel';
 import { useTranslation } from 'react-i18next';
 import { BestValueBadge } from '../BestValueBadge';
 import { useNavigate } from 'react-router';
@@ -31,6 +32,7 @@ export interface TariffPickerGridProps {
   purchaseOptions: PurchaseOptions | undefined;
   isTariffsMode: boolean;
   isMultiTariff: boolean;
+  switchOnly?: boolean;
   onSelectTariff: (tariff: Tariff) => void;
   onSwitchTariff: (tariffId: number) => void;
 }
@@ -41,6 +43,7 @@ export function TariffPickerGrid({
   purchaseOptions,
   isTariffsMode,
   isMultiTariff,
+  switchOnly = false,
   onSelectTariff,
   onSwitchTariff,
 }: TariffPickerGridProps) {
@@ -59,7 +62,8 @@ export function TariffPickerGrid({
   return (
     <>
       {/* Tariff Grid */}
-      {isMultiTariff &&
+      {!switchOnly &&
+        isMultiTariff &&
         purchaseOptions &&
         'all_tariffs_purchased' in purchaseOptions &&
         purchaseOptions.all_tariffs_purchased && (
@@ -117,14 +121,15 @@ export function TariffPickerGrid({
               'subscription_on_free_tariff' in purchaseOptions &&
               purchaseOptions.subscription_on_free_tariff === true;
             const canSwitch =
-              !isMultiTariff &&
-              subscription &&
-              subscription.tariff_id &&
-              !isCurrentTariff &&
-              !subscription.is_trial &&
-              !isSubscriptionExpired &&
-              !isOnFreeTariff &&
-              (subscription.is_active || subscription.is_limited);
+              switchOnly ||
+              (!isMultiTariff &&
+                subscription &&
+                subscription.tariff_id &&
+                !isCurrentTariff &&
+                !subscription.is_trial &&
+                !isSubscriptionExpired &&
+                !isOnFreeTariff &&
+                (subscription.is_active || subscription.is_limited));
             const isLegacySubscription = needsTariff(subscription);
             const dailyQuote = getDailyPriceQuote(tariff, activeDiscount);
             const firstPeriod = tariff.periods[0];
@@ -178,7 +183,9 @@ export function TariffPickerGrid({
                 <div className="mb-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
                   <div className="flex items-center gap-1.5">
                     <ArrowDownIcon className="h-4 w-4 text-accent-400" />
-                    <span className="font-medium text-dark-200">{tariff.traffic_limit_label}</span>
+                    <span className="font-medium text-dark-200">
+                      {tariffTrafficLabel(tariff.traffic_limit_gb, t)}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <DevicesIcon className="h-4 w-4 text-dark-400" />
@@ -215,7 +222,7 @@ export function TariffPickerGrid({
 
                 {/* Action Buttons */}
                 <div className="mt-2 flex gap-2">
-                  {isCurrentTariff ? (
+                  {!switchOnly && isCurrentTariff ? (
                     subscription?.is_daily ? (
                       <div className="flex-1 py-2 text-center text-sm text-dark-500">
                         {t('subscription.currentTariff')}
@@ -228,7 +235,7 @@ export function TariffPickerGrid({
                         {t('subscription.extend')}
                       </button>
                     )
-                  ) : isLegacySubscription ? (
+                  ) : !switchOnly && isLegacySubscription ? (
                     <button
                       onClick={() => onSelectTariff(tariff)}
                       className="btn-primary flex-1 py-2 text-sm"

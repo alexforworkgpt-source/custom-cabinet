@@ -973,6 +973,8 @@ export default function AdminUserDetail() {
         {/* Subscription Tab */}
         {activeTab === 'subscription' && (
           <SubscriptionTab
+            adminUserId={userId ?? undefined}
+            singlePanelId={user.remnawave_id}
             salesMode={salesMode}
             userSubscriptions={userSubscriptions}
             selectedSub={selectedSub}

@@ -10,6 +10,15 @@ export function needsTariff(
   return subscription?.requires_tariff_selection === true;
 }
 
+export function canOpenTariffSwitch(subscription: Subscription | null | undefined): boolean {
+  return Boolean(
+    subscription?.tariff_id &&
+      (subscription.is_active || subscription.is_limited) &&
+      !subscription.is_trial &&
+      !needsTariff(subscription),
+  );
+}
+
 export function tariffSelectionPath(subscriptionId: number): string {
   return `/subscription/purchase?subscriptionId=${subscriptionId}`;
 }

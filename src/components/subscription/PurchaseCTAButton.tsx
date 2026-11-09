@@ -6,9 +6,9 @@ import {
   needsTariff,
   tariffSelectionPath,
 } from '../../utils/legacySubscription';
-import { SubscriptionPurchaseSkeleton } from './SubscriptionManagementSkeleton';
 import { PurchaseCTAPresentation } from './PurchaseCTAPresentation';
 import { FundingNotice } from './FundingNotice';
+import { PageEntranceItem } from '../motion/PageEntrance';
 
 interface PurchaseCTAButtonProps {
   subscription: Subscription | null;
@@ -17,6 +17,8 @@ interface PurchaseCTAButtonProps {
   /** Explicit sales mode from purchase-options; a missing tariff alone is ambiguous. */
   isClassic?: boolean;
   loading?: boolean;
+  /** Cached conditions may describe the action while fresh data is still pending. */
+  conditionsKnown?: boolean;
   reserveSpace?: boolean;
   compactOnMobile?: boolean;
 }
@@ -26,6 +28,7 @@ export default function PurchaseCTAButton({
   isMultiTariff = false,
   isClassic = false,
   loading = false,
+  conditionsKnown = true,
   reserveSpace = false,
   compactOnMobile = false,
 }: PurchaseCTAButtonProps) {
@@ -82,10 +85,12 @@ export default function PurchaseCTAButton({
   // Reserve both existing captions while sales_mode is unknown. This is only
   // geometry: no guessed mode, financial link or API permission is exposed.
   const ambiguousClassic = subscription && !subscription.tariff_id && !isTrial && !requiresTariff;
+  const unknownSalesMode = loading && !conditionsKnown && ambiguousClassic;
   const content = (
     <PurchaseCTAPresentation
-      title={buttonText}
-      hint={hintText}
+      pending={loading}
+      title={unknownSalesMode ? t('common.loading') : buttonText}
+      hint={unknownSalesMode ? t('subscription.cta.checkingConditions') : hintText}
       expired={isExpired}
       reserveSpace={reserveSpace}
       compactOnMobile={compactOnMobile}
@@ -109,15 +114,29 @@ export default function PurchaseCTAButton({
     />
   );
 
-  if (loading) return <SubscriptionPurchaseSkeleton>{content}</SubscriptionPurchaseSkeleton>;
+  if (loading) {
+    return (
+      <PageEntranceItem>
+        <div role="status" aria-busy="true" data-subscription-purchase-loading>
+          {content}
+        </div>
+      </PageEntranceItem>
+    );
+  }
 
   if (isClassic && subscription && !isTrial && !requiresTariff && !canRenewCurrentSubscription) {
-    return <FundingNotice>{t('subscription.cta.renewUnavailable')}</FundingNotice>;
+    return (
+      <PageEntranceItem>
+        <FundingNotice>{t('subscription.cta.renewUnavailable')}</FundingNotice>
+      </PageEntranceItem>
+    );
   }
 
   return (
-    <Link to={linkTo} className="block">
-      {content}
-    </Link>
+    <PageEntranceItem>
+      <Link to={linkTo} className="block">
+        {content}
+      </Link>
+    </PageEntranceItem>
   );
 }

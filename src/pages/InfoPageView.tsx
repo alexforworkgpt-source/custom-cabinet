@@ -9,6 +9,9 @@ import { infoPagesApi } from '../api/infoPages';
 import { usePlatform } from '../platform/hooks/usePlatform';
 import type { FaqItem } from '../api/infoPages';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { motion } from 'framer-motion';
+import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
+import { staggerItem } from '@/components/motion/transitions';
 
 /**
  * Sanitization config — same strict allowlist as NewsArticlePage.
@@ -239,7 +242,7 @@ function FaqView({ items }: { items: FaqItem[] }) {
   }, [items, search]);
 
   return (
-    <div className="space-y-4">
+    <PageEntranceItem className="space-y-4">
       {/* Search */}
       {items.length > 3 && (
         <div className="relative">
@@ -279,7 +282,7 @@ function FaqView({ items }: { items: FaqItem[] }) {
           })}
         </div>
       )}
-    </div>
+    </PageEntranceItem>
   );
 }
 
@@ -377,7 +380,7 @@ export default function InfoPageView() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageEntrance className="space-y-6">
       {/* Back button */}
       {!capabilities.hasBackButton && (
         <button
@@ -391,24 +394,25 @@ export default function InfoPageView() {
       )}
 
       {/* Page header */}
-      <div>
+      <PageEntranceItem>
         {page.icon && <span className="mb-2 inline-block text-3xl">{page.icon}</span>}
         <h1 className="text-2xl font-extrabold leading-tight text-dark-50 sm:text-3xl">
           {resolvedTitle}
         </h1>
-      </div>
+      </PageEntranceItem>
 
       {/* Page content */}
       {isFaq ? (
         <FaqView items={faqItems} />
       ) : (
         /* Regular page content - sanitized with DOMPurify (strict allowlist) */
-        <div
+        <motion.div
+          variants={staggerItem}
           className="prose max-w-none overflow-x-auto lg:max-w-3xl"
           // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitizedContent is produced by the strict DOMPurify info-page sanitizer.
           dangerouslySetInnerHTML={{ __html: sanitizedContent }}
         />
       )}
-    </div>
+    </PageEntrance>
   );
 }

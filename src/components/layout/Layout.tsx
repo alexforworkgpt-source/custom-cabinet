@@ -1,4 +1,5 @@
 import { AppShell } from './AppShell';
+import { MobileNavigationProvider } from './AppShell/MobileNavigation';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,5 +14,9 @@ interface LayoutProps {
  * - Platform-aware features (Telegram integration)
  */
 export default function Layout({ children }: LayoutProps) {
-  return <AppShell>{children}</AppShell>;
+  return (
+    <MobileNavigationProvider>
+      <AppShell>{children}</AppShell>
+    </MobileNavigationProvider>
+  );
 }

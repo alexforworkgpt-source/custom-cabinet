@@ -57,8 +57,34 @@ const DASHBOARD_SUBSCRIPTION_SCREENS: readonly RegExp[] = [
   /^\/subscriptions\/\d+$/,
 ];
 
+/** Browsing/settings screens retain global navigation; action routes stay separate. */
+const SECONDARY_SCREENS: readonly { pattern: RegExp; parent: 'dashboard' | 'profile' }[] = [
+  { pattern: /^\/profile\/(accounts|notifications)$/, parent: 'profile' },
+  { pattern: /^\/referral$/, parent: 'profile' },
+  { pattern: /^\/(contests|polls|wheel|gift)$/, parent: 'profile' },
+  { pattern: /^\/(instructions|info)(\/[^/]+)?$/, parent: 'profile' },
+  { pattern: /^\/news\/[^/]+$/, parent: 'dashboard' },
+  { pattern: /^\/balance\/saved-cards$/, parent: 'dashboard' },
+];
+
+export function isMobileNavItemActive(
+  pathname: string,
+  item: Pick<MobileNavItem, 'key' | 'path'>,
+  fromSupport = false,
+): boolean {
+  const path = withoutTrailingSlash(pathname);
+  if (fromSupport && /^\/instructions(\/[^/]+)?$/.test(path)) return item.key === 'support';
+  if (path === '/subscription/purchase')
+    return ['tariffs', 'subscription', 'subscriptions'].includes(item.key);
+  const section = SECONDARY_SCREENS.find(({ pattern }) => pattern.test(path));
+  return section ? item.key === section.parent : isNavItemActive(path, item);
+}
+
 export function isMobileNavScreen(pathname: string, items: readonly MobileNavItem[]): boolean {
   const path = withoutTrailingSlash(pathname);
   if (items.some((item) => item.path === path)) return true;
-  return DASHBOARD_SUBSCRIPTION_SCREENS.some((pattern) => pattern.test(path));
+  return (
+    DASHBOARD_SUBSCRIPTION_SCREENS.some((pattern) => pattern.test(path)) ||
+    SECONDARY_SCREENS.some(({ pattern }) => pattern.test(path))
+  );
 }

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { staggerItem } from '@/components/motion/transitions';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
@@ -40,8 +42,9 @@ export default function ReminderCards() {
   return (
     <div className="space-y-3">
       {cards.map((card) => (
-        <div
+        <motion.div
           key={card.id}
+          variants={staggerItem}
           className="relative overflow-hidden rounded-2xl border border-accent-500/30 bg-accent-500/5 p-4"
         >
           <button
@@ -63,7 +66,7 @@ export default function ReminderCards() {
               {card.button.text}
             </button>
           )}
-        </div>
+        </motion.div>
       ))}
     </div>
   );

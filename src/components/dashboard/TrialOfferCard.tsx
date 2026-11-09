@@ -1,4 +1,6 @@
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
+import { staggerItem } from '@/components/motion/transitions';
 import { Link } from 'react-router';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { TrialInfo } from '../../types';
@@ -31,7 +33,8 @@ export default function TrialOfferCard({
   const canAfford = balanceKopeks !== null && balanceKopeks >= trialInfo.price_kopeks;
 
   return (
-    <div
+    <motion.div
+      variants={staggerItem}
       className="relative isolate overflow-hidden rounded-3xl text-center"
       style={{
         background: g.cardBg,
@@ -258,6 +261,6 @@ export default function TrialOfferCard({
           {activateTrialMutation.isPending ? t('common.loading') : t('subscription.trial.activate')}
         </button>
       )}
-    </div>
+    </motion.div>
   );
 }

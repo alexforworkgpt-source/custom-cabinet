@@ -1,9 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { CopyIcon, CheckIcon } from '@/components/icons';
+import { copyToClipboard } from '@/utils/clipboard';
 import { useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { QRCodeSVG } from 'qrcode.react';
 import { useBranding } from '../hooks/useBranding';
 import { AdminBackButton } from '@/components/admin';
+import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
 
 interface ConnectionQRState {
   url: string;
@@ -36,6 +39,24 @@ export default function ConnectionQR() {
 
   const state = location.state as unknown;
   const validState = isValidState(state) ? state : null;
+  const [copyResult, setCopyResult] = useState<{
+    url: string;
+    status: 'copying' | 'copied' | 'error';
+  } | null>(null);
+  const copyStatus = copyResult?.url === validState?.url ? copyResult?.status : undefined;
+  const handleCopy = async () => {
+    if (!validState || validState.hideLink) return;
+    const url = validState.url;
+    setCopyResult({ url, status: 'copying' });
+    const finish = (status: 'copied' | 'error') =>
+      setCopyResult((result) => (result?.url === url ? { url, status } : result));
+    try {
+      await copyToClipboard(url);
+      finish('copied');
+    } catch {
+      finish('error');
+    }
+  };
   const subId = validState?.subscriptionId;
   const connectionPath =
     validState?.returnPath || (subId ? `/connection?sub=${subId}` : '/connection');
@@ -51,13 +72,13 @@ export default function ConnectionQR() {
   }
 
   return (
-    <div className="animate-fade-in">
-      <div className="mb-6 flex items-center gap-3">
+    <PageEntrance>
+      <PageEntranceItem className="mb-6 flex items-center gap-3">
         <AdminBackButton to={connectionPath} replace />
         <h1 className="text-2xl font-bold text-dark-100">{t('subscription.connection.qrTitle')}</h1>
-      </div>
+      </PageEntranceItem>
 
-      <div className="flex flex-col items-center">
+      <PageEntranceItem className="flex flex-col items-center">
         <div className="flex w-full max-w-sm flex-col items-center px-2 sm:px-6">
           {appName && (
             <p className="mb-3 text-sm font-medium uppercase tracking-wider text-dark-400">
@@ -80,12 +101,36 @@ export default function ConnectionQR() {
           </div>
 
           {!validState.hideLink && (
-            <p className="mt-6 max-w-full truncate text-center font-mono text-xs text-dark-500">
-              {validState.url}
-            </p>
+            <div className="mt-6 w-full min-w-0 space-y-3">
+              <p dir="ltr" className="select-text break-all font-mono text-xs text-dark-400">
+                {validState.url}
+              </p>
+              <button
+                type="button"
+                className="btn-secondary flex w-full items-center justify-center gap-2"
+                disabled={copyStatus === 'copying'}
+                onClick={handleCopy}
+              >
+                {copyStatus === 'copied' ? (
+                  <CheckIcon className="h-4 w-4" />
+                ) : (
+                  <CopyIcon className="h-4 w-4" />
+                )}
+                <span aria-live="polite">
+                  {copyStatus === 'copied'
+                    ? t('common.copied')
+                    : t('subscription.connection.copyLink')}
+                </span>
+              </button>
+              {copyStatus === 'error' && (
+                <p role="alert" className="text-sm text-error-400">
+                  {t('subscription.connection.copyFailed')}
+                </p>
+              )}
+            </div>
           )}
         </div>
-      </div>
-    </div>
+      </PageEntranceItem>
+    </PageEntrance>
   );
 }

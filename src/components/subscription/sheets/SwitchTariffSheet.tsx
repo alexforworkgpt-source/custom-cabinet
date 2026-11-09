@@ -82,7 +82,7 @@ export function SwitchTariffSheet({
       : `${formatAmount(kopeks / 100)} ${currencySymbol}`;
 
   const { data: switchPreview, isLoading: switchPreviewLoading } = useQuery({
-    queryKey: ['tariff-switch-preview', tariffId],
+    queryKey: ['tariff-switch-preview', tariffId, subscriptionId],
     queryFn: () => {
       if (!tariffId) throw new Error('Tariff ID is required');
       return subscriptionApi.previewTariffSwitch(tariffId, subscriptionId);

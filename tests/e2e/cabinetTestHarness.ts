@@ -19,6 +19,7 @@ export const browserTestUser: User = {
 
 export const baseApiResponses: Record<string, unknown> = {
   '/api/cabinet/auth/me': browserTestUser,
+  '/api/cabinet/auth/me/avatar': { photo_url: null },
   '/api/cabinet/auth/me/is-admin': { is_admin: false },
   '/api/cabinet/auth/me/permissions': { permissions: [], roles: [], role_level: 0 },
   '/api/cabinet/balance': { balance_kopeks: 0, balance_rubles: 0 },

@@ -8,6 +8,7 @@ import { DeviceLimitPanel } from '@/components/subscription/DeviceLimitSheet';
 import DevicesPanel from '@/components/dashboard/DevicesPanel';
 import { needsTariff } from '@/utils/legacySubscription';
 import Subscription from './Subscription';
+import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
 
 /** Page owns routing; the existing management owns its queries and actions. */
 export default function SubscriptionPage() {
@@ -66,7 +67,7 @@ export default function SubscriptionPage() {
     else navigate(basePath, { replace: true, state: { backTo } });
   };
   return (
-    <div
+    <PageEntrance
       className="space-y-6"
       onClickCapture={(event) => {
         const link = (event.target as Element).closest<HTMLElement>('a[href]');
@@ -74,9 +75,9 @@ export default function SubscriptionPage() {
           deviceTrigger.current = link;
       }}
     >
-      <div className="flex items-center gap-3">
+      <PageEntranceItem className="flex items-center gap-3">
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('subscription.title')}</h1>
-      </div>
+      </PageEntranceItem>
       {/* Management owns the compact overview and existing subscription actions. */}
       <Subscription
         key={id}
@@ -114,6 +115,6 @@ export default function SubscriptionPage() {
           {devicesOpen && <DevicesPanel subscriptionId={id} />}
         </DeviceLimitPanel>
       </ResponsiveOverlay>
-    </div>
+    </PageEntrance>
   );
 }

@@ -26,10 +26,17 @@ export default function ServiceUnavailableScreen() {
   const [isChecking, setIsChecking] = useState(false);
   const isCheckingRef = useRef(false);
 
-  const recover = useCallback(() => {
+  const recover = useCallback(async () => {
     const needsSessionBootstrap =
       !useAuthStore.getState().isAuthenticated && Boolean(tokenStorage.getRefreshToken());
-    if (hasEverReachedBackend() && !needsSessionBootstrap) {
+    if (hasEverReachedBackend()) {
+      try {
+        await useAuthStore.getState().initialize();
+      } catch {
+        return false;
+      }
+      if (!useAuthStore.getState().isAuthenticated && tokenStorage.getRefreshToken()) return false;
+      if (useBlockingStore.getState().blockingType !== 'backend_unavailable') return true;
       // The app was already loaded and merely covered by this overlay — its
       // routes/forms are still mounted with their state. Lift the overlay and
       // refetch instead of a hard reload that would discard unsaved input.
@@ -50,6 +57,7 @@ export default function ServiceUnavailableScreen() {
         window.location.reload();
       }
     }
+    return true;
   }, [clearBlocking, queryClient]);
 
   // Manual retry: immediate probe with a visible checking state.
@@ -59,7 +67,7 @@ export default function ServiceUnavailableScreen() {
     setIsChecking(true);
     try {
       if (await pingBackend()) {
-        recover();
+        await recover();
       }
     } finally {
       isCheckingRef.current = false;
@@ -75,10 +83,7 @@ export default function ServiceUnavailableScreen() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const tick = async () => {
       if (cancelled) return;
-      if (await pingBackend()) {
-        if (!cancelled) recover();
-        return;
-      }
+      if ((await pingBackend()) && !cancelled && (await recover())) return;
       if (!cancelled) timer = setTimeout(tick, HEALTH.RECOVERY_POLL_INTERVAL_MS);
     };
     void tick();

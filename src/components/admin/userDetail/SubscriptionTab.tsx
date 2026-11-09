@@ -1,3 +1,5 @@
+import { CisPayRecurringPanel } from '@/components/subscription/manage/CisPayRecurringPanel';
+import { hasTargetBotContract } from '@/config/upstreamBotContract';
 import { useTranslation } from 'react-i18next';
 import {
   BackIcon,
@@ -69,6 +71,8 @@ type DeviceRow = {
 
 export interface SubscriptionTabProps {
   salesMode: SalesMode;
+  adminUserId?: number;
+  singlePanelId?: number | null;
   // Selection
   userSubscriptions: UserSubscriptionInfo[];
   selectedSub: UserSubscriptionInfo | null;
@@ -331,6 +335,14 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
             </button>
           )}
 
+          {hasTargetBotContract() && props.adminUserId && hasPermission('users:read') && (
+            <CisPayRecurringPanel
+              key={selectedSub.id}
+              subscriptionId={selectedSub.id}
+              adminUserId={props.adminUserId}
+              canManage={hasPermission('users:subscription')}
+            />
+          )}
           {/* Current subscription */}
           <div className="rounded-xl bg-dark-800/50 p-4">
             <div className="mb-3 flex items-center justify-between">
@@ -343,6 +355,15 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
               <StatusBadge status={selectedSub.status} />
             </div>
             <div className="grid grid-cols-2 gap-3">
+              {(selectedSub.remnawave_id ??
+                (userSubscriptions.length === 1 ? props.singlePanelId : null)) != null && (
+                <div>
+                  <div className="text-xs text-dark-500">Remnawave ID</div>
+                  <div className="text-dark-100">
+                    {selectedSub.remnawave_id ?? props.singlePanelId}
+                  </div>
+                </div>
+              )}
               {salesMode !== 'classic' && (
                 <div>
                   <div className="text-xs text-dark-500">

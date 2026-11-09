@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { prepareAuthenticatedPage } from './cabinetTestHarness';
+import { waitForRestingGeometry } from './entranceProbe';
 
 test('shows the simplified desktop or mobile user navigation', async ({ page }) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page);
@@ -346,6 +347,8 @@ test('exposes the web renewal back link as a full-size accessible target', async
   await page.goto('/subscriptions/7/renew');
   const backLink = page.getByRole('link', { name: 'Back' });
   await expect(backLink).toHaveAttribute('href', '/subscriptions/7');
+  // Measure the resting target, not fractional Chromium bounds during page entrance.
+  await waitForRestingGeometry(backLink);
   const backLinkBox = await backLink.boundingBox();
   expect(backLinkBox?.width).toBeGreaterThanOrEqual(44);
   expect(backLinkBox?.height).toBeGreaterThanOrEqual(44);

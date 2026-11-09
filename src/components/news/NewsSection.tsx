@@ -2,7 +2,8 @@ import { useState, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
+import { staggerItem } from '@/components/motion/transitions';
 import { newsApi } from '../../api/news';
 import { useHapticFeedback } from '../../platform/hooks/useHaptic';
 import { cn } from '../../lib/utils';
@@ -153,12 +154,13 @@ interface FeaturedCardProps {
 
 const FeaturedCard = memo(function FeaturedCard({ item, onClick }: FeaturedCardProps) {
   const { t, i18n } = useTranslation();
+  const reducedMotion = useReducedMotion();
 
   return (
     <motion.article
       custom={0}
       variants={fadeSlideUp}
-      initial="hidden"
+      initial={reducedMotion ? false : 'hidden'}
       animate="visible"
       role="link"
       tabIndex={0}
@@ -241,13 +243,14 @@ interface NewsCardProps {
 
 const NewsCard = memo(function NewsCard({ item, index, onClick }: NewsCardProps) {
   const { t, i18n } = useTranslation();
+  const reducedMotion = useReducedMotion();
   const color = safeColor(item.category_color);
 
   return (
     <motion.article
       custom={index + 1}
       variants={fadeSlideUp}
-      initial="hidden"
+      initial={reducedMotion ? false : 'hidden'}
       animate="visible"
       role="link"
       tabIndex={0}
@@ -341,6 +344,7 @@ const NEWS_LIMIT = 6;
 
 export default function NewsSection() {
   const { t } = useTranslation();
+  const reducedMotion = useReducedMotion();
   const navigate = useNavigate();
   const haptic = useHapticFeedback();
   const [filter, setFilter] = useState<string>('');
@@ -403,13 +407,16 @@ export default function NewsSection() {
   }
 
   return (
-    <section className="relative overflow-hidden rounded-2xl bg-dark-850/80 backdrop-blur-xl">
+    <motion.section
+      variants={staggerItem}
+      className="relative overflow-hidden rounded-2xl bg-dark-850/80 backdrop-blur-xl"
+    >
       <div className="px-5 py-8 sm:px-6 sm:py-10">
         {/* Header */}
         <motion.div
           variants={fadeSlideUp}
           custom={0}
-          initial="hidden"
+          initial={reducedMotion ? false : 'hidden'}
           animate="visible"
           className="mb-8"
         >
@@ -451,7 +458,7 @@ export default function NewsSection() {
           <motion.div
             variants={fadeSlideUp}
             custom={6}
-            initial="hidden"
+            initial={reducedMotion ? false : 'hidden'}
             animate="visible"
             className="mt-10 text-center"
           >
@@ -464,6 +471,6 @@ export default function NewsSection() {
           </motion.div>
         )}
       </div>
-    </section>
+    </motion.section>
   );
 }

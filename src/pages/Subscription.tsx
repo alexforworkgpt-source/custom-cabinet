@@ -4,11 +4,16 @@ import { uiLocale } from '@/utils/uiLocale';
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useReducedMotion } from 'framer-motion';
+import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 import { subscriptionApi } from '../api/subscription';
 import { WebBackButton } from '../components/WebBackButton';
 import { useDestructiveConfirm } from '../platform/hooks/useNativeDialog';
+import { CisPayRecurringPanel } from '../components/subscription/manage/CisPayRecurringPanel';
+import { canSetupCisPayTariff } from '../utils/cispayRecurring';
+import ManagedTrafficSummary from '../components/subscription/ManagedTrafficSummary';
+import { hasUnknownManagedTraffic } from '../utils/trafficAccounting';
 import TrafficProgressBar from '../components/dashboard/TrafficProgressBar';
 import { HoverBorderGradient } from '../components/ui/hover-border-gradient';
 import { useTrafficZone } from '../hooks/useTrafficZone';
@@ -265,11 +270,11 @@ export default function Subscription({
 
   // Revoke (reissue) cooldown state
   const [revokeCooldown, setRevokeCooldown] = useState(0);
-  const [trafficData, setTrafficData] = useState<{
-    traffic_used_gb: number;
-    traffic_used_percent: number;
-    is_unlimited: boolean;
+  const [trafficRefresh, setTrafficRefresh] = useState<{
+    id: number | undefined;
+    data: Awaited<ReturnType<typeof subscriptionApi.refreshTraffic>>;
   } | null>(null);
+  const trafficData = trafficRefresh?.id === subscriptionId ? trafficRefresh?.data : undefined;
 
   // Detect multi-tariff mode from cached subscriptions-list
   const { data: multiSubData } = useQuery({
@@ -282,6 +287,7 @@ export default function Subscription({
   const {
     data: subscriptionResponse,
     isLoading,
+    isFetching: subscriptionFetching,
     isError: subscriptionError,
     refetch: refetchSubscription,
   } = useQuery({
@@ -326,11 +332,22 @@ export default function Subscription({
   const purchaseOptionsQuery = useQuery({
     queryKey: ['purchase-options', subscriptionId],
     queryFn: () => subscriptionApi.getPurchaseOptions(subscriptionId),
-    enabled: Boolean(subscription),
+    enabled:
+      Boolean(subscription) || (Number.isSafeInteger(subscriptionId) && (subscriptionId ?? 0) > 0),
     staleTime: 0,
     refetchOnMount: 'always',
   });
   const purchaseOptions = purchaseOptionsQuery.data;
+
+  const cisPaySupported =
+    purchaseOptions?.sales_mode === 'tariffs' &&
+    typeof purchaseOptions.cispay_recurrent_enabled === 'boolean';
+  const cisPaySetup =
+    cisPaySupported &&
+    purchaseOptions.cispay_recurrent_enabled === true &&
+    canSetupCisPayTariff(
+      purchaseOptions.tariffs.find((tariff) => tariff.id === subscription?.tariff_id),
+    );
 
   const featureFlagsSettled = purchaseOptionsQuery.isSuccess || purchaseOptionsQuery.isError;
   const sbpFeatureOff = isRecurringFeatureOff(purchaseOptions, 'platega_recurrent_enabled');
@@ -541,14 +558,11 @@ export default function Subscription({
 
   // Traffic refresh mutation
   const refreshTrafficMutation = useMutation({
-    mutationFn: () => subscriptionApi.refreshTraffic(subscriptionId),
-    onSuccess: (data) => {
-      setTrafficData({
-        traffic_used_gb: data.traffic_used_gb,
-        traffic_used_percent: data.traffic_used_percent,
-        is_unlimited: data.is_unlimited,
-      });
-      safeLocal.setItem(`traffic_refresh_ts_${subscriptionId ?? 'default'}`, Date.now().toString());
+    mutationFn: (id: number | undefined) => subscriptionApi.refreshTraffic(id),
+    onSuccess: (data, id) => {
+      setTrafficRefresh({ id, data });
+      safeLocal.setItem(`traffic_refresh_ts_${id ?? 'default'}`, Date.now().toString());
+      if (id !== subscriptionId) return;
       if (data.rate_limited && data.retry_after_seconds) {
         setTrafficRefreshCooldown(data.retry_after_seconds);
       } else {
@@ -600,14 +614,14 @@ export default function Subscription({
   // Revoke (reissue) subscription mutation
   const revokeMutation = useMutation({
     mutationFn: () => subscriptionApi.revokeSubscription(subscriptionId),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
       queryClient.invalidateQueries({ queryKey: ['connection-link', subscriptionId] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
       // Remnawave resets device HWIDs on revoke — make sure the cabinet
       // re-reads the now-empty device list instead of showing the stale cache.
       queryClient.invalidateQueries({ queryKey: ['devices', subscriptionId] });
-      haptic.notification('success');
+      haptic.notification(result.devices_reset === false ? 'warning' : 'success');
       safeLocal.setItem(`revoke_ts_${subscriptionId ?? 'default'}`, Date.now().toString());
       setRevokeCooldown(900);
     },
@@ -636,7 +650,7 @@ export default function Subscription({
       return;
     }
 
-    refreshTrafficMutation.mutate();
+    refreshTrafficMutation.mutate(subscriptionId);
   }, [embedded, subscription, refreshTrafficMutation, subscriptionId]);
 
   const handleRevoke = async () => {
@@ -703,7 +717,7 @@ export default function Subscription({
   }
 
   return (
-    <div className={embedded ? 'space-y-4' : 'space-y-6'}>
+    <PageEntrance className={embedded ? 'space-y-4' : 'space-y-6'}>
       {!embedded && !hideHeader && (
         <div className="flex items-center gap-3">
           <WebBackButton to={isMultiTariff ? '/subscriptions' : '/'} />
@@ -715,7 +729,11 @@ export default function Subscription({
         </div>
       )}
 
-      {embedded && subscription && <SubscriptionOverviewCard subscription={subscription} />}
+      {embedded && subscription && (
+        <PageEntranceItem>
+          <SubscriptionOverviewCard subscription={subscription} />
+        </PageEntranceItem>
+      )}
 
       {/* Purchase / Renewal CTA */}
       {purchaseOptionsQuery.isError ? (
@@ -737,7 +755,12 @@ export default function Subscription({
           subscription={subscription}
           isMultiTariff={isMultiTariff}
           isClassic={purchaseOptions?.sales_mode === 'classic'}
-          loading={!purchaseOptionsQuery.isSuccess || purchaseOptionsQuery.isFetching}
+          conditionsKnown={purchaseOptions !== undefined}
+          loading={
+            !purchaseOptionsQuery.isSuccess ||
+            purchaseOptionsQuery.isFetching ||
+            subscriptionFetching
+          }
           reserveSpace={embedded}
           compactOnMobile={embedded}
         />
@@ -748,45 +771,48 @@ export default function Subscription({
       )}
 
       {subscription && (
-        <Link
-          to={`/subscriptions/${subscription.id}?overlay=devices`}
-          state={{ ...location.state, cabinetOverlayParent: true }}
-          onClick={() => haptic.impact('light')}
-          className={`flex min-h-16 w-full items-center rounded-2xl border border-dark-700/60 bg-dark-900/70 text-left transition-colors hover:border-dark-600/80 hover:bg-dark-800/70 ${embedded ? 'gap-2 p-3 sm:gap-3 sm:p-4' : 'gap-3 p-4'}`}
-        >
-          <span
-            className={`flex shrink-0 items-center justify-center rounded-xl bg-accent-500/10 text-accent-400 ${embedded ? 'h-9 w-9 sm:h-11 sm:w-11' : 'h-11 w-11'}`}
+        <PageEntranceItem>
+          <Link
+            to={`/subscriptions/${subscription.id}?overlay=devices`}
+            state={{ ...location.state, cabinetOverlayParent: true }}
+            onClick={() => haptic.impact('light')}
+            className={`flex min-h-16 w-full items-center rounded-2xl border border-dark-700/60 bg-dark-900/70 text-left transition-colors hover:border-dark-600/80 hover:bg-dark-800/70 ${embedded ? 'gap-2 p-3 sm:gap-3 sm:p-4' : 'gap-3 p-4'}`}
           >
-            <DevicesIcon className="h-5 w-5" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-dark-100">
-              {t('subscription.myDevices')}
-            </span>
             <span
-              className="mt-0.5 block text-xs text-dark-400"
-              role={devicesLoading ? 'status' : undefined}
-              aria-busy={devicesLoading || undefined}
-              aria-label={devicesLoading ? t('common.loading') : undefined}
+              className={`flex shrink-0 items-center justify-center rounded-xl bg-accent-500/10 text-accent-400 ${embedded ? 'h-9 w-9 sm:h-11 sm:w-11' : 'h-11 w-11'}`}
             >
-              {devicesData ? (
-                t('subscription.additionalOptions.connectedDevices', {
-                  count: devicesData.total,
-                })
-              ) : devicesLoading ? (
-                <Skeleton className="h-4 w-36" />
-              ) : (
-                t('dashboard.dataUnavailable')
-              )}
+              <DevicesIcon className="h-5 w-5" />
             </span>
-          </span>
-          <ChevronRightIcon className="h-5 w-5 shrink-0 text-dark-500 rtl:rotate-180" />
-        </Link>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-dark-100">
+                {t('subscription.myDevices')}
+              </span>
+              <span
+                className="mt-0.5 block text-xs text-dark-400"
+                role={devicesLoading ? 'status' : undefined}
+                aria-busy={devicesLoading || undefined}
+                aria-label={devicesLoading ? t('common.loading') : undefined}
+              >
+                {devicesData ? (
+                  t('subscription.additionalOptions.connectedDevices', {
+                    count: devicesData.total,
+                  })
+                ) : devicesLoading ? (
+                  <Skeleton className="h-4 w-36" />
+                ) : (
+                  t('dashboard.dataUnavailable')
+                )}
+              </span>
+            </span>
+            <ChevronRightIcon className="h-5 w-5 shrink-0 text-dark-500 rtl:rotate-180" />
+          </Link>
+        </PageEntranceItem>
       )}
 
       {/* Current Subscription */}
       {subscription && (!embedded || hasEmbeddedSubscriptionSettings) ? (
         (() => {
+          const unknownManagedTraffic = hasUnknownManagedTraffic(subscription, trafficData);
           const usedGb = trafficData?.traffic_used_gb ?? subscription.traffic_used_gb;
           const isUnlimited =
             (trafficData?.is_unlimited ?? false) || subscription.traffic_limit_gb === 0;
@@ -991,12 +1017,14 @@ export default function Subscription({
                     </span>
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-[11px] text-dark-500">
-                        {isUnlimited
-                          ? formatTraffic(usedGb)
-                          : `${formatTraffic(usedGb)} / ${formatTraffic(subscription.traffic_limit_gb)}`}
+                        {unknownManagedTraffic
+                          ? '—'
+                          : isUnlimited
+                            ? formatTraffic(usedGb)
+                            : `${formatTraffic(usedGb)} / ${formatTraffic(subscription.traffic_limit_gb)}`}
                       </span>
                       <button
-                        onClick={() => refreshTrafficMutation.mutate()}
+                        onClick={() => refreshTrafficMutation.mutate(subscriptionId)}
                         disabled={refreshTrafficMutation.isPending || trafficRefreshCooldown > 0}
                         className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-dark-500 transition-colors hover:bg-dark-50/[0.05] hover:text-dark-400 disabled:cursor-not-allowed disabled:opacity-50"
                       >
@@ -1016,13 +1044,16 @@ export default function Subscription({
                         {t(`subscription.trafficReset.${subscription.traffic_reset_mode}`)}
                       </div>
                     )}
-                  <TrafficProgressBar
-                    usedGb={usedGb}
-                    limitGb={subscription.traffic_limit_gb}
-                    percent={usedPercent}
-                    isUnlimited={isUnlimited}
-                    compact
-                  />
+                  {!unknownManagedTraffic && (
+                    <TrafficProgressBar
+                      usedGb={usedGb}
+                      limitGb={subscription.traffic_limit_gb}
+                      percent={usedPercent}
+                      isUnlimited={isUnlimited}
+                      compact
+                    />
+                  )}
+                  <ManagedTrafficSummary subscription={subscription} refreshed={trafficData} />
                 </div>
               )}
 
@@ -1180,6 +1211,16 @@ export default function Subscription({
                             </div>
                           </div>
                         </div>
+                        {subscription.traffic_accounting_mode === 'managed' &&
+                          typeof purchase.remaining_gb === 'number' &&
+                          Number.isFinite(purchase.remaining_gb) &&
+                          purchase.remaining_gb >= 0 && (
+                            <p className="mb-2 text-sm tabular-nums text-dark-300">
+                              {t('subscription.accounting.packageRemaining', {
+                                amount: formatTraffic(purchase.remaining_gb),
+                              })}
+                            </p>
+                          )}
                         <div
                           className="relative h-1.5 overflow-hidden rounded-full"
                           style={{ background: g.trackBg }}
@@ -1672,7 +1713,7 @@ export default function Subscription({
       {subscription &&
         (subscription.is_active || subscription.is_limited) &&
         !subscription.is_trial && (
-          <div
+          <PageEntranceItem
             ref={additionalOptionsSectionRef}
             className="relative scroll-mt-20 overflow-hidden rounded-3xl"
             style={{
@@ -1794,26 +1835,42 @@ export default function Subscription({
                     </div>
                   </div>
                 </button>
+                {revokeMutation.data?.devices_reset === false && (
+                  <p role="status" className="text-sm text-warning-400">
+                    {t('subscription.revoke.partialWarning')}
+                  </p>
+                )}
                 {revokeMutation.error && (
                   <p className="text-sm text-error-400">{getErrorMessage(revokeMutation.error)}</p>
                 )}
               </div>
             </div>
-          </div>
+          </PageEntranceItem>
         )}
-      {embedded && subscription && showsAutopayToggle(subscription) && (
-        <Card size="sm" className="p-2 sm:p-3" data-subscription-autopay>
-          <SubscriptionAutopayToggle
-            compactOnMobile
-            enabled={subscription.autopay_enabled}
-            daysBefore={subscription.autopay_days_before}
-            pending={autopayMutation.isPending}
-            onToggle={() => autopayMutation.mutate(!subscription.autopay_enabled)}
-            accentColor={zone.mainHex}
-            glassColors={g}
+      {cisPaySupported && subscription && !subscription.is_trial && (
+        <PageEntranceItem>
+          <CisPayRecurringPanel
+            key={subscription.id}
+            subscriptionId={subscription.id}
+            canSetup={cisPaySetup}
           />
-        </Card>
+        </PageEntranceItem>
       )}
-    </div>
+      {embedded && subscription && showsAutopayToggle(subscription) && (
+        <PageEntranceItem>
+          <Card size="sm" className="p-2 sm:p-3" data-subscription-autopay>
+            <SubscriptionAutopayToggle
+              compactOnMobile
+              enabled={subscription.autopay_enabled}
+              daysBefore={subscription.autopay_days_before}
+              pending={autopayMutation.isPending}
+              onToggle={() => autopayMutation.mutate(!subscription.autopay_enabled)}
+              accentColor={zone.mainHex}
+              glassColors={g}
+            />
+          </Card>
+        </PageEntranceItem>
+      )}
+    </PageEntrance>
   );
 }

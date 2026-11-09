@@ -5,11 +5,13 @@ import { usePlatform } from '@/platform';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/auth';
-import { displayName } from '../utils/displayName';
+import { useUserAvatar } from '@/hooks/useUserAvatar';
+import { ProfileIdentity } from '@/components/profile/ProfileIdentity';
 import { brandingApi, type EmailAuthEnabled } from '../api/branding';
 import { Card } from '@/components/data-display/Card';
 import { LogoutButton } from '@/components/LogoutButton';
-import { staggerContainer, staggerItem } from '@/components/motion/transitions';
+import { staggerItem } from '@/components/motion/transitions';
+import { PageEntrance } from '@/components/motion/PageEntrance';
 import { ChevronRightIcon, UsersIcon } from '@/components/icons';
 import ProfileHubSections, { ProfileAdminSection } from '@/components/profile/ProfileHubSections';
 import { useTheme } from '@/hooks/useTheme';
@@ -18,6 +20,7 @@ import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 export default function Profile() {
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
+  const avatar = useUserAvatar(user);
   const isAdmin = useAuthStore((state) => state.isAdmin);
   const logout = useAuthStore((state) => state.logout);
   const { toggleTheme, isDark, canToggle: canToggleTheme } = useTheme();
@@ -34,12 +37,7 @@ export default function Profile() {
   const { haptic } = usePlatform();
 
   return (
-    <motion.div
-      className="space-y-6"
-      variants={staggerContainer}
-      initial="initial"
-      animate="animate"
-    >
+    <PageEntrance className="space-y-6">
       <motion.div variants={staggerItem}>
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('profile.title')}</h1>
       </motion.div>
@@ -47,7 +45,7 @@ export default function Profile() {
       {/* User Info Card */}
       <motion.div variants={staggerItem}>
         <Card size="md">
-          <h2 className="mb-2 text-base font-semibold text-dark-100">{t('profile.accountInfo')}</h2>
+          <ProfileIdentity user={user} avatar={avatar} />
           <div>
             <div className="divide-y divide-dark-700">
               <div className="flex min-h-12 items-center justify-between gap-4 py-2">
@@ -84,20 +82,6 @@ export default function Profile() {
                   )}
                 </div>
               )}
-              {user?.username && (
-                <div className="flex min-h-12 items-center justify-between gap-4 py-2">
-                  <span className="text-dark-400">{t('profile.username')}</span>
-                  <span className="min-w-0 break-all text-right font-medium text-dark-100">
-                    @{user.username}
-                  </span>
-                </div>
-              )}
-              <div className="flex min-h-12 items-center justify-between gap-4 py-2">
-                <span className="text-dark-400">{t('profile.name')}</span>
-                <span className="min-w-0 break-words text-right font-medium text-dark-100">
-                  {displayName(user)}
-                </span>
-              </div>
               <div className="flex min-h-12 items-center justify-between gap-4 py-2">
                 <span className="text-dark-400">{t('profile.registeredAt')}</span>
                 <span className="font-medium text-dark-100">
@@ -156,6 +140,6 @@ export default function Profile() {
           }}
         />
       </motion.div>
-    </motion.div>
+    </PageEntrance>
   );
 }

@@ -1,14 +1,15 @@
 import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useLocation, useNavigate, useParams } from 'react-router';
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 import { subscriptionApi } from '../api/subscription';
-import { needsTariff, tariffSelectionPath } from '../utils/legacySubscription';
-import {
-  getErrorMessage,
-  getInsufficientBalanceError,
-  getSavedCartTopUpPath,
-} from '../utils/subscriptionHelpers';
+import { hasTargetBotContract } from '../config/upstreamBotContract';
+import { useCurrency } from '../hooks/useCurrency';
+import { DailyPausePanel } from '../components/subscription/manage/DailyPausePanel';
+import { canOpenTariffSwitch, needsTariff, tariffSelectionPath } from '../utils/legacySubscription';
+import { getInsufficientBalanceError, getSavedCartTopUpPath } from '../utils/subscriptionHelpers';
+import { isUncertainPurchaseOutcome } from '../utils/api-error';
+import { getLocalizedApiErrorMessage } from '../utils/api-error-display';
 import { formatDateOrRaw } from '../utils/format';
 import { previewRenewalEndDate } from '../utils/renewalPreview';
 import { useHaptic } from '../platform';
@@ -24,11 +25,14 @@ import { RenewalOptions } from '../components/subscription/renewal/RenewalOption
 import { RenewalSummary } from '../components/subscription/renewal/RenewalSummary';
 import { RenewalSubscriptionInfo } from '../components/subscription/renewal/RenewalSubscriptionInfo';
 import { PurchaseContextBanners } from '../components/subscription/purchase/PurchaseContextBanners';
+import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
 
 export default function RenewSubscription() {
   const { subscriptionId } = useParams<{ subscriptionId: string }>();
   const subId = subscriptionId ? Number(subscriptionId) : undefined;
   const { t, i18n } = useTranslation();
+  const { formatWithCurrency } = useCurrency();
+  const targetContract = hasTargetBotContract();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -45,10 +49,11 @@ export default function RenewSubscription() {
     refetchOnMount: 'always',
   });
   const subscription = subscriptionQuery.data?.subscription ?? null;
+  const dailyResume = targetContract && Boolean(subscription?.is_daily && !subscription.is_trial);
   const optionsQuery = useQuery({
     queryKey: ['renewal-options', subId],
     queryFn: () => subscriptionApi.getRenewalOptions(subId),
-    enabled: !!subId,
+    enabled: !!subId && (!targetContract || (!!subscription && !dailyResume)),
     staleTime: 0,
     refetchOnMount: 'always',
   });
@@ -98,6 +103,10 @@ export default function RenewSubscription() {
       navigate(`/subscriptions/${subId}`, { replace: true });
     },
     onError: (err: unknown) => {
+      if (isUncertainPurchaseOutcome(err)) {
+        setError(t('subscription.purchaseOutcomeUnknown'));
+        return;
+      }
       if (isClassic) {
         const insufficient = getInsufficientBalanceError(err);
         const detail =
@@ -110,7 +119,7 @@ export default function RenewSubscription() {
             ? getSavedCartTopUpPath(err, missingKopeks, `${location.pathname}${location.search}`)
             : null;
         if (topUpPath) navigate(topUpPath);
-        else setError(getErrorMessage(err));
+        else setError(getLocalizedApiErrorMessage(err, t('common.error'), t));
         return;
       }
       const detail =
@@ -124,7 +133,7 @@ export default function RenewSubscription() {
           return;
         }
       }
-      setError(getErrorMessage(err));
+      setError(getLocalizedApiErrorMessage(err, t('common.error'), t));
     },
     onSettled: () => {
       renewalInFlightRef.current = false;
@@ -174,14 +183,35 @@ export default function RenewSubscription() {
       : null;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
+    <PageEntrance className="space-y-4">
+      <PageEntranceItem className="flex items-center gap-3">
         <WebBackButton to={`/subscriptions/${subId}`} />
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-dark-100">{t('subscription.extend')}</h1>
         </div>
-      </div>
-      {loading ? (
+      </PageEntranceItem>
+      {dailyResume && subscription ? (
+        <PageEntranceItem>
+          <Card className="space-y-3">
+            <p className="text-sm text-dark-400">{t('subscription.dailyRenewalExplanation')}</p>
+            <p>
+              {t('subscription.dailyRenewalPrice', {
+                price: formatWithCurrency((subscription.daily_price_kopeks ?? 0) / 100),
+              })}
+            </p>
+            <DailyPausePanel
+              key={subscription.id}
+              subscription={subscription}
+              subscriptionId={subscription.id}
+            />
+            {canOpenTariffSwitch(subscription) && (
+              <Link className="btn-secondary" to={tariffSelectionPath(subId) + '&mode=switch'}>
+                {t('subscription.switchTariff.title')}
+              </Link>
+            )}
+          </Card>
+        </PageEntranceItem>
+      ) : loading ? (
         <SubscriptionFlowSkeleton
           mode="renewal"
           context={purchaseContext}
@@ -228,50 +258,59 @@ export default function RenewSubscription() {
       ) : (
         <>
           <PurchaseContextBanners context={purchaseContext} />
-          <RenewalSubscriptionInfo
-            subscription={subscription}
-            endDate={endDate}
-            maxDeviceLimit={
-              purchaseQuery.data.sales_mode === 'classic'
-                ? purchaseQuery.data.devices?.max
-                : undefined
-            }
-          />
-          <RenewalSummary
-            projectedEndDate={projectedEndDate}
-            option={selectedOption}
-            balanceKopeks={balanceKopeks}
-            isClassic={isClassic}
-            disabled={!ready}
-            pending={renewMutation.isPending}
-            onSubmit={handleRenew}
-          >
-            {selectionReset && (
-              <p role="status" className="text-sm text-dark-400">
-                {t('subscription.renewSelectionReset')}
-              </p>
-            )}
-            <RenewalOptions
-              options={optionsQuery.data ?? []}
-              selectedPeriod={selectedPeriod}
-              disabled={!ready || renewMutation.isPending}
-              onSelect={(period) => {
-                selectPeriod(period);
-                setError(null);
-                impact('light');
-              }}
+          {targetContract && !isClassic && canOpenTariffSwitch(subscription) && (
+            <Link className="btn-secondary" to={tariffSelectionPath(subId) + '&mode=switch'}>
+              {t('subscription.switchTariff.title')}
+            </Link>
+          )}
+          <PageEntranceItem>
+            <RenewalSubscriptionInfo
+              subscription={subscription}
+              endDate={endDate}
+              maxDeviceLimit={
+                purchaseQuery.data.sales_mode === 'classic'
+                  ? purchaseQuery.data.devices?.max
+                  : undefined
+              }
             />
-            {missingAmount && !isClassic && (
-              <InsufficientBalancePrompt missingAmountKopeks={Number(missingAmount)} compact />
-            )}
-            {error && !missingAmount && (
-              <p role="alert" className="rounded-xl bg-error-400/10 p-3 text-sm text-error-400">
-                {error}
-              </p>
-            )}
-          </RenewalSummary>
+          </PageEntranceItem>
+          <PageEntranceItem>
+            <RenewalSummary
+              projectedEndDate={projectedEndDate}
+              option={selectedOption}
+              balanceKopeks={balanceKopeks}
+              isClassic={isClassic}
+              disabled={!ready}
+              pending={renewMutation.isPending}
+              onSubmit={handleRenew}
+            >
+              {selectionReset && (
+                <p role="status" className="text-sm text-dark-400">
+                  {t('subscription.renewSelectionReset')}
+                </p>
+              )}
+              <RenewalOptions
+                options={optionsQuery.data ?? []}
+                selectedPeriod={selectedPeriod}
+                disabled={!ready || renewMutation.isPending}
+                onSelect={(period) => {
+                  selectPeriod(period);
+                  setError(null);
+                  impact('light');
+                }}
+              />
+              {missingAmount && !isClassic && (
+                <InsufficientBalancePrompt missingAmountKopeks={Number(missingAmount)} compact />
+              )}
+              {error && !missingAmount && (
+                <p role="alert" className="rounded-xl bg-error-400/10 p-3 text-sm text-error-400">
+                  {error}
+                </p>
+              )}
+            </RenewalSummary>
+          </PageEntranceItem>
         </>
       )}
-    </div>
+    </PageEntrance>
   );
 }

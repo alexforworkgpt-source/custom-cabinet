@@ -4,6 +4,7 @@ import { Card } from '../data-display';
 import { ClockIcon, XCircleIcon } from '../icons';
 import { formatOfferTimeLeft } from './offerPresentation';
 import { Button } from '../primitives';
+import { staggerItem } from '../motion/transitions';
 
 interface Props {
   discount: ActiveDiscount;
@@ -28,6 +29,7 @@ export function ActiveDiscountBanner({
   const { t } = useTranslation();
   return (
     <Card
+      variants={staggerItem}
       size="lg"
       data-promo-active-discount
       className="border-success-500/30 bg-gradient-to-br from-success-500/10 to-accent-500/5"
@@ -94,7 +96,12 @@ export function UnavailableDiscountBanner({
 }) {
   const { t } = useTranslation();
   return (
-    <Card size="sm" data-promo-unavailable-discount className="space-y-3 text-sm text-dark-300">
+    <Card
+      variants={staggerItem}
+      size="sm"
+      data-promo-unavailable-discount
+      className="space-y-3 text-sm text-dark-300"
+    >
       <div className="flex items-start gap-2">
         <ClockIcon />
         <p>{t('promo.navigation.expired')}</p>

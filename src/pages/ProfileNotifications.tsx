@@ -8,7 +8,8 @@ import {
   type NotificationSettingsUpdate,
 } from '@/api/notifications';
 import { Card } from '@/components/data-display/Card';
-import { staggerContainer, staggerItem } from '@/components/motion/transitions';
+import { staggerItem } from '@/components/motion/transitions';
+import { PageEntrance } from '@/components/motion/PageEntrance';
 import { Button } from '@/components/primitives/Button';
 import { Switch } from '@/components/primitives/Switch';
 import { WebBackButton } from '@/components/WebBackButton';
@@ -41,12 +42,7 @@ export default function ProfileNotifications() {
   };
 
   return (
-    <motion.div
-      className="space-y-6"
-      variants={staggerContainer}
-      initial="initial"
-      animate="animate"
-    >
+    <PageEntrance className="space-y-6">
       <motion.div variants={staggerItem} className="flex items-center gap-3">
         <WebBackButton to="/profile" />
         <h1 className="min-w-0 text-2xl font-bold text-dark-50 sm:text-3xl">
@@ -245,6 +241,6 @@ export default function ProfileNotifications() {
           )}
         </Card>
       </motion.div>
-    </motion.div>
+    </PageEntrance>
   );
 }

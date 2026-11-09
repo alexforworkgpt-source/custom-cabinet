@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
+import { motion } from 'framer-motion';
+import { staggerItem } from '@/components/motion/transitions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePlatform } from '@/platform';
 import {
@@ -165,7 +167,8 @@ export default function DashboardPromoCarousel({
   const showNext = () => setActiveIndex((current) => (current + 1) % slides.length);
 
   return (
-    <section
+    <motion.section
+      variants={staggerItem}
       className="relative"
       aria-label={t('dashboardPromo.ariaLabel')}
       data-dashboard-promo-carousel
@@ -285,6 +288,6 @@ export default function DashboardPromoCarousel({
           </div>
         )}
       </div>
-    </section>
+    </motion.section>
   );
 }

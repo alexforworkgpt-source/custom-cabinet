@@ -1,5 +1,85 @@
 # Custom Cabinet Ownership Map
 
+## QR/Wheel entrance and wheel sizing — 2026-10-29
+
+- ConnectionQR and Wheel adopt existing PageEntrance/staggerItem at the complete
+  section boundary; state guards, URLs, reduced motion and refresh identity stay intact.
+- FortuneWheel changes only its responsive max-width to existing xs/md utilities.
+  SVG geometry, native5s spin/easing/callbacks and payment/result ownership stay intact.
+- Existing short-screen Wheel check follows the approved visible mobile panel
+  and scroll model;44px target/34px safe area remain, plus8px panel clearance.
+- [TDD, exact local gates and evidence](docs/qr-wheel-entrance-20261029.md).
+
+## Profile identity / avatar — 2026-10-28
+
+- Profile owns the existing useUserAvatar query; ProfileIdentity owns only the
+  read-only56/64px presentation, real-name initials and loaded-image state.
+  Placeholder remains until image onLoad; name/username are no longer duplicated.
+- Existing Telegram initData/API sources, query/cache/error policy and account
+  actions retain their owners. No upload/edit, backend contract, global style or
+  dependency changes. Accessible avatar label uses all4existing locales.
+- [Browser TDD and exact local proof](docs/profile-avatar-20261028.md).
+
+## Secondary mobile navigation — 2026-10-28
+
+- `mobileNavRoutes` owns explicit secondary-route eligibility and mobile parent
+  highlighting; `MobileBottomNav` preserves4items/styles and Support-origin state.
+- `MobileNavigationProvider` under Layout carries only history-scoped UI phase.
+  SubscriptionPurchase/Polls/Contests publish their existing presentation state;
+  AppShell renders the panel. Catalogue visibility is independent of subscription
+  count/read failures; checkout and transient actions do not carry the panel.
+- Desktop activation, URLs, query keys, API/business logic and admin code retain
+  their owners. Existing clearance/keyboard rules are reused without new CSS.
+- [ADR0005](docs/adr/0005-mobile-section-navigation.md) and
+  [TDD/exact local proof](docs/mobile-navigation-20261028.md).
+
+## Audited entrance owners and reduced motion — 2026-10-27
+
+- Dashboard's optional visible cards/label/news section own their staggerItem;
+  ready trial and purchase have independent owners. PurchaseContextBanners owns
+  its complete entrance; existing wheel/bento and inner news effects retain theirs.
+- Contests/Polls, InfoNavigation, InfoPageView and Referral animate only their
+  previously missing ready sections using existing PageEntrance/stagger tokens.
+- Root MotionConfig follows the user reduced-motion preference for transforms
+  and layout. Audited page roots and independent news/gift entrances also skip
+  initial explicitly. Canonical Card defaults, API/query/action ownership stay intact.
+- SubscriptionFlowSkeleton owns deterministic non-renewal context/body gap-6;
+  existing geometry assertions remain unchanged.
+- [Audit, TDD and exact local verification](docs/animation-audit-20261027.md).
+
+## Promo carousel entrance — 2026-10-26
+
+- Ready `DashboardPromoCarousel` uses a semantic motion.section and the existing
+  staggerItem inherited from PageEntrance. Its empty/loading returns, slide CSS,
+  controls and autoplay retain their existing behavior; slide changes do not
+  remount the entrance container. Reduced motion is inherited from the page.
+  [Regression and verification](docs/page-entrance-20261026.md#дополнение-появление-рекламной-карусели).
+
+## Subscription action readiness — 2026-10-26
+
+- `Subscription` overlaps conditions/subscription reads for an explicit valid ID,
+  retaining URL/params/query keys and fresh-read policy. Pending navigation now
+  waits for both reads; errors/missing records retain their existing guards.
+- `PurchaseCTAPresentation` adds a native disabled Button/Spinner state with the
+  same geometry as its ready presentation. `PurchaseCTAButton` retains route and
+  eligibility policy, neutral unknown-mode text and cached read-only labels.
+- Dashboard's ordinary purchase link precedes the optional trial offer and does
+  not depend on the trial request. Trial activation retains its existing owner.
+  [TDD and validation](docs/subscription-action-readiness-20261026.md).
+
+## User page entrance — 2026-10-26
+
+- `components/motion/PageEntrance` composes the existing stagger container/item
+  variants for Dashboard and subscription list, management, purchase and renewal.
+  Initial reduced-motion preference skips entrance animations. The shell,
+  canonical Card/Button defaults and existing inner effects remain unchanged.
+- Route pages select presentation sections; management owns its loaded entrance
+  independently of its skeleton. PurchaseCTAButton keeps its null guard ahead of
+  the animated presentation so hidden daily renewal adds no empty spacing.
+  Query refreshes do not key or remount presentation. No API/cache/payment or
+  navigation contracts change.
+  [Scope and verification](docs/page-entrance-20261026.md).
+
 ## Dashboard-style subscription identity — 2026-10-22
 
 - `subscription/SubscriptionIdentityBadges` is the shared read-only heading for

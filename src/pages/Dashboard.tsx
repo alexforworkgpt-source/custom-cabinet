@@ -41,6 +41,9 @@ import {
 import { DeviceLimitPanel } from '@/components/subscription/DeviceLimitSheet';
 import { needsTariff } from '@/utils/legacySubscription';
 import { useTransientOverlayBackDispatcher } from '@/providers/TransientOverlayBackProvider';
+import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
+import { motion } from 'framer-motion';
+import { staggerItem } from '@/components/motion/transitions';
 
 const Connection = lazy(() => import('./Connection'));
 const TopUpMethodSelect = lazy(() => import('./TopUpMethodSelect'));
@@ -181,7 +184,7 @@ export default function Dashboard() {
     staleTime: 0,
   });
 
-  const { data: trialInfo, isLoading: trialLoading } = useQuery({
+  const { data: trialInfo } = useQuery({
     queryKey: ['trial-info'],
     queryFn: () => subscriptionApi.getTrialInfo(),
     enabled: !subscription && !subLoading && !subscriptionsError && !subscriptionError,
@@ -251,7 +254,7 @@ export default function Dashboard() {
   // Traffic refresh state and mutation
   const [trafficCooldowns, setTrafficCooldowns] = useState<Record<number, number>>({});
   const [refreshedTrafficById, setRefreshedTrafficById] = useState<
-    Record<number, { traffic_used_gb: number; traffic_used_percent: number; is_unlimited: boolean }>
+    Record<number, Awaited<ReturnType<typeof subscriptionApi.refreshTraffic>>>
   >({});
   const currentSubscriptionIdRef = useRef<number | undefined>(subscription?.id);
   const overlayTriggerRef = useRef<HTMLElement | null>(null);
@@ -268,11 +271,7 @@ export default function Dashboard() {
     onSuccess: ({ data, subscriptionId }) => {
       setRefreshedTrafficById((current) => ({
         ...current,
-        [subscriptionId]: {
-          traffic_used_gb: data.traffic_used_gb,
-          traffic_used_percent: data.traffic_used_percent,
-          is_unlimited: data.is_unlimited,
-        },
+        [subscriptionId]: data,
       }));
       if (subscriptionId === currentSubscriptionIdRef.current) {
         queryClient.invalidateQueries({ queryKey: ['subscription'] });
@@ -501,7 +500,7 @@ export default function Dashboard() {
             : '';
 
   return (
-    <div
+    <PageEntrance
       className="space-y-6"
       onClickCapture={(event) => {
         const target = (event.target as HTMLElement).closest<HTMLElement>(
@@ -514,7 +513,10 @@ export default function Dashboard() {
       {pendingGifts && pendingGifts.length > 0 && <PendingGiftCard gifts={pendingGifts} />}
 
       {subscriptions.length > 1 && (
-        <label className="block rounded-2xl border border-dark-700/50 bg-dark-900/70 p-4">
+        <motion.label
+          variants={staggerItem}
+          className="block rounded-2xl border border-dark-700/50 bg-dark-900/70 p-4"
+        >
           <span className="mb-2 block text-sm font-medium text-dark-300">
             {t('dashboard.subscriptions')}
           </span>
@@ -533,7 +535,7 @@ export default function Dashboard() {
               </option>
             ))}
           </select>
-        </label>
+        </motion.label>
       )}
 
       {(subscriptionsError || subscriptionError) && (
@@ -588,76 +590,80 @@ export default function Dashboard() {
         (subscription.is_expired ||
           subscription?.status === 'disabled' ||
           subscription?.is_limited) ? (
-        <SubscriptionCardExpired
-          subscription={subscription}
-          balanceKopeks={balanceData?.balance_kopeks ?? null}
-          balanceRubles={balanceData?.balance_rubles ?? null}
-          isTrafficTopupOpen={showTrafficTopup}
-          trafficTopupTriggerRef={trafficTopupTriggerRef}
-          onBuyTraffic={() => {
-            setSelectedTrafficPackage(null);
-            setShowTrafficTopup(true);
-          }}
-          connectedDevices={devicesData?.total}
-          devicesError={devicesError && !devicesData}
-          onConnectDevice={() => navigate(`/connection?sub=${subscription.id}`)}
-          onManageDevices={() =>
-            navigate(`/?sub=${subscription.id}&overlay=devices`, {
-              state: { cabinetOverlayParent: true },
-            })
-          }
-          onRetryDevices={() => void refetchDevices()}
-          devicesOpen={routeState.overlay === 'devices'}
-          onManageSubscription={() =>
-            navigate(`/subscriptions/${subscription.id}`, {
-              state: { backTo: getCabinetClosePath(subscription.id) },
-            })
-          }
-          managementOpen={managementOpen}
-        />
+        <PageEntranceItem>
+          <SubscriptionCardExpired
+            subscription={subscription}
+            balanceKopeks={balanceData?.balance_kopeks ?? null}
+            balanceRubles={balanceData?.balance_rubles ?? null}
+            isTrafficTopupOpen={showTrafficTopup}
+            trafficTopupTriggerRef={trafficTopupTriggerRef}
+            onBuyTraffic={() => {
+              setSelectedTrafficPackage(null);
+              setShowTrafficTopup(true);
+            }}
+            connectedDevices={devicesData?.total}
+            devicesError={devicesError && !devicesData}
+            onConnectDevice={() => navigate(`/connection?sub=${subscription.id}`)}
+            onManageDevices={() =>
+              navigate(`/?sub=${subscription.id}&overlay=devices`, {
+                state: { cabinetOverlayParent: true },
+              })
+            }
+            onRetryDevices={() => void refetchDevices()}
+            devicesOpen={routeState.overlay === 'devices'}
+            onManageSubscription={() =>
+              navigate(`/subscriptions/${subscription.id}`, {
+                state: { backTo: getCabinetClosePath(subscription.id) },
+              })
+            }
+            managementOpen={managementOpen}
+          />
+        </PageEntranceItem>
       ) : subscription ? (
-        <SubscriptionCardActive
-          subscription={subscription}
-          trafficData={trafficData}
-          refreshTrafficMutation={refreshTrafficMutation}
-          trafficRefreshCooldown={trafficRefreshCooldown}
-          connectedDevices={devicesData?.total}
-          devicesError={devicesError && !devicesData}
-          connectionUrl={shouldHideConnectionLink ? null : displayedConnectionUrl}
-          connectionLinkLoading={!shouldHideConnectionLink && isConnectionLinkLoading}
-          connectionUrlCopied={subscriptionLinkCopied}
-          onOpenConnectionQr={() => {
-            if (!displayedConnectionUrl || shouldHideConnectionLink) return;
-            navigate('/connection/qr', {
-              state: {
-                url: displayedConnectionUrl,
-                hideLink: false,
-                subscriptionId: subscription.id,
-                returnPath: getCabinetClosePath(subscription.id),
-              },
-            });
-          }}
-          onCopyConnectionUrl={() => {
-            if (!displayedConnectionUrl || shouldHideConnectionLink) return;
-            void copyToClipboard(displayedConnectionUrl);
-            setSubscriptionLinkCopied(true);
-            setTimeout(() => setSubscriptionLinkCopied(false), 2000);
-          }}
-          onConnectDevice={() => navigate(`/connection?sub=${subscription.id}`)}
-          onManageDevices={() =>
-            navigate(`/?sub=${subscription.id}&overlay=devices`, {
-              state: { cabinetOverlayParent: true },
-            })
-          }
-          onRetryDevices={() => void refetchDevices()}
-          devicesOpen={routeState.overlay === 'devices'}
-          onManageSubscription={() =>
-            navigate(`/subscriptions/${subscription.id}`, {
-              state: { backTo: getCabinetClosePath(subscription.id) },
-            })
-          }
-          managementOpen={managementOpen}
-        />
+        <PageEntranceItem>
+          <SubscriptionCardActive
+            subscription={subscription}
+            trafficData={trafficData}
+            refreshTrafficMutation={refreshTrafficMutation}
+            trafficRefreshCooldown={trafficRefreshCooldown}
+            connectedDevices={devicesData?.total}
+            devicesError={devicesError && !devicesData}
+            connectionUrl={shouldHideConnectionLink ? null : displayedConnectionUrl}
+            connectionLinkLoading={!shouldHideConnectionLink && isConnectionLinkLoading}
+            connectionUrlCopied={subscriptionLinkCopied}
+            onOpenConnectionQr={() => {
+              if (!displayedConnectionUrl || shouldHideConnectionLink) return;
+              navigate('/connection/qr', {
+                state: {
+                  url: displayedConnectionUrl,
+                  hideLink: false,
+                  subscriptionId: subscription.id,
+                  returnPath: getCabinetClosePath(subscription.id),
+                },
+              });
+            }}
+            onCopyConnectionUrl={() => {
+              if (!displayedConnectionUrl || shouldHideConnectionLink) return;
+              void copyToClipboard(displayedConnectionUrl);
+              setSubscriptionLinkCopied(true);
+              setTimeout(() => setSubscriptionLinkCopied(false), 2000);
+            }}
+            onConnectDevice={() => navigate(`/connection?sub=${subscription.id}`)}
+            onManageDevices={() =>
+              navigate(`/?sub=${subscription.id}&overlay=devices`, {
+                state: { cabinetOverlayParent: true },
+              })
+            }
+            onRetryDevices={() => void refetchDevices()}
+            devicesOpen={routeState.overlay === 'devices'}
+            onManageSubscription={() =>
+              navigate(`/subscriptions/${subscription.id}`, {
+                state: { backTo: getCabinetClosePath(subscription.id) },
+              })
+            }
+            managementOpen={managementOpen}
+          />
+        </PageEntranceItem>
       ) : null}
 
       {subscription?.is_limited && !needsTariff(subscription) && showTrafficTopup && (
@@ -681,8 +687,17 @@ export default function Dashboard() {
           при доступном триале это был единственный экран без кнопки покупки
           (Telegram-баг #605056/#605063). Единственная кнопка тут (вместо дубля
           с мульти-тариф блоком). */}
-      {hasNoSubscription && !trialLoading && (
+      {hasNoSubscription && (
         <div className="space-y-3">
+          {/* Keep purchase available and stationary while optional trial data arrives. */}
+          <PageEntranceItem>
+            <Link
+              to="/subscription/purchase"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent-500 p-3.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-600"
+            >
+              {t('subscriptions.chooseTariff')}
+            </Link>
+          </PageEntranceItem>
           {trialInfo?.is_available && (
             <TrialOfferCard
               trialInfo={trialInfo}
@@ -692,12 +707,6 @@ export default function Dashboard() {
               trialError={trialError}
             />
           )}
-          <Link
-            to="/subscription/purchase"
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent-500 p-3.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-600"
-          >
-            {t('subscriptions.chooseTariff')}
-          </Link>
         </div>
       )}
 
@@ -716,14 +725,16 @@ export default function Dashboard() {
       />
 
       {/* Stats Grid */}
-      <StatsGrid
-        balanceRubles={balanceData?.balance_rubles ?? null}
-        balanceLoading={balanceLoading && !balanceData}
-        referralCount={referralInfo?.total_referrals ?? null}
-        earningsRubles={referralInfo?.available_balance_rubles ?? null}
-        refLoading={refLoading}
-        showReferral={referralEnabled}
-      />
+      <PageEntranceItem>
+        <StatsGrid
+          balanceRubles={balanceData?.balance_rubles ?? null}
+          balanceLoading={balanceLoading && !balanceData}
+          referralCount={referralInfo?.total_referrals ?? null}
+          earningsRubles={referralInfo?.available_balance_rubles ?? null}
+          refLoading={refLoading}
+          showReferral={referralEnabled}
+        />
+      </PageEntranceItem>
 
       <DashboardPromoCarousel slides={promoSlides} loading={!promoDataReady} />
 
@@ -783,6 +794,6 @@ export default function Dashboard() {
           {overlayContent}
         </Suspense>
       </ResponsiveOverlay>
-    </div>
+    </PageEntrance>
   );
 }
