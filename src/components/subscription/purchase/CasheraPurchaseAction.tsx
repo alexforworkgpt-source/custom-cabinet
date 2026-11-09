@@ -11,6 +11,7 @@ import { Button } from '../../primitives/Button';
 interface Props {
   tariffId: number;
   disabled: boolean;
+  purchaseTariff?: () => ReturnType<typeof subscriptionApi.purchaseWithCasheraRecurring>;
   onPendingChange?: (pending: boolean) => void;
   claimPurchase?: () => boolean;
   releasePurchase?: () => void;
@@ -19,6 +20,7 @@ interface Props {
 export function CasheraPurchaseAction({
   tariffId,
   disabled,
+  purchaseTariff,
   onPendingChange,
   claimPurchase,
   releasePurchase,
@@ -29,7 +31,7 @@ export function CasheraPurchaseAction({
   const { platform, openLink } = usePlatform();
   const inFlight = useRef(false);
   const purchase = useMutation({
-    mutationFn: () => subscriptionApi.purchaseWithCasheraRecurring(tariffId),
+    mutationFn: purchaseTariff ?? (() => subscriptionApi.purchaseWithCasheraRecurring(tariffId)),
     onSuccess: (data) => {
       if (data.redirect_url) openPaymentUrl(data.redirect_url, platform, openLink);
       client.invalidateQueries({ queryKey: ['subscription'] });

@@ -14,6 +14,9 @@ import { CampaignCard } from '../components/partner/CampaignCard';
 import { useCurrency } from '../hooks/useCurrency';
 import { StatCard } from '@/components/stats';
 import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
+import { motion } from 'framer-motion';
+import { PageEntrance } from '@/components/motion/PageEntrance';
+import { staggerItem } from '@/components/motion/transitions';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -317,11 +320,13 @@ export default function Referral() {
   const showRejectedSection = partnerStatusValue === 'rejected';
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('referral.title')}</h1>
+    <PageEntrance className="space-y-6">
+      <motion.h1 variants={staggerItem} className="text-2xl font-bold text-dark-50 sm:text-3xl">
+        {t('referral.title')}
+      </motion.h1>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+      <motion.div variants={staggerItem} className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
         <div className="col-span-2 md:col-span-1">
           <StatCard
             label={t('referral.stats.totalReferrals')}
@@ -365,7 +370,7 @@ export default function Referral() {
           icon={<PercentIcon className="h-5 w-5" />}
           tone="accent"
         />
-      </div>
+      </motion.div>
 
       {/* Referral Links */}
       <div className="bento-card">
@@ -849,6 +854,6 @@ export default function Referral() {
           </div>
         </>
       )}
-    </div>
+    </PageEntrance>
   );
 }

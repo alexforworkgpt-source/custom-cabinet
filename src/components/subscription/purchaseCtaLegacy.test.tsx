@@ -44,6 +44,7 @@ describe('subscription action loading', () => {
       <MemoryRouter>
         <PurchaseCTAButton subscription={subscription()} isClassic loading reserveSpace />
       </MemoryRouter>,
+      { wrapper: PlatformProvider },
     );
     expect(screen.getByRole('status').getAttribute('aria-busy')).toBe('true');
     expect(screen.queryByRole('link')).toBeNull();
@@ -53,6 +54,32 @@ describe('subscription action loading', () => {
       </MemoryRouter>,
     );
     expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/subscriptions/42/renew');
+  });
+
+  it('uses neutral pending text until the sales mode is known and keeps confirmed text during refresh', () => {
+    const expired = subscription({ status: 'expired', is_active: false, is_expired: true });
+    const { rerender } = render(
+      <MemoryRouter>
+        <PurchaseCTAButton subscription={expired} conditionsKnown={false} loading />
+      </MemoryRouter>,
+      { wrapper: PlatformProvider },
+    );
+    expect(screen.getByRole('button').textContent).toContain('common.loading');
+    expect(screen.getByRole('button').hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('link')).toBeNull();
+    rerender(
+      <MemoryRouter>
+        <PurchaseCTAButton subscription={expired} conditionsKnown isClassic loading />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('button').textContent).toContain('subscription.extend');
+    expect(screen.getByRole('button').hasAttribute('disabled')).toBe(true);
+    rerender(
+      <MemoryRouter>
+        <PurchaseCTAButton subscription={expired} conditionsKnown isClassic />
+      </MemoryRouter>,
+    );
     expect(screen.getByRole('link').getAttribute('href')).toBe('/subscriptions/42/renew');
   });
 

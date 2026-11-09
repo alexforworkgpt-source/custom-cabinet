@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { MotionConfig } from 'framer-motion';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   init,
@@ -169,7 +170,9 @@ void Promise.all([i18nReady, telegramLanguageReady, themeColorsReady]).then(() =
     <React.StrictMode>
       <ErrorBoundary level="app">
         <QueryClientProvider client={queryClient}>
-          <AppWithNavigator />
+          <MotionConfig reducedMotion="user">
+            <AppWithNavigator />
+          </MotionConfig>
         </QueryClientProvider>
       </ErrorBoundary>
     </React.StrictMode>,

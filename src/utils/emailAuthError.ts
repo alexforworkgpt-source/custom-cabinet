@@ -2,6 +2,7 @@ import axios from 'axios';
 
 export type EmailAuthErrorKind =
   | 'disabled'
+  | 'invite-required'
   | 'disposable'
   | 'rate-limit-hour'
   | 'rate-limit-day'
@@ -48,6 +49,14 @@ export function classifyEmailAuthError(error: unknown): EmailAuthErrorKind {
     return 'disabled';
   }
 
+  if (
+    status === 403 &&
+    detail &&
+    typeof detail === 'object' &&
+    (detail as { code?: unknown }).code === 'registration_invite_required'
+  )
+    return 'invite-required';
+
   if (status === 400 && detail === DISPOSABLE_EMAIL_DETAIL) return 'disposable';
   if (status === 400 && typeof detail === 'string' && detail.includes('already registered')) {
     return 'already-registered';
@@ -74,6 +83,8 @@ export function getEmailAuthErrorTranslationKey(
   switch (kind) {
     case 'disabled':
       return 'auth.emailAuthDisabled';
+    case 'invite-required':
+      return 'auth.registrationInviteRequired';
     case 'disposable':
       return 'auth.disposableEmail';
     case 'rate-limit-hour':

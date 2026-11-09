@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  rublesPerDisplayUnit: 1,
   createTopUp: vi.fn(),
   getPaymentMethods: vi.fn(),
   hapticNotification: vi.fn(),
@@ -40,11 +41,11 @@ vi.mock('../api/balance', () => ({
 
 vi.mock('../hooks/useCurrency', () => ({
   useCurrency: () => ({
-    convertAmount: (amount: number) => amount,
-    convertToRub: (amount: number) => amount,
+    convertAmount: (amount: number) => amount / mocks.rublesPerDisplayUnit,
+    convertToRub: (amount: number) => amount * mocks.rublesPerDisplayUnit,
     currencySymbol: '₽',
     formatAmount: (amount: number) => String(amount),
-    targetCurrency: 'RUB',
+    targetCurrency: mocks.rublesPerDisplayUnit === 1 ? 'RUB' : 'USD',
   }),
 }));
 
@@ -93,7 +94,7 @@ function deferred<T>(): Deferred<T> {
   return { promise, reject, resolve };
 }
 
-async function renderTopUp() {
+async function renderTopUp(amount = 300) {
   const { default: TopUpAmount } = await import('./TopUpAmount');
   const client = new QueryClient({
     defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
@@ -101,7 +102,7 @@ async function renderTopUp() {
 
   render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/balance/top-up/test-card?amount=300']}>
+      <MemoryRouter initialEntries={[`/balance/top-up/test-card?amount=${amount}`]}>
         <Routes>
           <Route path="/balance/top-up/:methodId" element={<TopUpAmount />} />
         </Routes>
@@ -113,6 +114,7 @@ async function renderTopUp() {
 }
 
 beforeEach(() => {
+  mocks.rublesPerDisplayUnit = 1;
   mocks.createTopUp.mockReset();
   mocks.getPaymentMethods.mockReset();
   mocks.hapticNotification.mockReset();
@@ -194,4 +196,50 @@ describe('quick top-up feedback', () => {
       );
     });
   });
+});
+
+it.each([false, true])(
+  'keeps the intended amount after a rate update (manual=%s)',
+  async (manual) => {
+    mocks.rublesPerDisplayUnit = 100;
+    mocks.createTopUp.mockResolvedValue({ status: 'pending' });
+    const { default: TopUpAmount } = await import('./TopUpAmount');
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const tree = () => (
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={['/balance/top-up/test-card?amount=500']}>
+          <Routes>
+            <Route path="/balance/top-up/:methodId" element={<TopUpAmount />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+    const view = render(tree());
+    const input = (await screen.findByRole('spinbutton')) as HTMLInputElement;
+    expect(input.value).toBe('5.00');
+    if (manual) fireEvent.change(input, { target: { value: '7' } });
+    mocks.rublesPerDisplayUnit = 50;
+    view.rerender(tree());
+    expect(input.value).toBe(manual ? '7' : '10.00');
+    fireEvent.click(screen.getByRole('button', { name: 'Top Up' }));
+    await waitFor(() =>
+      expect(mocks.createTopUp).toHaveBeenCalledWith(
+        manual ? 35000 : 50000,
+        'test-card',
+        undefined,
+      ),
+    );
+  },
+);
+
+it('preserves the rounded RUB display and exact kopecks for a fractional prefill', async () => {
+  mocks.createTopUp.mockResolvedValue({ status: 'pending' });
+  const submit = await renderTopUp(300.25);
+
+  expect(screen.getByRole('spinbutton')).toHaveProperty('value', '301');
+  fireEvent.click(submit);
+
+  await waitFor(() =>
+    expect(mocks.createTopUp).toHaveBeenCalledWith(30_025, 'test-card', undefined),
+  );
 });

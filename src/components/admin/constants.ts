@@ -1,3 +1,4 @@
+import { hasTargetBotContract } from '../../config/upstreamBotContract';
 import { type ThemeColors, DEFAULT_THEME_COLORS } from '../../types/theme';
 
 // Tree sidebar types
@@ -55,7 +56,8 @@ export const SETTINGS_TREE: SettingsTreeConfig = {
         { id: 'payments_wata', categories: ['WATA'] },
         { id: 'payments_riopay', categories: ['RIOPAY'] },
         { id: 'payments_severpay', categories: ['SEVERPAY'] },
-        { id: 'payments_paypear', categories: ['PAYPEAR'] },
+        ...(!hasTargetBotContract() ? [{ id: 'payments_paypear', categories: ['PAYPEAR'] }] : []),
+        { id: 'payments_anore', categories: ['ANORE'] },
         { id: 'payments_rollypay', categories: ['ROLLYPAY'] },
         { id: 'payments_aurapay', categories: ['AURAPAY'] },
         { id: 'payments_etoplatezhi', categories: ['ETOPLATEZHI'] },

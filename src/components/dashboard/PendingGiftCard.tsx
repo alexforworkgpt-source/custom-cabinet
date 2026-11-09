@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { GiftIcon } from '@/components/icons';
 import type { PendingGift } from '../../api/gift';
 
@@ -11,6 +11,7 @@ interface PendingGiftCardProps {
 
 export default function PendingGiftCard({ gifts, className }: PendingGiftCardProps) {
   const { t } = useTranslation();
+  const reducedMotion = useReducedMotion();
 
   if (gifts.length === 0) return null;
 
@@ -19,7 +20,7 @@ export default function PendingGiftCard({ gifts, className }: PendingGiftCardPro
       {gifts.map((gift) => (
         <motion.div
           key={gift.token}
-          initial={{ opacity: 0, y: -10 }}
+          initial={reducedMotion ? false : { opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="relative overflow-hidden rounded-2xl border border-accent-500/30 bg-gradient-to-r from-accent-500/10 via-purple-500/10 to-accent-500/10 p-5"
         >

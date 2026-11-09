@@ -138,6 +138,31 @@ describe('best-value tariff contract', () => {
     expect(highlightedCard?.getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('opens the switch preview from the multi-subscription switch catalogue', async () => {
+    const { TariffPickerGrid } = await import('./purchase/TariffPickerGrid');
+    const select = vi.fn();
+    const openSwitch = vi.fn();
+    render(
+      providers(
+        <MemoryRouter>
+          <TariffPickerGrid
+            tariffs={[tariff({ id: 8, name: 'Про' })]}
+            subscription={null}
+            purchaseOptions={undefined}
+            isTariffsMode
+            isMultiTariff
+            switchOnly
+            onSelectTariff={select}
+            onSwitchTariff={openSwitch}
+          />
+        </MemoryRouter>,
+      ),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'subscription.switchTariff.switch' }));
+    expect(openSwitch).toHaveBeenCalledExactlyOnceWith(8);
+    expect(select).not.toHaveBeenCalled();
+  });
+
   it('marks the recommended tariff, but the current tariff remains the stronger state', async () => {
     const { TariffPickerGrid } = await import('./purchase/TariffPickerGrid');
     render(

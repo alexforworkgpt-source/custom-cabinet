@@ -44,6 +44,7 @@ import { useSubscriptionNavigation } from '@/hooks/useSubscriptionNavigation';
 import { AppHeader } from './AppHeader';
 import { LogoutButton } from '@/components/LogoutButton';
 import { useBackgroundConsumer } from '@/components/backgrounds/BackgroundHost';
+import { usePageMobileNavigationMode } from './MobileNavigation';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -97,7 +98,12 @@ export function AppShell({ children }: AppShellProps) {
 
   const subscriptionNav = useSubscriptionNavigation(!isAdminRoute);
   const navItems = mobileNavItems(subscriptionNav);
-  const showMobileNav = isMobileNavScreen(location.pathname, navItems);
+  const pageNavigation = usePageMobileNavigationMode();
+  const showMobileNav =
+    pageNavigation !== 'action' &&
+    (location.pathname.replace(/\/$/, '') === '/subscription/purchase'
+      ? pageNavigation === 'catalogue'
+      : isMobileNavScreen(location.pathname, navItems));
 
   // Desktop navigation — labels always visible (no hover-reveal gimmick)
   const desktopNav = [

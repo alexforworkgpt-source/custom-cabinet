@@ -22,6 +22,7 @@ import { StarIcon, CalendarIcon, HistoryIcon, CloseIcon } from '@/components/ico
 import { cn } from '@/lib/utils';
 import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
 import { WebBackButton } from '@/components/WebBackButton';
+import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
 
 // Icons
 const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
@@ -480,34 +481,34 @@ export default function Wheel() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        {header}
+      <PageEntrance className="space-y-4">
+        <PageEntranceItem>{header}</PageEntranceItem>
         <PageSkeleton titleWidth="w-40" className="space-y-6 pb-8">
           <Skeleton className="h-4 w-56" />
           <Skeleton variant="card" className="h-80" />
         </PageSkeleton>
-      </div>
+      </PageEntrance>
     );
   }
 
   if (error || !config) {
     return (
-      <div className="space-y-4">
-        {header}
+      <PageEntrance className="space-y-4">
+        <PageEntranceItem>{header}</PageEntranceItem>
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-error-500/10">
             <span className="text-4xl">😔</span>
           </div>
           <p className="text-lg text-dark-400">{t('wheel.errors.loadFailed')}</p>
         </div>
-      </div>
+      </PageEntrance>
     );
   }
 
   if (!config.is_enabled) {
     return (
-      <div className="space-y-4">
-        {header}
+      <PageEntrance className="space-y-4">
+        <PageEntranceItem>{header}</PageEntranceItem>
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6">
           <div className="flex h-24 w-24 items-center justify-center rounded-full bg-dark-800">
             <span className="text-5xl">🎡</span>
@@ -516,7 +517,7 @@ export default function Wheel() {
             <p className="text-dark-400">{t('wheel.disabled')}</p>
           </div>
         </div>
-      </div>
+      </PageEntrance>
     );
   }
 
@@ -542,9 +543,9 @@ export default function Wheel() {
     (paymentType === 'telegram_stars' ? !starsEnabled : !config.can_spin);
 
   return (
-    <div className="animate-fade-in space-y-4 pb-8 sm:space-y-6">
+    <PageEntrance className="space-y-4 pb-8 sm:space-y-6">
       {/* Simple Header */}
-      <div className="flex items-center justify-between gap-3 sm:block">
+      <PageEntranceItem className="flex items-center justify-between gap-3 sm:block">
         {header}
         {config.daily_limit > 0 && (
           <p className="shrink-0 text-dark-400 sm:mt-1">
@@ -554,10 +555,10 @@ export default function Wheel() {
             </span>
           </p>
         )}
-      </div>
+      </PageEntranceItem>
 
       {/* Wheel Section */}
-      <Card size="md" className="sm:p-6">
+      <Card variants={staggerItem} size="md" className="sm:p-6">
         <div className="grid gap-4 p-0 sm:gap-6 sm:p-8 lg:grid-cols-[1fr,280px]">
           {/* Left: Wheel and Controls */}
           <div>
@@ -773,7 +774,7 @@ export default function Wheel() {
       </Card>
 
       {/* History Section - full width, collapsible */}
-      <Card size="sm">
+      <Card variants={staggerItem} size="sm">
         <button
           onClick={() => setHistoryExpanded(!historyExpanded)}
           className="flex w-full items-center justify-between p-4"
@@ -847,6 +848,6 @@ export default function Wheel() {
           )}
         </AnimatePresence>
       </Card>
-    </div>
+    </PageEntrance>
   );
 }

@@ -23,7 +23,7 @@ export function SubscriptionFlowSkeleton({ mode, context, count, conditions }: P
       ? { ...context, promoGroupName: t('common.loading') }
       : context;
   return (
-    <SkeletonGroup className={mode === 'renewal' ? 'space-y-4' : 'space-y-6'}>
+    <SkeletonGroup className={mode === 'renewal' ? 'space-y-4' : 'flex flex-col gap-6'}>
       {showContext && (
         <div className="relative" data-sales-context-loading>
           <div className="invisible" aria-hidden="true">

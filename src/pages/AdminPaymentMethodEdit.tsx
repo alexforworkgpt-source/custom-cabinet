@@ -517,26 +517,34 @@ export default function AdminPaymentMethodEdit() {
               {config.available_sub_options.map((opt) => {
                 const enabled = subOptions[opt.id] !== false;
                 return (
-                  <button
-                    key={opt.id}
-                    onClick={() => setSubOptions((prev) => ({ ...prev, [opt.id]: !enabled }))}
-                    className={`flex w-full items-center justify-between rounded-xl border p-3 transition-all ${
-                      enabled
-                        ? 'border-accent-500/30 bg-dark-700/30 text-dark-100'
-                        : 'border-dark-800 bg-dark-900/30 text-dark-500'
-                    }`}
-                  >
-                    <span className="text-sm">{opt.name}</span>
-                    <div
-                      className={`flex h-5 w-5 items-center justify-center rounded ${
+                  <div key={opt.id}>
+                    <button
+                      type="button"
+                      aria-pressed={enabled}
+                      onClick={() => setSubOptions((prev) => ({ ...prev, [opt.id]: !enabled }))}
+                      className={`flex w-full items-center justify-between rounded-xl border p-3 transition-all ${
                         enabled
-                          ? 'bg-accent-500 text-on-accent'
-                          : 'border border-dark-600 bg-dark-700'
+                          ? 'border-accent-500/30 bg-dark-700/30 text-dark-100'
+                          : 'border-dark-800 bg-dark-900/30 text-dark-500'
                       }`}
                     >
-                      {enabled && <CheckIcon />}
-                    </div>
-                  </button>
+                      <span className="text-sm">{opt.name}</span>
+                      <div
+                        className={`flex h-5 w-5 items-center justify-center rounded ${
+                          enabled
+                            ? 'bg-accent-500 text-on-accent'
+                            : 'border border-dark-600 bg-dark-700'
+                        }`}
+                      >
+                        {enabled && <CheckIcon />}
+                      </div>
+                    </button>
+                    {opt.is_provider_enabled === false && (
+                      <p className="mt-1 text-xs text-dark-400">
+                        {t('admin.paymentMethods.providerOptionDisabled')}
+                      </p>
+                    )}
+                  </div>
                 );
               })}
             </div>

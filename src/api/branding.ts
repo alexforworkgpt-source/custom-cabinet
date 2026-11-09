@@ -116,7 +116,7 @@ const fetchLogo = async (logoUrl: string): Promise<Response> => {
 
 const loadLogoBlob = async (logoPath: string): Promise<void> => {
   try {
-    const logoUrl = `${import.meta.env.VITE_API_URL || ''}${logoPath}`;
+    const logoUrl = apiClient.getUri({ url: logoPath });
     const response = await fetchLogo(logoUrl);
     if (!response.ok) return;
 

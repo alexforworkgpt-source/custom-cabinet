@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { prepareAuthenticatedPage } from './cabinetTestHarness';
+import { waitForRestingGeometry } from './entranceProbe';
 
-test('keeps the Wheel spin action above the bottom safe area without global navigation', async ({
+test('keeps the enlarged Wheel spin action reachable above navigation and the bottom safe area', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 568 });
@@ -51,8 +52,12 @@ test('keeps the Wheel spin action above the bottom safe area without global navi
   const bottomNavigation = page.locator('nav:visible').filter({
     has: page.locator('a[href="/"]'),
   });
-  await expect(spinButton).toBeVisible();
-  await expect(bottomNavigation).toHaveCount(0);
+  await spinButton.waitFor();
+  await expect(bottomNavigation).toHaveCount(1);
+  await waitForRestingGeometry(spinButton);
+  await spinButton.evaluate((button) =>
+    button.scrollIntoView({ block: 'center', behavior: 'instant' }),
+  );
 
   const spinBox = await spinButton.boundingBox();
   if (!spinBox) {
@@ -60,6 +65,9 @@ test('keeps the Wheel spin action above the bottom safe area without global navi
   }
 
   expect(spinBox.y + spinBox.height).toBeLessThanOrEqual((page.viewportSize()?.height ?? 0) - 34);
+  const navigationBox = await bottomNavigation.boundingBox();
+  if (!navigationBox) throw new Error('The mobile navigation must remain rendered');
+  expect(spinBox.y + spinBox.height).toBeLessThanOrEqual(navigationBox.y - 8);
   expect(spinBox.height).toBeGreaterThanOrEqual(44);
 
   await spinButton.click();

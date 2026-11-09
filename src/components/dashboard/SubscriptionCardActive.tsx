@@ -8,16 +8,20 @@ import { useTheme } from '../../hooks/useTheme';
 import { useTrafficZone } from '../../hooks/useTrafficZone';
 import { formatTraffic } from '../../utils/formatTraffic';
 import { CalendarIcon, ChartIcon, GiftIcon, RefreshIcon, TariffsIcon } from '@/components/icons';
-import type { Subscription } from '../../types';
+import ManagedTrafficSummary from '../subscription/ManagedTrafficSummary';
+import { hasUnknownManagedTraffic } from '../../utils/trafficAccounting';
+import type { TrafficAccountingSummary, Subscription } from '../../types';
 import { SubscriptionActiveActions, SubscriptionPrimaryAction } from './SubscriptionActiveActions';
 
 interface SubscriptionCardActiveProps {
   subscription: Subscription;
-  trafficData: {
-    traffic_used_gb: number;
-    traffic_used_percent: number;
-    is_unlimited: boolean;
-  } | null;
+  trafficData:
+    | (TrafficAccountingSummary & {
+        traffic_used_gb: number;
+        traffic_used_percent: number;
+        is_unlimited: boolean;
+      })
+    | null;
   refreshTrafficMutation: UseMutationResult<unknown, unknown, number, unknown>;
   trafficRefreshCooldown: number;
   connectedDevices: number | undefined;
@@ -73,6 +77,7 @@ export default function SubscriptionCardActive({
   };
 
   const usedPercent = trafficData?.traffic_used_percent ?? subscription.traffic_used_percent;
+  const unknownManagedTraffic = hasUnknownManagedTraffic(subscription, trafficData);
   const usedGb = trafficData?.traffic_used_gb ?? subscription.traffic_used_gb;
   const isUnlimited = trafficData?.is_unlimited ?? subscription.traffic_limit_gb === 0;
   const zone = useTrafficZone(usedPercent);
@@ -233,8 +238,10 @@ export default function SubscriptionCardActive({
               </div>
             )}
             <div className="mt-1 break-words text-xs" style={{ color: contrast.secondary }}>
-              {formatTraffic(usedGb)} /{' '}
-              {isUnlimited ? (
+              {!unknownManagedTraffic && `${formatTraffic(usedGb)} / `}
+              {unknownManagedTraffic ? (
+                '—'
+              ) : isUnlimited ? (
                 <span className="inline-block align-baseline text-base leading-none">∞</span>
               ) : (
                 formatTraffic(subscription.traffic_limit_gb)
@@ -243,7 +250,7 @@ export default function SubscriptionCardActive({
           </div>
         </div>
 
-        {!isUnlimited && (
+        {!isUnlimited && !unknownManagedTraffic && (
           <div className="mt-2">
             <TrafficProgressBar
               usedGb={usedGb}
@@ -255,6 +262,8 @@ export default function SubscriptionCardActive({
             />
           </div>
         )}
+
+        <ManagedTrafficSummary subscription={subscription} refreshed={trafficData} />
 
         <div className="mt-3">
           <SubscriptionPrimaryAction

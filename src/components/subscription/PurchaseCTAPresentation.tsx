@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { ChevronRightIcon, TariffsIcon } from '@/components/icons';
 import { HoverBorderGradient } from '../ui/hover-border-gradient';
+import { Spinner } from '../ui/Spinner';
 
 interface Props {
   title: string;
@@ -10,6 +11,7 @@ interface Props {
   compactOnMobile?: boolean;
   geometryTitles?: string[];
   geometryHints?: string[];
+  pending?: boolean;
 }
 
 /** Read-only layout shared by the actual link and its non-interactive placeholder. */
@@ -21,6 +23,7 @@ export function PurchaseCTAPresentation({
   compactOnMobile = false,
   geometryTitles = [],
   geometryHints = [],
+  pending = false,
 }: Props) {
   const accentColor = expired ? 'rgb(var(--color-critical-500))' : 'rgb(var(--color-accent-400))';
   const geometryText = (values: string[], visible: string) =>
@@ -38,12 +41,16 @@ export function PurchaseCTAPresentation({
 
   return (
     <HoverBorderGradient
+      as={pending ? 'button' : 'div'}
+      disabled={pending}
+      aria-busy={pending || undefined}
       accentColor={accentColor}
       duration={4}
       className={cn(
         'group relative w-full cursor-pointer overflow-hidden rounded-2xl',
         reserveSpace && 'flex min-h-24 sm:min-h-20',
         compactOnMobile && 'flex min-h-[72px] sm:min-h-20',
+        pending && 'cursor-wait p-0 text-start font-normal leading-normal',
       )}
     >
       <div
@@ -88,7 +95,13 @@ export function PurchaseCTAPresentation({
             </div>
           </div>
         </div>
-        <ChevronRightIcon className="h-5 w-5 flex-shrink-0 text-dark-500 transition-transform duration-300 group-hover:translate-x-1" />
+        {pending ? (
+          <span aria-hidden="true" className="shrink-0">
+            <Spinner className="h-5 w-5 shrink-0" />
+          </span>
+        ) : (
+          <ChevronRightIcon className="h-5 w-5 flex-shrink-0 text-dark-500 transition-transform duration-300 group-hover:translate-x-1" />
+        )}
       </div>
     </HoverBorderGradient>
   );

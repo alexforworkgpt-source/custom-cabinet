@@ -9,7 +9,8 @@ import { brandingApi, type TelegramWidgetConfig, type EmailAuthEnabled } from '.
 import { useToast } from '../components/Toast';
 import { Card } from '@/components/data-display/Card';
 import { Button } from '@/components/primitives/Button';
-import { staggerContainer, staggerItem } from '@/components/motion/transitions';
+import { staggerItem } from '@/components/motion/transitions';
+import { PageEntrance } from '@/components/motion/PageEntrance';
 import ProviderIcon from '../components/ProviderIcon';
 import { getErrorDetail, saveLinkOAuthState } from '../utils/oauth';
 import { getApiErrorMessage } from '../utils/api-error';
@@ -650,13 +651,7 @@ export default function ConnectedAccounts() {
     // key: remount the container when loading resolves — stagger orchestration
     // runs once on mount, so provider cards arriving from the API later would
     // otherwise stay stuck at their initial variant (opacity 0) after a hard refresh
-    <motion.div
-      key={isLoading ? 'loading' : 'ready'}
-      className="space-y-6"
-      variants={staggerContainer}
-      initial="initial"
-      animate="animate"
-    >
+    <PageEntrance key={isLoading ? 'loading' : 'ready'} className="space-y-6">
       {/* Page title */}
       <motion.div variants={staggerItem} className="flex items-center gap-3">
         <WebBackButton to="/profile" />
@@ -879,6 +874,6 @@ export default function ConnectedAccounts() {
           </Card>
         </motion.div>
       ))}
-    </motion.div>
+    </PageEntrance>
   );
 }

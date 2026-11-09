@@ -5,6 +5,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 
+import { useAuthStore } from '../store/auth';
+import { hasTargetBotContract } from '../config/upstreamBotContract';
 import { balanceApi } from '../api/balance';
 import { useCurrency } from '../hooks/useCurrency';
 import { checkRateLimit, getRateLimitResetTime, RATE_LIMIT_KEYS } from '../utils/rateLimit';
@@ -16,7 +18,7 @@ import BentoCard from '../components/ui/BentoCard';
 import { saveTopUpPendingInfo } from '../utils/topUpStorage';
 import { getReadyTopUpClosePath, getTopUpReturnPath } from '../utils/topUpReturnPath';
 import { openPaymentUrl } from '../utils/openPaymentUrl';
-import { getApiErrorMessage } from '../utils/api-error';
+import { getLocalizedApiErrorMessage } from '../utils/api-error-display';
 import { copyToClipboard } from '@/utils/clipboard';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import { useTransientOverlayBackHandler } from '@/providers/TransientOverlayBackProvider';
@@ -103,6 +105,15 @@ export default function TopUpAmount() {
     queryFn: balanceApi.getPaymentMethods,
   });
   const method = methods?.find((m) => m.id === methodId);
+  const requiresPaymentEmail = method?.id === 'antilopay' && hasTargetBotContract();
+  const user = useAuthStore((state) => state.user);
+  const [paymentEmail, setPaymentEmail] = useState<{
+    accountId: number | undefined;
+    email: string;
+  }>();
+  const emailRef = useRef<HTMLInputElement>(null);
+  const customerEmail =
+    paymentEmail && paymentEmail.accountId === user?.id ? paymentEmail.email : (user?.email ?? '');
 
   const handleSuccess = useCallback(() => {
     navigate(getTopUpReturnPath(returnTo), { replace: true });
@@ -111,16 +122,32 @@ export default function TopUpAmount() {
   // Auto-redirect when success notification appears (e.g., balance topped up via WebSocket)
   useCloseOnSuccessNotification(handleSuccess);
 
-  const getInitialAmount = (): string => {
-    if (!initialAmountRubles || initialAmountRubles <= 0) return '';
-    const converted = convertAmount(initialAmountRubles);
-    return targetCurrency === 'IRR' || targetCurrency === 'RUB'
-      ? Math.ceil(converted).toString()
-      : converted.toFixed(2);
-  };
-
-  const initialDisplayAmount = getInitialAmount();
-  const [amount, setAmount] = useState(initialDisplayAmount);
+  const currencyDecimals = targetCurrency === 'IRR' || targetCurrency === 'RUB' ? 0 : 2;
+  const getQuickValue = (rub: number) =>
+    targetCurrency === 'IRR'
+      ? Math.round(convertAmount(rub)).toString()
+      : convertAmount(rub).toFixed(currencyDecimals);
+  const [amountChoice, setAmountChoice] = useState<
+    { kind: 'manual'; value: string } | { kind: 'quick'; rubles: number }
+  >();
+  const prefillRubles =
+    initialAmountRubles && Number.isFinite(initialAmountRubles) && initialAmountRubles > 0
+      ? initialAmountRubles
+      : undefined;
+  const exactRubles =
+    amountChoice?.kind === 'quick'
+      ? amountChoice.rubles
+      : amountChoice === undefined
+        ? prefillRubles
+        : undefined;
+  const amount =
+    amountChoice?.kind === 'manual'
+      ? amountChoice.value
+      : exactRubles === undefined
+        ? ''
+        : amountChoice === undefined && currencyDecimals === 0
+          ? Math.ceil(convertAmount(exactRubles)).toString()
+          : getQuickValue(exactRubles);
   const [error, setError] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<string | null>(
     getPreferredOptionId(method?.options),
@@ -147,12 +174,6 @@ export default function TopUpAmount() {
   useTransientOverlayBackHandler(Boolean(methodId), handleTopUpBack);
   const [copied, setCopied] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
-  // Canonical RUB amount when the user picked a quick-amount chip. The input shows a
-  // rounded display-currency value; validating/charging the canonical RUB avoids the FX
-  // round-trip that could push a min-amount chip just below the allowed minimum. Cleared
-  // as soon as the user edits the field by hand.
-  const [quickRub, setQuickRub] = useState<number | null>(null);
-
   // Once methods have loaded, redirect to method selection if this method id is unknown.
   useEffect(() => {
     if (methodId && methods && !method) {
@@ -208,7 +229,7 @@ export default function TopUpAmount() {
     },
     onError: (err: unknown) => {
       haptic.notification('error');
-      setError(getApiErrorMessage(err, t('balance.errors.invoiceFailed')));
+      setError(getLocalizedApiErrorMessage(err, t('balance.errors.invoiceFailed'), t));
       submissionLockRef.current = false;
     },
   });
@@ -229,6 +250,13 @@ export default function TopUpAmount() {
   >({
     mutationFn: (amountKopeks: number) => {
       if (!method) throw new Error('Method not loaded');
+      if (requiresPaymentEmail)
+        return balanceApi.createTopUp(
+          amountKopeks,
+          method.id,
+          selectedOption || undefined,
+          customerEmail.trim(),
+        );
       return balanceApi.createTopUp(amountKopeks, method.id, selectedOption || undefined);
     },
     onSuccess: (data) => {
@@ -239,7 +267,7 @@ export default function TopUpAmount() {
         if (method && data.payment_id) {
           const methodKey = method.id.toLowerCase().replace(/-/g, '_');
           const displayName =
-            t(`balance.paymentMethods.${methodKey}.name`, { defaultValue: '' }) || method.name;
+            method.name || t(`balance.paymentMethods.${methodKey}.name`, { defaultValue: '' });
           saveTopUpPendingInfo({
             amount_kopeks: data.amount_kopeks,
             method_id: method.id,
@@ -287,7 +315,7 @@ export default function TopUpAmount() {
       }
     },
     onError: (err: unknown) => {
-      const detail = getApiErrorMessage(err, t('balance.errors.paymentFailed'));
+      const detail = getLocalizedApiErrorMessage(err, t('balance.errors.paymentFailed'), t);
       setError(detail.includes('not yet implemented') ? t('balance.useBot') : detail);
       submissionLockRef.current = false;
     },
@@ -322,12 +350,14 @@ export default function TopUpAmount() {
 
   const hasOptions = method.options && method.options.length > 0;
   const orderedOptions = sortOptionsWithSbpFirst(method.options);
-  const minRubles = method.min_amount_kopeks / 100;
+  const optionMinimum =
+    method.options?.find((option) => option.id === selectedOption)?.min_amount_kopeks ?? 0;
+  const minRubles = Math.max(method.min_amount_kopeks, optionMinimum) / 100;
   const maxRubles = method.max_amount_kopeks / 100;
   const methodKey = method.id.toLowerCase().replace(/-/g, '_');
   const isStarsMethod = methodKey.includes('stars');
   const methodName =
-    t(`balance.paymentMethods.${methodKey}.name`, { defaultValue: '' }) || method.name;
+    method.name || t(`balance.paymentMethods.${methodKey}.name`, { defaultValue: '' });
 
   const handleSubmit = () => {
     if (submissionLockRef.current) return;
@@ -336,6 +366,11 @@ export default function TopUpAmount() {
     setQrPayload(null);
     inputRef.current?.blur();
 
+    if (requiresPaymentEmail && (!customerEmail.trim() || !emailRef.current?.checkValidity())) {
+      setError(t('balance.paymentEmailInvalid'));
+      emailRef.current?.focus();
+      return;
+    }
     if (hasOptions && !selectedOption) {
       setError(t('balance.errors.selectMethod'));
       return;
@@ -347,21 +382,9 @@ export default function TopUpAmount() {
     }
     const amountRubles = convertToRub(amountCurrency);
 
-    // Resolve the canonical RUB amount. Prefer an exact source — an unedited prefill or a
-    // quick-amount chip — over the display value, whose FX round-trip rounding (e.g. 150₽ at
-    // rate 90.66 → "1.65" USD → back to 149.59₽) could push a min selection just below the
-    // allowed minimum and block the top-up. quickRub is cleared on any manual edit, so a
-    // non-null value means the field still holds that chip's exact amount.
-    const userEditedAmount = amount.trim() !== initialDisplayAmount.trim();
-    const usingPrefill = !userEditedAmount && !!initialAmountRubles && initialAmountRubles > 0;
-    const usingQuick = quickRub !== null;
-
-    let canonicalRubles = amountRubles;
-    if (usingPrefill) {
-      canonicalRubles = initialAmountRubles as number;
-    } else if (usingQuick && quickRub !== null) {
-      canonicalRubles = quickRub;
-    } else if (targetCurrency !== 'RUB') {
+    // URL and quick amounts are already exact RUB values. A rate update only changes their display.
+    let canonicalRubles = exactRubles ?? amountRubles;
+    if (exactRubles === undefined && targetCurrency !== 'RUB') {
       // Hand-typed non-RUB amount: snap up to the minimum when it lands within one
       // display-currency rounding step below it, so typing the advertised (rounded)
       // minimum isn't rejected by FX rounding.
@@ -387,7 +410,7 @@ export default function TopUpAmount() {
     // Round for exact sources; ceil a hand-typed amount so float noise never lands sub-kopeck
     // under the chosen value.
     const amountKopeks =
-      targetCurrency === 'RUB' || usingPrefill || usingQuick
+      targetCurrency === 'RUB' || exactRubles !== undefined
         ? Math.round(canonicalRubles * 100)
         : Math.ceil(canonicalRubles * 100);
     submissionLockRef.current = true;
@@ -403,11 +426,6 @@ export default function TopUpAmount() {
       ? method.quick_amounts.map((kopeks) => kopeks / 100)
       : [100, 300, 500, 1000]
   ).filter((a) => a >= minRubles && a <= maxRubles);
-  const currencyDecimals = targetCurrency === 'IRR' || targetCurrency === 'RUB' ? 0 : 2;
-  const getQuickValue = (rub: number) =>
-    targetCurrency === 'IRR'
-      ? Math.round(convertAmount(rub)).toString()
-      : convertAmount(rub).toFixed(currencyDecimals);
   const isPending = topUpMutation.isPending || starsPaymentMutation.isPending;
   const paymentCreated = Boolean(paymentUrl);
 
@@ -485,6 +503,31 @@ export default function TopUpAmount() {
         </motion.div>
       )}
 
+      {requiresPaymentEmail && (
+        <motion.div variants={staggerItem} className="space-y-2">
+          <label htmlFor="payment-email" className="text-sm font-medium text-dark-400">
+            {t('balance.paymentEmail')}
+          </label>
+          <input
+            id="payment-email"
+            ref={emailRef}
+            className="input w-full"
+            type="email"
+            autoComplete="email"
+            required
+            maxLength={254}
+            value={customerEmail}
+            aria-describedby="payment-email-help"
+            onChange={(event) => {
+              setPaymentEmail({ accountId: user?.id, email: event.target.value });
+              setError(null);
+            }}
+          />
+          <p id="payment-email-help" className="text-sm text-dark-400">
+            {t('balance.paymentEmailHelp')}
+          </p>
+        </motion.div>
+      )}
       {/* Amount input + Submit button - inline */}
       <motion.div variants={staggerItem} className="space-y-2">
         <label htmlFor="top-up-amount" className="text-sm font-medium text-dark-400">
@@ -506,8 +549,7 @@ export default function TopUpAmount() {
               enterKeyHint="done"
               value={amount}
               onChange={(e) => {
-                setAmount(e.target.value);
-                setQuickRub(null);
+                setAmountChoice({ kind: 'manual', value: e.target.value });
               }}
               onFocus={() => setIsInputFocused(true)}
               onBlur={() => setIsInputFocused(false)}
@@ -568,8 +610,7 @@ export default function TopUpAmount() {
                 as="button"
                 type="button"
                 onClick={() => {
-                  setAmount(val);
-                  setQuickRub(a);
+                  setAmountChoice({ kind: 'quick', rubles: a });
                   inputRef.current?.blur();
                 }}
                 hover

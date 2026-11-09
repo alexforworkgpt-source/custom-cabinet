@@ -1,8 +1,10 @@
+import { hasTargetBotContract } from '../config/upstreamBotContract';
+import { usePermissionStore } from '../store/permissions';
 import { useCallback, useState, memo } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { infoPagesApi } from '../api/infoPages';
+import { infoPagesApi, legacyFaqApi } from '../api/infoPages';
 import { AdminBackButton, backTo } from '../components/admin';
 import { Toggle } from '../components/admin/Toggle';
 import { useHapticFeedback } from '../platform/hooks/useHaptic';
@@ -11,6 +13,8 @@ import { cn } from '../lib/utils';
 import { FileTextIcon, PencilIcon, PlusIcon, RefreshIcon, TrashIcon } from '@/components/icons';
 import type { InfoPageListItem, InfoPageType } from '../api/infoPages';
 import { ListRowSkeleton } from '@/components/admin/ListRowSkeleton';
+
+import { LegacyFaqList } from '../components/admin/LegacyFaqList';
 
 type FilterTab = 'all' | 'page' | 'faq';
 
@@ -164,6 +168,17 @@ export default function AdminInfoPages() {
     staleTime: 30_000,
   });
 
+  const hasPermission = usePermissionStore((state) => state.hasPermission);
+  const showLegacyFaq =
+    hasTargetBotContract() && activeFilter !== 'page' && hasPermission('info_pages:read');
+  const legacy = useQuery({
+    queryKey: ['admin', 'legacy-faq'],
+    queryFn: legacyFaqApi.getPages,
+    enabled: showLegacyFaq,
+    retry: false,
+    staleTime: 30_000,
+  });
+  const legacyPages = showLegacyFaq ? (legacy.data ?? []) : [];
   const items = pages ?? [];
 
   const deleteMutation = useMutation({
@@ -209,9 +224,9 @@ export default function AdminInfoPages() {
           <AdminBackButton />
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-dark-100">{t('admin.infoPages.title')}</h1>
-            {items.length > 0 && (
+            {items.length + legacyPages.length > 0 && (
               <span className="rounded-full bg-dark-700 px-2 py-0.5 text-xs font-medium text-dark-300">
-                {items.length}
+                {items.length + legacyPages.length}
               </span>
             )}
           </div>
@@ -229,7 +244,10 @@ export default function AdminInfoPages() {
             <span className="hidden sm:inline">{t('admin.legalPages.open')}</span>
           </button>
           <button
-            onClick={() => refetch()}
+            onClick={() => {
+              refetch();
+              if (showLegacyFaq) void legacy.refetch();
+            }}
             className="min-h-[44px] min-w-[44px] rounded-lg bg-dark-800 p-2.5 text-dark-400 transition-colors hover:text-dark-100"
             aria-label={t('common.refresh')}
           >
@@ -279,10 +297,23 @@ export default function AdminInfoPages() {
         ))}
       </div>
 
+      {showLegacyFaq && legacy.isError && (
+        <p role="alert" className="text-sm text-error-400">
+          {t('common.error')}{' '}
+          <button className="btn-ghost" onClick={() => legacy.refetch()}>
+            {t('common.retry')}
+          </button>
+        </p>
+      )}
+      {showLegacyFaq && legacy.isLoading && <ListRowSkeleton />}
+      <LegacyFaqList pages={legacyPages} canEdit={hasPermission('info_pages:edit')} />
+
       {/* Pages list */}
       {isLoading ? (
         <ListRowSkeleton />
-      ) : items.length === 0 ? (
+      ) : items.length === 0 &&
+        legacyPages.length === 0 &&
+        (!showLegacyFaq || (!legacy.isLoading && !legacy.isError)) ? (
         <div className="flex flex-col items-center rounded-xl border border-dark-700 bg-dark-800/50 p-8 text-center text-dark-400">
           <FileTextIcon className="h-6 w-6" />
           <p className="mt-2">{t('admin.infoPages.noPages')}</p>

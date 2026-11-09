@@ -33,3 +33,23 @@ export function getApiErrorMessage(err: unknown, fallback: string): string {
   }
   return fallback;
 }
+
+export function getApiErrorCode(err: unknown): string | undefined {
+  if (!axios.isAxiosError(err)) return undefined;
+  const detail: unknown = err.response?.data?.detail;
+  if (!detail || typeof detail !== 'object' || Array.isArray(detail)) return undefined;
+  const code = (detail as { code?: unknown }).code;
+  return typeof code === 'string' ? code : undefined;
+}
+
+export function isRateLimitedError(err: unknown): boolean {
+  return axios.isAxiosError(err) && err.response?.status === 429;
+}
+
+export function isUncertainPurchaseOutcome(err: unknown): boolean {
+  return (
+    axios.isAxiosError(err) &&
+    err.code !== 'ERR_CANCELED' &&
+    (!err.response || err.response.status >= 500)
+  );
+}

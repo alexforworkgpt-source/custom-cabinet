@@ -181,8 +181,22 @@ export const authApi = {
   },
 
   getMyAvatar: async (): Promise<UserAvatarResponse> => {
-    const response = await apiClient.get<UserAvatarResponse>('/cabinet/auth/me/avatar');
-    return response.data;
+    const { data } = await apiClient.get<UserAvatarResponse>('/cabinet/auth/me/avatar');
+    if (!data.photo_url) return data;
+    try {
+      const parsed = new URL(data.photo_url, 'https://cabinet.example');
+      const [scope, resource, filename] = parsed.pathname.split('/').slice(-3);
+      const mediaPath =
+        scope === 'cabinet' && resource === 'media' && filename
+          ? '/cabinet/media/' + filename
+          : null;
+      if (mediaPath) {
+        return { photo_url: apiClient.getUri({ url: `${mediaPath}${parsed.search}` }) };
+      }
+    } catch {
+      // The avatar hook handles an invalid URL with its existing fallback.
+    }
+    return data;
   },
 
   requestEmailChange: async (

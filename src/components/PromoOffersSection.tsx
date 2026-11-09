@@ -6,6 +6,7 @@ import { getApiErrorMessage } from '../utils/api-error';
 import { ClockIcon, CheckIcon } from './icons';
 import { useDestructiveConfirm } from '@/platform/hooks/useNativeDialog';
 import { Card } from '@/components/data-display/Card';
+import { staggerItem } from '@/components/motion/transitions';
 import { useDiscountAction } from '../hooks/useDiscountAction';
 import type { DiscountNavigationContext } from '../utils/discountAction';
 import { ActiveDiscountBanner, UnavailableDiscountBanner } from './promo/ActiveDiscountBanner';
@@ -213,6 +214,7 @@ export default function PromoOffersSection({ className = '', context }: PromoOff
           {availableOffers.map((offer) => (
             <Card
               key={offer.id}
+              variants={staggerItem}
               size="lg"
               className="border-warning-500/30 bg-gradient-to-br from-warning-500/5 to-transparent transition-colors hover:border-warning-500/50"
             >

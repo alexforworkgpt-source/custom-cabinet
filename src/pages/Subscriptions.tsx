@@ -13,6 +13,7 @@ import { hasLegacySubscription } from '../utils/legacySubscription';
 import SubscriptionListCard from '../components/subscription/SubscriptionListCard';
 import TrialOfferCard from '../components/dashboard/TrialOfferCard';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
 import { WebBackButton } from '@/components/WebBackButton';
 
 function EmptyState({ onBuy }: { onBuy: () => void }) {
@@ -123,9 +124,9 @@ export default function Subscriptions() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageEntrance className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
+      <PageEntranceItem className="flex items-center justify-between gap-3">
         <WebBackButton to="/" />
         <h1 className="truncate text-xl font-bold" style={{ color: g.text }}>
           {t('subscriptions.title', 'Мои подписки')}
@@ -145,7 +146,7 @@ export default function Subscriptions() {
             {t('subscriptions.buyAnother', 'Новый тариф')}
           </button>
         )}
-      </div>
+      </PageEntranceItem>
 
       {/* Есть подписки, но платной активной нет (только триал/истёкшие) —
           даём ЯВНУЮ primary-кнопку покупки: мы продаём подписки. */}
@@ -192,7 +193,7 @@ export default function Subscriptions() {
 
       {/* Empty state: показываем триал, если доступен; иначе — обычный empty */}
       {hasNoSubscriptions && !trialLoading && trialInfo?.is_available && (
-        <div className="space-y-4">
+        <PageEntranceItem className="space-y-4">
           <TrialOfferCard
             trialInfo={trialInfo}
             balanceKopeks={balanceData?.balance_kopeks ?? 0}
@@ -211,15 +212,17 @@ export default function Subscriptions() {
             <TariffsIcon className="h-5 w-5" />
             {t('subscriptions.browsePlans', 'Посмотреть тарифы и купить подписку')}
           </button>
-        </div>
+        </PageEntranceItem>
       )}
       {hasNoSubscriptions && !trialLoading && !trialInfo?.is_available && (
-        <EmptyState onBuy={() => navigate('/subscription/purchase')} />
+        <PageEntranceItem>
+          <EmptyState onBuy={() => navigate('/subscription/purchase')} />
+        </PageEntranceItem>
       )}
 
       {/* Subscription grid */}
       {subscriptions.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:[&>*:last-child:nth-child(odd)]:col-span-2">
+        <PageEntranceItem className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:[&>*:last-child:nth-child(odd)]:col-span-2">
           {subscriptions.map((sub) => (
             <SubscriptionListCard
               key={sub.id}
@@ -229,8 +232,8 @@ export default function Subscriptions() {
               }
             />
           ))}
-        </div>
+        </PageEntranceItem>
       )}
-    </div>
+    </PageEntrance>
   );
 }

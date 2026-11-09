@@ -5,6 +5,9 @@ import { pollsApi, type PollInfo, type PollQuestion } from '../api/polls';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { ClipboardIcon, GiftIcon, CheckIcon, CloseIcon } from '@/components/icons';
 import { WebBackButton } from '@/components/WebBackButton';
+import { usePageMobileNavigation } from '@/components/layout/AppShell/MobileNavigation';
+import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
+import { staggerItem } from '@/components/motion/transitions';
 import { Card } from '@/components/data-display/Card';
 import { SkeletonGroup, Skeleton } from '@/components/ui/skeleton';
 
@@ -89,38 +92,39 @@ export default function Polls() {
   const pollDialogRef = useFocusTrap<HTMLDivElement>(!!selectedPoll, {
     onEscape: handleClosePoll,
   });
+  usePageMobileNavigation(selectedPoll ? 'action' : 'section');
 
   const header = (
-    <div className="flex items-center gap-3">
+    <PageEntranceItem className="flex items-center gap-3">
       <WebBackButton to="/profile" />
       <h1 className="min-w-0 text-2xl font-bold text-dark-50 sm:text-3xl">{t('polls.title')}</h1>
-    </div>
+    </PageEntranceItem>
   );
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <PageEntrance className="space-y-6">
         {header}
         <SkeletonGroup className="space-y-6">
           <Skeleton variant="card" count={3} className="h-32" />
         </SkeletonGroup>
-      </div>
+      </PageEntrance>
     );
   }
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <PageEntrance className="space-y-6">
         {header}
         <Card size="lg" className="border-error-500/20 bg-error-500/10">
           <p className="text-error-400">{t('polls.error')}</p>
         </Card>
-      </div>
+      </PageEntrance>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <PageEntrance className="space-y-6">
       {header}
 
       {/* Poll Modal */}
@@ -218,7 +222,7 @@ export default function Polls() {
       {polls && polls.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {polls.map((poll) => (
-            <Card key={poll.id} size="md">
+            <Card key={poll.id} size="md" variants={staggerItem}>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <h3 className="break-words text-lg font-semibold">{poll.title}</h3>
@@ -256,11 +260,11 @@ export default function Polls() {
           ))}
         </div>
       ) : (
-        <Card size="lg" className="py-12 text-center">
+        <Card variants={staggerItem} size="lg" className="py-12 text-center">
           <ClipboardIcon className="h-6 w-6" />
           <p className="mt-4 text-dark-400">{t('polls.noPolls')}</p>
         </Card>
       )}
-    </div>
+    </PageEntrance>
   );
 }

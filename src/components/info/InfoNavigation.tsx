@@ -6,6 +6,9 @@ import { WebBackButton } from '@/components/WebBackButton';
 import { Button } from '@/components/primitives/Button';
 import { HubLink } from '@/components/profile/HubLink';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
+import { staggerItem } from '@/components/motion/transitions';
 
 export interface InfoSection {
   id: string;
@@ -52,8 +55,8 @@ export function InfoNavigation({
   }, [showMobileContent]);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3 md:hidden">
+    <PageEntrance className="flex flex-col gap-6">
+      <PageEntranceItem className="flex items-center gap-3 md:hidden">
         {showMobileContent ? (
           <Button
             variant="ghost"
@@ -74,9 +77,13 @@ export function InfoNavigation({
         >
           {showMobileContent ? (selected?.label ?? t('info.title')) : t('info.title')}
         </h1>
-      </div>
+      </PageEntranceItem>
 
-      <Card size="md" className={cn('md:hidden', showMobileContent && 'hidden')}>
+      <Card
+        variants={staggerItem}
+        size="md"
+        className={cn('md:hidden', showMobileContent && 'hidden')}
+      >
         <nav
           aria-label={t('info.title')}
           className="divide-y divide-dark-700 [&>a]:rounded-none [&>a:first-child]:rounded-t-xl [&>a:last-child]:rounded-b-xl"
@@ -98,7 +105,7 @@ export function InfoNavigation({
         </nav>
       </Card>
 
-      <div className="hidden items-center gap-3 md:flex">
+      <PageEntranceItem className="hidden items-center gap-3 md:flex">
         {hasSourcePage ? (
           <Button
             variant="ghost"
@@ -113,8 +120,8 @@ export function InfoNavigation({
           <WebBackButton to="/profile" />
         )}
         <h1 className="min-w-0 text-2xl font-bold text-dark-50 sm:text-3xl">{t('info.title')}</h1>
-      </div>
-      <div className="hidden flex-wrap gap-2 pb-1 md:flex">
+      </PageEntranceItem>
+      <motion.div variants={staggerItem} className="hidden flex-wrap gap-2 pb-1 md:flex">
         {sections.map((section) => (
           <button
             key={section.id}
@@ -132,8 +139,8 @@ export function InfoNavigation({
             <span className="max-w-[140px] truncate">{section.label}</span>
           </button>
         ))}
-      </div>
+      </motion.div>
       <div className={cn('min-w-0', !showMobileContent && 'hidden md:block')}>{children}</div>
-    </div>
+    </PageEntrance>
   );
 }

@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router';
+import { motion } from 'framer-motion';
+import { staggerItem } from '../../motion/transitions';
 import type { PurchaseContext } from '../../../hooks/usePurchaseContext';
 import { UsersIcon, TariffsIcon } from '../../icons';
 
@@ -15,7 +17,7 @@ export function PurchaseContextBanners({ context }: PurchaseContextBannersProps)
   if (!showTrialUpgrade && !promoGroupName) return null;
 
   return (
-    <div className="space-y-4">
+    <motion.div variants={staggerItem} className="space-y-4">
       {showTrialUpgrade && (
         <div className="rounded-[14px] border border-warning-500/30 bg-warning-500/15 p-4">
           <div className="flex items-start gap-3">
@@ -56,6 +58,6 @@ export function PurchaseContextBanners({ context }: PurchaseContextBannersProps)
           </div>
         </Link>
       )}
-    </div>
+    </motion.div>
   );
 }

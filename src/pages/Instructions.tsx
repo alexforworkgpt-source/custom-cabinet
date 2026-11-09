@@ -12,6 +12,7 @@ import {
   ShieldIcon,
 } from '@/components/icons';
 import { staggerContainer, staggerItem } from '@/components/motion/transitions';
+import { PageEntrance } from '@/components/motion/PageEntrance';
 import {
   instructionCategories,
   instructionSummaries,
@@ -31,12 +32,7 @@ export default function Instructions() {
   const isRussian = i18n.language.split('-')[0] === 'ru';
 
   return (
-    <motion.div
-      className="w-full space-y-6"
-      variants={staggerContainer}
-      initial="initial"
-      animate="animate"
-    >
+    <PageEntrance className="w-full space-y-6">
       <motion.header variants={staggerItem} className="max-w-2xl space-y-2">
         <InstructionSupportReturn fromSupport={fromSupport} />
         <div className="flex items-center gap-3">
@@ -112,6 +108,6 @@ export default function Instructions() {
           );
         })}
       </motion.div>
-    </motion.div>
+    </PageEntrance>
   );
 }

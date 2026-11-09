@@ -14,7 +14,8 @@ import type { SbpRecurringInfo, SubscriptionListItem } from '../types';
 import { Card } from '@/components/data-display/Card';
 import { Button } from '@/components/primitives/Button';
 import { BackIcon } from '@/components/icons';
-import { staggerContainer, staggerItem } from '@/components/motion/transitions';
+import { staggerItem } from '@/components/motion/transitions';
+import { PageEntrance } from '@/components/motion/PageEntrance';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
 function formatCardDate(dateStr: string): string {
@@ -169,13 +170,7 @@ export default function SavedCards() {
     // key: remount the container when loading resolves — stagger orchestration
     // runs once on mount, so cards arriving from the API later would otherwise
     // stay stuck at their initial variant (opacity 0) after a hard refresh
-    <motion.div
-      key={isLoading ? 'loading' : 'ready'}
-      className="space-y-6"
-      variants={staggerContainer}
-      initial="initial"
-      animate="animate"
-    >
+    <PageEntrance key={isLoading ? 'loading' : 'ready'} className="space-y-6">
       {/* Header */}
       <motion.div variants={staggerItem} className="flex items-center gap-3">
         <button
@@ -332,6 +327,6 @@ export default function SavedCards() {
           </Card>
         </motion.div>
       )}
-    </motion.div>
+    </PageEntrance>
   );
 }

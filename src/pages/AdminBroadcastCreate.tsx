@@ -1,3 +1,4 @@
+import { telegramCaptionLength } from '../utils/telegramCaptionLength';
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -290,8 +291,16 @@ export default function AdminBroadcastCreate() {
   };
 
   // Validate form
+  const captionLength = useMemo(
+    () => (mediaFile ? telegramCaptionLength(messageText) : 0),
+    [mediaFile, messageText],
+  );
+  const captionTooLong = Boolean(mediaFile) && captionLength > 1024;
   const isTelegramValid =
-    telegramEnabled && isAudienceComplete(telegramAudience) && messageText.trim().length > 0;
+    telegramEnabled &&
+    isAudienceComplete(telegramAudience) &&
+    messageText.trim().length > 0 &&
+    !captionTooLong;
   const isEmailValid =
     emailEnabled &&
     isAudienceComplete(emailAudience) &&
@@ -512,11 +521,19 @@ export default function AdminBroadcastCreate() {
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
               placeholder={t('admin.broadcasts.messageTextPlaceholder')}
+              aria-describedby={captionTooLong ? 'broadcast-caption-limit' : undefined}
               rows={6}
               maxLength={4000}
               className="input min-h-[150px] resize-y"
             />
-            <div className="mt-1 text-right text-xs text-dark-400">{messageText.length}/4000</div>
+            <div className="mt-1 text-right text-xs text-dark-400">
+              {mediaFile ? `${captionLength}/1024` : `${messageText.length}/4000`}
+            </div>
+            {captionTooLong && (
+              <p id="broadcast-caption-limit" role="alert" className="mt-2 text-sm text-error-400">
+                {t('admin.broadcasts.captionTooLong')}
+              </p>
+            )}
           </div>
 
           {/* Media upload */}

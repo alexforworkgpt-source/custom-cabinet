@@ -419,11 +419,11 @@ describe('classic renewal payment', () => {
   });
 
   it('keeps renewal selected after a network failure and allows a manual retry', async () => {
-    api.renewSubscription.mockRejectedValue(new Error('Network unavailable'));
+    api.renewSubscription.mockRejectedValue(new AxiosError('Network unavailable', 'ERR_NETWORK'));
     renderRenewal();
     fireEvent.click(await screen.findByRole('button', { name: /^30 subscription.days/ }));
     fireEvent.click(screen.getByRole('button', { name: 'dashboard.topUpBalance' }));
-    expect(await screen.findByText('Network unavailable')).toBeTruthy();
+    expect(await screen.findByText('subscription.purchaseOutcomeUnknown')).toBeTruthy();
     expect(
       screen.getByRole('button', { name: /^30 subscription.days/ }).getAttribute('aria-pressed'),
     ).toBe('true');

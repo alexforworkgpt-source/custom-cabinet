@@ -8,7 +8,7 @@ import { HIDDEN_UNDER_KEYBOARD, useVirtualKeyboard } from '@/hooks/useVirtualKey
 
 import { HomeIcon, TariffsIcon, ChatIcon, UserIcon } from './icons';
 import type { MobileNavItem, MobileNavKey } from './mobileNavRoutes';
-import { isNavItemActive } from './mobileNavRoutes';
+import { isMobileNavItemActive } from './mobileNavRoutes';
 
 type NavIcon = React.ComponentType<{ className?: string }>;
 
@@ -37,7 +37,12 @@ export function MobileBottomNav({
   const { haptic } = usePlatform();
   const isKeyboardOpen = useVirtualKeyboard();
 
-  const isActive = (item: MobileNavItem) => isNavItemActive(location.pathname, item);
+  const isActive = (item: MobileNavItem) =>
+    isMobileNavItemActive(
+      location.pathname,
+      item,
+      location.state?.instructionsOrigin === 'support',
+    );
 
   const handleNavClick = () => {
     haptic.impact('light');
