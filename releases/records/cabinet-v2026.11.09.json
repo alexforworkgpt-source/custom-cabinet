@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "cabinet": {
+    "tag": "cabinet-v2026.11.09",
+    "sha": "8244ab830add751ef51ba8b5943eed3691bd197f",
+    "tree_sha": "92a3d98c02be9190bb87414d9f3bdae8ae388d38"
+  },
+  "upstream": {
+    "repository": "https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git",
+    "tag": "v1.79.0",
+    "sha": "821c7b71823573a756de00418acb25118ede1c9c"
+  },
+  "bot": {
+    "repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "sha": "0fb7453a1f606c51e4ad92fa155436eb06e04081",
+    "backend_contract": "1",
+    "compatibility_evidence": "https://github.com/alexforworkgpt-source/custom-cabinet/blob/1066cdd23b885d4c29230f0dde7f68cb9c4ddd3c/releases/evidence/compatibility-bedolaga-v1820-20261109.md"
+  },
+  "changes": [
+    "Adapt selected Upstream Cabinet v1.82.0 behavior, including device pricing, managed traffic, CisPay recurring, daily renewal, Antilopay and localized errors.",
+    "Preserve Custom Cabinet navigation, layouts, profile, animations, QR, referral and subscription behavior.",
+    "Select the target API in the production build from the pinned Upstream Bot Git SHA."
+  ],
+  "limitations": [
+    {
+      "id": "classic-auto-purchase",
+      "status": "OPEN",
+      "summary": "Classic purchase still requires manual confirmation after balance top-up."
+    },
+    {
+      "id": "physical-telegram-device",
+      "status": "BLOCKED",
+      "summary": "Physical Telegram Mini App and native client coverage is unverified for this release."
+    },
+    {
+      "id": "live-provider-coverage",
+      "status": "BLOCKED",
+      "summary": "External panel app configuration and merchant sandbox checkout/recurring flows were not part of the verified browser scope."
+    },
+    {
+      "id": "unused-legacy-email-wrapper",
+      "status": "OPEN",
+      "summary": "The unused createEmail wrapper is unchanged; current UI uses the supported combined endpoint."
+    }
+  ],
+  "frontend_policy": {
+    "bscheker": "excluded",
+    "simple_mode": "excluded"
+  },
+  "owner_approved": true
+}
