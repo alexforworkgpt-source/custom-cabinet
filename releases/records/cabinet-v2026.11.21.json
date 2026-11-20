@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "cabinet": {
+    "tag": "cabinet-v2026.11.21",
+    "sha": "ac6babd19aa67d541f325038bb44d383a79d8705",
+    "tree_sha": "60ef814998e53e0051bb28443f8968f05a6f19cf"
+  },
+  "upstream": {
+    "repository": "https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git",
+    "tag": "v1.79.0",
+    "sha": "821c7b71823573a756de00418acb25118ede1c9c"
+  },
+  "bot": {
+    "repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "sha": "64beb370e6d69b23d3b651f91033f3b72e9e1f56",
+    "backend_contract": "1",
+    "compatibility_evidence": "https://github.com/alexforworkgpt-source/custom-cabinet/blob/ac6babd19aa67d541f325038bb44d383a79d8705/COMPATIBILITY.md"
+  },
+  "changes": [
+    "Adapt the v1.82.1 and v1.83.0 Cabinet contracts for manual renewal, tariff changes, traffic purchase outcomes and CisPay setup.",
+    "Show verified alternate subscription URLs in the existing dashboard, subscription list, Connection and QR flows.",
+    "Integrate HOT Pay one-time and recurring entry points with explicit consent, retry identity, and a fresh quote after a confirmed terminal outcome.",
+    "Retain Custom Cabinet navigation, profile, localizations, styling, and upstream license and source attribution."
+  ],
+  "limitations": [
+    {
+      "id": "classic-auto-purchase",
+      "status": "OPEN",
+      "summary": "Classic purchase still requires manual confirmation after balance top-up."
+    },
+    {
+      "id": "physical-telegram-device",
+      "status": "BLOCKED",
+      "summary": "Physical Telegram Mini App and native client coverage is unverified for this release."
+    },
+    {
+      "id": "live-provider-coverage",
+      "status": "BLOCKED",
+      "summary": "External panel app configuration and merchant sandbox checkout/recurring flows were not part of the verified browser scope."
+    },
+    {
+      "id": "unused-legacy-email-wrapper",
+      "status": "OPEN",
+      "summary": "The unused createEmail wrapper is unchanged; current UI uses the supported combined endpoint."
+    }
+  ],
+  "frontend_policy": {
+    "bscheker": "excluded",
+    "simple_mode": "excluded"
+  },
+  "owner_approved": true
+}
