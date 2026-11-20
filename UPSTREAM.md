@@ -1,5 +1,33 @@
 # Upstream Provenance
 
+## Local v1.83.0 adaptation — 2026-11-20
+
+Custom Cabinet retains its recorded v1.79.0 provenance. This update adapts
+Upstream Cabinet `v1.82.0..v1.83.0` from
+`72f80bad714d63213c6a91e12a55c6523e86026c` to
+`9e42f02ce562636a18cb18ab093ba6d9af219287` onto published Custom Cabinet
+`392a7aff25f58e00e78a1df888220e5f1731cce1`. The receiving code matches
+`cabinet-v2026.11.09` / `8244ab830add751ef51ba8b5943eed3691bd197f`.
+
+- `0f38b78`, `4c82fc8`, `50a2b7c` and `8d42e50` adapt the renewal request,
+  traffic purchase feedback, tariff switch eligibility and CisPay setup.
+  `3859ce6` and `7c20439` integrate these behaviors upstream.
+- `f5a4e93` adapts backup addresses in Dashboard, the subscription list,
+  Connection and QR. Simple/Lite Mode is outside the current product scope.
+- `616b700` adapts HOT Pay checkout and recurring authorization inside the
+  existing purchase, balance, gift, subscription and admin flows.
+  `b8215c1` integrates the two v1.83.0 features upstream.
+- `830c467` adjusts a specific upstream broadcast test timeout. The existing
+  Custom Cabinet broadcast test setup is retained. `5c128dc`, `e29d929`,
+  `fa6b577`, `18b4837`, `938fcd0`, `35e7d8e`, `e7b1b3a` and `9e42f02`
+  supply release metadata or CI changes. Custom Cabinet retains its own CI,
+  dependency lockfile and historical package version.
+
+The selected Upstream Bot is `v5.3.0` /
+`64beb370e6d69b23d3b651f91033f3b72e9e1f56`.
+See [local verification scope](COMPATIBILITY.md#local-v1830-adaptation--2026-11-20).
+[Cabinet diff](https://github.com/BEDOLAGA-DEV/bedolaga-cabinet/compare/72f80bad714d63213c6a91e12a55c6523e86026c...9e42f02ce562636a18cb18ab093ba6d9af219287).
+
 ## Current frontend-only continuation — 2026-10-15
 
 Owner fixed the working-baseline scope in AGENTS/CONTEXT: Custom Cabinet and its

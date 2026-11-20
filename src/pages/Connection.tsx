@@ -14,6 +14,10 @@ import { useAuthStore } from '../store/auth';
 import { getCabinetClosePath } from '../utils/userCabinetRouteState';
 import type { AppConfig, RemnawavePlatformData } from '../types';
 import InstallationGuide from '../components/connection/InstallationGuide';
+import { MirrorSelector } from '../components/connection/MirrorSelector';
+import { useSubscriptionMirror } from '../hooks/useSubscriptionMirror';
+import { mirrorAppConfig } from '../utils/subscriptionMirrors';
+import { hasBot53Contract } from '../config/upstreamBotContract';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
 export default function Connection() {
@@ -38,17 +42,17 @@ export default function Connection() {
     isLoading,
     error,
   } = useQuery<AppConfig>({
-    queryKey: ['appConfig', subId],
+    queryKey: ['appConfig', subId, user?.id],
     queryFn: () => subscriptionApi.getAppConfig(subId),
   });
   const { data: connectionLink, isLoading: isConnectionLinkLoading } = useQuery({
-    queryKey: ['connectionLink', subId],
+    queryKey: ['connection-link', subId, user?.id],
     queryFn: () => subscriptionApi.getConnectionLink(subId),
     retry: false,
     staleTime: 0,
   });
 
-  const qrConnectionUrl = useMemo(
+  const primaryConnectionUrl = useMemo(
     () =>
       resolveConnectionUrlForUi({
         mode: connectionLink?.connect_mode,
@@ -71,6 +75,16 @@ export default function Connection() {
       connectionLink?.subscription_url,
     ],
   );
+  const mirror = useSubscriptionMirror(
+    subId === undefined || connectionLink?.subscription_id === subId ? connectionLink : undefined,
+    primaryConnectionUrl,
+    appConfig?.hideLink,
+  );
+  const qrConnectionUrl = mirror.url;
+  const selectedConfig = useMemo(
+    () => mirrorAppConfig(appConfig, primaryConnectionUrl, qrConnectionUrl),
+    [appConfig, primaryConnectionUrl, qrConnectionUrl],
+  );
 
   const handleGoBack = useCallback(() => {
     if ((window.history.state?.idx ?? 0) > 0) {
@@ -86,12 +100,15 @@ export default function Connection() {
 
   const handleOpenQR = useCallback(() => {
     if (!qrConnectionUrl) return;
+    const targetId = subId ?? connectionLink?.subscription_id;
+    const refreshConnection = hasBot53Contract() && Boolean(targetId);
     navigate('/connection/qr', {
       replace: !isTelegramWebApp,
       state: {
-        url: qrConnectionUrl,
+        url: refreshConnection ? undefined : qrConnectionUrl,
+        refreshConnection,
         hideLink: connectionLink?.hide_link ?? appConfig?.hideLink ?? false,
-        subscriptionId: subId,
+        subscriptionId: targetId,
         returnPath: `${location.pathname}${location.search}`,
       },
     });
@@ -99,6 +116,7 @@ export default function Connection() {
     navigate,
     qrConnectionUrl,
     connectionLink?.hide_link,
+    connectionLink?.subscription_id,
     appConfig?.hideLink,
     isTelegramWebApp,
     subId,
@@ -108,13 +126,13 @@ export default function Connection() {
 
   const resolveUrl = useCallback(
     (url: string): string => {
-      if (!hasTemplates(url) || !appConfig?.subscriptionUrl) return url;
+      if (!hasTemplates(url) || !selectedConfig?.subscriptionUrl) return url;
       return resolveTemplate(url, {
-        subscriptionUrl: appConfig.subscriptionUrl,
+        subscriptionUrl: selectedConfig.subscriptionUrl,
         username: user?.username ?? undefined,
       });
     },
-    [appConfig?.subscriptionUrl, user?.username],
+    [selectedConfig?.subscriptionUrl, user?.username],
   );
 
   const openDeepLink = useCallback(
@@ -239,7 +257,8 @@ export default function Connection() {
 
   return (
     <InstallationGuide
-      appConfig={appConfig}
+      appConfig={selectedConfig ?? appConfig}
+      mirrorSelector={<MirrorSelector selection={mirror} />}
       onOpenDeepLink={openDeepLink}
       isTelegramWebApp={isTelegramWebApp}
       onGoBack={handleGoBack}

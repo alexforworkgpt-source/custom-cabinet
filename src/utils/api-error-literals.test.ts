@@ -35,16 +35,27 @@ async function translator(language: keyof typeof resources) {
 }
 
 it('keeps unique exact purchase mappings separate from authentication mappings', () => {
-  expect(PURCHASE_ERROR_LITERAL_KEYS).toHaveLength(189);
+  expect(PURCHASE_ERROR_LITERAL_KEYS).toHaveLength(190);
   const entries = [...PURCHASE_ERROR_LITERAL_KEYS, ...AUTH_ERROR_LITERAL_KEYS];
   expect(new Set(entries.map(([literal]) => literal)).size).toBe(entries.length);
   expect(new Set(entries.map(([, key]) => key)).size).toBe(entries.length);
 });
 
+it('localizes the explicit no-charge traffic rejection separately from a server outage', async () => {
+  const i18n = await translator('ru');
+  const rejection = error(
+    'Traffic purchase was not applied. No funds were charged. Please try again.',
+    409,
+  );
+  expect(getLocalizedApiErrorMessage(rejection, 'fallback', i18n.t)).toContain('не списаны');
+  expect(isUncertainPurchaseOutcome(rejection)).toBe(false);
+  expect(isUncertainPurchaseOutcome(error('Service unavailable', 503))).toBe(true);
+});
+
 describe.each(Object.keys(resources) as (keyof typeof resources)[])(
   'purchase API literals in %s',
   (language) => {
-    it('renders all 189 entries from real resources without changing the error', async () => {
+    it('renders all entries from real resources without changing the error', async () => {
       const i18n = await translator(language);
       for (const [literal, key] of PURCHASE_ERROR_LITERAL_KEYS) {
         expect(i18n.exists(`apiErrors.${key}`), key).toBe(true);

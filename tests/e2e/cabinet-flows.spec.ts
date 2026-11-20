@@ -1110,13 +1110,14 @@ test('groups secondary functions in Profile and gates admin/features by capabili
     },
   });
   await page.goto('/profile');
-  const accountHeading = page.getByRole('heading', { name: 'Account Information' });
+  const accountHeading = page.getByRole('heading', { name: 'Browser Test', exact: true, level: 2 });
   const preferencesHeading = page.getByRole('heading', { name: 'Preferences' });
   const moreHeading = page.getByRole('heading', { name: 'More features' });
   const informationHeading = page.getByRole('heading', { name: 'Information', exact: true });
   const managementHeading = page.getByRole('heading', { name: 'Management' });
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
   await expect(accountHeading).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Profile picture' })).toBeVisible();
   await expect(preferencesHeading).toBeVisible();
   await expect(moreHeading).toBeVisible();
   await expect(informationHeading).toBeVisible();
@@ -1150,15 +1151,16 @@ test('groups secondary functions in Profile and gates admin/features by capabili
   expect(informationBox.y).toBeLessThan(managementBox.y);
   await expect(adminLink.locator('svg')).toHaveCount(1);
 
-  const accountContent = accountHeading.locator('xpath=following-sibling::div[1]');
+  const accountsLink = page.getByRole('link', { name: /Connected Accounts/ });
+  const accountContent = accountsLink.locator('..');
   const accountRows = accountContent.locator(':scope > div:first-child > div');
-  await expect(accountRows).toHaveCount(5);
+  await expect(accountRows).toHaveCount(3);
+  await expect(accountRows.nth(0)).toContainText('Telegram ID');
+  await expect(accountRows.nth(1)).toContainText('Email');
+  await expect(accountRows.nth(2)).toContainText('Registered');
   await expect(accountRows.first()).toHaveCSS('border-top-width', '0px');
   await expect(accountRows.nth(1)).toHaveCSS('border-top-width', '1px');
   await expect(accountRows.nth(2)).toHaveCSS('border-top-width', '1px');
-  await expect(accountRows.nth(3)).toHaveCSS('border-top-width', '1px');
-  await expect(accountRows.nth(4)).toHaveCSS('border-top-width', '1px');
-  const accountsLink = accountContent.getByRole('link', { name: 'Connected Accounts' });
   await expect(accountsLink).toHaveCSS('border-top-width', '0px');
   await expect(accountsLink).toHaveCSS('margin-top', '8px');
 
@@ -1469,7 +1471,10 @@ test('reveals one subscription-sharing scenario at a time @critical-flow', async
     await expect
       .poll(async () => (await sender.boundingBox())?.y ?? Number.POSITIVE_INFINITY)
       .toBeLessThan(120);
-    await expect(mobileNavigation).toHaveCount(0);
+    await expect(mobileNavigation).toBeVisible();
+    await expect(
+      mobileNavigation.getByRole('link', { name: 'Profile', exact: true }),
+    ).toHaveAttribute('aria-current', 'page');
     await expect
       .poll(async () => {
         const headingBox = await firstStepHeading.boundingBox();
@@ -1642,10 +1647,8 @@ test('presents linked Email and missing Telegram as compact Profile rows @critic
   );
   await page.goto('/profile');
   await emailAuthLoaded;
-  const accountHeading = page.getByRole('heading', { name: 'Информация об аккаунте' });
-  const accountCard = accountHeading.locator(
-    'xpath=ancestor::div[contains(@class, "relative") and contains(@class, "overflow-hidden")][1]',
-  );
+  const connectedAccounts = page.getByRole('link', { name: /Привязанные аккаунты/ });
+  const accountCard = connectedAccounts.locator('..');
   const emailAddress = accountCard.getByText('browser-test@example.test', { exact: true });
 
   await expect(accountCard.getByRole('heading', { name: 'Авторизация по Email' })).toHaveCount(0);
@@ -1658,10 +1661,7 @@ test('presents linked Email and missing Telegram as compact Profile rows @critic
     'href',
     '/profile/accounts',
   );
-  await expect(accountCard.getByRole('link', { name: 'Привязанные аккаунты' })).toHaveAttribute(
-    'href',
-    '/profile/accounts',
-  );
+  await expect(connectedAccounts).toHaveAttribute('href', '/profile/accounts');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     await page.evaluate(() => window.innerWidth),
   );
@@ -1772,10 +1772,8 @@ test('presents linked Telegram and missing Email as compact Profile rows @critic
   });
 
   await page.goto('/profile');
-  const accountHeading = page.getByRole('heading', { name: 'Информация об аккаунте' });
-  const accountCard = accountHeading.locator(
-    'xpath=ancestor::div[contains(@class, "relative") and contains(@class, "overflow-hidden")][1]',
-  );
+  const connectedAccounts = page.getByRole('link', { name: /Привязанные аккаунты/ });
+  const accountCard = connectedAccounts.locator('..');
 
   await expect(accountCard.getByText('123456789', { exact: true })).toBeVisible();
   await expect(accountCard.getByRole('link', { name: 'Привязать Telegram ID' })).toHaveCount(0);
@@ -1977,7 +1975,15 @@ test('shows critical data errors instead of zero values @desktop-flow', async ({
 
 test('shows a load failure on an expanded subscription route @desktop-flow', async ({ page }) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
-    responses: activeResponses,
+    responses: {
+      ...activeResponses,
+      '/api/cabinet/subscription/purchase-options': {
+        sales_mode: 'classic',
+        periods: [],
+        balance_kopeks: 100_000,
+        balance_label: '1,000 RUB',
+      },
+    },
     responseStatuses: {
       '/api/cabinet/subscription': 500,
     },

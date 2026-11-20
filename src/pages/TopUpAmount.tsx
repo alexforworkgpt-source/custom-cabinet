@@ -152,6 +152,10 @@ export default function TopUpAmount() {
   const [selectedOption, setSelectedOption] = useState<string | null>(
     getPreferredOptionId(method?.options),
   );
+  const [paymentPhone, setPaymentPhone] = useState('');
+  const needsPaymentPhone = requiresPaymentPhone(method?.id, selectedOption);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Discard the previous payer's input when its scope changes.
+  useEffect(() => setPaymentPhone(''), [user?.id, method?.id, selectedOption]);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [qrPayload, setQrPayload] = useState<string | null>(null);
   const handleTopUpBack = useCallback(() => {
@@ -256,6 +260,14 @@ export default function TopUpAmount() {
           method.id,
           selectedOption || undefined,
           customerEmail.trim(),
+        );
+      if (needsPaymentPhone)
+        return balanceApi.createTopUp(
+          amountKopeks,
+          method.id,
+          selectedOption || undefined,
+          undefined,
+          paymentPhone.trim(),
         );
       return balanceApi.createTopUp(amountKopeks, method.id, selectedOption || undefined);
     },
@@ -369,6 +381,10 @@ export default function TopUpAmount() {
     if (requiresPaymentEmail && (!customerEmail.trim() || !emailRef.current?.checkValidity())) {
       setError(t('balance.paymentEmailInvalid'));
       emailRef.current?.focus();
+      return;
+    }
+    if (needsPaymentPhone && !isValidPaymentPhone(paymentPhone)) {
+      setError(t('balance.paymentPhoneInvalid'));
       return;
     }
     if (hasOptions && !selectedOption) {
@@ -503,6 +519,7 @@ export default function TopUpAmount() {
         </motion.div>
       )}
 
+      {needsPaymentPhone && <PaymentPhoneInput value={paymentPhone} onChange={setPaymentPhone} />}
       {requiresPaymentEmail && (
         <motion.div variants={staggerItem} className="space-y-2">
           <label htmlFor="payment-email" className="text-sm font-medium text-dark-400">
@@ -707,3 +724,7 @@ export default function TopUpAmount() {
     </motion.div>
   );
 }
+import PaymentPhoneInput, {
+  isValidPaymentPhone,
+  requiresPaymentPhone,
+} from '@/components/PaymentPhoneInput';

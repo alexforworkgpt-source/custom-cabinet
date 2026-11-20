@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { OTHER_CATEGORIES, SETTINGS_TREE, getMappedCategoryKeys } from './constants';
 
 // Категории настроек на бэкенде выводятся из имени ключа, поэтому каждая новая
@@ -7,6 +7,21 @@ import { OTHER_CATEGORIES, SETTINGS_TREE, getMappedCategoryKeys } from './consta
 // CABINET_ENABLED и CABINET_URL) и правовые документы из INFO_PAGES.
 
 describe('SETTINGS_TREE', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it.each([
+    ['0fb7453a1f606c51e4ad92fa155436eb06e04081', null],
+    [
+      '64beb370e6d69b23d3b651f91033f3b72e9e1f56',
+      { groupId: 'payments', subItemId: 'payments_payhot' },
+    ],
+  ])('only offers the HOT Pay settings on a supported Bot build (%s)', async (sha, expected) => {
+    vi.resetModules();
+    vi.stubEnv('VITE_UPSTREAM_BOT_SHA', sha);
+    const { findTreeLocation } = await import('./constants');
+    expect(findTreeLocation('PAYHOT')).toEqual(expected);
+  });
+
   it('содержит пункт-сборник для категорий без своего места', () => {
     const children = SETTINGS_TREE.groups.flatMap((group) => group.children);
     const catchAll = children.filter((child) => child.categories.includes(OTHER_CATEGORIES));

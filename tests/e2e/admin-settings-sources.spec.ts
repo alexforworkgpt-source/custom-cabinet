@@ -104,6 +104,23 @@ async function expectNoHorizontalOverflow(page: Page) {
     );
 }
 
+test('the HOT Pay settings entry follows the compiled Bot contract @critical-flow', async ({
+  page,
+}) => {
+  const botSha = process.env.VITE_UPSTREAM_BOT_SHA;
+  const supportsPayHot = botSha
+    ? botSha === '64beb370e6d69b23d3b651f91033f3b72e9e1f56'
+    : process.env.VITE_UPSTREAM_BOT_CONTRACT === '5.3.0';
+  await prepareAdminPage(page, ['settings:read'], {
+    '/api/cabinet/admin/settings': [],
+  });
+  await page.goto('/admin/settings');
+  await page.getByRole('button', { name: /Платежи$/ }).click();
+  const settingsEntry = page.getByRole('button', { name: 'HOT Pay', exact: true });
+  if (supportsPayHot) await expect(settingsEntry).toBeVisible();
+  else await expect(settingsEntry).toHaveCount(0);
+});
+
 test('partner form excludes env-locked values and shows the confirmed reread', async ({ page }) => {
   const confirmed = { ...partnerSettings, referral_program_enabled: false };
   const { unexpectedApiRequests } = await prepareAdminPage(

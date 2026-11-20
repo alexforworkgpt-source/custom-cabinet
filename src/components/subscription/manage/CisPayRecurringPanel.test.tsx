@@ -39,6 +39,35 @@ afterEach(() => {
   cleanup();
   vi.resetAllMocks();
 });
+it('quotes the managed subscription in place without replacing its device limit', async () => {
+  api.getCisPayRecurring.mockResolvedValue({ status: 'none' });
+  api.quoteCisPayRecurring.mockResolvedValue({
+    quote_id: 'quote',
+    amount_kopeks: 10000,
+    period_days: 17,
+  });
+  mount(
+    <CisPayRecurringPanel
+      subscriptionId={91}
+      setupTariff={{
+        id: 3,
+        custom_days_enabled: true,
+        min_days: 10,
+        max_days: 50,
+        price_per_day_kopeks: 100,
+      }}
+    />,
+  );
+  fireEvent.change(await screen.findByRole('spinbutton'), { target: { value: '17' } });
+  fireEvent.click(screen.getByText('subscription.cispayRecurring.choose'));
+  await waitFor(() =>
+    expect(api.quoteCisPayRecurring).toHaveBeenCalledWith({
+      tariff_id: 3,
+      subscription_id: 91,
+      period_days: 17,
+    }),
+  );
+});
 it('cancels existing agreement even when setup is disabled', async () => {
   api.getCisPayRecurring.mockResolvedValue({
     status: 'ACTIVE',

@@ -4,6 +4,190 @@ This document records verified source compatibility for each Custom Cabinet
 baseline and Release Bundle. Tags and commit SHAs are immutable technical
 identifiers, not public branding.
 
+## Installer database upgrade and restore preflight — 2026-11-21
+
+The comparison starts at `bundle-v2026.11.09`, with Upstream Bot `v5.2.0`
+(`0fb7453a1f606c51e4ad92fa155436eb06e04081`) and schema `0140`.
+The test target is Upstream Bot `v5.3.0`
+(`64beb370e6d69b23d3b651f91033f3b72e9e1f56`). Both official Bot image labels
+matched their Git SHAs. Local PostgreSQL 18.6 and Redis used the image
+digests specified in the previous Bundle. No host ports were published.
+[Previous Bundle](https://github.com/alexforworkgpt-source/installer/releases/tag/bundle-v2026.11.09)
+
+Installer source was read from `30cc0f3ced7c10d223d0be2fe70c515ab9b2c691`,
+Git tree `e116fea7b64c3a5e652ae13a00b3dbf484cf4e1f`. The public Installer
+archive had SHA-256
+`aef117aa364e62933a3e0bb926c5811c5922e1af6871bf4dc213ebd35da2cd2d`.
+Its seven shell files used by the test matched the immutable source tree.
+
+| Local check | Result |
+| --- | --- |
+| Installer contract tests on Ubuntu 24.04 | The checked-in dump verification, Protected Update adapter and Protected Update recovery harnesses passed. |
+| Upgrade with data | The official previous image initialized the fixture at `0140`. The candidate image ran `0140 → 0141 → 0142 → 0143`, created all four expected tables, and preserved the recorded fields of both synthetic accounts and their subscriptions. |
+| Backup and rollback | Installer's `create_verified_update_dump` created a mode-600 dump and restored it into a verification database. Its restore stage rejected an incorrect expected checksum while the candidate schema and test marker remained intact. With the correct checksum it restored `0140`, the original account and subscription fingerprint, and removed the four candidate tables and the test marker. |
+| Initialization after recovery | The previous image ran its database initialization after restore. The candidate then upgraded the same database again, passed another initialization at `0143`, and independently initialized a fresh database at `0143`. |
+
+The local database harness loaded the exact Installer dump and restore
+functions and bridged their Compose command to the PostgreSQL clients in
+the isolated container. The first run stopped at the harness's BusyBox
+`realpath`, which lacks GNU `-m`. The successful run supplied GNU
+coreutils in the disposable harness. PostgreSQL, Redis and Bot containers
+and the test network were removed after verification.
+
+This record covers the database portion of the transition with synthetic
+data and the three local Installer contract tests. Full Installer lifecycle,
+the complete Protected Update flow including runtime, proxy and recovery,
+and installation of a new public Release Bundle still require the designated
+Ubuntu 24.04 test host and the applicable release authorization. Evidence
+for handling writes made after a production cutover is outside this run.
+
+## Reproducible local Release Bundle build — 2026-11-20
+
+The isolated source snapshot has Git tree
+`3714cf0ec245d47b638c9e5d0ef5f77a348d7ef2` over Custom Cabinet
+`392a7aff25f58e00e78a1df888220e5f1731cce1`. This record was added
+after the snapshot. The actual index and HEAD were preserved. The owner's
+modified and untracked paths had zero overlap with the 70 candidate paths
+at the time of the check.
+
+The local build used the Dockerfile and lockfile from the snapshot, Installer
+`30cc0f3ced7c10d223d0be2fe70c515ab9b2c691` packaging scripts, and the
+Node and Nginx digests from the published Bundle's provenance. It targeted
+Linux/amd64 and Bot `64beb370e6d69b23d3b651f91033f3b72e9e1f56` with the
+standard Release Bundle build arguments. The release workflow verifies an
+immutable commit. The local preflight starts from an exported Git tree.
+[Previous Bundle provenance](https://github.com/alexforworkgpt-source/installer/releases/download/bundle-v2026.11.09/release-provenance.json)
+
+| Check | Local result |
+| --- | --- |
+| Independent Docker builds | Both `--no-cache` runs executed `npm ci` and Vite. All 291 extracted files, including Nginx's `50x.html`, matched byte for byte. The SHA-256 of the sorted per-file manifest is `31d446e46dc5ffcfd9a70f847079de720f42b8682f59ba214b164ab38f7a40ba`. |
+| Installer Ubuntu packaging | Both archives on Ubuntu 24.04 with Python 3.12.3 and zlib 1.3 matched byte for byte and passed the Installer archive verifier. Size 15,714,137 bytes. SHA-256 `42d1d41c4a5b5e6ace96fb4c9c037abcb5ec51434161a19beb75534474f2cb8c`. |
+| Packaging control | Repackaging the verified public `bundle-v2026.11.09` archive on Ubuntu reproduced its published SHA-256 `4c57b257130c90142f2e62ee9e56f928168ea03e3c3d5f6723e73b97fb836580`. Windows Python 3.14 uses zlib-ng and produced different gzip bytes for identical uncompressed tar contents. Use the Ubuntu archive for future comparison with the release workflow. |
+| Static container startup | The exact built Nginx image became healthy on loopback. `/`, direct `/subscription` and the entry JavaScript matched the extracted artifact. The HTML requires revalidation and the asset has a one-year cache lifetime. |
+| Source review | `git diff --check` passed for the exported snapshot. A scan of the added frontend and test lines found zero matches for the selected credential patterns. The license, Dockerfile, lockfile and workflow definitions retained their baseline contents. |
+
+### Full compiled-browser matrix
+
+Playwright exercised the 291 extracted Docker files through Vite preview in
+Chromium at widths 320, 375, 768, 1024 and 1280. The run used controlled API
+responses and kept the standard project selection and assertions. The
+2,222-case run reported 2,166 first-pass cases, 4 passed on retry, 35 skipped,
+and 17 failures.
+
+Four admin subscription-deletion tests had no response configured for the
+CisPay and HOT Pay agreement-status GETs. Both exact routes now return
+`{ status: 'none' }` in that fixture, matching the Bot response for a
+subscription without an agreement. All seven cases in
+[the admin browser spec](tests/e2e/admin-upstream-flows.spec.ts) passed on
+the same Docker-extracted artifact and separately on the verified November
+9 archive. Only test fixture data changed. The strict unexpected-request
+assertions and application source were preserved.
+
+The 13 other failures reproduced with the same assertions on the published
+November 9 Cabinet. They cover Profile account rows (6), the mobile sharing
+instruction (1), Gift navigation (5) and an unmocked purchase-options GET
+on an expanded subscription load-error screen (1). The four cases that
+passed on retry passed three additional consecutive runs each on the
+candidate with one worker. The full matrix retains its failed status.
+At that checkpoint, test inputs differed from the build snapshot only by the admin fixture.
+After this fixture update, the changes span 71 paths with zero overlap with
+the owner's modified or untracked paths.
+
+### Browser matrix after updating existing expectations
+
+The 13 baseline failures were addressed in the two browser specs. The
+Profile checks now use the documented identity header and keep the
+account-row, spacing and link assertions. The sharing and Gift checks
+verify the Profile destination in the mobile navigation. Gift also checks
+that the payment choice and the send button clear the navigation and safe
+area at 320×568. The subscription load-error fixture returns purchase
+options independently of the subscription response that still returns 500.
+The assertions continue to reject unexpected API requests.
+[Profile decision](docs/profile-avatar-20261028.md) ·
+[Mobile navigation decision](docs/adr/0005-mobile-section-navigation.md)
+
+All 14 affected browser cases passed without retries on both the extracted
+Docker candidate and the verified November 9 archive. The full five-width
+candidate rerun exited 0. Of 2,222 cases, 2,186 passed on the first attempt,
+1 passed on retry, and 35 were skipped by the existing scope guards.
+The retry was a mobile-375 subscription-overview case. Its initial trace
+recorded a 30-second reload timeout with a pending Google Fonts CSS request.
+A focused three-run check alongside the full matrix recorded two passes
+and one timeout waiting for the overview. A fresh single-worker check after
+the matrix passed three consecutive runs on each of the two artifacts.
+Browser settings, timeouts and retries remained the same as the preceding
+full run.
+
+The browser inputs are recorded in tree
+`2807cd9e843b4aa9303c11e70f83ed3ed398d701` before this evidence entry.
+The local Ubuntu archive still has SHA-256
+`42d1d41c4a5b5e6ace96fb4c9c037abcb5ec51434161a19beb75534474f2cb8c`.
+The follow-up changed only the two browser specs and this evidence record.
+
+The Bot SHA differs from the published `bundle-v2026.11.09`. An authorized
+release needs the applicable Installer lifecycle and transition evidence,
+successful publication workflows and smoke installation of the new public
+Release Bundle. Public artifact identity remains unverified for this candidate.
+
+## HOT Pay recovery and native browser follow-up — 2026-11-20
+
+When the response to a confirmed HOT Pay setup is lost, changing the period
+keeps a recovery action for the original checkout. The action sends the same
+`quote_id` and `checkout_id` and clears the stale transport error when the
+server responds. An explicit `quote_expired` requires a fresh quote and
+separate consent. This scope concerns a checkout in the still-open form.
+
+The follow-up build pins the same Bot `64beb370e6d69b23d3b651f91033f3b72e9e1f56`.
+It contains 290 files. SHA-256 of the sorted per-file manifest is
+`3313bc7ab56fcaf85d157401fb9b5184900e2ed8b84980410fd29738d67b9f62`.
+The build and TypeScript checks passed on Node 24.15.0. The expanded
+Playwright run passed 536 cases on this exact manifest at widths 320, 375,
+768, 1024 and 1280. The final rebuild with version-gated HOT Pay settings
+produced the same manifest and passed four focused Chromium cases for the
+settings menu and checkout recovery. The v5.2.0-targeted regression run
+passed 46 existing browser cases with four configured skips. A build with
+the final menu guard also passed two focused cases with the entry hidden for
+v5.2.0. HOT Pay checkout cases used test responses.
+The final `npm test -- --maxWorkers=1` run passed 1,815 tests in 230 files.
+The preceding default-worker run, started alongside the native smoke,
+had three five-second timeouts in the existing broadcast and loading
+tests. The serial run kept the same timeout and passed all three.
+`npm run check` and `git diff --check` passed.
+
+Chromium used this compiled build with a loopback relay to the unchanged Bot
+image on an internal Docker network, a fresh PostgreSQL 18 database and
+Redis. Two synthetic accounts signed in through the native email route.
+The owner selected the API-provided backup URL and opened its QR.
+An actual zero-balance renewal returned 402 and the client opened top-up
+with the existing return route. The native HOT Pay agreement and top-up
+methods indicated that the provider was disabled. The second account used
+the same browser context, retained its own primary address and could not
+retrieve the first account's URL. The fixture's startup and health wrapper
+hosted the native Cabinet router without starting Telegram polling.
+The local containers and internal network were removed.
+
+## Local v1.83.0 adaptation — 2026-11-20
+
+Candidate source based on `392a7aff25f58e00e78a1df888220e5f1731cce1`, in an
+isolated working copy. The build selects Upstream Bot `v5.3.0` /
+`64beb370e6d69b23d3b651f91033f3b72e9e1f56`. The original local checkout remains
+the owner's active workspace. The published baseline contains all paths from
+the local checkout's committed `src/` and `tests/`, and matches its
+`.github/` and `scripts/` trees.
+
+| Evidence | Result and scope |
+| --- | --- |
+| Build and TypeScript | PASS on Node 24.15.0. Production build contains 290 files. SHA-256 of the sorted per-file SHA-256 manifest is `7834115fc3b0291290c7c922bbbdcc69a50b1c6bad691faf12c9c001b5de9435`. |
+| Unit and static checks | `npm test` passed 1,811 tests in 230 files before the final admin key and app-list guard adjustments. The focused renewal, QR, mirror and HOT Pay suite then passed 65 tests in 6 files. `npm run check` and `git diff --check` passed. |
+| Compiled browser | 267 PASS on the final build in Chromium at widths 320, 375, 768, 1024 and 1280. Local API fixtures cover the two renewal attempts with one UUID, QR after a link refresh, existing HAPP/hidden links, management, promos, mobile navigation, balance, and purchase CTA. Includes light and RTL navigation coverage. Optional events and fallback navigation requests can log local proxy errors in the mock run. |
+| Exact Bot HTTP contract | PASS on the unchanged GHCR image `sha256:5b2eeee7ec2e742dbd1b20d66e5a6fb2ee76b3bb6b45d2d2def9644c340b9b7d`. Seven anonymous requests returned 401. In a separate local internal network and fresh disposable PostgreSQL 18 schema 0143, the native router and native JWT returned an owned mirror (200), rejected another account (404), rejected an old renewal (422) and stale term (409), and reported disabled HOT Pay status/options. Temporary containers and network were removed. |
+| Existing 28-scenario API mock | 28 PASS on the final compiled build, plus the existing renewal server/group check. A temporary launcher selected scenarios inside the collapsed Mock Mode panel and reused the candidate test harness. The owner's helper files were preserved. |
+
+Coverage is limited to the local candidate, the compiled-browser mocks and
+the cited native requests. Provider settlement and callbacks, physical
+Telegram, operator mirror domains, the production transition and public
+Release Bundle gates remain unverified for this candidate.
+
 ## Актуальная граница задачи — решение владельца 2026-10-15
 
 **Upstream Bot принимаем как рабочую основу.** Текущий план — exact Custom Cabinet

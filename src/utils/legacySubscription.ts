@@ -1,4 +1,5 @@
 import type { Subscription } from '@/types';
+import { hasRenewalOperationContract } from '../config/upstreamBotContract';
 
 /**
  * A legacy subscription is identified only by the explicit Bot contract.
@@ -11,9 +12,13 @@ export function needsTariff(
 }
 
 export function canOpenTariffSwitch(subscription: Subscription | null | undefined): boolean {
+  const limited =
+    subscription?.is_limited &&
+    (!hasRenewalOperationContract() || Date.parse(subscription.end_date) > Date.now());
   return Boolean(
     subscription?.tariff_id &&
-      (subscription.is_active || subscription.is_limited) &&
+      (subscription.is_active || limited) &&
+      subscription.status !== 'disabled' &&
       !subscription.is_trial &&
       !needsTariff(subscription),
   );

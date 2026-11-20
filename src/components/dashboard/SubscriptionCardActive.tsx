@@ -27,6 +27,7 @@ interface SubscriptionCardActiveProps {
   connectedDevices: number | undefined;
   devicesError: boolean;
   connectionUrl?: string | null;
+  connectionSelector?: React.ReactNode;
   connectionLinkLoading?: boolean;
   connectionUrlCopied?: boolean;
   onCopyConnectionUrl?: () => void;
@@ -47,6 +48,7 @@ export default function SubscriptionCardActive({
   connectedDevices,
   devicesError,
   connectionUrl,
+  connectionSelector,
   connectionLinkLoading,
   connectionUrlCopied = false,
   onCopyConnectionUrl,
@@ -279,6 +281,7 @@ export default function SubscriptionCardActive({
         connectedDevices={connectedDevices}
         devicesError={devicesError}
         connectionUrl={connectionUrl}
+        connectionSelector={connectionSelector}
         connectionLinkLoading={connectionLinkLoading}
         connectionUrlCopied={connectionUrlCopied}
         onCopyConnectionUrl={onCopyConnectionUrl}

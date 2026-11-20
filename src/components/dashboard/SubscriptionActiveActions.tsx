@@ -15,6 +15,7 @@ interface SubscriptionActiveActionsProps {
   connectedDevices: number | undefined;
   devicesError: boolean;
   connectionUrl?: string | null;
+  connectionSelector?: React.ReactNode;
   connectionLinkLoading?: boolean;
   connectionUrlCopied?: boolean;
   onCopyConnectionUrl?: () => void;
@@ -33,6 +34,7 @@ export function SubscriptionActiveActions({
   connectedDevices,
   devicesError,
   connectionUrl,
+  connectionSelector,
   connectionLinkLoading = false,
   connectionUrlCopied = false,
   onCopyConnectionUrl,
@@ -130,6 +132,7 @@ export function SubscriptionActiveActions({
         </div>
       )}
 
+      {connectionSelector}
       {showManagementAction && (
         <SubscriptionPrimaryAction
           subscription={subscription}

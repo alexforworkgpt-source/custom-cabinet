@@ -1,4 +1,4 @@
-import { hasTargetBotContract } from '../../config/upstreamBotContract';
+import { hasBot53Contract, hasTargetBotContract } from '../../config/upstreamBotContract';
 import { type ThemeColors, DEFAULT_THEME_COLORS } from '../../types/theme';
 
 // Tree sidebar types
@@ -64,6 +64,7 @@ export const SETTINGS_TREE: SettingsTreeConfig = {
         { id: 'payments_antilopay', categories: ['ANTILOPAY'] },
         { id: 'payments_jupiter', categories: ['JUPITER'] },
         { id: 'payments_cispay', categories: ['CISPAY'] },
+        ...(hasBot53Contract() ? [{ id: 'payments_payhot', categories: ['PAYHOT'] }] : []),
         { id: 'payments_cashera', categories: ['CASHERA'] },
         { id: 'payments_tabpay', categories: ['TABPAY'] },
         { id: 'payments_paritypay', categories: ['PARITYPAY'] },

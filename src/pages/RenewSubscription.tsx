@@ -3,12 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 import { subscriptionApi } from '../api/subscription';
-import { hasTargetBotContract } from '../config/upstreamBotContract';
+import { hasRenewalOperationContract, hasTargetBotContract } from '../config/upstreamBotContract';
 import { useCurrency } from '../hooks/useCurrency';
 import { DailyPausePanel } from '../components/subscription/manage/DailyPausePanel';
 import { canOpenTariffSwitch, needsTariff, tariffSelectionPath } from '../utils/legacySubscription';
 import { getInsufficientBalanceError, getSavedCartTopUpPath } from '../utils/subscriptionHelpers';
 import { isUncertainPurchaseOutcome } from '../utils/api-error';
+import { isValidRenewalSnapshot, type RenewalSnapshot } from '../utils/renewalOperation';
 import { getLocalizedApiErrorMessage } from '../utils/api-error-display';
 import { formatDateOrRaw } from '../utils/format';
 import { previewRenewalEndDate } from '../utils/renewalPreview';
@@ -33,6 +34,7 @@ export default function RenewSubscription() {
   const { t, i18n } = useTranslation();
   const { formatWithCurrency } = useCurrency();
   const targetContract = hasTargetBotContract();
+  const usesRenewalOperation = hasRenewalOperationContract();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -40,6 +42,7 @@ export default function RenewSubscription() {
   const userId = useAuthStore((state) => state.user?.id);
   const [error, setError] = useState<string | null>(null);
   const renewalInFlightRef = useRef(false);
+  type Confirmation = { periodDays: number; subscriptionId?: number; snapshot?: RenewalSnapshot };
 
   const subscriptionQuery = useQuery({
     queryKey: ['subscription', subId],
@@ -91,7 +94,11 @@ export default function RenewSubscription() {
       : 0;
 
   const renewMutation = useMutation({
-    mutationFn: (periodDays: number) => subscriptionApi.renewSubscription(periodDays, subId),
+    retry: false,
+    mutationFn: ({ periodDays, subscriptionId: id, snapshot }: Confirmation) =>
+      snapshot
+        ? subscriptionApi.renewSubscription(periodDays, id, snapshot)
+        : subscriptionApi.renewSubscription(periodDays, id),
     onSuccess: () => {
       clearSelection();
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
@@ -105,6 +112,21 @@ export default function RenewSubscription() {
     onError: (err: unknown) => {
       if (isUncertainPurchaseOutcome(err)) {
         setError(t('subscription.purchaseOutcomeUnknown'));
+        return;
+      }
+      const response = (err as { response?: { status?: number; data?: { detail?: unknown } } })
+        ?.response;
+      if (
+        usesRenewalOperation &&
+        response?.status === 409 &&
+        (response.data?.detail === 'Subscription changed; reload before renewing' ||
+          response.data?.detail === 'Renewal operation parameters changed')
+      ) {
+        clearSelection();
+        setError(t('subscription.renewSelectionReset'));
+        void subscriptionQuery.refetch();
+        void optionsQuery.refetch();
+        void purchaseQuery.refetch();
         return;
       }
       if (isClassic) {
@@ -139,19 +161,41 @@ export default function RenewSubscription() {
       renewalInFlightRef.current = false;
     },
   });
+  const lastConfirmation = renewMutation.variables;
+  const retryConfirmation =
+    lastConfirmation?.snapshot &&
+    lastConfirmation.snapshot.userId === userId &&
+    lastConfirmation.subscriptionId === subId &&
+    isUncertainPurchaseOutcome(renewMutation.error)
+      ? lastConfirmation
+      : null;
+  const snapshot = subscription ? { userId, endDate: subscription.end_date } : undefined;
+  const validTarget = subscription?.id === subId && isValidRenewalSnapshot(snapshot);
   const handleRenew = () => {
     if (
       renewalInFlightRef.current ||
       !ready ||
       !subscription ||
       !selectedOption ||
-      balanceKopeks === undefined
+      balanceKopeks === undefined ||
+      retryConfirmation ||
+      (usesRenewalOperation && !validTarget)
     )
       return;
     renewalInFlightRef.current = true;
     impact('medium');
     setError(null);
-    renewMutation.mutate(selectedOption.period_days);
+    renewMutation.mutate({
+      periodDays: selectedOption.period_days,
+      subscriptionId: subId,
+      snapshot: usesRenewalOperation ? snapshot : undefined,
+    });
+  };
+  const retryRenewal = () => {
+    if (!retryConfirmation || renewalInFlightRef.current) return;
+    renewalInFlightRef.current = true;
+    setError(null);
+    renewMutation.mutate(retryConfirmation);
   };
 
   if (!subId || !Number.isInteger(subId) || subId < 1)
@@ -280,7 +324,9 @@ export default function RenewSubscription() {
               option={selectedOption}
               balanceKopeks={balanceKopeks}
               isClassic={isClassic}
-              disabled={!ready}
+              disabled={
+                !ready || Boolean(retryConfirmation) || (usesRenewalOperation && !validTarget)
+              }
               pending={renewMutation.isPending}
               onSubmit={handleRenew}
             >
@@ -292,20 +338,25 @@ export default function RenewSubscription() {
               <RenewalOptions
                 options={optionsQuery.data ?? []}
                 selectedPeriod={selectedPeriod}
-                disabled={!ready || renewMutation.isPending}
+                disabled={!ready || renewMutation.isPending || Boolean(retryConfirmation)}
                 onSelect={(period) => {
                   selectPeriod(period);
                   setError(null);
                   impact('light');
                 }}
               />
-              {missingAmount && !isClassic && (
+              {missingAmount && !isClassic && !retryConfirmation && (
                 <InsufficientBalancePrompt missingAmountKopeks={Number(missingAmount)} compact />
               )}
-              {error && !missingAmount && (
+              {error && (!missingAmount || retryConfirmation) && (
                 <p role="alert" className="rounded-xl bg-error-400/10 p-3 text-sm text-error-400">
                   {error}
                 </p>
+              )}
+              {retryConfirmation && (
+                <button type="button" className="btn-secondary" onClick={retryRenewal}>
+                  {t('common.retry')}
+                </button>
               )}
             </RenewalSummary>
           </PageEntranceItem>

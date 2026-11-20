@@ -13,6 +13,7 @@ import { pickBestValue } from '../../../utils/bestValue';
 import { TariffDeviceSelector } from './TariffDeviceSelector';
 import { useRecurringTariffQuote } from './useRecurringTariffQuote';
 import { CisPayPurchaseButton } from './CisPayPurchaseButton';
+import { PayHotPurchaseButton } from './PayHotPurchaseButton';
 import { useTariffDeviceQuote } from './useTariffDeviceQuote';
 import { Skeleton } from '../../ui/skeleton';
 import { customDaysPrice } from './customDaysPrice';
@@ -50,6 +51,8 @@ export interface TariffPurchaseFormProps {
   casheraPurchaseEnabled?: boolean;
   cispayPurchaseEnabled?: boolean;
   cispaySubscriptionId?: number;
+  payhotMethods?: ('card' | 'sbp')[];
+  payhotSubscriptionId?: number;
   onBack: () => void;
 }
 
@@ -62,6 +65,8 @@ export function TariffPurchaseForm({
   casheraPurchaseEnabled = false,
   cispayPurchaseEnabled = false,
   cispaySubscriptionId = subscriptionId,
+  payhotMethods,
+  payhotSubscriptionId,
   onBack,
 }: TariffPurchaseFormProps) {
   const { t } = useTranslation();
@@ -387,6 +392,26 @@ export function TariffPurchaseForm({
     />
   );
 
+  const payHotButton = Boolean(payhotMethods?.length) && !useCustomTraffic && (
+    <PayHotPurchaseButton
+      tariffId={tariff.id}
+      subscriptionId={payhotSubscriptionId}
+      methods={payhotMethods ?? []}
+      periodDays={isDaily ? 1 : useCustomDays ? customDays : selectedTariffPeriod?.days}
+      deviceLimit={checkout.selected}
+      displayedDeviceLimit={checkout.selected ?? checkout.quote?.device_selection.effective_limit}
+      disabled={checkout.blocked || checkout.uncertain || purchaseMutation.isPending}
+      claimPurchase={() => {
+        if (purchaseInFlightRef.current) return false;
+        purchaseInFlightRef.current = true;
+        return true;
+      }}
+      releasePurchase={() => {
+        purchaseInFlightRef.current = false;
+      }}
+    />
+  );
+
   // Smooth scroll the form into view when first mounted.
   useEffect(() => {
     if (ref.current) {
@@ -525,6 +550,7 @@ export function TariffPurchaseForm({
                 {sbpPurchaseButton}
                 {lavaPurchaseButton}
                 {casheraPurchaseButton}
+                {payHotButton}
 
                 {purchaseMutation.isError && (
                   <div className="mt-3 text-center text-sm text-error-400">
@@ -951,6 +977,7 @@ export function TariffPurchaseForm({
                     {lavaPurchaseButton}
                     {casheraPurchaseButton}
                     {cisPayButton}
+                    {payHotButton}
                   </>
                 );
               })()}

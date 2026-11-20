@@ -1,4 +1,10 @@
 import apiClient from './client';
+import { hasRenewalOperationContract } from '../config/upstreamBotContract';
+import {
+  isValidRenewalSnapshot,
+  renewalOperationId,
+  type RenewalSnapshot,
+} from '../utils/renewalOperation';
 import { getYandexCid } from '../utils/yandexCid';
 
 export interface TariffDeviceQuote {
@@ -78,7 +84,76 @@ export interface CisPayRecurringInfo {
   next_charge_at?: string | null;
 }
 
+export interface PayHotQuote {
+  quote_id: string;
+  expires_at: string;
+  amount_kopeks: number;
+  period_days: number;
+  payment_method: 'card' | 'sbp';
+  source_subscription_id: number | null;
+  first_payment_required: true;
+}
+export interface PayHotRecurringInfo {
+  id?: number;
+  status: string;
+  subscription_id?: number;
+  redirect_url?: string | null;
+  amount_kopeks?: number;
+  period_days?: number;
+  payment_method?: 'card' | 'sbp';
+  next_charge_at?: string | null;
+  reason?: string | null;
+  enabled?: boolean;
+  methods?: ('card' | 'sbp')[];
+}
+
 export const subscriptionApi = {
+  quotePayHotRecurring: async (body: {
+    tariff_id: number | null;
+    period_days: number;
+    device_limit?: number;
+    subscription_id?: number;
+    payment_method: 'card' | 'sbp';
+  }): Promise<PayHotQuote> => {
+    const { data } = await apiClient.post('/cabinet/subscription/payhot-recurrent/quote', body);
+    return data;
+  },
+  purchasePayHotRecurring: async (
+    quote_id: string,
+    checkout_id: string,
+  ): Promise<PayHotRecurringInfo> => {
+    const { data } = await apiClient.post('/cabinet/subscription/payhot-recurrent/purchase', {
+      quote_id,
+      checkout_id,
+    });
+    return data;
+  },
+  getPayHotRecurring: async (
+    subscription_id: number,
+    adminUserId?: number,
+  ): Promise<PayHotRecurringInfo> => {
+    const { data } = await apiClient.get(
+      adminUserId
+        ? `/cabinet/admin/users/${adminUserId}/subscriptions/${subscription_id}/payhot-recurring`
+        : '/cabinet/subscription/payhot-recurrent',
+      { params: { subscription_id } },
+    );
+    return data;
+  },
+  cancelPayHotRecurring: async (
+    subscription_id: number,
+    adminUserId?: number,
+  ): Promise<PayHotRecurringInfo> => {
+    const { data } = await apiClient.post(
+      adminUserId
+        ? `/cabinet/admin/users/${adminUserId}/subscriptions/${subscription_id}/payhot-recurring/cancel`
+        : '/cabinet/subscription/payhot-recurrent/cancel',
+      null,
+      { params: { subscription_id } },
+    );
+    return data;
+  },
+
   quoteCisPayRecurring: async (body: {
     tariff_id: number;
     period_days: number;
@@ -165,17 +240,34 @@ export const subscriptionApi = {
   renewSubscription: async (
     periodDays: number,
     subscriptionId?: number,
+    snapshot?: RenewalSnapshot,
   ): Promise<{
     message: string;
     new_end_date: string;
     amount_paid_kopeks: number;
   }> => {
+    const body = { period_days: periodDays, yandex_cid: getYandexCid() || undefined };
+    if (hasRenewalOperationContract()) {
+      if (!subscriptionId || !isValidRenewalSnapshot(snapshot)) {
+        throw new Error('Renewal requires a subscription snapshot');
+      }
+      const response = await apiClient.post(
+        '/cabinet/subscription/renew',
+        ...bodyWithSubId(
+          {
+            ...body,
+            subscription_id: subscriptionId,
+            operation_id: renewalOperationId(subscriptionId, periodDays, snapshot),
+            expected_end_date: snapshot.endDate,
+          },
+          subscriptionId,
+        ),
+      );
+      return response.data;
+    }
     const response = await apiClient.post(
       '/cabinet/subscription/renew',
-      ...bodyWithSubId(
-        { period_days: periodDays, yandex_cid: getYandexCid() || undefined },
-        subscriptionId,
-      ),
+      ...bodyWithSubId(body, subscriptionId),
     );
     return response.data;
   },
@@ -755,6 +847,8 @@ export const subscriptionApi = {
   getConnectionLink: async (
     subscriptionId?: number,
   ): Promise<{
+    subscription_id?: number;
+    mirrors?: { id: string; label: string; url: string }[];
     subscription_url: string | null;
     display_link: string | null;
     happ_redirect_link: string | null;

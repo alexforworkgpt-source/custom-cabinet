@@ -1,5 +1,6 @@
 import { CisPayRecurringPanel } from '@/components/subscription/manage/CisPayRecurringPanel';
-import { hasTargetBotContract } from '@/config/upstreamBotContract';
+import { PayHotRecurringPanel } from '@/components/subscription/manage/PayHotRecurringPanel';
+import { hasBot53Contract, hasTargetBotContract } from '@/config/upstreamBotContract';
 import { useTranslation } from 'react-i18next';
 import {
   BackIcon,
@@ -338,6 +339,14 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
           {hasTargetBotContract() && props.adminUserId && hasPermission('users:read') && (
             <CisPayRecurringPanel
               key={selectedSub.id}
+              subscriptionId={selectedSub.id}
+              adminUserId={props.adminUserId}
+              canManage={hasPermission('users:subscription')}
+            />
+          )}
+          {hasBot53Contract() && props.adminUserId && hasPermission('users:read') && (
+            <PayHotRecurringPanel
+              key={`payhot-${selectedSub.id}`}
               subscriptionId={selectedSub.id}
               adminUserId={props.adminUserId}
               canManage={hasPermission('users:subscription')}

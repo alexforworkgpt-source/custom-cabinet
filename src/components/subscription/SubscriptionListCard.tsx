@@ -13,6 +13,8 @@ import {
 } from '@/components/icons';
 import type { SubscriptionListItem } from '../../types';
 import { needsTariff, tariffSelectionPath } from '../../utils/legacySubscription';
+import { hasBot53Contract } from '@/config/upstreamBotContract';
+import { SubscriptionMirrorSelector } from '../connection/SubscriptionMirrorSelector';
 
 function formatDate(iso: string | null, locale?: string): string {
   if (!iso) return '—';
@@ -206,6 +208,9 @@ export default function SubscriptionListCard({
         </div>
       </button>
 
+      {hasBot53Contract() && isActive && (
+        <SubscriptionMirrorSelector subscriptionId={subscription.id} />
+      )}
       {needsTariff(subscription) && (
         <Link
           to={tariffSelectionPath(subscription.id)}

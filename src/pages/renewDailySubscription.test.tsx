@@ -20,7 +20,10 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 
-vi.mock('@/config/upstreamBotContract', () => ({ hasTargetBotContract: () => true }));
+vi.mock('@/config/upstreamBotContract', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/config/upstreamBotContract')>()),
+  hasTargetBotContract: () => true,
+}));
 
 const state = { requiresTariff: false, status: 'expired', paused: false };
 const togglePause = vi.fn().mockResolvedValue({ success: true });
