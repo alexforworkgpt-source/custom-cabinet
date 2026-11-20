@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { subscriptionApi, type PayHotQuote } from '../../../api/subscription';
 import { usePlatform } from '../../../platform';
 import { openPaymentUrl } from '../../../utils/openPaymentUrl';
-import { isPayHotPeriod, payHotErrorKey } from '../../../utils/payhotRecurring';
+import { isPayHotLocked, isPayHotPeriod, payHotErrorKey } from '../../../utils/payhotRecurring';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthStore } from '../../../store/auth';
 import { isUncertainPurchaseOutcome } from '../../../utils/api-error';
@@ -53,6 +53,13 @@ export function PayHotPurchaseButton(props: Props) {
       checkout.current = null;
     }
   };
+  const applyCheckoutStatus = (nextStatus: string) => {
+    setStatus(nextStatus);
+    if (!isPayHotLocked(nextStatus)) {
+      checkout.current = null;
+      setQuote(null);
+    }
+  };
   const quoteMutation = useMutation({
     mutationFn: async () => {
       if (!isPayHotPeriod(props.periodDays) || !method) throw new Error('Invalid selection');
@@ -69,6 +76,8 @@ export function PayHotPurchaseButton(props: Props) {
     onSuccess: (result) => {
       setQuote(result);
       setStatus(null);
+      setTargetId(undefined);
+      setPaymentUrl(null);
       checkout.current = null;
       purchaseMutation.reset();
       refreshMutation.reset();
@@ -89,7 +98,7 @@ export function PayHotPurchaseButton(props: Props) {
     },
     onError: discardExpiredQuote,
     onSuccess: (data) => {
-      setStatus(data.status);
+      applyCheckoutStatus(data.status);
       setTargetId(data.subscription_id ?? undefined);
       setPaymentUrl(data.redirect_url ?? null);
       queryClient.invalidateQueries({ queryKey: ['payhot-recurring'] });
@@ -116,7 +125,7 @@ export function PayHotPurchaseButton(props: Props) {
     onError: discardExpiredQuote,
     onSuccess: (data) => {
       purchaseMutation.reset();
-      setStatus(data.status);
+      applyCheckoutStatus(data.status);
       setTargetId(data.subscription_id ?? targetId);
       setPaymentUrl(data.redirect_url ?? null);
       queryClient.invalidateQueries({ queryKey: ['payhot-recurring'] });
@@ -128,7 +137,7 @@ export function PayHotPurchaseButton(props: Props) {
   const current = quote?.key === key ? quote.data : null;
   const busy = quoteMutation.isPending || purchaseMutation.isPending || refreshMutation.isPending;
   const selectionChangedAfterAttempt = !!checkout.current && quote?.key !== key;
-  const unresolved = status && !['none', 'CANCELLED', 'FAILED'].includes(status);
+  const unresolved = status && isPayHotLocked(status);
   const canQuote = isPayHotPeriod(props.periodDays) && Boolean(method);
   const retryLostAttempt =
     status === null &&

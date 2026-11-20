@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { useState } from 'react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, expect, it, vi } from 'vitest';
 import { PayHotRecurringPanel } from './PayHotRecurringPanel';
@@ -268,3 +269,78 @@ it('requires fresh consent after the server confirms the interrupted quote expir
   );
   expect(api.purchasePayHotRecurring).toHaveBeenCalledTimes(2);
 });
+
+it.each([
+  { terminalStatus: 'FAILED', refreshFirst: false },
+  { terminalStatus: 'CANCELLED', refreshFirst: true },
+])(
+  'allows new consent after a confirmed $terminalStatus purchase',
+  async ({ terminalStatus, refreshFirst }) => {
+    function PurchaseForm() {
+      const [periodDays, setPeriodDays] = useState(30);
+      return (
+        <>
+          <button type="button" onClick={() => setPeriodDays(90)}>
+            90 days
+          </button>
+          <PayHotPurchaseButton tariffId={3} methods={['card', 'sbp']} periodDays={periodDays} />
+        </>
+      );
+    }
+
+    api.quotePayHotRecurring
+      .mockResolvedValueOnce({
+        quote_id: 'original-quote',
+        amount_kopeks: 30_000,
+        period_days: 30,
+        payment_method: 'card',
+      })
+      .mockResolvedValueOnce({
+        quote_id: 'new-quote',
+        amount_kopeks: 90_000,
+        period_days: 90,
+        payment_method: 'sbp',
+      });
+    api.purchasePayHotRecurring
+      .mockResolvedValueOnce({
+        status: refreshFirst ? 'PENDING' : terminalStatus,
+        subscription_id: 42,
+      })
+      .mockResolvedValueOnce({ status: 'PENDING', subscription_id: 43 });
+    api.getPayHotRecurring.mockResolvedValueOnce({ status: terminalStatus });
+
+    mount(<PurchaseForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'subscription.payhotRecurring.choose' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'subscription.payhotRecurring.confirm' }),
+    );
+    if (refreshFirst) {
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'subscription.payhotRecurring.refresh' }),
+      );
+    }
+    await screen.findByText(`subscription.payhotRecurring.state.${terminalStatus}`);
+    if (refreshFirst) expect(api.getPayHotRecurring).toHaveBeenCalledWith(42);
+
+    const sbp = screen.getByRole('button', { name: 'subscription.payhotRecurring.methods.sbp' });
+    expect(sbp.matches(':disabled')).toBe(false);
+    fireEvent.click(sbp);
+    fireEvent.click(screen.getByRole('button', { name: '90 days' }));
+    const choose = screen.getByRole('button', { name: 'subscription.payhotRecurring.choose' });
+    expect(choose.matches(':disabled')).toBe(false);
+    fireEvent.click(choose);
+    const confirm = await screen.findByRole('button', {
+      name: 'subscription.payhotRecurring.confirm',
+    });
+    expect(api.quotePayHotRecurring).toHaveBeenLastCalledWith(
+      expect.objectContaining({ period_days: 90, payment_method: 'sbp' }),
+    );
+    expect(api.purchasePayHotRecurring).toHaveBeenCalledTimes(1);
+    fireEvent.click(confirm);
+    await screen.findByText('subscription.payhotRecurring.state.PENDING');
+    expect(api.purchasePayHotRecurring.mock.calls[1]?.[0]).toBe('new-quote');
+    expect(api.purchasePayHotRecurring.mock.calls[1]?.[1]).not.toBe(
+      api.purchasePayHotRecurring.mock.calls[0]?.[1],
+    );
+  },
+);
