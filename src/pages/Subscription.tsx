@@ -11,6 +11,9 @@ import { subscriptionApi } from '../api/subscription';
 import { WebBackButton } from '../components/WebBackButton';
 import { useDestructiveConfirm } from '../platform/hooks/useNativeDialog';
 import { CisPayRecurringPanel } from '../components/subscription/manage/CisPayRecurringPanel';
+import { hasBot53Contract, hasRenewalOperationContract } from '../config/upstreamBotContract';
+import { PayHotRecurringPanel } from '../components/subscription/manage/PayHotRecurringPanel';
+import { payHotSetupTariff } from '../utils/payhotRecurring';
 import { canSetupCisPayTariff } from '../utils/cispayRecurring';
 import ManagedTrafficSummary from '../components/subscription/ManagedTrafficSummary';
 import { hasUnknownManagedTraffic } from '../utils/trafficAccounting';
@@ -342,12 +345,14 @@ export default function Subscription({
   const cisPaySupported =
     purchaseOptions?.sales_mode === 'tariffs' &&
     typeof purchaseOptions.cispay_recurrent_enabled === 'boolean';
-  const cisPaySetup =
+  const cisPayTariff =
     cisPaySupported &&
     purchaseOptions.cispay_recurrent_enabled === true &&
-    canSetupCisPayTariff(
-      purchaseOptions.tariffs.find((tariff) => tariff.id === subscription?.tariff_id),
-    );
+    subscription?.status !== 'disabled'
+      ? purchaseOptions.tariffs.find((tariff) => tariff.id === subscription?.tariff_id)
+      : undefined;
+  const cisPaySetup = canSetupCisPayTariff(cisPayTariff);
+  const inlineCisPaySetup = hasRenewalOperationContract();
 
   const featureFlagsSettled = purchaseOptionsQuery.isSuccess || purchaseOptionsQuery.isError;
   const sbpFeatureOff = isRecurringFeatureOff(purchaseOptions, 'platega_recurrent_enabled');
@@ -390,6 +395,9 @@ export default function Subscription({
       queryClient.invalidateQueries({ queryKey: ['sbp-recurring', subscriptionId] });
       queryClient.invalidateQueries({ queryKey: ['lava-recurring', subscriptionId] });
       queryClient.invalidateQueries({ queryKey: ['cashera-recurring', subscriptionId] });
+      if (subscription) {
+        queryClient.invalidateQueries({ queryKey: ['payhot-recurring', subscription.id] });
+      }
       // Backend flips autopay_enabled off when SBP auto-pay is enabled.
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
     },
@@ -617,6 +625,9 @@ export default function Subscription({
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
       queryClient.invalidateQueries({ queryKey: ['connection-link', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['appConfig', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['connection-link', undefined] });
+      queryClient.invalidateQueries({ queryKey: ['appConfig', undefined] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
       // Remnawave resets device HWIDs on revoke — make sure the cabinet
       // re-reads the now-empty device list instead of showing the stale cache.
@@ -1847,12 +1858,23 @@ export default function Subscription({
             </div>
           </PageEntranceItem>
         )}
+      {hasBot53Contract() && subscription && !subscription.is_trial && (
+        <PageEntranceItem>
+          <PayHotRecurringPanel
+            key={subscription.id}
+            subscriptionId={subscription.id}
+            setupTariff={payHotSetupTariff(purchaseOptions, subscription)}
+            currentDeviceLimit={subscription.device_limit}
+          />
+        </PageEntranceItem>
+      )}
       {cisPaySupported && subscription && !subscription.is_trial && (
         <PageEntranceItem>
           <CisPayRecurringPanel
             key={subscription.id}
             subscriptionId={subscription.id}
-            canSetup={cisPaySetup}
+            canSetup={cisPaySetup && !inlineCisPaySetup}
+            setupTariff={cisPaySetup && inlineCisPaySetup ? cisPayTariff : undefined}
           />
         </PageEntranceItem>
       )}

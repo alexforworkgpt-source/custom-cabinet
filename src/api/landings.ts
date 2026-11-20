@@ -102,6 +102,7 @@ export interface LandingConfig {
 }
 
 export interface PurchaseRequest {
+  payment_phone?: string;
   tariff_id: number;
   period_days: number;
   contact_type: 'email' | 'telegram';

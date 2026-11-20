@@ -3,6 +3,45 @@ import { prepareAuthenticatedPage } from './cabinetTestHarness';
 
 import { responses, subscription } from './classicRenewalFixture';
 
+test('retries balance renewal with the same operation and confirmed term @critical-flow', async ({
+  page,
+}) => {
+  test.skip(process.env.VITE_UPSTREAM_BOT_SHA !== '64beb370e6d69b23d3b651f91033f3b72e9e1f56');
+  await prepareAuthenticatedPage(page, {
+    language: 'ru',
+    responses: {
+      ...responses,
+      '/api/cabinet/subscription/purchase-options': {
+        ...responses['/api/cabinet/subscription/purchase-options'],
+        balance_kopeks: 50_000,
+      },
+    },
+  });
+  const attempts: unknown[] = [];
+  await page.route(/\/api\/cabinet\/subscription\/renew(?:\?|$)/, async (route) => {
+    attempts.push(route.request().postDataJSON());
+    if (attempts.length === 1) {
+      await route.abort('connectionreset');
+      return;
+    }
+    await route.fulfill({ json: { new_end_date: '2026-11-29T00:00:00Z' } });
+  });
+  await page.goto('/subscriptions/42/renew');
+  await page.getByRole('button', { name: /^30 дней/ }).click();
+  await page.getByRole('button', { name: 'Оплатить', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Операция могла выполниться');
+  await page.getByRole('button', { name: 'Повторить', exact: true }).click();
+  await expect(page).toHaveURL('/subscriptions/42');
+  expect(attempts).toHaveLength(2);
+  expect(attempts[0]).toMatchObject({
+    subscription_id: 42,
+    period_days: 30,
+    expected_end_date: subscription.end_date,
+    operation_id: expect.stringMatching(/^[0-9a-f-]{36}$/i),
+  });
+  expect(attempts[1]).toEqual(attempts[0]);
+});
+
 for (const status of ['active', 'expired']) {
   test(`Dashboard waits for the sales mode before ${status} classic renewal @critical-flow`, async ({
     page,

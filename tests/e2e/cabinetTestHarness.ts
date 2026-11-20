@@ -134,6 +134,7 @@ export const baseApiResponses: Record<string, unknown> = {
     hide_link: false,
     instructions: { steps: [] },
   },
+  '/api/cabinet/subscription/payhot-recurrent': { status: 'none', enabled: false, methods: [] },
   '/api/cabinet/subscription/trial': {
     is_available: false,
     duration_days: 0,

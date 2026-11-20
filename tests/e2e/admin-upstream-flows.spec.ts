@@ -124,6 +124,12 @@ function adminUserResponses(subscription: UserSubscriptionInfo): Record<string, 
       categories: [],
       period_days: 30,
     },
+    [`/api/cabinet/admin/users/${adminUserId}/subscriptions/${subscription.id}/cispay-recurrent`]: {
+      status: 'none',
+    },
+    [`/api/cabinet/admin/users/${adminUserId}/subscriptions/${subscription.id}/payhot-recurring`]: {
+      status: 'none',
+    },
     [`/api/cabinet/admin/users/${adminUserId}/devices`]: {
       devices: [],
       total: 0,

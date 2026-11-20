@@ -29,32 +29,44 @@ export function resolveCisPayTarget(
   return undefined;
 }
 
-export function canSetupCisPayTariff(
-  tariff:
-    | {
-        is_daily?: boolean;
-        is_available?: boolean;
-        periods?: { days: number; price_kopeks: number; original_price_kopeks?: number }[];
-        custom_days_enabled?: boolean;
-        min_days?: number;
-        max_days?: number;
-        price_per_day_kopeks?: number;
-        original_price_per_day_kopeks?: number;
-      }
-    | undefined,
-): boolean {
-  if (!tariff || tariff.is_daily || tariff.is_available === false) return false;
-  if (
-    tariff.periods?.some(
+export type CisPaySetupTariff = {
+  is_daily?: boolean;
+  is_available?: boolean;
+  periods?: { days: number; price_kopeks: number; original_price_kopeks?: number }[];
+  custom_days_enabled?: boolean;
+  min_days?: number;
+  max_days?: number;
+  price_per_day_kopeks?: number;
+  original_price_per_day_kopeks?: number;
+};
+
+/** Periods a tariff can be renewed with through CisPay: fixed ones and the custom-days range. */
+export function cisPayPeriodOptions(tariff: CisPaySetupTariff | undefined): {
+  periods: number[];
+  custom: { min: number; max: number } | null;
+} {
+  if (!tariff || tariff.is_daily || tariff.is_available === false) {
+    return { periods: [], custom: null };
+  }
+  const periods = (tariff.periods ?? [])
+    .filter(
       (p) => canUseCisPayPeriod(p.days, false) && (p.original_price_kopeks ?? p.price_kopeks) > 0,
     )
-  )
-    return true;
-  return (
-    !!tariff.custom_days_enabled &&
+    .map((p) => p.days);
+  const min = Math.max(7, tariff.min_days ?? 1);
+  const max = Math.min(360, tariff.max_days ?? 365);
+  const custom =
+    tariff.custom_days_enabled &&
     (tariff.original_price_per_day_kopeks ?? tariff.price_per_day_kopeks ?? 0) > 0 &&
-    Math.max(7, tariff.min_days ?? 1) <= Math.min(360, tariff.max_days ?? 365)
-  );
+    min <= max
+      ? { min, max }
+      : null;
+  return { periods, custom };
+}
+
+export function canSetupCisPayTariff(tariff: CisPaySetupTariff | undefined): boolean {
+  const options = cisPayPeriodOptions(tariff);
+  return options.periods.length > 0 || options.custom !== null;
 }
 
 export function cisPayErrorKey(error: unknown): string {

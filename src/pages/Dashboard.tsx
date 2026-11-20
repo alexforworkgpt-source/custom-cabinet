@@ -31,6 +31,9 @@ import { isFailedStatus, isPaidStatus } from '@/utils/paymentStatus';
 import { TrafficTopupSheet } from '@/components/subscription/sheets/TrafficTopupSheet';
 import { copyToClipboard } from '@/utils/clipboard';
 import { resolveConnectionUrlForUi } from '@/utils/connectionLink';
+import { MirrorSelector } from '@/components/connection/MirrorSelector';
+import { useSubscriptionMirror } from '@/hooks/useSubscriptionMirror';
+import { hasBot53Contract } from '@/config/upstreamBotContract';
 import { brandingApi } from '@/api/branding';
 import { authApi } from '@/api/auth';
 import DashboardPromoCarousel from '@/components/dashboard/DashboardPromoCarousel';
@@ -149,13 +152,16 @@ export default function Dashboard() {
   const managementOpen = false;
 
   const { data: connectionLink, isLoading: isConnectionLinkLoading } = useQuery({
-    queryKey: ['connection-link', selectedSubscriptionId],
-    queryFn: () => subscriptionApi.getConnectionLink(selectedSubscriptionId),
+    queryKey: ['connection-link', subscription?.id, user?.id],
+    queryFn: () =>
+      subscriptionApi.getConnectionLink(
+        hasBot53Contract() ? subscription?.id : selectedSubscriptionId,
+      ),
     enabled: Boolean(subscription),
     retry: false,
     staleTime: 0,
   });
-  const displayedConnectionUrl = useMemo(
+  const primaryConnectionUrl = useMemo(
     () =>
       resolveConnectionUrlForUi({
         mode: connectionLink?.connect_mode,
@@ -171,11 +177,17 @@ export default function Dashboard() {
   );
   const shouldHideConnectionLink =
     subscription?.hide_subscription_link || connectionLink?.hide_link;
+  const mirror = useSubscriptionMirror(
+    connectionLink?.subscription_id === subscription?.id ? connectionLink : undefined,
+    primaryConnectionUrl,
+    shouldHideConnectionLink,
+  );
+  const displayedConnectionUrl = mirror.url;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies(selectedSubscriptionId): Switching subscriptions must reset the copied-link state before the next response.
+  // biome-ignore lint/correctness/useExhaustiveDependencies(displayedConnectionUrl): The copy indicator belongs to the currently displayed address.
   useEffect(() => {
     setSubscriptionLinkCopied(false);
-  }, [selectedSubscriptionId]);
+  }, [displayedConnectionUrl]);
 
   const { data: purchaseOptions } = useQuery({
     queryKey: ['purchase-options', selectedSubscriptionId],
@@ -629,13 +641,15 @@ export default function Dashboard() {
             connectedDevices={devicesData?.total}
             devicesError={devicesError && !devicesData}
             connectionUrl={shouldHideConnectionLink ? null : displayedConnectionUrl}
+            connectionSelector={<MirrorSelector selection={mirror} />}
             connectionLinkLoading={!shouldHideConnectionLink && isConnectionLinkLoading}
             connectionUrlCopied={subscriptionLinkCopied}
             onOpenConnectionQr={() => {
               if (!displayedConnectionUrl || shouldHideConnectionLink) return;
               navigate('/connection/qr', {
                 state: {
-                  url: displayedConnectionUrl,
+                  url: hasBot53Contract() ? undefined : displayedConnectionUrl,
+                  refreshConnection: hasBot53Contract(),
                   hideLink: false,
                   subscriptionId: subscription.id,
                   returnPath: getCabinetClosePath(subscription.id),

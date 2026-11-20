@@ -18,7 +18,8 @@ import { ExclamationIcon } from '@/components/icons';
 import { SubscriptionFlowSkeleton } from '../components/subscription/SubscriptionFlowSkeleton';
 import { usePurchaseContext } from '../hooks/usePurchaseContext';
 import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
-import { hasTargetBotContract } from '../config/upstreamBotContract';
+import { hasBot53Contract, hasTargetBotContract } from '../config/upstreamBotContract';
+import { resolvePayHotTarget } from '@/utils/payhotRecurring';
 import { canSetupCisPayTariff, resolveCisPayTarget } from '@/utils/cispayRecurring';
 import { useAuthStore } from '../store/auth';
 import { usePageMobileNavigation } from '@/components/layout/AppShell/MobileNavigation';
@@ -366,6 +367,19 @@ export default function SubscriptionPurchase() {
                     isTariffsMode && purchaseOptions.cispay_recurrent_enabled === true
                   }
                   cispaySubscriptionId={resolveCisPayTarget(
+                    subscriptionId,
+                    subscription,
+                    purchaseTariff.id,
+                    isMultiTariff,
+                  )}
+                  payhotMethods={
+                    hasBot53Contract() &&
+                    !cisPaySetupTariff &&
+                    purchaseOptions.payhot_recurrent_enabled === true
+                      ? purchaseOptions.payhot_recurrent_methods
+                      : undefined
+                  }
+                  payhotSubscriptionId={resolvePayHotTarget(
                     subscriptionId,
                     subscription,
                     purchaseTariff.id,

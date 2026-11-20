@@ -200,7 +200,7 @@ test('shows one empty state on mobile Support when there are no tickets', async 
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('keeps Gift payment context and action above the safe area without global navigation', async ({
+test('keeps Gift payment context and action above the bottom navigation and safe area', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 568 });
@@ -253,19 +253,23 @@ test('keeps Gift payment context and action above the safe area without global n
   });
   await expect(paymentContext).toHaveAttribute('aria-pressed', 'true');
   await expect(sendGift).toBeVisible();
-  await expect(bottomNavigation).toHaveCount(0);
+  await expect(bottomNavigation).toBeVisible();
+  await expect(
+    bottomNavigation.getByRole('link', { name: 'Profile', exact: true }),
+  ).toHaveAttribute('aria-current', 'page');
 
-  const [paymentBox, sendGiftBox] = await Promise.all([
+  const [paymentBox, sendGiftBox, navigationBox] = await Promise.all([
     paymentContext.boundingBox(),
     sendGift.boundingBox(),
+    bottomNavigation.boundingBox(),
   ]);
-  if (!paymentBox || !sendGiftBox) {
+  if (!paymentBox || !sendGiftBox || !navigationBox) {
     throw new Error('Gift payment context and action must be measurable');
   }
 
-  const safeBottom = (page.viewportSize()?.height ?? 0) - 34;
-  expect(paymentBox.y + paymentBox.height).toBeLessThanOrEqual(safeBottom);
-  expect(sendGiftBox.y + sendGiftBox.height).toBeLessThanOrEqual(safeBottom);
+  const usableBottom = Math.min(navigationBox.y, (page.viewportSize()?.height ?? 0) - 34);
+  expect(paymentBox.y + paymentBox.height).toBeLessThanOrEqual(usableBottom);
+  expect(sendGiftBox.y + sendGiftBox.height).toBeLessThanOrEqual(usableBottom);
   expect(sendGiftBox.height).toBeGreaterThanOrEqual(44);
   expect([...unexpectedApiRequests]).toEqual([]);
 });

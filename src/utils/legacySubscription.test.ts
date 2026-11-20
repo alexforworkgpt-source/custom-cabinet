@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { Subscription } from '@/types';
 import {
+  canOpenTariffSwitch,
   hasLegacySubscription,
   needsTariff,
   planTitle,
@@ -73,4 +75,20 @@ describe('hasLegacySubscription', () => {
     expect(hasLegacySubscription([])).toBe(false);
     expect(hasLegacySubscription(undefined)).toBe(false);
   });
+});
+
+afterEach(() => vi.unstubAllEnvs());
+
+it('offers a tariff switch after traffic exhaustion only while the paid term is valid', () => {
+  vi.stubEnv('VITE_UPSTREAM_BOT_CONTRACT', '5.3.0');
+  const limited = {
+    tariff_id: 5,
+    status: 'limited',
+    is_active: false,
+    is_limited: true,
+    is_trial: false,
+  } as Subscription;
+
+  expect(canOpenTariffSwitch({ ...limited, end_date: '2099-01-01T00:00:00Z' })).toBe(true);
+  expect(canOpenTariffSwitch({ ...limited, end_date: '2000-01-01T00:00:00Z' })).toBe(false);
 });

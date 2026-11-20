@@ -76,6 +76,7 @@ function isHappApp(app: RemnawaveAppClient | null): boolean {
 }
 
 interface Props {
+  mirrorSelector?: React.ReactNode;
   appConfig: AppConfig;
   onOpenDeepLink: (url: string) => void;
   isTelegramWebApp: boolean;
@@ -92,6 +93,7 @@ export default function InstallationGuide({
   onGoBack,
   onFinish,
   onOpenQR,
+  mirrorSelector,
   username,
 }: Props) {
   const { t, i18n } = useTranslation();
@@ -121,7 +123,12 @@ export default function InstallationGuide({
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   const [activePlatformKey, setActivePlatformKey] = useState<string | null>(null);
-  const [selectedApp, setSelectedApp] = useState<RemnawaveAppClient | null>(null);
+  const [selectedAppName, setSelectedAppName] = useState<string | null>(null);
+  const selectedApp =
+    appConfig.platforms?.[activePlatformKey ?? '']?.apps?.find(
+      (app) => app.name === selectedAppName,
+    ) ?? null;
+  const setSelectedApp = (app: RemnawaveAppClient | null) => setSelectedAppName(app?.name ?? null);
   const [showOtherApps, setShowOtherApps] = useState(false);
 
   const setFlowStep = useCallback(
@@ -429,6 +436,7 @@ export default function InstallationGuide({
         >
           {stepTitle}
         </h2>
+        {mirrorSelector}
         {step === 'add' && appConfig.subscriptionUrl && onOpenQR && (
           <button
             onClick={() => onOpenQR()}

@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subscriptionApi } from '../../../api/subscription';
-import { getErrorMessage } from '../../../utils/subscriptionHelpers';
+import { getLocalizedApiErrorMessage } from '../../../utils/api-error-display';
+import { isUncertainPurchaseOutcome } from '../../../utils/api-error';
 import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
 import { ChevronRightIcon } from '../../icons';
 import type { PurchaseOptions, Subscription } from '../../../types';
@@ -56,6 +57,7 @@ export function TrafficTopupSheet({
   });
 
   const purchaseMutation = useMutation({
+    retry: false,
     mutationFn: (gb: number) => subscriptionApi.purchaseTraffic(gb, subscriptionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
@@ -208,8 +210,10 @@ export function TrafficTopupSheet({
             })()}
 
           {purchaseMutation.isError && (
-            <div className="text-center text-sm text-error-400">
-              {getErrorMessage(purchaseMutation.error)}
+            <div role="alert" className="text-center text-sm text-error-400">
+              {isUncertainPurchaseOutcome(purchaseMutation.error)
+                ? t('subscription.purchaseOutcomeUnknown')
+                : getLocalizedApiErrorMessage(purchaseMutation.error, t('common.error'), t)}
             </div>
           )}
         </div>

@@ -36,12 +36,48 @@ const responses = {
     is_unlimited: false,
   },
   '/api/cabinet/subscription/connection-link': {
+    subscription_id: subscription.id,
     subscription_url: connectionUrl,
     display_link: connectionUrl,
     connect_mode: 'plain',
     hide_link: false,
   },
 };
+
+test('uses the selected backup address in Dashboard and the fresh QR on the target contract', async ({
+  page,
+}) => {
+  test.skip(process.env.VITE_UPSTREAM_BOT_SHA !== '64beb370e6d69b23d3b651f91033f3b72e9e1f56');
+  const original = 'https://backup.example.test/sub/original';
+  const reissued = 'https://backup.example.test/sub/reissued';
+  let reads = 0;
+  await prepareAuthenticatedPage(page, { responses });
+  await page.route(/\/api\/cabinet\/subscription\/connection-link(?:\?|$)/, async (route) => {
+    reads += 1;
+    expect(new URL(route.request().url()).searchParams.get('subscription_id')).toBe('7');
+    await route.fulfill({
+      json: {
+        ...responses['/api/cabinet/subscription/connection-link'],
+        connect_mode: 'guide',
+        mirrors: [
+          {
+            id: '0123456789abcdef',
+            label: 'Backup',
+            url: reads === 1 ? original : reissued,
+          },
+        ],
+      },
+    });
+  });
+  await page.goto('/?sub=7');
+  await page.getByRole('button', { name: /Connection address: Primary/ }).click();
+  await page.getByRole('option', { name: 'Backup' }).click();
+  await expect(page.getByText(original, { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Open QR code' }).click();
+  await expect(page.getByText(reissued, { exact: true })).toBeVisible();
+  await expect(page.getByText(original, { exact: true })).toHaveCount(0);
+  expect(reads).toBeGreaterThanOrEqual(2);
+});
 
 test('opens the selected subscription QR next to Copy link and returns to Dashboard', async ({
   page,

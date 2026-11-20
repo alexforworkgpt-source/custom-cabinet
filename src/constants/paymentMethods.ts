@@ -24,6 +24,7 @@ export const METHOD_LABELS: Record<string, string> = {
   antilopay: 'Antilopay',
   jupiter: 'Jupiter',
   cispay: 'CisPay',
+  payhot: 'HOT Pay',
   anore: 'Anore',
   cashera: 'Cashera',
   tabpay: 'TabPay',

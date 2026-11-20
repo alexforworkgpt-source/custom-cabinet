@@ -80,10 +80,36 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  vi.unstubAllEnvs();
   vi.resetAllMocks();
 });
 
 describe('classic renewal payment', () => {
+  it('retries the confirmed snapshot after the subscription has refreshed', async () => {
+    vi.stubEnv('VITE_UPSTREAM_BOT_CONTRACT', '5.3.0');
+    api.getPurchaseOptions.mockResolvedValue({ sales_mode: 'classic', balance_kopeks: 60_000 });
+    api.renewSubscription
+      .mockRejectedValueOnce(new AxiosError('Connection lost', 'ERR_NETWORK'))
+      .mockResolvedValueOnce({ message: 'Subscription renewed successfully' });
+    const client = renderRenewal();
+    fireEvent.click(await screen.findByRole('button', { name: /^30 subscription.days/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'subscription.pay' }));
+    expect(await screen.findByText('subscription.purchaseOutcomeUnknown')).toBeTruthy();
+    await waitFor(() =>
+      expect(api.renewSubscription).toHaveBeenCalledWith(30, 42, {
+        userId: 1,
+        endDate: '2026-10-30T00:00:00Z',
+      }),
+    );
+    const original = await api.getSubscription();
+    client.setQueryData(['subscription', 42], {
+      subscription: { ...original.subscription, end_date: '2026-11-29T00:00:00Z' },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'common.retry' }));
+    await waitFor(() => expect(api.renewSubscription).toHaveBeenCalledTimes(2));
+    expect(api.renewSubscription.mock.calls[0]).toEqual(api.renewSubscription.mock.calls[1]);
+  });
+
   it('estimates renewal of an expired subscription from the current instant', async () => {
     const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-20T00:00:00Z'));
     try {
