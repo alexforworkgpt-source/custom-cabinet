@@ -68,7 +68,7 @@ export default function Subscriptions() {
   const subscriptions = data?.subscriptions ?? [];
   const hasLegacy = hasLegacySubscription(subscriptions);
   const isMultiTariff = data?.multi_tariff_enabled ?? false;
-  const hasNoSubscriptions = data?.subscriptions.length === 0;
+  const hasNoSubscriptions = isSuccess && subscriptions.length === 0;
   const purchaseQuery = useQuery({
     queryKey: ['purchase-options'],
     queryFn: () => subscriptionApi.getPurchaseOptions(),

@@ -38,6 +38,7 @@ export default function SubscriptionPurchase() {
   const accountId = useAuthStore((state) => state.user?.id);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const configureRequested = searchParams.get('mode') === 'configure';
   const rawSubscriptionId = searchParams.get('subscriptionId');
   const subscriptionId =
     rawSubscriptionId && /^\d+$/.test(rawSubscriptionId) ? Number(rawSubscriptionId) : undefined;
@@ -50,6 +51,7 @@ export default function SubscriptionPurchase() {
   const {
     data: purchaseOptions,
     isLoading: optionsLoading,
+    isFetchedAfterMount: optionsRefreshed,
     isError: optionsError,
     refetch: refetchOptions,
   } = useQuery({
@@ -68,6 +70,7 @@ export default function SubscriptionPurchase() {
   const {
     data: subscriptionResponse,
     isLoading,
+    isFetchedAfterMount: subscriptionRefreshed,
     isError: primarySubscriptionError,
     refetch: refetchSubscription,
   } = useQuery({
@@ -143,7 +146,12 @@ export default function SubscriptionPurchase() {
   };
   useCloseOnSuccessNotification(handleCloseAllModals);
   const initiallyLoading =
-    isLoading || optionsLoading || (!isTariffsMode && multiSubQuery.isPending);
+    isLoading ||
+    optionsLoading ||
+    (!isTariffsMode && multiSubQuery.isPending) ||
+    (configureRequested &&
+      subscriptionId !== undefined &&
+      (!optionsRefreshed || !subscriptionRefreshed));
   const paidClassic = classicOptions
     ? subscription && !subscription.is_trial
       ? subscription
@@ -151,7 +159,7 @@ export default function SubscriptionPurchase() {
     : undefined;
   const configureClassic =
     Boolean(classicOptions) &&
-    searchParams.get('mode') === 'configure' &&
+    configureRequested &&
     subscriptionId !== undefined &&
     subscription?.id === subscriptionId &&
     canConfigureExpiredClassic(subscription);

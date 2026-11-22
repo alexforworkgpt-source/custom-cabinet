@@ -87,6 +87,49 @@ test('classic configuration entry keeps active paid subscriptions in management'
   expect(apiRequests).not.toContain('POST /api/cabinet/subscription/purchase-preview');
 });
 
+test('configuration waits for a fresh subscription when a cached expired Classic was renewed', async ({
+  page,
+}) => {
+  const expired = { ...subscription, status: 'expired', is_active: false, is_expired: true };
+  const { apiRequests } = await prepareAuthenticatedPage(page, {
+    language: 'ru',
+    responses: {
+      ...responses,
+      '/api/cabinet/subscription/platega-recurrent': { status: 'none' },
+      '/api/cabinet/subscription/lava-recurrent': { status: 'none' },
+      '/api/cabinet/subscriptions': { subscriptions: [expired], multi_tariff_enabled: false },
+      '/api/cabinet/subscription/purchase-options': classicPurchaseOptions,
+    },
+  });
+  let refreshed = false;
+  const freshSubscription = Promise.withResolvers<void>();
+  await page.route(
+    (url) => url.pathname === '/api/cabinet/subscription',
+    async (route) => {
+      if (refreshed) await freshSubscription.promise;
+      await route.fulfill({
+        json: { has_subscription: true, subscription: refreshed ? subscription : expired },
+      });
+    },
+  );
+
+  await page.goto('/subscriptions/42');
+  const configure = page.getByRole('link', { name: 'Изменить подписку', exact: true });
+  await expect(configure).toBeVisible();
+  refreshed = true;
+
+  try {
+    await configure.click();
+    await expect(page).toHaveURL('/subscription/purchase?subscriptionId=42&mode=configure');
+    await expect(page.locator('main [role=status][aria-busy=true]')).toBeVisible();
+    await expect(page.locator('[data-purchase-layout="classic"]')).toHaveCount(0);
+  } finally {
+    freshSubscription.resolve();
+  }
+  await expect(page).toHaveURL('/subscriptions/42');
+  expect(apiRequests).not.toContain('POST /api/cabinet/subscription/purchase-preview');
+});
+
 test('expired classic subscription can choose one device and save its new configuration before top-up', async ({
   page,
 }) => {

@@ -33,10 +33,13 @@ const state: { subscription: SubscriptionListItem } = {
   subscription: { ...baseSubscription, requires_tariff_selection: true },
 };
 
+const getSubscriptions = vi.fn(() =>
+  Promise.resolve({ subscriptions: [state.subscription], multi_tariff_enabled: true }),
+);
+
 vi.mock('@/api/subscription', () => ({
   subscriptionApi: {
-    getSubscriptions: () =>
-      Promise.resolve({ subscriptions: [state.subscription], multi_tariff_enabled: true }),
+    getSubscriptions,
     getTrialInfo: () => Promise.resolve({ is_available: false }),
     getPurchaseOptions: () =>
       Promise.resolve({ sales_mode: 'tariffs', tariffs: [], balance_kopeks: 0 }),
@@ -63,12 +66,14 @@ if (!window.matchMedia) {
 
 afterEach(() => {
   cleanup();
+  getSubscriptions.mockReset();
   state.subscription = { ...baseSubscription, requires_tariff_selection: true };
 });
 
-async function renderPage() {
+async function renderPage(
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   const Subscriptions = (await import('@/pages/Subscriptions')).default;
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
       <PlatformProvider>
@@ -101,4 +106,23 @@ describe('legacy subscription list actions', () => {
     expect(await screen.findByText('subscriptions.buyAnother')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'subscription.cta.moveToTariff' })).toBeNull();
   });
+});
+
+it('hides a cached trial offer when refreshing the subscription list fails', async () => {
+  const client = new QueryClient();
+  client.setQueryData(['subscriptions-list'], { subscriptions: [], multi_tariff_enabled: true });
+  client.setQueryData(['trial-info'], {
+    is_available: true,
+    requires_payment: false,
+    price_kopeks: 0,
+    duration_days: 3,
+    traffic_limit_gb: 10,
+    device_limit: 1,
+  });
+  getSubscriptions.mockRejectedValueOnce(new Error('Subscription list unavailable'));
+
+  await renderPage(client);
+
+  expect(await screen.findByText('dashboard.subscriptionLoadError')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'subscription.trial.activate' })).toBeNull();
 });

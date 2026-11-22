@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronRightIcon } from '@/components/icons';
+import { Button } from '@/components/primitives/Button';
 import { cn } from '@/lib/utils';
 
 export function ConnectionSelectionCard({
@@ -19,17 +20,22 @@ export function ConnectionSelectionCard({
   'data-selected-platform'?: boolean;
 }) {
   const { t } = useTranslation();
-  const Surface = onToggle ? 'button' : 'div';
+  const Surface = onToggle ? Button : 'div';
   return (
     <Surface
       {...attributes}
       {...(onToggle
-        ? { type: 'button' as const, onClick: onToggle, 'aria-expanded': expanded }
+        ? {
+            type: 'button' as const,
+            variant: 'ghost' as const,
+            onClick: onToggle,
+            'aria-expanded': expanded,
+          }
         : {})}
       className={cn(
         'flex w-full items-center gap-2.5 rounded-2xl border border-accent-500/50 bg-accent-500/10 p-2.5 text-start',
         onToggle &&
-          'transition-colors hover:bg-accent-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
+          'h-auto justify-start transition-colors hover:bg-accent-500/15 focus-visible:ring-accent-500',
       )}
     >
       <span
