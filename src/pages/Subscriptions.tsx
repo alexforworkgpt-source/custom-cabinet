@@ -57,7 +57,7 @@ export default function Subscriptions() {
   const refreshUser = useAuthStore((state) => state.refreshUser);
   const [trialError, setTrialError] = useState<string | null>(null);
 
-  const { data, isLoading, isSuccess, isError, refetch } = useQuery({
+  const { data, isLoading, isFetching, isSuccess, isError, refetch } = useQuery({
     queryKey: ['subscriptions-list'],
     queryFn: () => subscriptionApi.getSubscriptions(),
     staleTime: 30_000,
@@ -119,14 +119,14 @@ export default function Subscriptions() {
   });
 
   // Single-tariff mode with one subscription: skip list, go directly to detail
-  if (data && !isMultiTariff && subscriptions.length === 1) {
+  if (data && !isFetching && !isError && !isMultiTariff && subscriptions.length === 1) {
     return <Navigate to={`/subscriptions/${subscriptions[0].id}`} replace />;
   }
 
   return (
     <PageEntrance className="space-y-6">
       {/* Header */}
-      <PageEntranceItem className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <WebBackButton to="/" />
         <h1 className="truncate text-xl font-bold" style={{ color: g.text }}>
           {t('subscriptions.title', 'Мои подписки')}
@@ -146,7 +146,7 @@ export default function Subscriptions() {
             {t('subscriptions.buyAnother', 'Новый тариф')}
           </button>
         )}
-      </PageEntranceItem>
+      </div>
 
       {/* Есть подписки, но платной активной нет (только триал/истёкшие) —
           даём ЯВНУЮ primary-кнопку покупки: мы продаём подписки. */}
@@ -177,17 +177,9 @@ export default function Subscriptions() {
           </button>
         </div>
       )}
-      {isLoading && (
-        <SkeletonGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {[1, 2].map((i) => (
-            <Skeleton
-              key={i}
-              variant="card"
-              // Фон и рамку задаёт стеклянная тема, поэтому вариантную заливку гасим.
-              className="h-36 border-0 bg-transparent"
-              style={{ background: g.innerBg }}
-            />
-          ))}
+      {(isLoading || (hasNoSubscriptions && trialLoading)) && (
+        <SkeletonGroup>
+          <Skeleton variant="card" className="h-24" />
         </SkeletonGroup>
       )}
 

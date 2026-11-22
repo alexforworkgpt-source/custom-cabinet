@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "cabinet": {
+    "tag": "cabinet-v2026.11.22",
+    "sha": "e72fe0749790dd3e48ca09340a98d8b9490a9179",
+    "tree_sha": "2181646c86807433d46fb6dcc9900e1a3cfea056"
+  },
+  "upstream": {
+    "repository": "https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git",
+    "tag": "v1.79.0",
+    "sha": "821c7b71823573a756de00418acb25118ede1c9c"
+  },
+  "bot": {
+    "repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "sha": "64beb370e6d69b23d3b651f91033f3b72e9e1f56",
+    "backend_contract": "1",
+    "compatibility_evidence": "https://github.com/alexforworkgpt-source/custom-cabinet/blob/e72fe0749790dd3e48ca09340a98d8b9490a9179/COMPATIBILITY.md"
+  },
+  "changes": [
+    "Restore compact inline device and app selection in the VPN setup guide while preserving alternate subscription URLs.",
+    "Restore subscription management actions and loading states, including reduced-motion behavior and a fresh status check before reconfiguring expired Classic subscriptions.",
+    "Carry the selected Classic configuration into the balance top-up flow and clear query caches when the account changes.",
+    "Use the full profile row for Settings when additional functions are absent."
+  ],
+  "limitations": [
+    {
+      "id": "classic-auto-purchase",
+      "status": "OPEN",
+      "summary": "Classic purchase still requires manual confirmation after balance top-up."
+    },
+    {
+      "id": "physical-telegram-device",
+      "status": "BLOCKED",
+      "summary": "Physical Telegram Mini App and native client coverage is unverified for this release."
+    },
+    {
+      "id": "live-provider-coverage",
+      "status": "BLOCKED",
+      "summary": "External panel app configuration and merchant sandbox checkout/recurring flows were not part of the verified browser scope."
+    },
+    {
+      "id": "unused-legacy-email-wrapper",
+      "status": "OPEN",
+      "summary": "The unused createEmail wrapper is unchanged; current UI uses the supported combined endpoint."
+    }
+  ],
+  "frontend_policy": {
+    "bscheker": "excluded",
+    "simple_mode": "excluded"
+  },
+  "owner_approved": true
+}

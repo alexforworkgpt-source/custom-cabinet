@@ -1,4 +1,4 @@
-import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
+import { PageSkeleton, Skeleton, SkeletonSurface } from '@/components/ui/skeleton';
 import { safeLocal } from '../utils/safeStorage';
 import { uiLocale } from '@/utils/uiLocale';
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
@@ -23,18 +23,15 @@ import { useTrafficZone } from '../hooks/useTrafficZone';
 import { formatTraffic } from '../utils/formatTraffic';
 import { getGlassColors } from '../utils/glassTheme';
 import { useTheme } from '../hooks/useTheme';
-import InsufficientBalancePrompt from '../components/InsufficientBalancePrompt';
 import { useCurrency } from '../hooks/useCurrency';
 import { useCloseOnSuccessNotification } from '../store/successNotification';
 import PurchaseCTAButton from '../components/subscription/PurchaseCTAButton';
 import { planTitle, showsAddonOptions, showsAutopayToggle } from '../utils/legacySubscription';
 import {
-  PauseIcon,
   CalendarIcon,
   RefreshIcon,
   DevicesIcon,
   KeyIcon,
-  DownloadIcon,
   TrashIcon,
   ChevronRightIcon,
   ArrowPathIcon,
@@ -42,7 +39,7 @@ import {
   WarningIcon,
 } from '../components/icons';
 import { useHaptic, usePlatform } from '../platform';
-import { getErrorMessage, getInsufficientBalanceError } from '../utils/subscriptionHelpers';
+import { getErrorMessage } from '../utils/subscriptionHelpers';
 import { openPaymentUrl } from '../utils/openPaymentUrl';
 import { useToast } from '../components/Toast';
 import {
@@ -65,7 +62,12 @@ import { ServerManagementSheet } from '../components/subscription/sheets/ServerM
 import { DeleteSubscriptionSheet } from '../components/subscription/sheets/DeleteSubscriptionSheet';
 import { CasheraRecurringPanel } from '../components/subscription/manage/CasheraRecurringPanel';
 import { SubscriptionOverviewCard } from '../components/subscription/SubscriptionOverviewCard';
-import { SubscriptionManagementSkeleton } from '../components/subscription/SubscriptionManagementSkeleton';
+import {
+  SubscriptionAddonsSkeleton,
+  SubscriptionManagementSkeleton,
+} from '../components/subscription/SubscriptionManagementSkeleton';
+import { PurchasedTrafficSummary } from '../components/subscription/PurchasedTrafficSummary';
+import { SubscriptionDailyManagement } from '../components/subscription/SubscriptionDailyManagement';
 import { SubscriptionAutopayToggle } from '../components/subscription/SubscriptionAutopayToggle';
 import { Card } from '../components/data-display';
 
@@ -302,10 +304,33 @@ export default function Subscription({
   });
   // Extract subscription from response (null if no subscription)
   const subscription = subscriptionResponse?.subscription ?? null;
+
+  // Traffic zone (theme-aware) — called unconditionally at top level
+  const usedPercent = trafficData?.traffic_used_percent ?? subscription?.traffic_used_percent ?? 0;
+  const zone = useTrafficZone(usedPercent);
+
+  // Purchase options (needed for balance_kopeks in device/traffic/server management)
+  const purchaseOptionsQuery = useQuery({
+    queryKey: ['purchase-options', subscriptionId],
+    queryFn: () => subscriptionApi.getPurchaseOptions(subscriptionId),
+    enabled:
+      Boolean(subscription) || (Number.isSafeInteger(subscriptionId) && (subscriptionId ?? 0) > 0),
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+  const purchaseOptions = purchaseOptionsQuery.data;
+  const managementLoading =
+    isLoading ||
+    (embedded &&
+      subscription !== null &&
+      subscription.id === subscriptionId &&
+      !subscriptionError &&
+      purchaseOptionsQuery.isLoading);
+
   useEffect(() => {
     if (
       !initiallyOpenAdditionalOptions ||
-      isLoading ||
+      managementLoading ||
       subscriptionError ||
       !subscription ||
       didScrollToAdditionalOptions.current ||
@@ -325,22 +350,13 @@ export default function Subscription({
       });
     });
     return () => cancelAnimationFrame(frame);
-  }, [initiallyOpenAdditionalOptions, isLoading, subscriptionError, subscription, reducedMotion]);
-
-  // Traffic zone (theme-aware) — called unconditionally at top level
-  const usedPercent = trafficData?.traffic_used_percent ?? subscription?.traffic_used_percent ?? 0;
-  const zone = useTrafficZone(usedPercent);
-
-  // Purchase options (needed for balance_kopeks in device/traffic/server management)
-  const purchaseOptionsQuery = useQuery({
-    queryKey: ['purchase-options', subscriptionId],
-    queryFn: () => subscriptionApi.getPurchaseOptions(subscriptionId),
-    enabled:
-      Boolean(subscription) || (Number.isSafeInteger(subscriptionId) && (subscriptionId ?? 0) > 0),
-    staleTime: 0,
-    refetchOnMount: 'always',
-  });
-  const purchaseOptions = purchaseOptionsQuery.data;
+  }, [
+    initiallyOpenAdditionalOptions,
+    managementLoading,
+    subscriptionError,
+    subscription,
+    reducedMotion,
+  ]);
 
   const cisPaySupported =
     purchaseOptions?.sales_mode === 'tariffs' &&
@@ -674,11 +690,76 @@ export default function Subscription({
     revokeMutation.mutate();
   };
 
+  const purchasedTraffic = subscription?.traffic_purchases?.length ? (
+    <PurchasedTrafficSummary
+      purchases={subscription.traffic_purchases}
+      managed={subscription.traffic_accounting_mode === 'managed'}
+      glassColors={g}
+      accentColor={zone.mainHex}
+    />
+  ) : null;
   const hasEmbeddedSubscriptionSettings = Boolean(
     subscription &&
-      ((subscription.traffic_purchases?.length ?? 0) > 0 ||
+      (purchasedTraffic ||
         (!subscription.is_trial &&
           (sbpUiStateValue !== 'hidden' || lavaUiStateValue !== 'hidden' || casheraEnabled))),
+  );
+
+  const showAdditionalOptions = Boolean(
+    subscription && (subscription.is_active || subscription.is_limited) && !subscription.is_trial,
+  );
+  const showAddons = subscription ? showsAddonOptions(subscription) : false;
+  const showTrafficAddon = Boolean(showAddons && subscription && subscription.traffic_limit_gb > 0);
+  const showDaily = subscription?.is_daily && !subscription.is_trial;
+  const renderDaily = (measuring = false) =>
+    subscription && (
+      <SubscriptionDailyManagement
+        subscription={subscription}
+        glassColors={g}
+        priceLabel={
+          subscription.daily_price_kopeks ? formatPrice(subscription.daily_price_kopeks) : undefined
+        }
+        onPause={measuring ? undefined : () => pauseMutation.mutate()}
+        pending={!measuring && pauseMutation.isPending}
+        error={measuring ? undefined : pauseMutation.error}
+      />
+    );
+  const showDelete =
+    isMultiTariff &&
+    subscription &&
+    !subscription.is_active &&
+    !subscription.is_trial &&
+    !subscription.is_limited;
+  const showAutopay = subscription && showsAutopayToggle(subscription);
+  const renderAutopay = (measuring = false) =>
+    subscription &&
+    showAutopay && (
+      <Card size="sm" className="p-2 sm:p-3" data-subscription-autopay={!measuring || undefined}>
+        <SubscriptionAutopayToggle
+          compactOnMobile
+          enabled={subscription.autopay_enabled}
+          daysBefore={subscription.autopay_days_before}
+          pending={autopayMutation.isPending}
+          onToggle={
+            measuring ? undefined : () => autopayMutation.mutate(!subscription.autopay_enabled)
+          }
+          accentColor={zone.mainHex}
+          glassColors={g}
+        />
+      </Card>
+    );
+
+  const purchaseOptionsError = (
+    <div role="alert" className="space-y-2 rounded-xl bg-error-400/10 p-4 text-sm text-error-400">
+      <p>{t('subscription.paymentOptionsLoadError')}</p>
+      <button
+        className="btn-secondary"
+        disabled={purchaseOptionsQuery.isFetching}
+        onClick={() => purchaseOptionsQuery.refetch()}
+      >
+        {t('common.retry')}
+      </button>
+    </div>
   );
 
   // In multi-tariff mode without a specific subscription ID, redirect to list
@@ -686,8 +767,71 @@ export default function Subscription({
     return <Navigate to="/subscriptions" replace />;
   }
 
-  if (isLoading) {
-    if (embedded) return <SubscriptionManagementSkeleton />;
+  if (embedded && isLoading && purchaseOptionsQuery.isError) return purchaseOptionsError;
+  if (managementLoading) {
+    if (embedded) {
+      const knownSubscription = subscription?.id === subscriptionId ? subscription : null;
+      return (
+        <SubscriptionManagementSkeleton
+          subscription={knownSubscription}
+          purchase={
+            knownSubscription && (
+              <PurchaseCTAButton
+                subscription={knownSubscription}
+                isMultiTariff={isMultiTariff}
+                isClassic={purchaseOptions?.sales_mode === 'classic'}
+                conditionsKnown={purchaseOptions !== undefined}
+                loading
+                reserveSpace
+                compactOnMobile
+                withinLoadingGroup
+              />
+            )
+          }
+        >
+          {knownSubscription && (
+            <>
+              {hasEmbeddedSubscriptionSettings && (
+                <SkeletonSurface>
+                  <div className="overflow-hidden rounded-3xl border border-transparent p-3">
+                    {purchasedTraffic}
+                    {!knownSubscription.is_trial && sbpUiStateValue !== 'hidden' && (
+                      <div className="mt-3 h-24" />
+                    )}
+                    {!knownSubscription.is_trial && lavaUiStateValue !== 'hidden' && (
+                      <div className="mt-3 h-24" />
+                    )}
+                    {casheraEnabled && <div className="mt-3 h-24" />}
+                  </div>
+                </SkeletonSurface>
+              )}
+              {showDaily && (
+                <div data-subscription-daily-placeholder>
+                  <SkeletonSurface>{renderDaily(true)}</SkeletonSurface>
+                </div>
+              )}
+              {showDelete && <Skeleton variant="card" animate={false} className="h-[50px]" />}
+              {showAdditionalOptions && (
+                <SubscriptionAddonsSkeleton
+                  subscription={knownSubscription}
+                  showDevices={showAddons}
+                  showTraffic={showTrafficAddon}
+                  isDark={isDark}
+                />
+              )}
+              {cisPaySupported && !knownSubscription.is_trial && (
+                <Skeleton variant="card" animate={false} className="h-24" />
+              )}
+              {showAutopay && (
+                <div data-subscription-autopay-placeholder>
+                  <SkeletonSurface>{renderAutopay(true)}</SkeletonSurface>
+                </div>
+              )}
+            </>
+          )}
+        </SubscriptionManagementSkeleton>
+      );
+    }
     return (
       <PageSkeleton leading={1} titleWidth="w-48">
         <Skeleton variant="card" className="h-64" />
@@ -748,19 +892,7 @@ export default function Subscription({
 
       {/* Purchase / Renewal CTA */}
       {purchaseOptionsQuery.isError ? (
-        <div
-          role="alert"
-          className="space-y-2 rounded-xl bg-error-400/10 p-4 text-sm text-error-400"
-        >
-          <p>{t('subscription.paymentOptionsLoadError')}</p>
-          <button
-            className="btn-secondary"
-            disabled={purchaseOptionsQuery.isFetching}
-            onClick={() => purchaseOptionsQuery.refetch()}
-          >
-            {t('common.retry')}
-          </button>
-        </div>
+        purchaseOptionsError
       ) : embedded || (purchaseOptionsQuery.isSuccess && !purchaseOptionsQuery.isFetching) ? (
         <PurchaseCTAButton
           subscription={subscription}
@@ -1173,89 +1305,7 @@ export default function Subscription({
                 </div>
               )}
 
-              {/* ─── Purchased Traffic Packages ─── */}
-              {subscription.traffic_purchases && subscription.traffic_purchases.length > 0 && (
-                <div className="mb-5">
-                  <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-dark-400">
-                    {t('subscription.purchasedTraffic')}
-                  </div>
-                  <div className="space-y-2">
-                    {subscription.traffic_purchases.map((purchase) => (
-                      <div
-                        key={purchase.id}
-                        className="rounded-[12px] p-3"
-                        style={{
-                          background: g.innerBg,
-                          border: `1px solid ${g.innerBorder}`,
-                        }}
-                      >
-                        <div className="mb-2 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="flex h-7 w-7 items-center justify-center rounded-[8px]"
-                              style={{ background: `${zone.mainHex}12`, color: zone.mainHex }}
-                            >
-                              <DownloadIcon className="h-3.5 w-3.5" />
-                            </div>
-                            <span className="text-sm font-semibold text-dark-50">
-                              {purchase.traffic_gb} {t('common.units.gb')}
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <div
-                              className="text-[11px] font-medium"
-                              style={{
-                                color: purchase.days_remaining === 0 ? '#FF6B35' : g.textSecondary,
-                              }}
-                            >
-                              {purchase.days_remaining === 0
-                                ? t('subscription.expired')
-                                : t('subscription.days', { count: purchase.days_remaining })}
-                            </div>
-                            <div className="mt-0.5 font-mono text-[9px] text-dark-500">
-                              {t('subscription.trafficResetAt')}:{' '}
-                              {new Date(purchase.expires_at).toLocaleDateString(uiLocale(), {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                        {subscription.traffic_accounting_mode === 'managed' &&
-                          typeof purchase.remaining_gb === 'number' &&
-                          Number.isFinite(purchase.remaining_gb) &&
-                          purchase.remaining_gb >= 0 && (
-                            <p className="mb-2 text-sm tabular-nums text-dark-300">
-                              {t('subscription.accounting.packageRemaining', {
-                                amount: formatTraffic(purchase.remaining_gb),
-                              })}
-                            </p>
-                          )}
-                        <div
-                          className="relative h-1.5 overflow-hidden rounded-full"
-                          style={{ background: g.trackBg }}
-                        >
-                          <div
-                            className="absolute inset-0 origin-left rounded-full bg-accent-500 transition-transform duration-500"
-                            style={{
-                              transform: `scaleX(${purchase.progress_percent / 100})`,
-                            }}
-                          />
-                        </div>
-                        <div className="mt-1 flex justify-between font-mono text-[9px] text-dark-500">
-                          <span>
-                            {new Date(purchase.created_at).toLocaleDateString(uiLocale())}
-                          </span>
-                          <span>
-                            {new Date(purchase.expires_at).toLocaleDateString(uiLocale())}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {purchasedTraffic}
 
               {/* ─── Autopay Toggle ─── */}
               {!embedded && showsAutopayToggle(subscription) && (
@@ -1529,335 +1579,161 @@ export default function Subscription({
         </div>
       ) : null}
 
-      {/* Daily Subscription Pause */}
-      {subscription?.is_daily && !subscription.is_trial && (
-        <div
-          className="relative overflow-hidden rounded-3xl"
+      {showDaily && renderDaily()}
+
+      {/* Delete expired subscription */}
+      {subscription && showDelete && (
+        <div className="space-y-3">
+          <DeleteSubscriptionSheet
+            subscriptionId={subscription.id}
+            open={showDeleteSheet}
+            onOpen={() => setShowDeleteSheet(true)}
+            onClose={() => setShowDeleteSheet(false)}
+            textSecondary={g.textSecondary}
+            onDeleted={() => {
+              queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
+              navigate('/subscriptions', { replace: true });
+            }}
+          />
+        </div>
+      )}
+
+      {/* Available secondary actions are always visible; individual forms remain explicit. */}
+      {subscription && showAdditionalOptions && (
+        <PageEntranceItem
+          ref={additionalOptionsSectionRef}
+          className="relative scroll-mt-20 overflow-hidden rounded-3xl"
           style={{
             background: g.cardBg,
             border: `1px solid ${g.cardBorder}`,
             boxShadow: g.shadow,
-            padding: '24px 28px',
+            padding: embedded ? '12px' : '24px 28px',
           }}
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold tracking-tight text-dark-50">
-                {t('subscription.pause.title')}
-              </h2>
-              <div className="mt-1 text-[12px] text-dark-400">
-                {subscription.is_limited
-                  ? t('subscription.trafficLimited')
-                  : subscription.status === 'disabled'
-                    ? t('subscription.pause.suspended')
-                    : subscription.is_daily_paused
-                      ? t('subscription.pause.paused')
-                      : t('subscription.pause.active')}
-              </div>
-            </div>
-            <button
-              onClick={() => pauseMutation.mutate()}
-              disabled={pauseMutation.isPending}
-              className="rounded-[10px] px-4 py-2 text-sm font-semibold transition-colors duration-300"
-              style={{
-                background:
-                  subscription.is_daily_paused || subscription.status === 'disabled'
-                    ? 'rgba(var(--color-accent-400), 0.12)'
-                    : 'rgba(255,184,0,0.12)',
-                border:
-                  subscription.is_daily_paused || subscription.status === 'disabled'
-                    ? '1px solid rgba(var(--color-accent-400), 0.2)'
-                    : '1px solid rgba(255,184,0,0.2)',
-                color:
-                  subscription.is_daily_paused || subscription.status === 'disabled'
-                    ? 'rgb(var(--color-accent-400))'
-                    : 'rgb(var(--color-urgent-400))',
-              }}
-            >
-              {pauseMutation.isPending ? (
-                <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                </span>
-              ) : subscription.is_daily_paused || subscription.status === 'disabled' ? (
-                t('subscription.pause.resumeBtn')
-              ) : (
-                t('subscription.pause.pauseBtn')
-              )}
-            </button>
-          </div>
+          <h2 className="text-sm font-semibold tracking-tight text-dark-50">
+            {t('subscription.additionalOptions.title')}
+          </h2>
 
-          {/* Pause mutation error */}
-          {pauseMutation.isError &&
-            (() => {
-              const balanceError = getInsufficientBalanceError(pauseMutation.error);
-              if (balanceError) {
-                const missingAmount = balanceError.required - balanceError.balance;
-                return (
-                  <div className="mt-4">
-                    <InsufficientBalancePrompt
-                      missingAmountKopeks={missingAmount}
-                      message={t('subscription.pause.insufficientBalance')}
-                      compact
-                    />
-                  </div>
-                );
-              }
-              return (
-                <div
-                  className="mt-4 rounded-[10px] p-3 text-center text-sm"
-                  style={{
-                    background: 'rgba(255,59,92,0.08)',
-                    border: '1px solid rgba(255,59,92,0.15)',
-                    color: 'rgb(var(--color-critical-500))',
-                  }}
-                >
-                  {getErrorMessage(pauseMutation.error)}
-                </div>
-              );
-            })()}
+          <div id="subscription-additional-options-panel">
+            <div className={embedded ? 'mt-2 space-y-2 sm:mt-3 sm:space-y-3' : 'mt-3 space-y-3'}>
+              {showAddons && (
+                <>
+                  <DeviceTopupSheet
+                    compactOnMobile={embedded}
+                    open={showDeviceTopup}
+                    onOpen={() => {
+                      setShowDeviceTopup(true);
+                      setShowDeviceReduction(false);
+                      setShowTrafficTopup(false);
+                      setShowServerManagement(false);
+                    }}
+                    onClose={() => setShowDeviceTopup(false)}
+                    subscription={subscription}
+                    subscriptionId={subscriptionId}
+                    devicesToAdd={devicesToAdd}
+                    onDevicesToAddChange={setDevicesToAdd}
+                    purchaseOptions={purchaseOptions}
+                    isDark={isDark}
+                  />
 
-          {/* Paused info or Next charge progress bar */}
-          {subscription.is_daily_paused ? (
-            <div
-              className="mt-4 rounded-[12px] p-4"
-              style={{
-                background: 'rgba(255,184,0,0.06)',
-                border: '1px solid rgba(255,184,0,0.12)',
-              }}
-            >
-              <div className="flex items-start gap-3">
-                <PauseIcon
-                  className="h-5 w-5 shrink-0"
-                  style={{ color: 'rgb(var(--color-urgent-400))' }}
-                />
-                <div>
-                  <div
-                    className="text-sm font-semibold"
-                    style={{ color: 'rgb(var(--color-urgent-400))' }}
-                  >
-                    {t('subscription.pause.pausedInfo')}
-                  </div>
-                  <div className="mt-1 text-[12px] text-dark-400">
-                    {t('subscription.pause.pausedDescription')}{' '}
-                    {new Date(subscription.end_date).toLocaleDateString(uiLocale())} (
-                    {t('subscription.pause.days', { count: subscription.days_left })})
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            subscription.next_daily_charge_at &&
-            (() => {
-              const now = new Date();
-              const nextChargeStr = subscription.next_daily_charge_at.endsWith('Z')
-                ? subscription.next_daily_charge_at
-                : `${subscription.next_daily_charge_at}Z`;
-              const nextCharge = new Date(nextChargeStr);
-              const totalMs = 24 * 60 * 60 * 1000;
-              const remainingMs = Math.max(0, nextCharge.getTime() - now.getTime());
-              const elapsedMs = totalMs - remainingMs;
-              const progress = Math.min(100, (elapsedMs / totalMs) * 100);
+                  <DeviceReductionSheet
+                    compactOnMobile={embedded}
+                    open={showDeviceReduction}
+                    onOpen={() => {
+                      setShowDeviceTopup(false);
+                      setShowDeviceReduction(true);
+                      setShowTrafficTopup(false);
+                      setShowServerManagement(false);
+                    }}
+                    onClose={() => setShowDeviceReduction(false)}
+                    subscriptionPresent={!!subscription}
+                    subscriptionId={subscriptionId}
+                    targetDeviceLimit={targetDeviceLimit}
+                    onTargetDeviceLimitChange={setTargetDeviceLimit}
+                    isDark={isDark}
+                  />
 
-              const hours = Math.floor(remainingMs / (1000 * 60 * 60));
-              const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
-
-              return (
-                <div className="mt-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-[11px] font-medium uppercase tracking-wider text-dark-400">
-                      {t('subscription.pause.nextCharge')}
-                    </span>
-                    <span className="font-mono text-[12px] font-semibold text-dark-50">
-                      {hours > 0
-                        ? `${hours}${t('subscription.pause.hours')} ${minutes}${t('subscription.pause.minutes')}`
-                        : `${minutes}${t('subscription.pause.minutes')}`}
-                    </span>
-                  </div>
-                  <div
-                    className="relative h-2 overflow-hidden rounded-full"
-                    style={{ background: g.trackBg }}
-                  >
-                    <div
-                      className="absolute inset-0 origin-left rounded-full transition-transform duration-500"
-                      style={{
-                        transform: `scaleX(${progress / 100})`,
-                        background:
-                          'linear-gradient(90deg, rgb(var(--color-accent-500)), rgb(var(--color-accent-400)))',
-                      }}
-                    />
-                  </div>
-                  {subscription.daily_price_kopeks && (
-                    <div className="mt-2 text-center text-[11px] text-dark-500">
-                      {t('subscription.pause.willBeCharged')}:{' '}
-                      {formatPrice(subscription.daily_price_kopeks)}
-                    </div>
-                  )}
-                </div>
-              );
-            })()
-          )}
-        </div>
-      )}
-
-      {/* Delete expired subscription */}
-      {isMultiTariff &&
-        subscription &&
-        !subscription.is_active &&
-        !subscription.is_trial &&
-        !subscription.is_limited && (
-          <div className="space-y-3">
-            <DeleteSubscriptionSheet
-              subscriptionId={subscription.id}
-              open={showDeleteSheet}
-              onOpen={() => setShowDeleteSheet(true)}
-              onClose={() => setShowDeleteSheet(false)}
-              textSecondary={g.textSecondary}
-              onDeleted={() => {
-                queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
-                navigate('/subscriptions', { replace: true });
-              }}
-            />
-          </div>
-        )}
-
-      {/* Available secondary actions are always visible; individual forms remain explicit. */}
-      {subscription &&
-        (subscription.is_active || subscription.is_limited) &&
-        !subscription.is_trial && (
-          <PageEntranceItem
-            ref={additionalOptionsSectionRef}
-            className="relative scroll-mt-20 overflow-hidden rounded-3xl"
-            style={{
-              background: g.cardBg,
-              border: `1px solid ${g.cardBorder}`,
-              boxShadow: g.shadow,
-              padding: embedded ? '12px' : '24px 28px',
-            }}
-          >
-            <h2 className="text-sm font-semibold tracking-tight text-dark-50">
-              {t('subscription.additionalOptions.title')}
-            </h2>
-
-            <div id="subscription-additional-options-panel">
-              <div className={embedded ? 'mt-2 space-y-2 sm:mt-3 sm:space-y-3' : 'mt-3 space-y-3'}>
-                {showsAddonOptions(subscription) && (
-                  <>
-                    <DeviceTopupSheet
+                  {showTrafficAddon && (
+                    <TrafficTopupSheet
                       compactOnMobile={embedded}
-                      open={showDeviceTopup}
+                      open={showTrafficTopup}
                       onOpen={() => {
-                        setShowDeviceTopup(true);
+                        setShowDeviceTopup(false);
                         setShowDeviceReduction(false);
-                        setShowTrafficTopup(false);
+                        setShowTrafficTopup(true);
                         setShowServerManagement(false);
                       }}
-                      onClose={() => setShowDeviceTopup(false)}
+                      onClose={() => setShowTrafficTopup(false)}
                       subscription={subscription}
                       subscriptionId={subscriptionId}
-                      devicesToAdd={devicesToAdd}
-                      onDevicesToAddChange={setDevicesToAdd}
+                      selectedTrafficPackage={selectedTrafficPackage}
+                      onSelectedTrafficPackageChange={setSelectedTrafficPackage}
                       purchaseOptions={purchaseOptions}
                       isDark={isDark}
                     />
+                  )}
 
-                    <DeviceReductionSheet
-                      compactOnMobile={embedded}
-                      open={showDeviceReduction}
+                  {SHOW_SERVER_MANAGEMENT_OPTION && !isTariffsMode && (
+                    <ServerManagementSheet
+                      open={showServerManagement}
                       onOpen={() => {
                         setShowDeviceTopup(false);
-                        setShowDeviceReduction(true);
+                        setShowDeviceReduction(false);
                         setShowTrafficTopup(false);
-                        setShowServerManagement(false);
+                        setShowServerManagement(true);
                       }}
-                      onClose={() => setShowDeviceReduction(false)}
-                      subscriptionPresent={!!subscription}
+                      onClose={() => setShowServerManagement(false)}
+                      subscription={subscription}
                       subscriptionId={subscriptionId}
-                      targetDeviceLimit={targetDeviceLimit}
-                      onTargetDeviceLimitChange={setTargetDeviceLimit}
+                      selectedServers={selectedServersToUpdate}
+                      onSelectedServersChange={setSelectedServersToUpdate}
+                      purchaseOptions={purchaseOptions}
                       isDark={isDark}
                     />
+                  )}
+                </>
+              )}
 
-                    {subscription.traffic_limit_gb > 0 && (
-                      <TrafficTopupSheet
-                        compactOnMobile={embedded}
-                        open={showTrafficTopup}
-                        onOpen={() => {
-                          setShowDeviceTopup(false);
-                          setShowDeviceReduction(false);
-                          setShowTrafficTopup(true);
-                          setShowServerManagement(false);
-                        }}
-                        onClose={() => setShowTrafficTopup(false)}
-                        subscription={subscription}
-                        subscriptionId={subscriptionId}
-                        selectedTrafficPackage={selectedTrafficPackage}
-                        onSelectedTrafficPackageChange={setSelectedTrafficPackage}
-                        purchaseOptions={purchaseOptions}
-                        isDark={isDark}
-                      />
-                    )}
-
-                    {SHOW_SERVER_MANAGEMENT_OPTION && !isTariffsMode && (
-                      <ServerManagementSheet
-                        open={showServerManagement}
-                        onOpen={() => {
-                          setShowDeviceTopup(false);
-                          setShowDeviceReduction(false);
-                          setShowTrafficTopup(false);
-                          setShowServerManagement(true);
-                        }}
-                        onClose={() => setShowServerManagement(false)}
-                        subscription={subscription}
-                        subscriptionId={subscriptionId}
-                        selectedServers={selectedServersToUpdate}
-                        onSelectedServersChange={setSelectedServersToUpdate}
-                        purchaseOptions={purchaseOptions}
-                        isDark={isDark}
-                      />
-                    )}
-                  </>
-                )}
-
-                <button
-                  onClick={handleRevoke}
-                  disabled={revokeMutation.isPending || revokeCooldown > 0}
-                  className="w-full rounded-xl border border-warning-500/30 bg-warning-500/10 p-3 text-left transition-colors hover:bg-warning-500/20 disabled:opacity-50"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-medium text-warning-400">
-                        {t('subscription.revoke.button')}
-                      </div>
-                      <div className="mt-0.5 text-xs text-dark-400">
-                        {revokeCooldown > 0
-                          ? t('subscription.revoke.cooldown', {
-                              minutes: Math.floor(revokeCooldown / 60),
-                              seconds: revokeCooldown % 60,
-                            })
-                          : t('subscription.revoke.description')}
-                      </div>
+              <button
+                onClick={handleRevoke}
+                disabled={revokeMutation.isPending || revokeCooldown > 0}
+                className="w-full rounded-xl border border-warning-500/30 bg-warning-500/10 p-3 text-left transition-colors hover:bg-warning-500/20 disabled:opacity-50"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium text-warning-400">
+                      {t('subscription.revoke.button')}
                     </div>
-                    <div className="shrink-0 text-warning-400">
-                      {revokeMutation.isPending ? (
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-warning-400/30 border-t-amber-400" />
-                      ) : (
-                        <ArrowPathIcon className="h-5 w-5" />
-                      )}
+                    <div className="mt-0.5 text-xs text-dark-400">
+                      {revokeCooldown > 0
+                        ? t('subscription.revoke.cooldown', {
+                            minutes: Math.floor(revokeCooldown / 60),
+                            seconds: revokeCooldown % 60,
+                          })
+                        : t('subscription.revoke.description')}
                     </div>
                   </div>
-                </button>
-                {revokeMutation.data?.devices_reset === false && (
-                  <p role="status" className="text-sm text-warning-400">
-                    {t('subscription.revoke.partialWarning')}
-                  </p>
-                )}
-                {revokeMutation.error && (
-                  <p className="text-sm text-error-400">{getErrorMessage(revokeMutation.error)}</p>
-                )}
-              </div>
+                  <div className="shrink-0 text-warning-400">
+                    {revokeMutation.isPending ? (
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-warning-400/30 border-t-amber-400" />
+                    ) : (
+                      <ArrowPathIcon className="h-5 w-5" />
+                    )}
+                  </div>
+                </div>
+              </button>
+              {revokeMutation.data?.devices_reset === false && (
+                <p role="status" className="text-sm text-warning-400">
+                  {t('subscription.revoke.partialWarning')}
+                </p>
+              )}
+              {revokeMutation.error && (
+                <p className="text-sm text-error-400">{getErrorMessage(revokeMutation.error)}</p>
+              )}
             </div>
-          </PageEntranceItem>
-        )}
+          </div>
+        </PageEntranceItem>
+      )}
       {hasBot53Contract() && subscription && !subscription.is_trial && (
         <PageEntranceItem>
           <PayHotRecurringPanel
@@ -1878,21 +1754,7 @@ export default function Subscription({
           />
         </PageEntranceItem>
       )}
-      {embedded && subscription && showsAutopayToggle(subscription) && (
-        <PageEntranceItem>
-          <Card size="sm" className="p-2 sm:p-3" data-subscription-autopay>
-            <SubscriptionAutopayToggle
-              compactOnMobile
-              enabled={subscription.autopay_enabled}
-              daysBefore={subscription.autopay_days_before}
-              pending={autopayMutation.isPending}
-              onToggle={() => autopayMutation.mutate(!subscription.autopay_enabled)}
-              accentColor={zone.mainHex}
-              glassColors={g}
-            />
-          </Card>
-        </PageEntranceItem>
-      )}
+      {embedded && showAutopay && <PageEntranceItem>{renderAutopay()}</PageEntranceItem>}
     </PageEntrance>
   );
 }

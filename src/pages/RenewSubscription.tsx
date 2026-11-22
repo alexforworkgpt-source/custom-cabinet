@@ -228,12 +228,12 @@ export default function RenewSubscription() {
 
   return (
     <PageEntrance className="space-y-4">
-      <PageEntranceItem className="flex items-center gap-3">
+      <div className="flex items-center gap-3">
         <WebBackButton to={`/subscriptions/${subId}`} />
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-dark-100">{t('subscription.extend')}</h1>
         </div>
-      </PageEntranceItem>
+      </div>
       {dailyResume && subscription ? (
         <PageEntranceItem>
           <Card className="space-y-3">
@@ -255,7 +255,7 @@ export default function RenewSubscription() {
             )}
           </Card>
         </PageEntranceItem>
-      ) : loading ? (
+      ) : loading && !failedQuery ? (
         <SubscriptionFlowSkeleton
           mode="renewal"
           context={purchaseContext}

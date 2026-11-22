@@ -358,7 +358,7 @@ test('reserves the full-device action height on a narrow screen', async ({ page 
   const balanceCard = page.getByRole('link', { name: /Balance/ }).first();
   const before = (await balanceCard.boundingBox())?.y;
   devices.release();
-  await expect(page.getByRole('button', { name: /My Devices/ })).toContainText('3 / 3');
+  await expect(page.getByRole('button', { name: /Set Up VPN/ })).toContainText('3 / 3');
   const after = (await balanceCard.boundingBox())?.y;
   if (before === undefined || after === undefined) throw new Error('Balance must remain visible');
   expect(Math.abs(after - before)).toBeLessThanOrEqual(4);
@@ -558,3 +558,42 @@ for (const theme of ['dark', 'light'] as const) {
     await expect(page.getByRole('link', { name: /Balance/ }).first()).toContainText('0');
   });
 }
+
+test('known expired trial leaves space only for the dashboard card it will show', async ({
+  page,
+}) => {
+  const details = deferred();
+  const requested = deferred();
+  const trial = {
+    ...subscription,
+    status: 'expired',
+    is_trial: true,
+    is_active: false,
+    is_expired: true,
+  };
+  await prepareAuthenticatedPage(page, {
+    responses: {
+      '/api/cabinet/subscriptions': { subscriptions: [trial], multi_tariff_enabled: true },
+      '/api/cabinet/subscription': { has_subscription: true, subscription: trial },
+      '/api/cabinet/subscription/devices': { devices: [], total: 0, device_limit: 3 },
+    },
+  });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route(/\/api\/cabinet\/subscription(?:\?|$)/, async (route) => {
+    requested.release();
+    await details.promise;
+    await route.fallback();
+  });
+
+  await page.goto('/?sub=7', { waitUntil: 'domcontentloaded' });
+  await requested.promise;
+  await expect(page.getByRole('heading', { name: 'Your Subscription' })).toBeVisible();
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
+  const balance = page.getByRole('link', { name: /Balance/ }).first();
+  const before = await balance.boundingBox();
+  details.release();
+  await expect(page.getByRole('button', { name: 'Manage subscription' })).toBeVisible();
+  const after = await balance.boundingBox();
+  if (!before || !after) throw new Error('Balance must remain visible');
+  expect(Math.abs(before.y - after.y)).toBeLessThanOrEqual(4);
+});

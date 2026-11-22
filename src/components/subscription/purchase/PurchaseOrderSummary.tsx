@@ -8,6 +8,9 @@ import {
   TagIcon,
   WalletIcon,
 } from '../../icons';
+import { Skeleton, SkeletonGroup } from '../../ui/skeleton';
+
+const summaryClasses = 'w-full space-y-3 rounded-xl bg-dark-800/70 p-4 sm:p-5';
 
 interface IconProps {
   className?: string;
@@ -70,7 +73,7 @@ export function PurchaseOrderSummary({
   discountValue,
 }: PurchaseOrderSummaryProps) {
   return (
-    <div data-order-summary className="w-full space-y-3 rounded-xl bg-dark-800/70 p-4 sm:p-5">
+    <div data-order-summary className={summaryClasses}>
       {breakdown.map((item, idx) => {
         const { kind, icon: Icon } = getBreakdownPresentation(item.label);
         const detail = details?.[kind];
@@ -119,5 +122,17 @@ export function PurchaseOrderSummary({
         </div>
       </div>
     </div>
+  );
+}
+
+export function PurchaseOrderSummarySkeleton() {
+  return (
+    <SkeletonGroup className={summaryClasses}>
+      <div className="flex items-center gap-3 border-t border-dark-700/50 pt-3">
+        <Skeleton className="h-8 w-8 shrink-0" />
+        <Skeleton className="h-5 w-20" />
+        <Skeleton className="ms-auto h-7 w-16 shrink-0" />
+      </div>
+    </SkeletonGroup>
   );
 }

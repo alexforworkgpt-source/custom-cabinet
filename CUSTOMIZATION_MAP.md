@@ -185,10 +185,14 @@
 
 - `SubscriptionManagementSkeleton` owns the embedded management loading shape,
   without the heading already owned by `SubscriptionPage`. It reuses Card,
-  Skeleton/SkeletonGroup and the same256px minimum as `SubscriptionOverviewCard`.
+  Skeleton/SkeletonGroup and the same 256px minimum as `SubscriptionOverviewCard`.
+  When the selected subscription is known, the overview, action cards and
+  applicable settings reuse the ready layout and guards. The skeleton uses
+  read-only shells for the daily control, traffic packages and balance autopay.
 - `PurchaseCTAButton` accepts opt-in `loading`/`reserveSpace` presentation props.
-  Loading exposes a status skeleton rather than a live link; the existing daily
-  multi-tariff visibility rule still applies first. Management opts into96/80px
+  Loading reserves the available action cards. If a refresh interrupts a focused
+  action, the link keeps focus and its financial destination is suspended until
+  fresh conditions arrive. The daily multi-tariff visibility rule still applies first. Management opts into96/80px
   reserved action height on the painted HoverBorderGradient, not on an oversized
   invisible Link. Its child fills the surface; the following devices gap stays16px.
   Route/price decisions retain their existing owners.
@@ -274,6 +278,10 @@
   `mobileNavRoutes` supplies matching active-state and four-item navigation rules.
 - `SubscriptionPurchase` and `ClassicPurchaseWizard` guard paid classic contexts;
   existing renewal remains the API owner for renewal with current device limits.
+  The explicit `mode=configure` entry permits the existing Classic configurator
+  for an expired paid, non-daily, non-tariff subscription with a matching ID.
+  `PurchaseCTAButton` places this entry below renewal and offers the existing
+  ID-scoped catalogue for periodic tariff subscriptions.
 - `useDevicePurchase` owns fresh quote/balance/subscription checks and explicit
   confirmation. `deviceIntent` persists user/subscription-scoped intent only;
   `DeviceTopupSheet` retains the existing presentation and server quote display.

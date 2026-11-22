@@ -200,3 +200,99 @@ for (const mode of ['renewal', 'classic', 'tariff']) {
     });
   }
 }
+
+test('renewal goes from a neutral period placeholder to a known empty choice', async ({ page }) => {
+  const options = deferred();
+  const promo = deferred();
+  await prepareSales(page, 'renewal', 'light');
+  await page.route('**/api/cabinet/subscription/renewal-options**', async (route) => {
+    await options.promise;
+    await route.fulfill({ json: [] });
+  });
+  await page.route('**/api/cabinet/promo/group-discounts', async (route) => {
+    await promo.promise;
+    await route.fallback();
+  });
+
+  await page.goto(pathFor('renewal'), { waitUntil: 'domcontentloaded' });
+  const periods = page.locator('[data-period-options-loading]');
+  await expect(periods.locator(':scope > div')).toHaveCount(1);
+  options.release();
+  await expect(page.locator('[data-sales-context-loading]')).toBeVisible();
+  await expect(periods.locator(':scope > div')).toHaveCount(0);
+  promo.release();
+  await expect(periods).toHaveCount(0);
+});
+
+test('classic loading uses the configured period count and a noninteractive first step', async ({
+  page,
+}) => {
+  const promo = deferred();
+  await prepareSales(page, 'classic', 'light');
+  await page.route('**/api/cabinet/subscription/purchase-options', (route) =>
+    route.fulfill({
+      json: { ...classicPurchaseOptions, periods: classicPurchaseOptions.periods.slice(0, 2) },
+    }),
+  );
+  await page.route('**/api/cabinet/promo/group-discounts', async (route) => {
+    await promo.promise;
+    await route.fallback();
+  });
+
+  await page.goto(pathFor('classic'), { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-sales-context-loading]')).toBeVisible();
+  const loading = page.locator('main [role="status"][aria-busy="true"]').first();
+  await expect(loading.locator('[data-period-options-loading] > div')).toHaveCount(2);
+  await expect(loading.locator('[data-classic-step-indicator] > span')).toHaveCount(3);
+  await expect(loading.locator('a, button, input, [tabindex]')).toHaveCount(0);
+
+  promo.release();
+  await expect(page.getByText('Шаг 1 из 3', { exact: true })).toBeVisible();
+});
+
+test('catalogue displays no invented tariff cards when the result is unknown or empty', async ({
+  page,
+}) => {
+  const options = deferred();
+  const promo = deferred();
+  await prepareSales(page, 'tariff', 'dark');
+  await page.route('**/api/cabinet/subscription/purchase-options**', async (route) => {
+    await options.promise;
+    await route.fulfill({ json: { sales_mode: 'tariffs', tariffs: [], balance_kopeks: 0 } });
+  });
+  await page.route('**/api/cabinet/promo/group-discounts', async (route) => {
+    await promo.promise;
+    await route.fallback();
+  });
+
+  await page.goto(pathFor('tariff'), { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('main [role="status"][aria-busy="true"]').first()).toBeVisible();
+  const tariffCards = page.locator('[data-tariff-options-loading] > div');
+  await expect(tariffCards).toHaveCount(0);
+  options.release();
+  await expect(page.locator('[data-sales-context-loading]')).toBeVisible();
+  await expect(tariffCards).toHaveCount(0);
+  promo.release();
+  await expect(page.getByText('Доступных опций нет', { exact: true })).toBeVisible();
+});
+
+test('classic device step stays open and ends price loading when the quote fails', async ({
+  page,
+}) => {
+  const preview = deferred();
+  await prepareSales(page, 'classic', 'light');
+  await page.route('**/api/cabinet/subscription/purchase-preview', async (route) => {
+    await preview.promise;
+    await route.fulfill({ status: 503, json: { detail: 'Temporary quote failure' } });
+  });
+  await page.goto(pathFor('classic'), { waitUntil: 'domcontentloaded' });
+  await page.getByRole('button', { name: /^30 дней/ }).click();
+  await page.getByRole('button', { name: /^Далее/ }).click();
+  const layout = page.locator('[data-purchase-layout="classic"]');
+  await expect(page.getByText('Шаг 2 из 3', { exact: true })).toBeVisible();
+  await expect(layout.locator('[role="status"][aria-busy="true"]')).toBeVisible();
+  preview.release();
+  await expect(layout.getByRole('alert')).toBeVisible();
+  await expect(layout.locator('[role="status"][aria-busy="true"]')).toHaveCount(0);
+  await expect(page.getByText('Шаг 2 из 3', { exact: true })).toBeVisible();
+});

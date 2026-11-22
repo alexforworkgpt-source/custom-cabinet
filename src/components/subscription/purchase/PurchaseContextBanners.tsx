@@ -7,17 +7,39 @@ import { UsersIcon, TariffsIcon } from '../../icons';
 
 interface PurchaseContextBannersProps {
   context: PurchaseContext;
+  measuring?: boolean;
 }
 
-export function PurchaseContextBanners({ context }: PurchaseContextBannersProps) {
+export function PurchaseContextBanners({
+  context,
+  measuring = false,
+}: PurchaseContextBannersProps) {
   const { t } = useTranslation();
   const location = useLocation();
   const { promoGroupName, showTrialUpgrade } = context;
 
   if (!showTrialUpgrade && !promoGroupName) return null;
 
+  const Container = measuring ? 'div' : motion.div;
+  const groupClassName =
+    'flex items-center gap-3 rounded-xl border border-success-500/40 bg-success-500/15 p-3 transition-colors hover:border-success-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success-500';
+  const groupContent = (
+    <>
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success-500/25 text-success-400">
+        <UsersIcon className="h-5 w-5" />
+      </div>
+      <div>
+        <div className="text-sm font-medium text-success-400">
+          {t('subscription.promoGroup.yourGroup', { name: promoGroupName })}
+        </div>
+        <div className="text-xs text-dark-300">
+          {t('subscription.promoGroup.personalDiscountsApplied')}
+        </div>
+      </div>
+    </>
+  );
   return (
-    <motion.div variants={staggerItem} className="space-y-4">
+    <Container {...(measuring ? {} : { variants: staggerItem })} className="space-y-4">
       {showTrialUpgrade && (
         <div className="rounded-[14px] border border-warning-500/30 bg-warning-500/15 p-4">
           <div className="flex items-start gap-3">
@@ -36,28 +58,21 @@ export function PurchaseContextBanners({ context }: PurchaseContextBannersProps)
         </div>
       )}
 
-      {promoGroupName && (
-        <Link
-          to="/info"
-          state={{
-            infoSection: 'loyalty',
-            infoReturnTo: `${location.pathname}${location.search}${location.hash}`,
-          }}
-          className="flex items-center gap-3 rounded-xl border border-success-500/40 bg-success-500/15 p-3 transition-colors hover:border-success-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success-500"
-        >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success-500/25 text-success-400">
-            <UsersIcon className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="text-sm font-medium text-success-400">
-              {t('subscription.promoGroup.yourGroup', { name: promoGroupName })}
-            </div>
-            <div className="text-xs text-dark-300">
-              {t('subscription.promoGroup.personalDiscountsApplied')}
-            </div>
-          </div>
-        </Link>
-      )}
-    </motion.div>
+      {promoGroupName &&
+        (measuring ? (
+          <div className={groupClassName}>{groupContent}</div>
+        ) : (
+          <Link
+            to="/info"
+            state={{
+              infoSection: 'loyalty',
+              infoReturnTo: location.pathname + location.search + location.hash,
+            }}
+            className={groupClassName}
+          >
+            {groupContent}
+          </Link>
+        ))}
+    </Container>
   );
 }

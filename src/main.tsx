@@ -148,6 +148,12 @@ const queryClient = new QueryClient({
   },
 });
 
+// Query keys are shared within an account. Logout and identity changes must
+// discard the previous account's data before another protected route mounts.
+useAuthStore.subscribe((state, previous) => {
+  if (previous.user && previous.user.id !== state.user?.id) queryClient.clear();
+});
+
 const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error('Application root element #root was not found');

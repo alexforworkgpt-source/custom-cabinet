@@ -6,7 +6,7 @@ interface Props {
   enabled: boolean;
   daysBefore: number;
   pending: boolean;
-  onToggle: () => void;
+  onToggle?: () => void;
   accentColor: string;
   glassColors: ReturnType<typeof getGlassColors>;
   compactOnMobile?: boolean;
@@ -23,6 +23,7 @@ export function SubscriptionAutopayToggle({
   compactOnMobile = false,
 }: Props) {
   const { t } = useTranslation();
+  const Switch = onToggle ? 'button' : 'span';
   return (
     <div
       className={cn(
@@ -37,12 +38,16 @@ export function SubscriptionAutopayToggle({
           {t('subscription.daysBeforeExpiry', { count: daysBefore })}
         </div>
       </div>
-      <button
-        onClick={onToggle}
-        disabled={pending}
-        role="switch"
-        aria-checked={enabled}
-        aria-label={t('subscription.autopay', 'Auto-payment')}
+      <Switch
+        {...(onToggle
+          ? {
+              onClick: onToggle,
+              disabled: pending,
+              role: 'switch',
+              'aria-checked': enabled,
+              'aria-label': t('subscription.autopay', 'Auto-payment'),
+            }
+          : {})}
         className={cn(
           'relative h-7 w-[52px] rounded-full',
           compactOnMobile && 'h-11 shrink-0 sm:h-7',
@@ -61,7 +66,7 @@ export function SubscriptionAutopayToggle({
             }}
           />
         </span>
-      </button>
+      </Switch>
     </div>
   );
 }

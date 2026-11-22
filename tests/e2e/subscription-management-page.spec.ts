@@ -192,7 +192,11 @@ test('device viewing retains the Home source for management with multiple subscr
   await page.goto('/?sub=42');
   await page.getByRole('button', { name: /Управление подпиской/ }).click();
   await page.getByRole('link', { name: /Мои устройства/ }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
   await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(page).toHaveURL('/subscriptions/42');
   await expect(page.getByRole('link', { name: 'Назад', exact: true })).toHaveCount(0);
   await page.goBack();
   await expect(page).toHaveURL('/?sub=42');
@@ -318,4 +322,58 @@ test('Telegram Back from a directly opened management page stays inside the cabi
     host.Telegram?.WebView?.receiveEvent('back_button_pressed');
   });
   await expect(page).toHaveURL('/?sub=42');
+});
+
+test('the subscriptions list stays compact cold and visible during a cached refresh', async ({
+  page,
+}) => {
+  let hold = true;
+  let release = () => {};
+  const options = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await prepareAuthenticatedPage(page, {
+    language: 'ru',
+    responses: {
+      ...responses,
+      '/api/cabinet/subscriptions': {
+        multi_tariff_enabled: true,
+        subscriptions: [
+          { ...currentSubscription, tariff_name: 'Первый тариф' },
+          { ...currentSubscription, id: 43, tariff_name: 'Второй тариф' },
+        ],
+      },
+    },
+  });
+  await page.route('**/api/cabinet/subscriptions', async (route) => {
+    if (hold) await options;
+    await route.fallback();
+  });
+  await page.goto('/subscriptions', { waitUntil: 'domcontentloaded' });
+  const loading = page.locator('main [role="status"][aria-busy="true"]').first();
+  await expect(page.getByRole('heading', { name: 'Мои подписки' })).toBeVisible();
+  await expect(loading).toBeVisible();
+  await expect(loading.locator(':scope > span')).toHaveCount(1);
+  hold = false;
+  release();
+  const first = page.getByRole('button', { name: /^Первый тариф/ });
+  const second = page.getByRole('button', { name: /^Второй тариф/ });
+  await expect(first).toBeVisible();
+  await expect(second).toBeVisible();
+
+  await first.click();
+  await expect(page).toHaveURL('/subscriptions/42');
+  const refresh = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/cabinet/subscriptions', async (route) => {
+    await refresh;
+    await route.fallback();
+  });
+  await page.goBack();
+  await expect(page).toHaveURL('/subscriptions');
+  await expect(first).toBeVisible();
+  await expect(second).toBeVisible();
+  await expect(loading).toHaveCount(0);
+  release();
 });

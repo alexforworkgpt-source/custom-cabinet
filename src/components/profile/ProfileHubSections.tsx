@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
 import { Card } from '@/components/data-display/Card';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { HubLink } from './HubLink';
@@ -42,10 +43,11 @@ export default function ProfileHubSections({
   hasPolls,
 }: ProfileHubSectionsProps) {
   const { t } = useTranslation();
+  const showMoreFeatures = giftEnabled || wheelEnabled || hasContests || hasPolls;
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-2">
-      <Card size="md" className="z-20 overflow-visible">
+      <Card size="md" className={cn('z-20 overflow-visible', !showMoreFeatures && 'lg:col-span-2')}>
         <SectionTitle>{t('profile.hub.preferences')}</SectionTitle>
         <div
           role="group"
@@ -83,7 +85,7 @@ export default function ProfileHubSections({
         </div>
       </Card>
 
-      {(giftEnabled || wheelEnabled || hasContests || hasPolls) && (
+      {showMoreFeatures && (
         <Card size="md">
           <SectionTitle>{t('profile.hub.more')}</SectionTitle>
           <nav

@@ -23,7 +23,7 @@
  */
 
 export { PageSkeleton } from './PageSkeleton';
-export { Skeleton, SkeletonGroup, type SkeletonProps } from './Skeleton';
+export { Skeleton, SkeletonGroup, SkeletonSurface, type SkeletonProps } from './Skeleton';
 export {
   skeletonClass,
   type SkeletonClassOptions,

@@ -65,3 +65,15 @@ export function SkeletonGroup({
     </div>
   );
 }
+
+/** Holds the footprint of a read-only presentation while its content is hidden. */
+export function SkeletonSurface({ children }: { children: ReactNode }) {
+  return (
+    <div className="relative">
+      <div className="invisible" aria-hidden="true">
+        {children}
+      </div>
+      <Skeleton variant="card" animate={false} className="absolute inset-0 h-full w-full" />
+    </div>
+  );
+}

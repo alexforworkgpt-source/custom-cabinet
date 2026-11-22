@@ -1,14 +1,18 @@
+import { useState, type MouseEvent } from 'react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import type { Subscription } from '../../types';
+import { AdjustmentsIcon, ChevronRightIcon } from '../icons';
 import {
   canRenewSubscription,
+  canConfigureExpiredClassic,
   needsTariff,
   tariffSelectionPath,
 } from '../../utils/legacySubscription';
 import { PurchaseCTAPresentation } from './PurchaseCTAPresentation';
 import { FundingNotice } from './FundingNotice';
 import { PageEntranceItem } from '../motion/PageEntrance';
+import { SubscriptionPurchaseSkeleton } from './SubscriptionPurchaseSkeleton';
 
 interface PurchaseCTAButtonProps {
   subscription: Subscription | null;
@@ -21,6 +25,7 @@ interface PurchaseCTAButtonProps {
   conditionsKnown?: boolean;
   reserveSpace?: boolean;
   compactOnMobile?: boolean;
+  withinLoadingGroup?: boolean;
 }
 
 export default function PurchaseCTAButton({
@@ -31,8 +36,11 @@ export default function PurchaseCTAButton({
   conditionsKnown = true,
   reserveSpace = false,
   compactOnMobile = false,
+  withinLoadingGroup = false,
 }: PurchaseCTAButtonProps) {
   const { t } = useTranslation();
+  const [focused, setFocused] = useState(false);
+  const preserveFocus = loading && focused && !withinLoadingGroup;
 
   const isExpired =
     !subscription ||
@@ -42,6 +50,8 @@ export default function PurchaseCTAButton({
   const requiresTariff = needsTariff(subscription);
   const canRenewCurrentSubscription = canRenewSubscription(subscription, isClassic);
   const isClassicRenewal = canRenewCurrentSubscription && isClassic && !subscription?.tariff_id;
+  const configureClassic = isClassicRenewal && canConfigureExpiredClassic(subscription);
+  const chooseTariff = !isClassic && !!subscription?.tariff_id && canRenewCurrentSubscription;
 
   // Daily tariffs renew automatically — no manual renewal button needed in multi-tariff
   if (isMultiTariff && isDaily && !isExpired) return null;
@@ -88,7 +98,7 @@ export default function PurchaseCTAButton({
   const unknownSalesMode = loading && !conditionsKnown && ambiguousClassic;
   const content = (
     <PurchaseCTAPresentation
-      pending={loading}
+      measuring={loading && !preserveFocus}
       title={unknownSalesMode ? t('common.loading') : buttonText}
       hint={unknownSalesMode ? t('subscription.cta.checkingConditions') : hintText}
       expired={isExpired}
@@ -114,29 +124,79 @@ export default function PurchaseCTAButton({
     />
   );
 
-  if (loading) {
-    return (
-      <PageEntranceItem>
-        <div role="status" aria-busy="true" data-subscription-purchase-loading>
-          {content}
-        </div>
-      </PageEntranceItem>
+  const secondaryTitle = t(
+    configureClassic ? 'subscription.cta.changeTerms' : 'subscription.cta.chooseTariff',
+  );
+  const secondaryClassName = `flex min-h-16 w-full items-center rounded-2xl border border-dark-700/60 bg-dark-900/70 text-start transition-colors hover:border-dark-600/80 hover:bg-dark-800/70 ${compactOnMobile ? 'gap-2 p-3 sm:gap-3 sm:p-4' : 'gap-3 p-4'}`;
+  const secondary = conditionsKnown && subscription && (configureClassic || chooseTariff) && (
+    <>
+      <span
+        className={`flex shrink-0 items-center justify-center rounded-xl bg-accent-500/10 text-accent-400 ${compactOnMobile ? 'h-9 w-9 sm:h-11 sm:w-11' : 'h-11 w-11'}`}
+        aria-hidden="true"
+      >
+        <AdjustmentsIcon className="h-5 w-5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold text-dark-100">{secondaryTitle}</span>
+        <span className="mt-0.5 block text-xs text-dark-400">
+          {t(
+            configureClassic
+              ? 'subscription.cta.changeTermsHint'
+              : 'subscription.cta.chooseTariffHint',
+          )}
+        </span>
+      </span>
+      <ChevronRightIcon className="h-5 w-5 shrink-0 text-dark-500 rtl:rotate-180" />
+    </>
+  );
+
+  const renewUnavailable =
+    isClassic && subscription && !isTrial && !requiresTariff && !canRenewCurrentSubscription;
+  const unavailable = renewUnavailable && (
+    <FundingNotice>{t('subscription.cta.renewUnavailable')}</FundingNotice>
+  );
+
+  if (loading && !preserveFocus) {
+    const placeholder = (
+      <SubscriptionPurchaseSkeleton
+        announce={!withinLoadingGroup}
+        secondary={secondary ? <div className={secondaryClassName}>{secondary}</div> : undefined}
+      >
+        {unavailable || content}
+      </SubscriptionPurchaseSkeleton>
     );
+    return withinLoadingGroup ? placeholder : <PageEntranceItem>{placeholder}</PageEntranceItem>;
   }
 
-  if (isClassic && subscription && !isTrial && !requiresTariff && !canRenewCurrentSubscription) {
-    return (
-      <PageEntranceItem>
-        <FundingNotice>{t('subscription.cta.renewUnavailable')}</FundingNotice>
-      </PageEntranceItem>
-    );
-  }
+  if (unavailable) return <PageEntranceItem>{unavailable}</PageEntranceItem>;
+
+  const actionProps = {
+    onFocus: () => setFocused(true),
+    onBlur: () => setFocused(false),
+    'aria-disabled': loading || undefined,
+    tabIndex: loading ? -1 : undefined,
+    onClick: loading ? (event: MouseEvent<HTMLAnchorElement>) => event.preventDefault() : undefined,
+  };
 
   return (
     <PageEntranceItem>
-      <Link to={linkTo} className="block">
+      <Link {...actionProps} to={loading ? '' : linkTo} className="block">
         {content}
       </Link>
+      {secondary && subscription && (
+        <Link
+          {...actionProps}
+          to={
+            loading
+              ? ''
+              : tariffSelectionPath(subscription.id) + (configureClassic ? '&mode=configure' : '')
+          }
+          aria-label={secondaryTitle}
+          className={`mt-3 ${secondaryClassName}`}
+        >
+          {secondary}
+        </Link>
+      )}
     </PageEntranceItem>
   );
 }

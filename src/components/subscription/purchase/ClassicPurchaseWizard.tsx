@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation, useNavigate } from 'react-router';
+import { canConfigureExpiredClassic } from '../../../utils/legacySubscription';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { subscriptionApi } from '../../../api/subscription';
 import { useCurrency } from '../../../hooks/useCurrency';
@@ -15,10 +16,15 @@ import {
   type PurchaseStep,
 } from '../../../utils/subscriptionHelpers';
 import { CheckIcon } from '../../icons';
-import { PurchaseOrderSummary } from './PurchaseOrderSummary';
+import { ClassicPurchaseStepHeader } from './ClassicPurchaseStepHeader';
+import {
+  getClassicDefaultPeriod,
+  getClassicPurchaseSteps,
+  getClassicServers,
+} from './classicPurchaseSteps';
+import { PurchaseOrderSummary, PurchaseOrderSummarySkeleton } from './PurchaseOrderSummary';
 import { PurchaseFundingNotice } from './PurchaseFundingNotice';
 import Twemoji from 'react-twemoji';
-import { Skeleton, SkeletonGroup } from '../../ui/skeleton';
 import type {
   ClassicPurchaseOptions,
   PeriodOption,
@@ -49,12 +55,14 @@ export interface ClassicPurchaseWizardProps {
   classicOptions: ClassicPurchaseOptions;
   subscription: Subscription | null;
   subscriptionId: number | undefined;
+  allowExpiredConfiguration?: boolean;
 }
 
 export function ClassicPurchaseWizard({
   classicOptions,
   subscription,
   subscriptionId,
+  allowExpiredConfiguration = false,
 }: ClassicPurchaseWizardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -62,7 +70,14 @@ export function ClassicPurchaseWizard({
   const queryClient = useQueryClient();
   const { formatAmount, currencySymbol } = useCurrency();
   const { applyPromoDiscount } = usePromoDiscount();
-  const hasPaidSubscription = !!subscription && !subscription.is_trial;
+  const hasPaidSubscription =
+    !!subscription &&
+    !subscription.is_trial &&
+    !(
+      allowExpiredConfiguration &&
+      subscriptionId === subscription.id &&
+      canConfigureExpiredClassic(subscription)
+    );
 
   const formatPrice = (kopeks: number) =>
     kopeks === 0
@@ -90,33 +105,12 @@ export function ClassicPurchaseWizard({
     setCurrentStep('period');
   });
 
+  const defaultPeriod = getClassicDefaultPeriod(classicOptions);
   const getAvailableServers = useCallback(
-    (period: PeriodOption | null) => {
-      if (!period?.servers.options) return [];
-      return period.servers.options.filter((server) => {
-        if (!server.is_available) return false;
-        if (subscription?.is_trial && server.name.toLowerCase().includes('trial')) return false;
-        return true;
-      });
-    },
+    (period: PeriodOption | null | undefined) => getClassicServers(period, subscription?.is_trial),
     [subscription?.is_trial],
   );
-
-  const steps = useMemo<PurchaseStep[]>(() => {
-    const result: PurchaseStep[] = ['period'];
-    if (selectedPeriod?.traffic.selectable && (selectedPeriod.traffic.options?.length ?? 0) > 0) {
-      result.push('traffic');
-    }
-    const availableServers = getAvailableServers(selectedPeriod);
-    if (availableServers.length > 1) {
-      result.push('servers');
-    }
-    if (selectedPeriod && selectedPeriod.devices.max > selectedPeriod.devices.min) {
-      result.push('devices');
-    }
-    result.push('confirm');
-    return result;
-  }, [selectedPeriod, getAvailableServers]);
+  const steps = getClassicPurchaseSteps(selectedPeriod ?? defaultPeriod, subscription?.is_trial);
 
   const currentStepIndex = steps.indexOf(currentStep);
   const isFirstStep = currentStepIndex === 0;
@@ -125,9 +119,7 @@ export function ClassicPurchaseWizard({
   // Seed defaults from classicOptions.selection on first mount.
   useEffect(() => {
     if (!selectedPeriod) {
-      const defaultPeriod =
-        classicOptions.periods.find((p) => p.id === classicOptions.selection.period_id) ||
-        classicOptions.periods[0];
+      if (!defaultPeriod) return;
       setSelectedPeriod(defaultPeriod);
       setSelectedTraffic(classicOptions.selection.traffic_value);
       const availableServers = getAvailableServers(defaultPeriod);
@@ -141,7 +133,7 @@ export function ClassicPurchaseWizard({
       }
       setSelectedDevices(classicOptions.selection.devices);
     }
-  }, [classicOptions, selectedPeriod, getAvailableServers]);
+  }, [classicOptions, defaultPeriod, selectedPeriod, getAvailableServers]);
 
   const currentSelection: PurchaseSelection = useMemo(
     () => ({
@@ -285,22 +277,7 @@ export function ClassicPurchaseWizard({
 
       {showPurchaseForm && (
         <div className="space-y-6">
-          {/* Step Indicator */}
-          <div className="mb-6 flex items-center justify-between">
-            <div className="text-sm text-dark-400">
-              {t('subscription.step', { current: currentStepIndex + 1, total: steps.length })}
-            </div>
-            <div className="flex gap-2">
-              {steps.map((step, idx) => (
-                <div
-                  key={step}
-                  className={`h-1 w-8 rounded-full transition-colors ${
-                    idx <= currentStepIndex ? 'bg-accent-500' : 'bg-dark-700'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
+          <ClassicPurchaseStepHeader steps={steps} index={currentStepIndex} />
 
           <div className="mb-4 text-lg font-medium text-dark-100">{getStepLabel(currentStep)}</div>
 
@@ -529,7 +506,7 @@ export function ClassicPurchaseWizard({
                   </div>
                 )}
               </div>
-              <div className="mt-6 w-full" aria-busy={previewLoading}>
+              <div className="mt-6 w-full" aria-busy={summaryPreview ? previewLoading : undefined}>
                 {summaryPreview ? (
                   <PurchaseOrderSummary
                     breakdown={summaryPreview.breakdown}
@@ -540,11 +517,9 @@ export function ClassicPurchaseWizard({
                     totalLabel={t('subscription.total')}
                     totalValue={previewTotalValue ?? summaryPreview.total_price_label}
                   />
-                ) : (
-                  <SkeletonGroup className="w-full">
-                    <Skeleton variant="card" className="h-44 w-full rounded-xl" />
-                  </SkeletonGroup>
-                )}
+                ) : !previewError ? (
+                  <PurchaseOrderSummarySkeleton />
+                ) : null}
               </div>
             </div>
           )}
@@ -604,11 +579,9 @@ export function ClassicPurchaseWizard({
                       </div>
                     ) : null)}
                 </div>
-              ) : (
-                <SkeletonGroup className="w-full">
-                  <Skeleton variant="card" className="h-44 w-full rounded-xl" />
-                </SkeletonGroup>
-              )}
+              ) : !previewError ? (
+                <PurchaseOrderSummarySkeleton />
+              ) : null}
             </div>
           )}
 

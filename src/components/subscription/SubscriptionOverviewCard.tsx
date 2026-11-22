@@ -9,7 +9,13 @@ import ManagedTrafficSummary from './ManagedTrafficSummary';
 
 /** Compact read-only overview. Existing management retains its queries and actions. */
 
-export function SubscriptionOverviewCard({ subscription }: { subscription: Subscription }) {
+export function SubscriptionOverviewCard({
+  subscription,
+  measuring = false,
+}: {
+  subscription: Subscription;
+  measuring?: boolean;
+}) {
   const { i18n } = useTranslation();
   const endDate = formatDateOrRaw(subscription.end_date, i18n?.language ?? 'ru', {
     day: 'numeric',
@@ -17,7 +23,10 @@ export function SubscriptionOverviewCard({ subscription }: { subscription: Subsc
     year: 'numeric',
   });
   return (
-    <Card className="min-h-64 space-y-4 text-sm" data-subscription-overview>
+    <Card
+      className="min-h-64 space-y-4 text-sm"
+      data-subscription-overview={measuring ? undefined : true}
+    >
       <SubscriptionIdentityBadges subscription={subscription} />
       <SubscriptionConditions subscription={subscription} endDate={endDate} serverFlagsOnly />
       <ManagedTrafficSummary subscription={subscription} />

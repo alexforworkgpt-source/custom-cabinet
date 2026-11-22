@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Subscription } from '@/types';
@@ -54,7 +54,9 @@ describe('subscription action loading', () => {
       </MemoryRouter>,
     );
     expect(screen.queryByRole('status')).toBeNull();
-    expect(screen.getByRole('link').getAttribute('href')).toBe('/subscriptions/42/renew');
+    expect(screen.getByRole('link', { name: /subscription.extend/ }).getAttribute('href')).toBe(
+      '/subscriptions/42/renew',
+    );
   });
 
   it('uses neutral pending text until the sales mode is known and keeps confirmed text during refresh', () => {
@@ -65,22 +67,45 @@ describe('subscription action loading', () => {
       </MemoryRouter>,
       { wrapper: PlatformProvider },
     );
-    expect(screen.getByRole('button').textContent).toContain('common.loading');
-    expect(screen.getByRole('button').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('status').getAttribute('aria-busy')).toBe('true');
+    expect(screen.queryByRole('button')).toBeNull();
     expect(screen.queryByRole('link')).toBeNull();
     rerender(
       <MemoryRouter>
         <PurchaseCTAButton subscription={expired} conditionsKnown isClassic loading />
       </MemoryRouter>,
     );
-    expect(screen.getByRole('button').textContent).toContain('subscription.extend');
-    expect(screen.getByRole('button').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('status').getAttribute('aria-busy')).toBe('true');
+    expect(screen.queryByRole('button')).toBeNull();
     rerender(
       <MemoryRouter>
         <PurchaseCTAButton subscription={expired} conditionsKnown isClassic />
       </MemoryRouter>,
     );
-    expect(screen.getByRole('link').getAttribute('href')).toBe('/subscriptions/42/renew');
+    expect(screen.getByRole('link', { name: /subscription.extend/ }).getAttribute('href')).toBe(
+      '/subscriptions/42/renew',
+    );
+  });
+
+  it('keeps keyboard focus on a temporarily unavailable action during a refresh', () => {
+    const current = subscription();
+    const action = (loading: boolean) => (
+      <MemoryRouter>
+        <PurchaseCTAButton subscription={current} isClassic loading={loading} />
+      </MemoryRouter>
+    );
+    const { rerender } = render(action(false), { wrapper: PlatformProvider });
+    const link = screen.getByRole('link', { name: /subscription.extend/ });
+    act(() => link.focus());
+
+    rerender(action(true));
+    expect(document.activeElement).toBe(link);
+    expect(link.getAttribute('aria-disabled')).toBe('true');
+    expect(fireEvent.click(link)).toBe(false);
+
+    rerender(action(false));
+    expect(document.activeElement).toBe(link);
+    expect(link.getAttribute('href')).toBe('/subscriptions/42/renew');
   });
 
   it('does not introduce a loading action where active multi-tariff daily renewal is hidden', () => {
@@ -178,7 +203,9 @@ describe('tariff subscription primary action', () => {
         </MemoryRouter>,
       );
 
-      expect(screen.getByRole('link').getAttribute('href')).toBe('/subscriptions/42/renew');
+      expect(screen.getByRole('link', { name: /subscription.extend/ }).getAttribute('href')).toBe(
+        '/subscriptions/42/renew',
+      );
       expect(screen.getByText('subscription.extend')).toBeTruthy();
       expect(
         screen.getByText(
@@ -240,13 +267,46 @@ describe('tariff subscription primary action', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('link').getAttribute('href')).toBe('/subscriptions/42/renew');
+    expect(screen.getByRole('link', { name: /subscription.extend/ }).getAttribute('href')).toBe(
+      '/subscriptions/42/renew',
+    );
     expect(screen.getByText('subscription.extend')).toBeTruthy();
     expect(screen.getByText('subscription.cta.activeHint')).toBeTruthy();
   });
 });
 
 describe('classic subscription renewal action', () => {
+  it.each(['active', 'expired'])('offers a tariff catalogue below %s tariff renewal', (status) => {
+    render(
+      <MemoryRouter>
+        <PurchaseCTAButton
+          subscription={subscription({ tariff_id: 7, status, is_active: status === 'active' })}
+        />
+      </MemoryRouter>,
+    );
+    expect(
+      screen.getByRole('link', { name: 'subscription.cta.chooseTariff' }).getAttribute('href'),
+    ).toBe('/subscription/purchase?subscriptionId=42');
+    expect(screen.getAllByRole('link')[0].getAttribute('href')).toBe('/subscriptions/42/renew');
+  });
+
+  it('offers changing expired classic terms below renewal for the same subscription', () => {
+    render(
+      <MemoryRouter>
+        <PurchaseCTAButton
+          subscription={subscription({ status: 'expired', is_active: false, is_expired: true })}
+          isClassic
+        />
+      </MemoryRouter>,
+    );
+    const links = screen.getAllByRole('link');
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
+      '/subscriptions/42/renew',
+      '/subscription/purchase?subscriptionId=42&mode=configure',
+    ]);
+    expect(links[1].textContent).toContain('subscription.cta.changeTerms');
+  });
+
   it('does not infer classic renewal from a missing tariff without a sales mode', () => {
     render(
       <MemoryRouter>
@@ -263,7 +323,9 @@ describe('classic subscription renewal action', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('link').getAttribute('href')).toBe('/subscriptions/42/renew');
+    expect(screen.getByRole('link', { name: /subscription.extend/ }).getAttribute('href')).toBe(
+      '/subscriptions/42/renew',
+    );
     expect(screen.getByText('subscription.classicRenewHint')).toBeTruthy();
   });
 
@@ -276,7 +338,9 @@ describe('classic subscription renewal action', () => {
         />
       </MemoryRouter>,
     );
-    expect(screen.getByRole('link').getAttribute('href')).toBe('/subscriptions/42/renew');
+    expect(screen.getByRole('link', { name: /subscription.extend/ }).getAttribute('href')).toBe(
+      '/subscriptions/42/renew',
+    );
     expect(screen.getByText('subscription.extend')).toBeTruthy();
   });
 
