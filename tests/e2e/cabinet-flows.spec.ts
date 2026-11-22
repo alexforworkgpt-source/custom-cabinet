@@ -249,7 +249,7 @@ test('keeps management usable as a page and Connection as compact as Balance', a
 
   await page.goto('/connection?sub=1&step=application&platform=windows');
   const installDialog = page.getByRole('dialog');
-  await expect(installDialog.getByRole('button', { name: 'App is installed' })).toBeInViewport();
+  await expect(installDialog.getByRole('button', { name: 'Next', exact: true })).toBeInViewport();
   await expect
     .poll(async () => (await installDialog.boundingBox())?.height ?? Number.POSITIVE_INFINITY)
     .toBeLessThanOrEqual(balanceBox.height + 16);
@@ -760,17 +760,16 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
     ).toHaveCSS('text-align', 'center');
   }
   await expect(dialog.getByRole('button', { name: otherPlatform, exact: true })).toHaveCount(0);
-  const chooseAnotherDevice = dialog.getByRole('button', { name: 'Choose another device' });
-  await expect(chooseAnotherDevice.locator('svg')).toHaveCount(1);
-  const continueWithPlatform = dialog.getByRole('button', {
-    name: `Continue with ${detectedPlatform}`,
+  await expect(
+    dialog.getByRole('button', { name: 'Choose another device', exact: true }),
+  ).toHaveCount(0);
+  const platformCard = dialog.getByRole('button', {
+    name: new RegExp(detectedPlatform + '.*Change'),
   });
-  const [chooseAnotherDeviceBox, continueWithPlatformBox] = await Promise.all([
-    chooseAnotherDevice.boundingBox(),
-    continueWithPlatform.boundingBox(),
-  ]);
-  expect(chooseAnotherDeviceBox?.y).toBeLessThan(continueWithPlatformBox?.y ?? 0);
-  await chooseAnotherDevice.click();
+  await expect(platformCard).toHaveAttribute('aria-expanded', 'false');
+  await platformCard.focus();
+  await page.keyboard.press('Enter');
+  await expect(platformCard).toHaveAttribute('aria-expanded', 'true');
   await expect(dialog.getByRole('button', { name: otherPlatform, exact: true })).toBeVisible();
   if (detectedPlatform === 'Android') {
     await dialog.getByRole('button', { name: 'Windows', exact: true }).click();
@@ -795,11 +794,11 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   expect(installActionsBox?.y).toBeGreaterThanOrEqual(
     (installContentBox?.y ?? 0) + (installContentBox?.height ?? 0),
   );
-  const chooseAnotherApp = dialog.getByRole('button', { name: 'Choose another app' });
-  await expect(chooseAnotherApp.locator('svg')).toHaveCount(1);
-  const chooseAnotherAppBox = await chooseAnotherApp.boundingBox();
+  const appCard = dialog.getByRole('button', { name: /Test App.*Change/ });
+  await expect(appCard.locator('svg')).toHaveCount(2);
+  const appCardBox = await appCard.boundingBox();
   const downloadAppBox = await downloadApp.boundingBox();
-  expect(chooseAnotherAppBox?.y).toBeLessThan(downloadAppBox?.y ?? 0);
+  expect(appCardBox?.y).toBeLessThan(downloadAppBox?.y ?? 0);
   expect(downloadAppBox?.width).toBeGreaterThanOrEqual((installActionsBox?.width ?? 0) - 1);
   await expect(dialog.getByRole('button', { name: 'Add to Test App' })).toHaveCount(0);
   await downloadApp.click();
@@ -808,9 +807,11 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   await expect(dialog.locator('[data-connection-step="add"]')).toHaveCSS('opacity', '1');
   await dialog.getByRole('button', { name: 'Back' }).click();
   await expect(page).toHaveURL(/step=application/);
-  const appInstalled = dialog.getByRole('button', { name: 'App is installed' });
-  await expect(appInstalled).toHaveClass(/btn-secondary/);
-  await appInstalled.click();
+  const nextFromApplication = dialog
+    .locator('[data-connection-step="application"]')
+    .getByRole('button', { name: 'Next', exact: true });
+  await expect(nextFromApplication).toHaveClass(/btn-secondary/);
+  await nextFromApplication.click();
   await expect(page).toHaveURL(/step=add/);
   await expect(dialog.getByRole('heading', { name: 'Add subscription', level: 2 })).toBeVisible();
   await expect(dialog.getByRole('heading', { name: 'Add subscription', level: 2 })).toBeFocused();
@@ -831,9 +832,11 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
   expect((await addToApp.boundingBox())?.width).toBeGreaterThanOrEqual(
     (addActionsBox?.width ?? 0) - 1,
   );
-  const subscriptionAdded = dialog.getByRole('button', { name: 'Subscription added' });
-  await expect(subscriptionAdded).toBeVisible();
-  await expect(subscriptionAdded).toHaveClass(/btn-secondary/);
+  const nextFromAdd = dialog
+    .locator('[data-connection-step="add"]')
+    .getByRole('button', { name: 'Next', exact: true });
+  await expect(nextFromAdd).toBeVisible();
+  await expect(nextFromAdd).toHaveClass(/btn-secondary/);
   await addToApp.click();
   await expect(page).toHaveURL(/step=success/);
   await expect(
@@ -860,8 +863,14 @@ test('runs the Connection wizard with Back, reload fallback, and legacy entry @c
     page.getByRole('dialog').getByRole('heading', { name: 'Set up Windows' }),
   ).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: 'Continue with Windows' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'App is installed' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Subscription added' }).click();
+  await dialog
+    .locator('[data-connection-step="application"]')
+    .getByRole('button', { name: 'Next', exact: true })
+    .click();
+  await dialog
+    .locator('[data-connection-step="add"]')
+    .getByRole('button', { name: 'Next', exact: true })
+    .click();
   await expect(page).toHaveURL(/step=success/);
   await page.getByRole('dialog').getByRole('button', { name: 'Finish' }).click();
   await expect(page).toHaveURL('/?sub=1');
@@ -908,6 +917,28 @@ test('centers Russian overlay headers at 320 px @critical-flow', async ({ page }
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
+test('uses Далее on both VPN steps and Готово at the end', async ({ page }) => {
+  await prepareAuthenticatedPage(page, {
+    language: 'ru',
+    responses: { ...activeResponses, ...connectionResponses },
+  });
+  await page.goto('/connection?sub=1&step=application&platform=windows');
+  const dialog = page.getByRole('dialog');
+  await dialog
+    .locator('[data-connection-step="application"]')
+    .getByRole('button', { name: 'Далее', exact: true })
+    .click({ timeout: 6000 });
+  await dialog
+    .locator('[data-connection-step="add"]')
+    .getByRole('button', { name: 'Далее', exact: true })
+    .click();
+  await dialog
+    .locator('[data-connection-step="success"]')
+    .getByRole('button', { name: 'Готово', exact: true })
+    .click();
+  await expect(page).toHaveURL('/?sub=1');
+});
+
 test('preserves an alternative app when moving back through Connection @critical-flow', async ({
   page,
 }) => {
@@ -917,7 +948,14 @@ test('preserves an alternative app when moving back through Connection @critical
 
   await page.goto('/connection?sub=1&step=application&platform=windows');
   const dialog = page.getByRole('dialog');
-  await dialog.getByRole('button', { name: 'Choose another app' }).click();
+  await expect(dialog.getByRole('button', { name: 'Choose another app', exact: true })).toHaveCount(
+    0,
+  );
+  const recommended = dialog.getByRole('button', {
+    name: /Recommended for Windows.*Test App.*Change/,
+  });
+  await recommended.click();
+  await expect(recommended).toHaveAttribute('aria-expanded', 'true');
   await dialog.getByRole('button', { name: 'Alternative App' }).click();
   await expect(
     dialog.getByRole('heading', { name: 'Install Alternative App', level: 2 }),
@@ -926,7 +964,10 @@ test('preserves an alternative app when moving back through Connection @critical
     dialog.getByRole('heading', { name: 'Install Alternative App', level: 2 }),
   ).toBeFocused();
   await expect(dialog.getByRole('link', { name: 'Alternative mirror' })).toBeVisible();
-  await dialog.getByRole('button', { name: 'App is installed' }).click();
+  await expect(
+    dialog.getByRole('button', { name: /Selected app.*Alternative App.*Change/ }),
+  ).toHaveAttribute('aria-expanded', 'false');
+  await dialog.getByRole('button', { name: 'Next', exact: true }).click();
   await expect(dialog.getByRole('button', { name: 'Add to Alternative App' })).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Quick import Alternative' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Back' }).click();
@@ -948,15 +989,54 @@ test('shows configured application icons in the Connection app picker @critical-
     responses: { ...activeResponses, ...connectionResponses },
   });
 
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.addInitScript(() => {
+    const observe = () => {
+      const list = document.querySelector(
+        '[data-connection-step="application"] button[aria-pressed]',
+      )?.parentElement;
+      if (list) {
+        const opacity = Number(getComputedStyle(list).opacity);
+        if (opacity > 0 && opacity < 0.99) list.dataset.sampledOpening = 'true';
+      }
+      requestAnimationFrame(observe);
+    };
+    requestAnimationFrame(observe);
+  });
   await page.goto('/connection?sub=1&step=application&platform=windows');
   const dialog = page.getByRole('dialog');
-  await dialog.getByRole('button', { name: 'Choose another app' }).click();
+  await dialog.getByRole('button', { name: /Test App.*Change/ }).click();
 
   const testApp = dialog.getByRole('button', { name: 'Test App', exact: true });
   const alternativeApp = dialog.getByRole('button', { name: 'Alternative App', exact: true });
+  await expect(testApp.locator('..')).toHaveAttribute('data-sampled-opening', 'true');
   await expect(testApp.locator('[data-app-icon="test-app"]')).toBeVisible();
   await expect(alternativeApp.locator('[data-app-icon="alternative-app"]')).toBeVisible();
   expect([...unexpectedApiRequests]).toEqual([]);
+});
+
+test('shows static VPN selection cards for a single platform and app', async ({ page }) => {
+  const config = connectionResponses['/api/cabinet/subscription/app-config'];
+  await prepareAuthenticatedPage(page, {
+    responses: {
+      ...activeResponses,
+      ...connectionResponses,
+      '/api/cabinet/subscription/app-config': {
+        ...config,
+        platforms: { android: config.platforms.android },
+      },
+    },
+  });
+
+  await page.goto('/connection?sub=1');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText('Android', { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: /Android.*Change/ })).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Continue with Android' }).click();
+  await expect(dialog.getByText('Mobile App', { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: /Mobile App.*Change/ })).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(dialog.getByRole('heading', { name: 'Add subscription', level: 2 })).toBeVisible();
 });
 
 test('keeps the Telegram Connection Back model inside the overlay @telegram-flow', async ({

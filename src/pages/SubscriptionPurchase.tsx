@@ -10,8 +10,17 @@ import type { Tariff, ClassicPurchaseOptions } from '../types';
 import { useCloseOnSuccessNotification } from '../store/successNotification';
 import { SwitchTariffSheet } from '../components/subscription/sheets/SwitchTariffSheet';
 import { TariffPurchaseForm } from '../components/subscription/purchase/TariffPurchaseForm';
-import { canOpenTariffSwitch, needsTariff } from '../utils/legacySubscription';
+import {
+  canConfigureExpiredClassic,
+  canOpenTariffSwitch,
+  needsTariff,
+} from '../utils/legacySubscription';
 import { TariffPickerGrid } from '../components/subscription/purchase/TariffPickerGrid';
+import { ClassicPurchaseStepHeader } from '../components/subscription/purchase/ClassicPurchaseStepHeader';
+import {
+  getClassicDefaultPeriod,
+  getClassicPurchaseSteps,
+} from '../components/subscription/purchase/classicPurchaseSteps';
 import { ClassicPurchaseWizard } from '../components/subscription/purchase/ClassicPurchaseWizard';
 import { PurchaseContextBanners } from '../components/subscription/purchase/PurchaseContextBanners';
 import { ExclamationIcon } from '@/components/icons';
@@ -140,6 +149,12 @@ export default function SubscriptionPurchase() {
       ? subscription
       : multiSubData?.subscriptions.find((sub) => !sub.is_trial)
     : undefined;
+  const configureClassic =
+    Boolean(classicOptions) &&
+    searchParams.get('mode') === 'configure' &&
+    subscriptionId !== undefined &&
+    subscription?.id === subscriptionId &&
+    canConfigureExpiredClassic(subscription);
   const purchaseContext = usePurchaseContext({
     subscription,
     purchaseOptions,
@@ -151,7 +166,7 @@ export default function SubscriptionPurchase() {
       !subscriptionError &&
       !optionsError &&
       (!classicOptions || !multiSubQuery.isError) &&
-      !paidClassic,
+      (!paidClassic || configureClassic),
   });
   usePageMobileNavigation(
     !invalidId && isTariffsMode && !optionsError && !showPurchaseForm && switchTariffId === null
@@ -159,7 +174,7 @@ export default function SubscriptionPurchase() {
       : 'action',
   );
   const pageHeader = (
-    <PageEntranceItem className="flex items-center gap-3">
+    <div className="flex items-center gap-3">
       {subscriptionId && <WebBackButton to={`/subscriptions/${subscriptionId}`} />}
       <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
         {scopedSwitch
@@ -172,7 +187,7 @@ export default function SubscriptionPurchase() {
                 ? t('subscription.switchTariff.title')
                 : t('subscription.getSubscription')}
       </h1>
-    </PageEntranceItem>
+    </div>
   );
 
   // (switch preview query + switchTariffMutation moved into <SwitchTariffSheet>)
@@ -183,26 +198,93 @@ export default function SubscriptionPurchase() {
 
   // (classic-mode helpers moved into <ClassicPurchaseWizard>)
 
+  const catalogueNotices =
+    isTariffsMode && (purchaseOptions.subscription_is_expired || needsTariff(subscription)) ? (
+      <>
+        {/* Expired subscription notice */}
+        {isTariffsMode &&
+          purchaseOptions &&
+          'subscription_is_expired' in purchaseOptions &&
+          purchaseOptions.subscription_is_expired && (
+            <div
+              className="mb-6 rounded-[14px] p-4"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,59,92,0.08), rgba(255,184,0,0.06))',
+                border: '1px solid rgba(255,59,92,0.15)',
+              }}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]"
+                  style={{
+                    background: 'rgba(255,59,92,0.12)',
+                    color: 'rgb(var(--color-critical-500))',
+                  }}
+                >
+                  <ExclamationIcon className="h-4 w-4" />
+                </div>
+                <div>
+                  <div
+                    className="text-sm font-semibold"
+                    style={{ color: 'rgb(var(--color-critical-500))' }}
+                  >
+                    {t('subscription.expiredBanner.title')}
+                  </div>
+                  <div className="mt-1 text-[12px] text-dark-400">
+                    {t('subscription.expiredBanner.selectTariff')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+        {/* Legacy subscription notice */}
+        {needsTariff(subscription) && (
+          <div className="mb-6 rounded-xl border border-accent-500/30 bg-accent-500/10 p-4">
+            <div className="mb-2 font-medium text-accent-400">
+              {t('subscription.legacy.selectTariffTitle')}
+            </div>
+            <div className="text-sm text-dark-300">
+              {t('subscription.legacy.selectTariffDescription')}
+            </div>
+            <div className="mt-2 text-xs text-dark-500">
+              {t('subscription.legacy.currentSubContinues')}
+            </div>
+          </div>
+        )}
+      </>
+    ) : null;
+
   if (invalidId) return <Navigate to="/subscriptions" replace />;
-  if (initiallyLoading || purchaseContext.isLoading) {
+  const classicListError = Boolean(classicOptions && multiSubQuery.isError);
+  const loadError = subscriptionError || classicListError || optionsError;
+  if (!loadError && (initiallyLoading || purchaseContext.isLoading)) {
     return (
       <PageEntrance className="space-y-6">
         {pageHeader}
         <SubscriptionFlowSkeleton
           mode={purchaseOptions ? (isTariffsMode ? 'tariffs' : 'classic') : 'unknown'}
           context={purchaseContext}
-          count={isTariffsMode ? tariffs.length : classicOptions?.periods.length}
+          count={isTariffsMode ? catalogueTariffs.length : classicOptions?.periods.length}
+          conditions={catalogueNotices}
+          stepHeader={
+            classicOptions && classicOptions.periods.length > 0 ? (
+              <ClassicPurchaseStepHeader
+                steps={getClassicPurchaseSteps(
+                  getClassicDefaultPeriod(classicOptions),
+                  subscription?.is_trial,
+                )}
+                index={0}
+                loading
+              />
+            ) : undefined
+          }
         />
       </PageEntrance>
     );
   }
 
-  if (
-    subscriptionError ||
-    (!isTariffsMode && multiSubQuery.isError) ||
-    optionsError ||
-    (!purchaseOptions && !optionsLoading)
-  ) {
+  if (loadError || (!purchaseOptions && !optionsLoading)) {
     return (
       <PageEntrance className="space-y-6">
         {pageHeader}
@@ -219,7 +301,7 @@ export default function SubscriptionPurchase() {
           <button
             onClick={() => {
               if (subscriptionError) void refetchSubscription();
-              else if (multiSubQuery.isError) void multiSubQuery.refetch();
+              else if (classicListError) void multiSubQuery.refetch();
               else void refetchOptions();
             }}
             className="rounded-xl bg-accent-500 px-6 py-2 text-sm font-medium text-on-accent transition-colors hover:bg-accent-600"
@@ -234,7 +316,8 @@ export default function SubscriptionPurchase() {
   if (subscriptionId && subscription?.id !== subscriptionId) {
     return <Navigate to="/subscriptions" replace />;
   }
-  if (paidClassic) return <Navigate to={`/subscriptions/${paidClassic.id}`} replace />;
+  if (paidClassic && !configureClassic)
+    return <Navigate to={`/subscriptions/${paidClassic.id}`} replace />;
 
   return (
     <PageEntrance className="space-y-6">
@@ -247,58 +330,7 @@ export default function SubscriptionPurchase() {
       {isTariffsMode && tariffs.length > 0 && (
         <PageEntranceItem>
           <section data-purchase-layout="tariffs">
-            {/* Expired subscription notice */}
-            {isTariffsMode &&
-              purchaseOptions &&
-              'subscription_is_expired' in purchaseOptions &&
-              purchaseOptions.subscription_is_expired && (
-                <div
-                  className="mb-6 rounded-[14px] p-4"
-                  style={{
-                    background:
-                      'linear-gradient(135deg, rgba(255,59,92,0.08), rgba(255,184,0,0.06))',
-                    border: '1px solid rgba(255,59,92,0.15)',
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]"
-                      style={{
-                        background: 'rgba(255,59,92,0.12)',
-                        color: 'rgb(var(--color-critical-500))',
-                      }}
-                    >
-                      <ExclamationIcon className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <div
-                        className="text-sm font-semibold"
-                        style={{ color: 'rgb(var(--color-critical-500))' }}
-                      >
-                        {t('subscription.expiredBanner.title')}
-                      </div>
-                      <div className="mt-1 text-[12px] text-dark-400">
-                        {t('subscription.expiredBanner.selectTariff')}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            {/* Legacy subscription notice */}
-            {needsTariff(subscription) && (
-              <div className="mb-6 rounded-xl border border-accent-500/30 bg-accent-500/10 p-4">
-                <div className="mb-2 font-medium text-accent-400">
-                  {t('subscription.legacy.selectTariffTitle')}
-                </div>
-                <div className="text-sm text-dark-300">
-                  {t('subscription.legacy.selectTariffDescription')}
-                </div>
-                <div className="mt-2 text-xs text-dark-500">
-                  {t('subscription.legacy.currentSubContinues')}
-                </div>
-              </div>
-            )}
+            {catalogueNotices}
 
             {/* Switch Tariff Preview Modal */}
             <SwitchTariffSheet
@@ -407,6 +439,7 @@ export default function SubscriptionPurchase() {
             classicOptions={classicOptions}
             subscription={subscription}
             subscriptionId={subscriptionId}
+            allowExpiredConfiguration={configureClassic}
           />
         </PageEntranceItem>
       )}

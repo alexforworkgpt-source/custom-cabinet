@@ -71,7 +71,7 @@ for (const status of ['active', 'expired']) {
     });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: /Управление подпиской/ }).click();
-    await expect(page.getByRole('link', { name: /Мои устройства/ })).toBeVisible();
+    await expect(page.locator('[data-subscription-management-loading]')).toBeVisible();
     await expect(
       page.getByRole('link', { name: /Продлить подписку|Оформить подписку/ }),
     ).toHaveCount(0);

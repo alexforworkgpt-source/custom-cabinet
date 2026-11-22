@@ -594,9 +594,12 @@ export default function Dashboard() {
 
       {!subscriptionsError && !subscriptionError && (subLoading || subscriptionsLoading) ? (
         <SubscriptionCardSkeleton
-          showTrafficProgress={
-            subscriptions.find((item) => item.id === selectedSubscriptionId)?.traffic_limit_gb !== 0
-          }
+          subscription={subscriptions.find((item) => item.id === selectedSubscriptionId)}
+          hideSubscriptionLink={Boolean(
+            selectedSubscriptionId &&
+              subscription?.id === selectedSubscriptionId &&
+              subscription.hide_subscription_link,
+          )}
         />
       ) : subscription &&
         (subscription.is_expired ||

@@ -47,7 +47,7 @@ test('requests purchase conditions while the selected subscription is still load
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('shows neutral pending text for an unknown sales mode on a cold paid subscription', async ({
+test('uses a noninteractive loading surface for an unknown sales mode on a cold paid subscription', async ({
   page,
 }) => {
   const options = deferred();
@@ -59,8 +59,10 @@ test('shows neutral pending text for an unknown sales mode on a cold paid subscr
   });
   try {
     await page.goto('/subscriptions/42');
-    await page.getByRole('link', { name: /Мои устройства/ }).waitFor();
-    await expect(page.getByRole('button', { name: /Проверяем условия/ })).toBeDisabled();
+    const loading = page.locator('[data-subscription-management-loading]');
+    await expect(loading.getByRole('status', { name: /Загрузка/ })).toBeVisible();
+    await expect(loading.locator('button, a')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /Мои устройства/ })).toHaveCount(0);
     await expect(page.getByRole('link', { name: /Продлить подписку/ })).toHaveCount(0);
   } finally {
     options.release();
@@ -71,7 +73,7 @@ test('shows neutral pending text for an unknown sales mode on a cold paid subscr
   );
 });
 
-test('shows the trial upgrade action while its conditions are pending without allowing navigation', async ({
+test('reserves the trial action while conditions are pending without allowing navigation', async ({
   page,
 }) => {
   const options = deferred();
@@ -91,8 +93,10 @@ test('shows the trial upgrade action while its conditions are pending without al
   });
   try {
     await page.goto('/subscriptions/42');
-    await page.getByRole('link', { name: /Мои устройства/ }).waitFor();
-    await expect(page.getByRole('button', { name: /Выберите тариф/ })).toBeDisabled();
+    const loading = page.locator('[data-subscription-management-loading]');
+    await expect(loading.getByRole('status', { name: /Загрузка/ })).toBeVisible();
+    await expect(loading.locator('button, a')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /Мои устройства/ })).toHaveCount(0);
     await expect(page.getByRole('link', { name: /Выберите тариф/ })).toHaveCount(0);
     await expect(page).toHaveURL('/subscriptions/42');
     expect(
@@ -139,8 +143,10 @@ test('keeps the cached action visible and blocked until both subscription and co
   hold = true;
   try {
     await page.locator('nav:visible a[href="/subscriptions/42"]').first().click();
-    const pending = page.getByRole('button', { name: /Продлить подписку/ });
-    await expect(pending).toBeDisabled();
+    const pending = page.locator('[data-subscription-purchase-loading]');
+    await expect(pending).toBeVisible();
+    await expect(pending.locator('button, a')).toHaveCount(0);
+    await expect(page.locator('[data-subscription-overview]')).toBeVisible();
     await expect(page.getByRole('link', { name: /Продлить подписку/ })).toHaveCount(0);
     await expect.poll(() => optionRequests).toBe(2);
     const freshOptions = page.waitForResponse(
@@ -161,7 +167,9 @@ test('keeps the cached action visible and blocked until both subscription and co
           apiRequests.filter((r) => r === 'GET /api/cabinet/subscription/purchase-options').length,
       )
       .toBe(2);
-    await expect(pending).toBeDisabled();
+    await expect(pending).toBeVisible();
+    await expect(pending.locator('button, a')).toHaveCount(0);
+    await expect(page.locator('[data-subscription-overview]')).toBeVisible();
     await expect(page.getByRole('link', { name: /Продлить подписку/ })).toHaveCount(0);
   } finally {
     details.release();

@@ -118,7 +118,7 @@ export function SubscriptionConnectFooter({
       ? `${state.used} · ∞`
       : `${state.used} / ${state.limit}`;
   const action = full ? onManage : onConnect;
-  const label = full ? t('subscription.myDevices') : t('dashboard.connectDevice');
+  const label = t('dashboard.connectDevice');
   const detail = full
     ? t('dashboard.deviceLimitReached')
     : state.unlimited

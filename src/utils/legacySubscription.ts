@@ -28,6 +28,19 @@ export function tariffSelectionPath(subscriptionId: number): string {
   return `/subscription/purchase?subscriptionId=${subscriptionId}`;
 }
 
+/** Explicit entry into the existing classic configurator after the paid period has ended. */
+export function canConfigureExpiredClassic(subscription: Subscription | null | undefined): boolean {
+  return Boolean(
+    subscription?.status === 'expired' &&
+      !subscription.tariff_id &&
+      !subscription.is_active &&
+      !subscription.is_trial &&
+      !subscription.is_daily &&
+      !subscription.is_limited &&
+      !needsTariff(subscription),
+  );
+}
+
 export type RenewableSubscription = Pick<
   Subscription,
   'status' | 'is_trial' | 'is_daily' | 'is_limited' | 'requires_tariff_selection' | 'tariff_id'

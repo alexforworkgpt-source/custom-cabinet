@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { browserTestUser, prepareAuthenticatedPage } from './cabinetTestHarness';
+import { responses, subscription } from './classicRenewalFixture';
 
 test('restores the protected profile after a transport failure interrupts session bootstrap', async ({
   page,
@@ -108,4 +109,65 @@ test('discards the completed protected return before a later ordinary login', as
   await expect(page).toHaveURL(/\/login$/);
   await login();
   await expect(page).toHaveURL(/\/$/);
+});
+
+test('signing in to a different account leaves the previous subscription out of loading', async ({
+  page,
+}) => {
+  const account = { ...browserTestUser, id: 2, email: 'new-account@example.test' };
+  const old = { ...subscription, tariff_name: 'Former account plan' };
+  let switched = false;
+  let release = () => {};
+  const list = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await prepareAuthenticatedPage(page, {
+    responses: {
+      ...responses,
+      '/api/cabinet/auth/logout': {},
+      '/api/cabinet/subscriptions': {
+        subscriptions: [old, { ...old, id: 43 }],
+        multi_tariff_enabled: true,
+      },
+      '/api/cabinet/subscription': { has_subscription: true, subscription: old },
+    },
+  });
+  await page.routeWebSocket('**/api/cabinet/ws**', (socket) => socket.close());
+  await page.route('**/api/cabinet/auth/me', (route) =>
+    route.fulfill({ json: switched ? account : browserTestUser }),
+  );
+  await page.route('**/api/cabinet/auth/email/login', (route) => {
+    switched = true;
+    return route.fulfill({
+      json: {
+        access_token: `browser-test.${Buffer.from(
+          JSON.stringify({ sub: '2', exp: 4102444800 }),
+        ).toString('base64url')}.signature`,
+        refresh_token: 'second-browser-test-refresh-token',
+        token_type: 'bearer',
+        expires_in: 900,
+        user: account,
+      },
+    });
+  });
+  await page.route('**/api/cabinet/subscriptions', async (route) => {
+    if (!switched) return route.fallback();
+    await list;
+    await route.fulfill({ json: { subscriptions: [], multi_tariff_enabled: true } });
+  });
+
+  await page.goto('/');
+  await expect(page.getByText('Former account plan', { exact: true }).last()).toBeVisible();
+  await page.getByRole('link', { name: 'Profile', exact: true }).first().click();
+  await page.getByRole('main').getByRole('button', { name: 'Logout' }).click();
+  await expect(page).toHaveURL('/login');
+  await page.getByRole('textbox', { name: 'Email', exact: true }).fill(account.email);
+  await page.getByRole('textbox', { name: 'Password', exact: true }).fill('browser-test-password');
+  await page.locator('form').getByRole('button', { name: 'Login', exact: true }).click();
+  await expect(page.getByRole('navigation')).not.toHaveCount(0);
+  await page.getByRole('link', { name: 'Dashboard', exact: true }).first().click();
+  await expect(page.getByRole('heading', { name: 'Your Subscription' })).toBeVisible();
+  await expect(page.getByText('Former account plan', { exact: true })).toHaveCount(0);
+  release();
+  await expect(page.locator('main a[href="/subscription/purchase"]')).toBeVisible();
 });

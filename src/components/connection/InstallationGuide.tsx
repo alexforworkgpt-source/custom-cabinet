@@ -129,7 +129,6 @@ export default function InstallationGuide({
       (app) => app.name === selectedAppName,
     ) ?? null;
   const setSelectedApp = (app: RemnawaveAppClient | null) => setSelectedAppName(app?.name ?? null);
-  const [showOtherApps, setShowOtherApps] = useState(false);
 
   const setFlowStep = useCallback(
     (nextStep: ConnectionStep, platform?: string, app?: string, replace = false) => {
@@ -415,7 +414,7 @@ export default function InstallationGuide({
           : t('subscription.connection.successTitle', 'Subscription added successfully');
 
   return (
-    <div className="space-y-4 pb-2">
+    <div className={step === 'application' ? 'space-y-2 pb-2' : 'space-y-4 pb-2'}>
       <p className="sr-only" aria-live="polite">
         {t('subscription.connection.step', { current: stepIndex + 1, total: 4 })}
       </p>
@@ -490,7 +489,7 @@ export default function InstallationGuide({
               currentPlatformKey={currentPlatformKey}
               activePlatformName={activePlatformName}
               activePlatformIcon={activePlatformIcon}
-              isAutoDetected={currentPlatformKey === detectedPlatform}
+              isAutoDetected={!requestedPlatform && currentPlatformKey === detectedPlatform}
               getPlatformDisplayName={getPlatformDisplayName}
               getSvgHtml={getSvgHtml}
               onSelect={selectPlatform}
@@ -503,11 +502,10 @@ export default function InstallationGuide({
               selectedApp={selectedApp}
               availableApps={currentPlatformApps}
               installBlocks={installBlocks}
-              showOtherApps={showOtherApps}
-              onToggleOtherApps={() => setShowOtherApps((visible) => !visible)}
+              platformName={activePlatformName}
+              isRecommended={Boolean(selectedApp.featured && requestedApp !== selectedApp.name)}
               onSelectApp={(app) => {
                 setSelectedApp(app);
-                setShowOtherApps(false);
                 setFlowStep('application', currentPlatformKey, app.name, true);
                 requestAnimationFrame(() => stepHeadingRef.current?.focus({ preventScroll: true }));
               }}
@@ -554,7 +552,7 @@ export default function InstallationGuide({
                 className="btn-secondary w-full justify-center"
                 onClick={() => setFlowStep('success', currentPlatformKey, selectedApp.name)}
               >
-                {t('subscription.connection.subscriptionAdded', 'Subscription added')}
+                {t('common.next')}
               </button>
             </div>
           )}
