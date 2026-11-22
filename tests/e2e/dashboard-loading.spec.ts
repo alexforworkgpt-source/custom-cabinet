@@ -358,7 +358,7 @@ test('reserves the full-device action height on a narrow screen', async ({ page 
   const balanceCard = page.getByRole('link', { name: /Balance/ }).first();
   const before = (await balanceCard.boundingBox())?.y;
   devices.release();
-  await expect(page.getByRole('button', { name: /Set Up VPN/ })).toContainText('3 / 3');
+  await expect(page.getByRole('button', { name: /My Devices/ })).toContainText('3 / 3');
   const after = (await balanceCard.boundingBox())?.y;
   if (before === undefined || after === undefined) throw new Error('Balance must remain visible');
   expect(Math.abs(after - before)).toBeLessThanOrEqual(4);
