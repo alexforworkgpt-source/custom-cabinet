@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocation, Link } from 'react-router';
+import { useLocation, Link, matchPath } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
@@ -13,6 +13,7 @@ import { useBranding } from '@/hooks/useBranding';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { resetVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import { themeColorsApi } from '@/api/themeColors';
+import { useAvatarPreload } from '@/hooks/useUserAvatar';
 import { useSupportUnreadCount } from '@/hooks/useSupportUnreadCount';
 import { isLogoPreloaded } from '@/api/branding';
 import { cn } from '@/lib/utils';
@@ -53,6 +54,7 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const { t } = useTranslation();
   const location = useLocation();
+  const user = useAuthStore((state) => state.user);
   const isAdmin = useAuthStore((state) => state.isAdmin);
   const logout = useAuthStore((state) => state.logout);
   const { isFullscreen, safeAreaInset, contentSafeAreaInset, platform, isMobile } =
@@ -65,6 +67,9 @@ export function AppShell({ children }: AppShellProps) {
   // Extracted hooks
   const { appName, logoLetter, hasCustomLogo, logoUrl } = useBranding();
   useScrollRestoration();
+  // Profile owns its own fetch, including the direct-entry error case.
+  const isProfileRoute = Boolean(matchPath('/profile', location.pathname));
+  useAvatarPreload(isAdminRoute ? null : user, !isProfileRoute);
   useBackgroundConsumer();
   // Theme toggle visibility
   const { data: enabledThemes } = useQuery({

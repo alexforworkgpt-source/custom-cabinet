@@ -30,7 +30,7 @@ afterEach(() => cleanup());
 
 describe('useUserAvatar', () => {
   it('сразу показывает фото из initData, не дожидаясь бота', () => {
-    initDataUser.mockReturnValue({ photo_url: 'https://t.me/i/userpic/320/a.jpg' });
+    initDataUser.mockReturnValue({ id: 123, photo_url: 'https://t.me/i/userpic/320/a.jpg' });
     getMyAvatar.mockResolvedValue({ photo_url: 'https://api/cabinet/media/X?token=t' });
 
     const { result } = renderHook(() => useUserAvatarUnderTest(telegramUser), { wrapper });
@@ -48,7 +48,7 @@ describe('useUserAvatar', () => {
   });
 
   it('если фото из initData не загрузилось — переходит к фото от бота, потом к заглушке', async () => {
-    initDataUser.mockReturnValue({ photo_url: 'https://t.me/i/userpic/320/a.jpg' });
+    initDataUser.mockReturnValue({ id: 123, photo_url: 'https://t.me/i/userpic/320/a.jpg' });
     getMyAvatar.mockResolvedValue({ photo_url: 'https://api/cabinet/media/X?token=t' });
 
     const { result } = renderHook(() => useUserAvatarUnderTest(telegramUser), { wrapper });
@@ -70,6 +70,22 @@ describe('useUserAvatar', () => {
     const { result } = renderHook(() => useUserAvatarUnderTest(telegramUser), { wrapper });
 
     await waitFor(() => expect(result.current.src).toBe('https://api/cabinet/media/X?token=t'));
+  });
+
+  it('does not reuse the launching Telegram photo after switching accounts', () => {
+    initDataUser.mockReturnValue({ id: 123, photo_url: 'https://t.me/i/userpic/320/a.jpg' });
+    getMyAvatar.mockResolvedValue({ photo_url: null });
+
+    const { result, rerender } = renderHook(({ user }) => useUserAvatarUnderTest(user), {
+      initialProps: { user: telegramUser },
+      wrapper,
+    });
+    expect(result.current.src).toBe('https://t.me/i/userpic/320/a.jpg');
+
+    rerender({ user: { ...telegramUser, id: 3, telegram_id: 456 } });
+    expect(result.current.src).toBeNull();
+    rerender({ user: emailUser });
+    expect(result.current.src).toBeNull();
   });
 
   it('у аккаунта без Telegram бота не спрашивает', () => {
