@@ -502,7 +502,6 @@ export default function InstallationGuide({
               selectedApp={selectedApp}
               availableApps={currentPlatformApps}
               installBlocks={installBlocks}
-              platformName={activePlatformName}
               isRecommended={Boolean(selectedApp.featured && requestedApp !== selectedApp.name)}
               onSelectApp={(app) => {
                 setSelectedApp(app);

@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "cabinet": {
+    "tag": "cabinet-v2026.11.26",
+    "sha": "b072a1e35cd3d025d4582968b0514ea2bc207b3d",
+    "tree_sha": "717f2c68caef1b73191f0bea1074fe7c90ef57a2"
+  },
+  "upstream": {
+    "repository": "https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git",
+    "tag": "v1.79.0",
+    "sha": "821c7b71823573a756de00418acb25118ede1c9c"
+  },
+  "bot": {
+    "repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "sha": "64beb370e6d69b23d3b651f91033f3b72e9e1f56",
+    "backend_contract": "1",
+    "compatibility_evidence": "https://github.com/alexforworkgpt-source/custom-cabinet/blob/b072a1e35cd3d025d4582968b0514ea2bc207b3d/COMPATIBILITY.md"
+  },
+  "changes": [
+    "Reserve space for the Dashboard subscription and adjacent content on cold visits and when returning to cached data.",
+    "Keep subscription purchase and renewal actions disabled until fresh status and purchase options are available after reconnecting or retrying.",
+    "Keep ticket lists and the reply field in place during loading, and serve Manrope from the Cabinet assets.",
+    "Preload the profile photo for the signed-in Telegram identity and keep it isolated when switching accounts.",
+    "Show a text recommendation in the VPN connection guide."
+  ],
+  "limitations": [
+    {
+      "id": "classic-auto-purchase",
+      "status": "OPEN",
+      "summary": "Classic purchase still requires manual confirmation after balance top-up."
+    },
+    {
+      "id": "physical-telegram-device",
+      "status": "BLOCKED",
+      "summary": "Physical Telegram Mini App and native client coverage is unverified for this release."
+    },
+    {
+      "id": "live-provider-coverage",
+      "status": "BLOCKED",
+      "summary": "External panel app configuration and merchant sandbox checkout/recurring flows were not part of the verified browser scope."
+    },
+    {
+      "id": "unused-legacy-email-wrapper",
+      "status": "OPEN",
+      "summary": "The unused createEmail wrapper is unchanged; current UI uses the supported combined endpoint."
+    },
+    {
+      "id": "daily-tariff-list-loading",
+      "status": "OPEN",
+      "summary": "A delayed subscriptions list can temporarily expose a renewal action for an active daily tariff. Reproduced on the previous stable and this candidate."
+    }
+  ],
+  "frontend_policy": {
+    "bscheker": "excluded",
+    "simple_mode": "excluded"
+  },
+  "owner_approved": true
+}

@@ -924,6 +924,7 @@ test('uses Далее on both VPN steps and Готово at the end', async ({ p
   });
   await page.goto('/connection?sub=1&step=application&platform=windows');
   const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText('Рекомендуем', { exact: true })).toBeVisible();
   await dialog
     .locator('[data-connection-step="application"]')
     .getByRole('button', { name: 'Далее', exact: true })
@@ -952,7 +953,7 @@ test('preserves an alternative app when moving back through Connection @critical
     0,
   );
   const recommended = dialog.getByRole('button', {
-    name: /Recommended for Windows.*Test App.*Change/,
+    name: /^Recommended Test App Change$/,
   });
   await recommended.click();
   await expect(recommended).toHaveAttribute('aria-expanded', 'true');

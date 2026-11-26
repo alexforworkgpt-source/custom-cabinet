@@ -36,6 +36,7 @@ import { useSubscriptionMirror } from '@/hooks/useSubscriptionMirror';
 import { hasBot53Contract } from '@/config/upstreamBotContract';
 import { brandingApi } from '@/api/branding';
 import { authApi } from '@/api/auth';
+import { promoApi } from '@/api/promo';
 import DashboardPromoCarousel from '@/components/dashboard/DashboardPromoCarousel';
 import {
   resolveEmailIdentityLinked,
@@ -46,7 +47,7 @@ import { needsTariff } from '@/utils/legacySubscription';
 import { useTransientOverlayBackDispatcher } from '@/providers/TransientOverlayBackProvider';
 import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
 import { motion } from 'framer-motion';
-import { staggerItem } from '@/components/motion/transitions';
+import { fadeIn, staggerItem } from '@/components/motion/transitions';
 
 const Connection = lazy(() => import('./Connection'));
 const TopUpMethodSelect = lazy(() => import('./TopUpMethodSelect'));
@@ -75,6 +76,8 @@ export default function Dashboard() {
   const [selectedTrafficPackage, setSelectedTrafficPackage] = useState<number | null>(null);
   const trafficTopupTriggerRef = useRef<HTMLButtonElement>(null);
   const [subscriptionLinkCopied, setSubscriptionLinkCopied] = useState(false);
+  const [initialSubscriptionShown, setInitialSubscriptionShown] = useState(false);
+  const [initialStatsShown, setInitialStatsShown] = useState(false);
 
   useEffect(() => {
     if (location.pathname !== '/balance') return;
@@ -196,7 +199,7 @@ export default function Dashboard() {
     staleTime: 0,
   });
 
-  const { data: trialInfo } = useQuery({
+  const { data: trialInfo, isLoading: trialLoading } = useQuery({
     queryKey: ['trial-info'],
     queryFn: () => subscriptionApi.getTrialInfo(),
     enabled: !subscription && !subLoading && !subscriptionsError && !subscriptionError,
@@ -204,6 +207,7 @@ export default function Dashboard() {
 
   const {
     data: devicesData,
+    isLoading: devicesLoading,
     isError: devicesError,
     refetch: refetchDevices,
   } = useQuery({
@@ -240,11 +244,23 @@ export default function Dashboard() {
     retry: false,
   });
 
-  const { data: pendingGifts } = useQuery({
+  const { data: pendingGifts, isLoading: giftsLoading } = useQuery({
     queryKey: ['pending-gifts'],
     queryFn: giftApi.getPendingGifts,
     staleTime: 30_000,
     retry: false,
+  });
+
+  const offers = useQuery({
+    queryKey: ['promo-offers'],
+    queryFn: promoApi.getOffers,
+    staleTime: 30_000,
+  });
+
+  const activeDiscount = useQuery({
+    queryKey: ['active-discount'],
+    queryFn: promoApi.getActiveDiscount,
+    staleTime: 30_000,
   });
 
   const activateTrialMutation = useMutation({
@@ -356,6 +372,30 @@ export default function Dashboard() {
   const hasNoSubscription = isMultiTariff
     ? multiSubData !== undefined && (multiSubData.subscriptions?.length ?? 0) === 0
     : subscriptionResponse?.has_subscription === false && !subLoading;
+  // Keep the first placeholder in place until the subscription layout is known.
+  const showInitialSubscriptionSkeleton =
+    !initialSubscriptionShown && (subscriptionsLoading || subLoading || giftsLoading);
+  // The subscription or purchase action can be usable while the blocks below it settle.
+  const balanceAffectsLayout =
+    subscription?.is_daily || (hasNoSubscription && trialInfo?.requires_payment);
+  const showStats =
+    initialStatsShown ||
+    (!showInitialSubscriptionSkeleton &&
+      !devicesLoading &&
+      !isConnectionLinkLoading &&
+      !offers.isLoading &&
+      !activeDiscount.isLoading &&
+      referralReady &&
+      (!hasNoSubscription || !trialLoading) &&
+      (!balanceAffectsLayout || !balanceLoading));
+
+  useEffect(() => {
+    if (!showInitialSubscriptionSkeleton && !initialSubscriptionShown) {
+      setInitialSubscriptionShown(true);
+    }
+    if (showStats && !initialStatsShown) setInitialStatsShown(true);
+  }, [showInitialSubscriptionSkeleton, initialSubscriptionShown, showStats, initialStatsShown]);
+
   const promoSubscriptionState =
     subLoading ||
     subscriptionsLoading ||
@@ -396,11 +436,11 @@ export default function Dashboard() {
 
   // Show onboarding for new users after data loads
   useEffect(() => {
-    if (!isOnboardingCompleted && !subLoading && !refLoading && !blockingType) {
+    if (!isOnboardingCompleted && showStats && !subLoading && !refLoading && !blockingType) {
       const timer = setTimeout(() => setShowOnboarding(true), 500);
       return () => clearTimeout(timer);
     }
-  }, [isOnboardingCompleted, subLoading, refLoading, blockingType]);
+  }, [isOnboardingCompleted, showStats, subLoading, refLoading, blockingType]);
 
   const onboardingSteps = useMemo(() => {
     type Placement = 'top' | 'bottom' | 'left' | 'right';
@@ -511,7 +551,7 @@ export default function Dashboard() {
             ? t('dashboard.overlayDescriptions.topup')
             : '';
 
-  return (
+  const dashboardContent = (
     <PageEntrance
       className="space-y-6"
       onClickCapture={(event) => {
@@ -566,32 +606,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {balanceError && (
-        <div className="rounded-2xl border border-error-500/30 bg-error-500/10 p-5" role="alert">
-          <p className="text-sm text-error-400">{t('dashboard.balanceLoadError')}</p>
-          <button
-            type="button"
-            className="mt-3 min-h-11 rounded-xl bg-dark-800 px-4 text-sm font-medium text-dark-100"
-            onClick={() => void refetchBalance()}
-          >
-            {t('common.retry')}
-          </button>
-        </div>
-      )}
-
-      {subscription && devicesError && (
-        <div className="rounded-2xl border border-error-500/30 bg-error-500/10 p-5" role="alert">
-          <p className="text-sm text-error-400">{t('dashboard.devicesLoadError')}</p>
-          <button
-            type="button"
-            className="mt-3 min-h-11 rounded-xl bg-dark-800 px-4 text-sm font-medium text-dark-100"
-            onClick={() => void refetchDevices()}
-          >
-            {t('common.retry')}
-          </button>
-        </div>
-      )}
-
       {!subscriptionsError && !subscriptionError && (subLoading || subscriptionsLoading) ? (
         <SubscriptionCardSkeleton
           subscription={subscriptions.find((item) => item.id === selectedSubscriptionId)}
@@ -605,7 +619,7 @@ export default function Dashboard() {
         (subscription.is_expired ||
           subscription?.status === 'disabled' ||
           subscription?.is_limited) ? (
-        <PageEntranceItem>
+        <motion.div variants={fadeIn}>
           <SubscriptionCardExpired
             subscription={subscription}
             balanceKopeks={balanceData?.balance_kopeks ?? null}
@@ -633,54 +647,52 @@ export default function Dashboard() {
             }
             managementOpen={managementOpen}
           />
-        </PageEntranceItem>
+        </motion.div>
       ) : subscription ? (
-        <PageEntranceItem>
-          <SubscriptionCardActive
-            subscription={subscription}
-            trafficData={trafficData}
-            refreshTrafficMutation={refreshTrafficMutation}
-            trafficRefreshCooldown={trafficRefreshCooldown}
-            connectedDevices={devicesData?.total}
-            devicesError={devicesError && !devicesData}
-            connectionUrl={shouldHideConnectionLink ? null : displayedConnectionUrl}
-            connectionSelector={<MirrorSelector selection={mirror} />}
-            connectionLinkLoading={!shouldHideConnectionLink && isConnectionLinkLoading}
-            connectionUrlCopied={subscriptionLinkCopied}
-            onOpenConnectionQr={() => {
-              if (!displayedConnectionUrl || shouldHideConnectionLink) return;
-              navigate('/connection/qr', {
-                state: {
-                  url: hasBot53Contract() ? undefined : displayedConnectionUrl,
-                  refreshConnection: hasBot53Contract(),
-                  hideLink: false,
-                  subscriptionId: subscription.id,
-                  returnPath: getCabinetClosePath(subscription.id),
-                },
-              });
-            }}
-            onCopyConnectionUrl={() => {
-              if (!displayedConnectionUrl || shouldHideConnectionLink) return;
-              void copyToClipboard(displayedConnectionUrl);
-              setSubscriptionLinkCopied(true);
-              setTimeout(() => setSubscriptionLinkCopied(false), 2000);
-            }}
-            onConnectDevice={() => navigate(`/connection?sub=${subscription.id}`)}
-            onManageDevices={() =>
-              navigate(`/?sub=${subscription.id}&overlay=devices`, {
-                state: { cabinetOverlayParent: true },
-              })
-            }
-            onRetryDevices={() => void refetchDevices()}
-            devicesOpen={routeState.overlay === 'devices'}
-            onManageSubscription={() =>
-              navigate(`/subscriptions/${subscription.id}`, {
-                state: { backTo: getCabinetClosePath(subscription.id) },
-              })
-            }
-            managementOpen={managementOpen}
-          />
-        </PageEntranceItem>
+        <SubscriptionCardActive
+          subscription={subscription}
+          trafficData={trafficData}
+          refreshTrafficMutation={refreshTrafficMutation}
+          trafficRefreshCooldown={trafficRefreshCooldown}
+          connectedDevices={devicesData?.total}
+          devicesError={devicesError && !devicesData}
+          connectionUrl={shouldHideConnectionLink ? null : displayedConnectionUrl}
+          connectionSelector={<MirrorSelector selection={mirror} />}
+          connectionLinkLoading={!shouldHideConnectionLink && isConnectionLinkLoading}
+          connectionUrlCopied={subscriptionLinkCopied}
+          onOpenConnectionQr={() => {
+            if (!displayedConnectionUrl || shouldHideConnectionLink) return;
+            navigate('/connection/qr', {
+              state: {
+                url: hasBot53Contract() ? undefined : displayedConnectionUrl,
+                refreshConnection: hasBot53Contract(),
+                hideLink: false,
+                subscriptionId: subscription.id,
+                returnPath: getCabinetClosePath(subscription.id),
+              },
+            });
+          }}
+          onCopyConnectionUrl={() => {
+            if (!displayedConnectionUrl || shouldHideConnectionLink) return;
+            void copyToClipboard(displayedConnectionUrl);
+            setSubscriptionLinkCopied(true);
+            setTimeout(() => setSubscriptionLinkCopied(false), 2000);
+          }}
+          onConnectDevice={() => navigate(`/connection?sub=${subscription.id}`)}
+          onManageDevices={() =>
+            navigate(`/?sub=${subscription.id}&overlay=devices`, {
+              state: { cabinetOverlayParent: true },
+            })
+          }
+          onRetryDevices={() => void refetchDevices()}
+          devicesOpen={routeState.overlay === 'devices'}
+          onManageSubscription={() =>
+            navigate(`/subscriptions/${subscription.id}`, {
+              state: { backTo: getCabinetClosePath(subscription.id) },
+            })
+          }
+          managementOpen={managementOpen}
+        />
       ) : null}
 
       {subscription?.is_limited && !needsTariff(subscription) && showTrafficTopup && (
@@ -727,8 +739,24 @@ export default function Dashboard() {
         </div>
       )}
 
+      {subscription && devicesError && (
+        <div className="rounded-2xl border border-error-500/30 bg-error-500/10 p-5" role="alert">
+          <p className="text-sm text-error-400">{t('dashboard.devicesLoadError')}</p>
+          <button
+            type="button"
+            className="mt-3 min-h-11 rounded-xl bg-dark-800 px-4 text-sm font-medium text-dark-100"
+            onClick={() => void refetchDevices()}
+          >
+            {t('common.retry')}
+          </button>
+        </div>
+      )}
+
       {/* Promo Offers */}
       <PromoOffersSection
+        offers={offers.data}
+        activeDiscount={activeDiscount.data}
+        refreshing={offers.isFetching || activeDiscount.isFetching}
         context={{
           subscriptions: multiSubData?.subscriptions,
           selectedSubscriptionId:
@@ -741,41 +769,60 @@ export default function Dashboard() {
         }}
       />
 
-      {/* Stats Grid */}
-      <PageEntranceItem>
-        <StatsGrid
-          balanceRubles={balanceData?.balance_rubles ?? null}
-          balanceLoading={balanceLoading && !balanceData}
-          referralCount={referralInfo?.total_referrals ?? null}
-          earningsRubles={referralInfo?.available_balance_rubles ?? null}
-          refLoading={refLoading}
-          showReferral={referralEnabled}
-        />
-      </PageEntranceItem>
+      {showStats && (
+        <div className="space-y-6">
+          {/* Stats Grid */}
+          <PageEntranceItem>
+            <StatsGrid
+              balanceRubles={balanceData?.balance_rubles ?? null}
+              balanceLoading={balanceLoading && !balanceData}
+              referralCount={referralInfo?.total_referrals ?? null}
+              earningsRubles={referralInfo?.available_balance_rubles ?? null}
+              refLoading={refLoading}
+              showReferral={referralEnabled}
+            />
+          </PageEntranceItem>
 
-      <DashboardPromoCarousel slides={promoSlides} loading={!promoDataReady} />
+          <DashboardPromoCarousel slides={promoSlides} loading={!promoDataReady} />
 
-      {/* Fortune Wheel Banner */}
-      {wheelConfig?.is_enabled && (
-        <Link to="/wheel" className="bento-card-hover group flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-3xl">🎰</span>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-semibold text-dark-100">{t('wheel.banner.title')}</h3>
-              <p className="text-sm text-dark-400">{t('wheel.banner.description')}</p>
-            </div>
-          </div>
-          <div className="flex-shrink-0 text-dark-500 transition-all duration-300 group-hover:translate-x-1 group-hover:text-accent-400">
-            <ChevronRightIcon />
-          </div>
-        </Link>
+          {/* Fortune Wheel Banner */}
+          {wheelConfig?.is_enabled && (
+            <Link to="/wheel" className="bento-card-hover group flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <span className="text-3xl">🎰</span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-semibold text-dark-100">
+                    {t('wheel.banner.title')}
+                  </h3>
+                  <p className="text-sm text-dark-400">{t('wheel.banner.description')}</p>
+                </div>
+              </div>
+              <div className="flex-shrink-0 text-dark-500 transition-all duration-300 group-hover:translate-x-1 group-hover:text-accent-400">
+                <ChevronRightIcon />
+              </div>
+            </Link>
+          )}
+
+          {/* Reminders configured by an administrator */}
+          <ReminderCards />
+
+          {/* News Section */}
+          <NewsSection />
+        </div>
       )}
 
-      {/* Reminders configured by an administrator */}
-      <ReminderCards />
-
-      {/* News Section */}
-      <NewsSection />
+      {balanceError && (
+        <div className="rounded-2xl border border-error-500/30 bg-error-500/10 p-5" role="alert">
+          <p className="text-sm text-error-400">{t('dashboard.balanceLoadError')}</p>
+          <button
+            type="button"
+            className="mt-3 min-h-11 rounded-xl bg-dark-800 px-4 text-sm font-medium text-dark-100"
+            onClick={() => void refetchBalance()}
+          >
+            {t('common.retry')}
+          </button>
+        </div>
+      )}
 
       {/* Onboarding Tutorial */}
       {showOnboarding && (
@@ -785,7 +832,12 @@ export default function Dashboard() {
           onSkip={handleOnboardingComplete}
         />
       )}
+    </PageEntrance>
+  );
 
+  return (
+    <>
+      {showInitialSubscriptionSkeleton ? <SubscriptionCardSkeleton /> : dashboardContent}
       <ResponsiveOverlay
         open={routeState.overlay !== null}
         onOpenChange={(open) => {
@@ -811,6 +863,6 @@ export default function Dashboard() {
           {overlayContent}
         </Suspense>
       </ResponsiveOverlay>
-    </PageEntrance>
+    </>
   );
 }

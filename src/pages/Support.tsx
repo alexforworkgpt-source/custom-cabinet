@@ -15,13 +15,15 @@ import { getSafeTicketErrorLogContext, isOpenTicketConflict } from '../utils/tic
 import type { SupportConfig, TicketDetail } from '../types';
 import { Card } from '@/components/data-display/Card';
 import { Button } from '@/components/primitives/Button';
-import { staggerContainer, staggerItem } from '@/components/motion/transitions';
+import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
+import { staggerItem } from '@/components/motion/transitions';
 import { ChatIcon, CloseIcon, ImageIcon, PlusIcon, SendIcon } from '@/components/icons';
 import { usePlatform } from '@/platform';
 import { linkifyText } from '../utils/linkify';
 import { resolveSupportContact } from '../utils/supportContact';
 import { useSearchParams } from 'react-router';
-import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { SkeletonSurface } from '@/components/ui/skeleton';
+import { TicketListSkeleton, TicketMessagesSkeleton } from '../components/tickets/SupportLoading';
 
 const log = logger.createLogger('Support');
 const mediaTypes: Record<string, 'photo' | 'video'> = {
@@ -262,15 +264,6 @@ export default function Support() {
     return t(`support.status.${status}`) || status;
   };
 
-  // Show loading while checking configuration
-  if (configLoading) {
-    return (
-      <SkeletonGroup className="space-y-3">
-        <Skeleton variant="card" count={3} className="h-16" />
-      </SkeletonGroup>
-    );
-  }
-
   // If tickets are disabled, show redirect message
   if (supportConfig && !supportConfig.tickets_enabled) {
     log.debug('Tickets disabled, config:', supportConfig);
@@ -368,30 +361,31 @@ export default function Support() {
       </div>
     );
 
-  return (
-    <motion.div
-      className="space-y-6"
-      variants={staggerContainer}
-      initial="initial"
-      animate="animate"
+  const newTicketButton = (
+    <Button
+      className="w-full sm:w-auto"
+      disabled={configLoading}
+      onClick={() => {
+        setShowCreateForm(true);
+        setSelectedTicket(null);
+        setFormError(null);
+        clearCreateAttachments();
+      }}
     >
-      <motion.div variants={staggerItem} className="space-y-4">
+      <PlusIcon />
+      <span className="ml-2">{t('support.newTicket')}</span>
+    </Button>
+  );
+
+  return (
+    <PageEntrance className="space-y-6">
+      <PageEntranceItem className="space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('support.title')}</h1>
-          <Button
-            onClick={() => {
-              setShowCreateForm(true);
-              setSelectedTicket(null);
-              setFormError(null);
-              clearCreateAttachments();
-            }}
-          >
-            <PlusIcon />
-            <span className="ml-2">{t('support.newTicket')}</span>
-          </Button>
+          {configLoading ? <SkeletonSurface>{newTicketButton}</SkeletonSurface> : newTicketButton}
         </div>
         {!showCreateForm && !selectedTicket && <SupportInstructionsCard />}
-      </motion.div>
+      </PageEntranceItem>
 
       {/* Contact support card for "both" mode — self-animated: mounts after the
           config query resolves, when the parent stagger orchestration has already
@@ -421,17 +415,15 @@ export default function Support() {
           </motion.div>
         )}
 
-      <motion.div variants={staggerItem} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <PageEntranceItem className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Tickets List */}
         <Card size="sm" className="lg:col-span-1">
           <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('support.yourTickets')}</h2>
 
-          {isLoading ? (
-            <SkeletonGroup className="space-y-3">
-              <Skeleton variant="card" count={3} className="h-16" />
-            </SkeletonGroup>
+          {configLoading || isLoading ? (
+            <TicketListSkeleton />
           ) : tickets?.items && tickets.items.length > 0 ? (
-            <div className="space-y-2">
+            <div className="min-h-[200px] space-y-2">
               {tickets.items.map((ticket) => (
                 <button
                   key={ticket.id}
@@ -472,11 +464,7 @@ export default function Support() {
         {/* Ticket Detail / Create Form */}
         <Card
           size="md"
-          className={`lg:col-span-2 ${
-            !isLoading && tickets?.items.length === 0 && !showCreateForm && !selectedTicket
-              ? 'hidden md:block'
-              : ''
-          }`}
+          className={`lg:col-span-2 ${!showCreateForm && !selectedTicket ? 'hidden md:block' : ''}`}
         >
           {showCreateForm ? (
             <div>
@@ -618,13 +606,11 @@ export default function Support() {
               </div>
 
               {/* Messages */}
-              {detailLoading ? (
-                <SkeletonGroup className="space-y-3">
-                  <Skeleton variant="card" count={3} className="h-16" />
-                </SkeletonGroup>
-              ) : ticketDetail?.messages ? (
-                <div className="scrollbar-hide mb-6 max-h-96 flex-1 space-y-4 overflow-y-auto">
-                  {ticketDetail.messages.map((msg) => (
+              <div className="scrollbar-hide mb-6 h-64 shrink-0 space-y-4 overflow-y-auto sm:h-96">
+                {detailLoading ? (
+                  <TicketMessagesSkeleton />
+                ) : (
+                  ticketDetail?.messages?.map((msg) => (
                     <div
                       key={msg.id}
                       className={`rounded-xl p-4 ${
@@ -656,98 +642,99 @@ export default function Support() {
                         translateError={t('support.imageLoadFailed')}
                       />
                     </div>
-                  ))}
-                </div>
-              ) : null}
+                  ))
+                )}
+              </div>
 
               {/* Reply Form */}
-              {ticketDetail?.status !== 'closed' && !ticketDetail?.is_reply_blocked && (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setFormError(null);
-                    // Rate limit: max 5 replies per 30 seconds
-                    if (!checkRateLimit(RATE_LIMIT_KEYS.TICKET_REPLY, 5, 30000)) {
-                      const resetTime = getRateLimitResetTime(RATE_LIMIT_KEYS.TICKET_REPLY);
-                      setFormError(t('support.tooManyRequests', { seconds: resetTime }));
-                      return;
-                    }
-                    replyMutation.mutate();
-                  }}
-                  className="border-t border-dark-800/50 pt-4"
-                >
-                  <div className="space-y-3">
-                    <div className="flex gap-3">
-                      <textarea
-                        className="input min-h-[80px] flex-1"
-                        placeholder={t('support.replyPlaceholder')}
-                        value={replyMessage}
-                        onChange={(e) => setReplyMessage(e.target.value)}
-                        maxLength={4000}
-                      />
-                    </div>
-
-                    {/* Image attachments for reply */}
-                    <div>
-                      <input
-                        ref={replyFileInputRef}
-                        type="file"
-                        accept={Object.keys(mediaTypes).join(',')}
-                        multiple
-                        className="hidden"
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files || []);
-                          files.forEach((file) => {
-                            void handleFileSelect(file, setReplyAttachments);
-                          });
-                          e.target.value = '';
-                        }}
-                      />
-                      <AttachmentsPreview
-                        items={replyAttachments}
-                        onRemove={(idx) =>
-                          setReplyAttachments((prev) => {
-                            const removed = prev[idx];
-                            if (removed?.preview) URL.revokeObjectURL(removed.preview);
-                            return prev.filter((_, i) => i !== idx);
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      {replyAttachments.length < 10 && (
-                        <button
-                          type="button"
-                          onClick={() => replyFileInputRef.current?.click()}
-                          disabled={replyAttachments.some((a) => a.uploading)}
-                          className="flex items-center gap-2 text-sm text-dark-400 transition-colors hover:text-dark-200 disabled:opacity-50"
-                        >
-                          <ImageIcon />
-                          {t('support.attachMedia')}{' '}
-                          {replyAttachments.length > 0 && `(${replyAttachments.length}/10)`}
-                        </button>
-                      )}
-
-                      <Button
-                        type="submit"
-                        disabled={
-                          (!replyMessage.trim() &&
-                            replyAttachments.filter((a) => a.fileId).length === 0) ||
-                          replyAttachments.some((a) => a.uploading)
-                        }
-                        loading={replyMutation.isPending}
-                      >
-                        <SendIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {formError && (
-                      <div className="mt-2 rounded-lg border border-error-500/30 bg-error-500/10 p-2 text-sm text-error-400">
-                        {formError}
+              {(ticketDetail?.status ?? selectedTicket.status) !== 'closed' &&
+                !ticketDetail?.is_reply_blocked && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      setFormError(null);
+                      // Rate limit: max 5 replies per 30 seconds
+                      if (!checkRateLimit(RATE_LIMIT_KEYS.TICKET_REPLY, 5, 30000)) {
+                        const resetTime = getRateLimitResetTime(RATE_LIMIT_KEYS.TICKET_REPLY);
+                        setFormError(t('support.tooManyRequests', { seconds: resetTime }));
+                        return;
+                      }
+                      replyMutation.mutate();
+                    }}
+                    className="border-t border-dark-800/50 pt-4"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex gap-3">
+                        <textarea
+                          className="input min-h-[80px] flex-1"
+                          placeholder={t('support.replyPlaceholder')}
+                          value={replyMessage}
+                          onChange={(e) => setReplyMessage(e.target.value)}
+                          maxLength={4000}
+                        />
                       </div>
-                    )}
-                  </div>
-                </form>
-              )}
+
+                      {/* Image attachments for reply */}
+                      <div>
+                        <input
+                          ref={replyFileInputRef}
+                          type="file"
+                          accept={Object.keys(mediaTypes).join(',')}
+                          multiple
+                          className="hidden"
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            files.forEach((file) => {
+                              void handleFileSelect(file, setReplyAttachments);
+                            });
+                            e.target.value = '';
+                          }}
+                        />
+                        <AttachmentsPreview
+                          items={replyAttachments}
+                          onRemove={(idx) =>
+                            setReplyAttachments((prev) => {
+                              const removed = prev[idx];
+                              if (removed?.preview) URL.revokeObjectURL(removed.preview);
+                              return prev.filter((_, i) => i !== idx);
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        {replyAttachments.length < 10 && (
+                          <button
+                            type="button"
+                            onClick={() => replyFileInputRef.current?.click()}
+                            disabled={replyAttachments.some((a) => a.uploading)}
+                            className="flex items-center gap-2 text-sm text-dark-400 transition-colors hover:text-dark-200 disabled:opacity-50"
+                          >
+                            <ImageIcon />
+                            {t('support.attachMedia')}{' '}
+                            {replyAttachments.length > 0 && `(${replyAttachments.length}/10)`}
+                          </button>
+                        )}
+
+                        <Button
+                          type="submit"
+                          disabled={
+                            (!replyMessage.trim() &&
+                              replyAttachments.filter((a) => a.fileId).length === 0) ||
+                            replyAttachments.some((a) => a.uploading)
+                          }
+                          loading={replyMutation.isPending}
+                        >
+                          <SendIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {formError && (
+                        <div className="mt-2 rounded-lg border border-error-500/30 bg-error-500/10 p-2 text-sm text-error-400">
+                          {formError}
+                        </div>
+                      )}
+                    </div>
+                  </form>
+                )}
 
               {ticketDetail?.is_reply_blocked && (
                 <div className="border-t border-dark-800/50 py-4 text-center text-sm text-dark-500">
@@ -776,7 +763,7 @@ export default function Support() {
             </div>
           )}
         </Card>
-      </motion.div>
-    </motion.div>
+      </PageEntranceItem>
+    </PageEntrance>
   );
 }
