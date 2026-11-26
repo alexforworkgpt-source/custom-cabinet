@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { prepareAuthenticatedPage } from './cabinetTestHarness';
 
 const supportConfig = {
@@ -49,6 +49,98 @@ function supportResponses(ticket?: ReturnType<typeof makeTicket>) {
     ...(ticket ? { [`/api/cabinet/tickets/${ticket.detail.id}`]: ticket.detail } : {}),
   };
 }
+
+async function measure(locator: Locator) {
+  const bounds = await locator.boundingBox();
+  if (!bounds) throw new Error('Expected a visible support element');
+  return bounds;
+}
+
+function deferSupportResponse() {
+  let release = () => {};
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return { pending, release };
+}
+
+test('keeps support instructions and ticket list in place during initial loading', async ({
+  page,
+}) => {
+  const config = deferSupportResponse();
+  const list = deferSupportResponse();
+  const ticket = makeTicket(42, 'One support request', 'Initial user message');
+  await prepareAuthenticatedPage(page, { responses: supportResponses(ticket) });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  for (const [path, gate] of [
+    ['/api/cabinet/info/support-config', config],
+    ['/api/cabinet/tickets', list],
+  ] as const) {
+    await page.route(
+      (url) => url.pathname === path,
+      async (route) => {
+        await gate.pending;
+        await route.fallback();
+      },
+    );
+  }
+
+  const instructions = page.getByRole('region', { name: 'Instructions and setup' });
+  const listTitle = page.getByRole('heading', { name: 'Your Tickets' });
+  const newTicket = page.getByRole('button', { name: 'New Ticket' });
+
+  try {
+    await page.goto('/support');
+    await page.evaluate(() => document.fonts.ready);
+    await expect(page.getByRole('heading', { name: 'Support', level: 1 })).toBeVisible();
+    await expect(newTicket).toHaveCount(0);
+    await expect(instructions).toBeVisible();
+    const first = await measure(instructions);
+    const firstList = await measure(listTitle);
+    config.release();
+
+    await expect(newTicket).toBeEnabled();
+    await expect(listTitle).toBeVisible();
+    const loading = await measure(listTitle.locator('..'));
+    const loadingTitle = await measure(listTitle);
+    expect(Math.abs(firstList.y - loadingTitle.y)).toBeLessThanOrEqual(1);
+    list.release();
+
+    await expect(page.getByRole('button', { name: /One support request/ })).toBeVisible();
+    const ready = await measure(listTitle.locator('..'));
+    const last = await measure(instructions);
+    expect(Math.abs(loading.height - ready.height)).toBeLessThanOrEqual(1);
+    expect(Math.abs(first.y - last.y)).toBeLessThanOrEqual(1);
+  } finally {
+    config.release();
+    list.release();
+  }
+});
+
+test('keeps the reply field in place while the first message loads', async ({ page }) => {
+  const detail = deferSupportResponse();
+  const ticket = makeTicket(42, 'One support request', 'Initial user message');
+  await prepareAuthenticatedPage(page, { responses: supportResponses(ticket) });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route('**/api/cabinet/tickets/42', async (route) => {
+    await detail.pending;
+    await route.fallback();
+  });
+
+  try {
+    await page.goto('/support');
+    await page.getByRole('button', { name: /One support request/ }).click();
+    const reply = page.getByPlaceholder('Type your reply...');
+    await expect(reply).toBeVisible();
+    const loading = await measure(reply);
+    detail.release();
+    await expect(page.getByText('Initial user message', { exact: true })).toBeVisible();
+    const ready = await measure(reply);
+    expect(Math.abs(loading.y - ready.y)).toBeLessThanOrEqual(1);
+  } finally {
+    detail.release();
+  }
+});
 
 interface FailedWrite {
   status: number;

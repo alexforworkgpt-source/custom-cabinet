@@ -24,6 +24,7 @@ import { formatTraffic } from '../utils/formatTraffic';
 import { getGlassColors } from '../utils/glassTheme';
 import { useTheme } from '../hooks/useTheme';
 import { useCurrency } from '../hooks/useCurrency';
+import { useSubscriptionActionState } from '../hooks/useSubscriptionActionState';
 import { useCloseOnSuccessNotification } from '../store/successNotification';
 import PurchaseCTAButton from '../components/subscription/PurchaseCTAButton';
 import { planTitle, showsAddonOptions, showsAutopayToggle } from '../utils/legacySubscription';
@@ -289,19 +290,20 @@ export default function Subscription({
   });
   const isMultiTariff = multiSubData?.multi_tariff_enabled ?? false;
 
-  const {
-    data: subscriptionResponse,
-    isLoading,
-    isFetching: subscriptionFetching,
-    isError: subscriptionError,
-    refetch: refetchSubscription,
-  } = useQuery({
+  const subscriptionQuery = useQuery({
     queryKey: ['subscription', subscriptionId],
     queryFn: () => subscriptionApi.getSubscription(subscriptionId),
     retry: false,
     staleTime: 0,
     refetchOnMount: 'always',
   });
+  const {
+    data: subscriptionResponse,
+    isLoading,
+    isFetching: subscriptionFetching,
+    isError: subscriptionError,
+    refetch: refetchSubscription,
+  } = subscriptionQuery;
   // Extract subscription from response (null if no subscription)
   const subscription = subscriptionResponse?.subscription ?? null;
 
@@ -319,13 +321,28 @@ export default function Subscription({
     refetchOnMount: 'always',
   });
   const purchaseOptions = purchaseOptionsQuery.data;
+  const missingSalesMode =
+    purchaseOptionsQuery.isSuccess &&
+    purchaseOptions?.sales_mode !== 'classic' &&
+    purchaseOptions?.sales_mode !== 'tariffs';
+  const actions = useSubscriptionActionState(
+    subscriptionId,
+    subscriptionQuery,
+    purchaseOptionsQuery,
+    isMultiTariff,
+  );
+  const hasKnownActions = embedded && actions.snapshot !== null;
   const managementLoading =
-    isLoading ||
-    (embedded &&
-      subscription !== null &&
-      subscription.id === subscriptionId &&
-      !subscriptionError &&
-      purchaseOptionsQuery.isLoading);
+    (!embedded || !actions.offline) &&
+    (isLoading ||
+      (embedded &&
+        subscription !== null &&
+        subscription.id === subscriptionId &&
+        !hasKnownActions &&
+        !subscriptionError &&
+        !purchaseOptionsQuery.isError &&
+        !missingSalesMode &&
+        !actions.ready));
 
   useEffect(() => {
     if (
@@ -749,6 +766,27 @@ export default function Subscription({
       </Card>
     );
 
+  const offlineNotice = (
+    <p role="status" className="rounded-xl bg-dark-800/50 p-3 text-sm text-dark-300">
+      {t('subscription.cta.offline')}
+    </p>
+  );
+  const subscriptionStatusError = (
+    <div role="alert" className="space-y-3 rounded-xl bg-error-400/10 p-4 text-error-400">
+      <p>{t('dashboard.subscriptionLoadError')}</p>
+      <button
+        className="btn-secondary"
+        disabled={subscriptionFetching}
+        onClick={() => {
+          void refetchSubscription();
+          if (purchaseOptionsQuery.isError) void purchaseOptionsQuery.refetch();
+        }}
+      >
+        {t('common.retry')}
+      </button>
+    </div>
+  );
+
   const purchaseOptionsError = (
     <div role="alert" className="space-y-2 rounded-xl bg-error-400/10 p-4 text-sm text-error-400">
       <p>{t('subscription.paymentOptionsLoadError')}</p>
@@ -840,16 +878,8 @@ export default function Subscription({
     );
   }
 
-  if (subscriptionError) {
-    return (
-      <div role="alert" className="space-y-3 rounded-xl bg-error-400/10 p-4 text-error-400">
-        <p>{t('dashboard.subscriptionLoadError')}</p>
-        <button className="btn-secondary" onClick={() => refetchSubscription()}>
-          {t('common.retry')}
-        </button>
-      </div>
-    );
-  }
+  if (embedded && actions.offline && !subscription) return offlineNotice;
+  if (subscriptionError && !hasKnownActions) return subscriptionStatusError;
 
   if ((!subscription || subscription.id !== subscriptionId) && subscriptionId) {
     return (
@@ -884,16 +914,33 @@ export default function Subscription({
         </div>
       )}
 
-      {embedded && subscription && (
-        <PageEntranceItem>
-          <SubscriptionOverviewCard subscription={subscription} />
+      {embedded ? (
+        <PageEntranceItem className="space-y-4">
+          {subscription && <SubscriptionOverviewCard subscription={subscription} />}
+          {actions.snapshot && (
+            <div>
+              <PurchaseCTAButton
+                subscription={actions.snapshot.subscription}
+                isMultiTariff={actions.snapshot.isMultiTariff}
+                isClassic={actions.snapshot.salesMode === 'classic'}
+                disabled={!actions.ready}
+                animateEntrance={false}
+                reserveSpace
+                compactOnMobile
+              />
+            </div>
+          )}
+          {actions.offline
+            ? offlineNotice
+            : subscriptionError
+              ? subscriptionStatusError
+              : purchaseOptionsQuery.isError || missingSalesMode
+                ? purchaseOptionsError
+                : null}
         </PageEntranceItem>
-      )}
-
-      {/* Purchase / Renewal CTA */}
-      {purchaseOptionsQuery.isError ? (
+      ) : purchaseOptionsQuery.isError ? (
         purchaseOptionsError
-      ) : embedded || (purchaseOptionsQuery.isSuccess && !purchaseOptionsQuery.isFetching) ? (
+      ) : purchaseOptionsQuery.isSuccess && !purchaseOptionsQuery.isFetching ? (
         <PurchaseCTAButton
           subscription={subscription}
           isMultiTariff={isMultiTariff}

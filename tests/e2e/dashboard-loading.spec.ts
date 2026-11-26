@@ -14,6 +14,7 @@ test('shows independent loading values without false unavailable or zero balance
 }) => {
   const balance = deferred();
   const referral = deferred();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await prepareAuthenticatedPage(page, {
     featureFlags: { referralEnabled: true },
     responses: {
@@ -61,6 +62,8 @@ test('shows independent loading values without false unavailable or zero balance
   await expect(referralCard.getByRole('status', { name: /^Loading/ })).toBeVisible();
   await expect(balanceCard).not.toContainText('Unavailable');
   await expect(referralCard).not.toContainText('0');
+  await page.evaluate(() => document.fonts.ready);
+  const loadingBox = await referralCard.boundingBox();
 
   balance.release();
   await expect(balanceCard).toContainText('42');
@@ -68,6 +71,9 @@ test('shows independent loading values without false unavailable or zero balance
   referral.release();
   await expect(referralCard).toContainText('7');
   await expect(referralCard).toContainText('3.20');
+  const loadedBox = await referralCard.boundingBox();
+  if (!loadingBox || !loadedBox) throw new Error('The referral card must remain visible');
+  expect(Math.abs(loadedBox.height - loadingBox.height)).toBeLessThanOrEqual(1);
 });
 
 const subscription = {
@@ -91,7 +97,7 @@ const subscription = {
 };
 
 for (const trafficLimit of [100, 0]) {
-  test(`reveals subscription details before devices and link without moving balance (${trafficLimit ? 'limited' : 'unlimited'})`, async ({
+  test(`reveals subscription details before devices and link, then shows balance (${trafficLimit ? 'limited' : 'unlimited'})`, async ({
     page,
   }, testInfo) => {
     // The PRD's mobile geometry target is 390px; at 320px the action text wraps.
@@ -142,30 +148,19 @@ for (const trafficLimit of [100, 0]) {
     await expect(page.getByRole('heading', { name: 'Your Subscription' })).toBeVisible();
     await expect(page.getByText('Selected plan')).toHaveCount(0);
     const balanceCard = page.getByRole('link', { name: /Balance/ }).first();
-    const beforeDetails = (await balanceCard.boundingBox())?.y;
+    await expect(balanceCard).toHaveCount(0);
     details.release();
     await expect(page.getByText('Selected plan')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Manage subscription' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Copy Link' })).toHaveCount(0);
+    await expect(balanceCard).toHaveCount(0);
 
-    const before = (await balanceCard.boundingBox())?.y;
     devices.release();
     await expect(page.getByRole('button', { name: /Set Up VPN/ })).toBeVisible();
-    const afterDevices = (await balanceCard.boundingBox())?.y;
+    await expect(balanceCard).toHaveCount(0);
     link.release();
     await expect(page.getByRole('button', { name: 'Copy Link' })).toBeVisible();
-    const afterLink = (await balanceCard.boundingBox())?.y;
-    if (
-      beforeDetails === undefined ||
-      before === undefined ||
-      afterDevices === undefined ||
-      afterLink === undefined
-    ) {
-      throw new Error('Balance must remain visible during subscription loading');
-    }
-    expect(Math.abs(before - beforeDetails)).toBeLessThanOrEqual(4);
-    expect(Math.abs(afterDevices - before)).toBeLessThanOrEqual(4);
-    expect(Math.abs(afterLink - afterDevices)).toBeLessThanOrEqual(4);
+    await expect(balanceCard).toBeVisible();
   });
 }
 
@@ -355,13 +350,14 @@ test('reserves the full-device action height on a narrow screen', async ({ page 
   });
   await page.goto('/?sub=7');
   await expect(page.getByRole('button', { name: 'Copy Link' })).toBeVisible();
-  const balanceCard = page.getByRole('link', { name: /Balance/ }).first();
-  const before = (await balanceCard.boundingBox())?.y;
+  const deviceSlot = page.locator('[data-onboarding="connect-devices"]');
+  const before = await deviceSlot.boundingBox();
   devices.release();
-  await expect(page.getByRole('button', { name: /Set Up VPN/ })).toContainText('3 / 3');
-  const after = (await balanceCard.boundingBox())?.y;
-  if (before === undefined || after === undefined) throw new Error('Balance must remain visible');
-  expect(Math.abs(after - before)).toBeLessThanOrEqual(4);
+  await expect(page.getByRole('button', { name: /My Devices/ })).toContainText('3 / 3');
+  const after = await deviceSlot.boundingBox();
+  if (!before || !after) throw new Error('The device slot must stay visible while loading');
+  expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(4);
+  await expect(page.getByRole('link', { name: /Balance/ }).first()).toBeVisible();
 });
 
 test('keeps the Russian device action stable while ten of fifteen slots load', async ({ page }) => {
@@ -408,27 +404,24 @@ test('keeps the Russian device action stable while ten of fifteen slots load', a
   });
   await page.goto('/?sub=7');
   await expect(page.getByText('Пробный', { exact: true }).last()).toBeVisible();
-  const balanceCard = page.getByRole('link', { name: /Баланс/ }).first();
-  const before = (await balanceCard.boundingBox())?.y;
+  const deviceSlot = page.locator('[data-onboarding="connect-devices"]');
+  const before = await deviceSlot.boundingBox();
   devices.release();
-  const action = page.getByRole('button', { name: /Настроить VPN/ });
-  await expect(action).toContainText('10 / 15');
-  const after = (await balanceCard.boundingBox())?.y;
+  await expect(page.getByRole('button', { name: /Настроить VPN/ })).toContainText('10 / 15');
+  const after = await deviceSlot.boundingBox();
+  if (!before || !after) throw new Error('The device slot must stay visible while loading');
+  expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(4);
   link.release();
   await expect(page.getByRole('button', { name: 'Копировать ссылку' })).toBeVisible();
-  const afterLink = (await balanceCard.boundingBox())?.y;
-  if (before === undefined || after === undefined || afterLink === undefined) {
-    throw new Error('Balance must remain visible');
-  }
-  expect(Math.abs(after - before)).toBeLessThanOrEqual(4);
-  expect(Math.abs(afterLink - after)).toBeLessThanOrEqual(4);
+  await expect(page.getByRole('link', { name: /Баланс/ }).first()).toBeVisible();
 });
 
-test('holds carousel space while empty offers resolve without moving the wheel', async ({
+test('shows the wheel once offer placement is known and holds the carousel space', async ({
   page,
 }) => {
   const offers = deferred();
   const providers = deferred();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await prepareAuthenticatedPage(page, {
     featureFlags: { wheelEnabled: true },
     responses: { '/api/cabinet/wheel/config': { is_enabled: true } },
@@ -443,23 +436,20 @@ test('holds carousel space while empty offers resolve without moving the wheel',
   });
   await page.goto('/');
   const wheel = page.getByRole('link', { name: /Try your luck/ });
-  await expect(wheel).toBeVisible();
+  const purchase = page.getByRole('link', { name: 'Choose tariff', exact: true });
+  await expect(purchase).toBeVisible();
+  await expect(wheel).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Recommended actions' })).toHaveCount(0);
-  const beforeOffers = (await wheel.boundingBox())?.y;
-  const offersResponse = page.waitForResponse(
-    (response) => new URL(response.url()).pathname === '/api/cabinet/promo/offers',
-  );
   offers.release();
-  await offersResponse;
-  const afterOffers = (await wheel.boundingBox())?.y;
+  await expect(wheel).toBeVisible();
+  const beforeCarousel = (await wheel.boundingBox())?.y;
   providers.release();
   await expect(page.getByRole('region', { name: 'Recommended actions' })).toBeVisible();
   const afterCarousel = (await wheel.boundingBox())?.y;
-  if (beforeOffers === undefined || afterOffers === undefined || afterCarousel === undefined) {
-    throw new Error('Wheel must remain visible during promo loading');
+  if (beforeCarousel === undefined || afterCarousel === undefined) {
+    throw new Error('Wheel must remain visible during carousel loading');
   }
-  expect(Math.abs(afterOffers - beforeOffers)).toBeLessThanOrEqual(4);
-  expect(Math.abs(afterCarousel - afterOffers)).toBeLessThanOrEqual(4);
+  expect(Math.abs(afterCarousel - beforeCarousel)).toBeLessThanOrEqual(4);
 });
 
 test('does not apply a late traffic error from A to the refresh action on B', async ({ page }) => {
@@ -559,7 +549,7 @@ for (const theme of ['dark', 'light'] as const) {
   });
 }
 
-test('known expired trial leaves space only for the dashboard card it will show', async ({
+test('expired trial resolves from the initial skeleton before balance appears', async ({
   page,
 }) => {
   const details = deferred();
@@ -590,10 +580,8 @@ test('known expired trial leaves space only for the dashboard card it will show'
   await expect(page.getByRole('heading', { name: 'Your Subscription' })).toBeVisible();
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
   const balance = page.getByRole('link', { name: /Balance/ }).first();
-  const before = await balance.boundingBox();
+  await expect(balance).toHaveCount(0);
   details.release();
   await expect(page.getByRole('button', { name: 'Manage subscription' })).toBeVisible();
-  const after = await balance.boundingBox();
-  if (!before || !after) throw new Error('Balance must remain visible');
-  expect(Math.abs(before.y - after.y)).toBeLessThanOrEqual(4);
+  await expect(balance).toBeVisible();
 });

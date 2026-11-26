@@ -1,6 +1,7 @@
 import { uiLocale } from '@/utils/uiLocale';
 import { useTranslation } from 'react-i18next';
 import type { UseMutationResult } from '@tanstack/react-query';
+import { subscriptionSummaryLayout } from './subscriptionSummaryLayout';
 import TrafficProgressBar from './TrafficProgressBar';
 import { SubscriptionTechGrid } from './SubscriptionTechGrid';
 import { useAnimatedNumber } from '../../hooks/useAnimatedNumber';
@@ -97,7 +98,7 @@ export default function SubscriptionCardActive({
     <div className="space-y-3">
       <section
         aria-labelledby="subscription-summary-title"
-        className="relative isolate overflow-hidden rounded-3xl px-5 py-3 sm:px-6"
+        className={`${subscriptionSummaryLayout} relative isolate`}
         style={{
           background: contrast.background,
           border: `1px solid ${contrast.border}`,
@@ -105,175 +106,177 @@ export default function SubscriptionCardActive({
         }}
       >
         <SubscriptionTechGrid />
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:gap-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span
-              className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-semibold uppercase ${
-                subscription.is_trial
-                  ? 'border-warning-500/30 bg-warning-500/15 text-warning-200'
-                  : ''
-              }`}
-              style={
-                subscription.is_trial
-                  ? undefined
-                  : {
-                      borderColor: `rgba(${activeStatusRaw}, 0.25)`,
-                      background: `rgba(${activeStatusRaw}, 0.1)`,
-                      color: `rgb(${activeStatusRaw})`,
-                    }
-              }
-            >
-              {subscription.is_trial ? (
-                <GiftIcon className="h-3 w-3" />
-              ) : (
-                <span className="h-2 w-2 rounded-full bg-current" aria-hidden="true" />
+        <div className="flex flex-1 flex-col motion-safe:animate-fade-in-fast">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <span
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-semibold uppercase ${
+                  subscription.is_trial
+                    ? 'border-warning-500/30 bg-warning-500/15 text-warning-200'
+                    : ''
+                }`}
+                style={
+                  subscription.is_trial
+                    ? undefined
+                    : {
+                        borderColor: `rgba(${activeStatusRaw}, 0.25)`,
+                        background: `rgba(${activeStatusRaw}, 0.1)`,
+                        color: `rgb(${activeStatusRaw})`,
+                      }
+                }
+              >
+                {subscription.is_trial ? (
+                  <GiftIcon className="h-3 w-3" />
+                ) : (
+                  <span className="h-2 w-2 rounded-full bg-current" aria-hidden="true" />
+                )}
+                {t(subscription.is_trial ? 'subscription.trialStatusShort' : 'subscription.active')}
+              </span>
+              {!subscription.is_trial && (
+                <span
+                  className="flex min-w-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-medium uppercase"
+                  style={{
+                    borderColor: contrast.innerBorder,
+                    background: contrast.innerBackground,
+                    color: contrast.secondary,
+                  }}
+                >
+                  <span aria-hidden="true" className="shrink-0">
+                    <TariffsIcon className="h-3 w-3" />
+                  </span>
+                  <span className="min-w-0 line-clamp-2 break-words">
+                    {subscription.tariff_name || t('subscription.currentPlan')}
+                  </span>
+                </span>
               )}
-              {t(subscription.is_trial ? 'subscription.trialStatusShort' : 'subscription.active')}
-            </span>
-            {!subscription.is_trial && (
-              <span
-                className="flex min-w-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-medium uppercase"
-                style={{
-                  borderColor: contrast.innerBorder,
-                  background: contrast.innerBackground,
-                  color: contrast.secondary,
-                }}
-              >
-                <span aria-hidden="true" className="shrink-0">
-                  <TariffsIcon className="h-3 w-3" />
-                </span>
-                <span className="min-w-0 line-clamp-2 break-words">
-                  {subscription.tariff_name || t('subscription.currentPlan')}
-                </span>
-              </span>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => refreshTrafficMutation.mutate(subscription.id)}
-            disabled={refreshing || trafficRefreshCooldown > 0}
-            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-xl px-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-            style={{ color: contrast.secondary }}
-            aria-label={
-              trafficRefreshCooldown > 0
-                ? `${t('common.refresh')}: ${trafficRefreshCooldown}s`
-                : t('common.refresh')
-            }
-            title={
-              trafficRefreshCooldown > 0
-                ? `${t('common.refresh')}: ${trafficRefreshCooldown}s`
-                : t('common.refresh')
-            }
-            data-traffic-refresh
-          >
-            <RefreshIcon className={refreshing ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
-            {trafficRefreshCooldown > 0 ? `${trafficRefreshCooldown}s` : t('common.refresh')}
-          </button>
-        </div>
-        <h2 id="subscription-summary-title" className="sr-only">
-          {t(
-            subscription.is_trial
-              ? 'dashboard.subscriptionTrialTitle'
-              : 'dashboard.subscriptionActiveTitle',
-          )}
-        </h2>
-
-        <div
-          className="mt-2 grid grid-cols-2 border-t pt-3"
-          style={{ borderColor: contrast.innerBorder }}
-        >
-          <div className="min-w-0 pe-3 sm:pe-5">
-            <div
-              className="mb-1 flex items-center gap-2 text-xs font-medium"
+            </div>
+            <button
+              type="button"
+              onClick={() => refreshTrafficMutation.mutate(subscription.id)}
+              disabled={refreshing || trafficRefreshCooldown > 0}
+              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-xl px-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               style={{ color: contrast.secondary }}
+              aria-label={
+                trafficRefreshCooldown > 0
+                  ? `${t('common.refresh')}: ${trafficRefreshCooldown}s`
+                  : t('common.refresh')
+              }
+              title={
+                trafficRefreshCooldown > 0
+                  ? `${t('common.refresh')}: ${trafficRefreshCooldown}s`
+                  : t('common.refresh')
+              }
+              data-traffic-refresh
             >
-              <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-                style={{ background: contrast.innerBackground }}
-              >
-                <CalendarIcon className="h-4 w-4" />
-              </span>
-              {t('dashboard.remaining')}
-            </div>
-            <div
-              className="flex flex-wrap items-baseline gap-1 text-2xl font-bold tracking-tight sm:text-3xl"
-              style={{ color: daysLeft <= 3 ? `rgb(${warningStatusRaw})` : contrast.primary }}
-            >
-              <span>{daysLeft}</span>
-              <span className="text-lg">{t('subscription.daysShort')}</span>
-            </div>
-            <div className="mt-1 text-xs" style={{ color: contrast.secondary }}>
-              {t('dashboard.validUntil', { date: formattedDate })}
-            </div>
+              <RefreshIcon className={refreshing ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
+              {trafficRefreshCooldown > 0 ? `${trafficRefreshCooldown}s` : t('common.refresh')}
+            </button>
           </div>
+          <h2 id="subscription-summary-title" className="sr-only">
+            {t(
+              subscription.is_trial
+                ? 'dashboard.subscriptionTrialTitle'
+                : 'dashboard.subscriptionActiveTitle',
+            )}
+          </h2>
+
           <div
-            className="min-w-0 border-s ps-3 sm:ps-5"
+            className="mt-2 grid grid-cols-2 border-t pt-3"
             style={{ borderColor: contrast.innerBorder }}
           >
-            <div
-              className="mb-1 flex items-center gap-2 text-xs font-medium"
-              style={{ color: contrast.secondary }}
-            >
-              <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-                style={{ background: contrast.innerBackground }}
+            <div className="min-w-0 pe-3 sm:pe-5">
+              <div
+                className="mb-1 flex items-center gap-2 text-xs font-medium"
+                style={{ color: contrast.secondary }}
               >
-                <ChartIcon className="h-4 w-4" />
-              </span>
-              {t('subscription.traffic')}
+                <span
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+                  style={{ background: contrast.innerBackground }}
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                </span>
+                {t('dashboard.remaining')}
+              </div>
+              <div
+                className="flex flex-wrap items-baseline gap-1 text-2xl font-bold tracking-tight sm:text-3xl"
+                style={{ color: daysLeft <= 3 ? `rgb(${warningStatusRaw})` : contrast.primary }}
+              >
+                <span>{daysLeft}</span>
+                <span className="text-lg">{t('subscription.daysShort')}</span>
+              </div>
+              <div className="mt-1 text-xs" style={{ color: contrast.secondary }}>
+                {t('dashboard.validUntil', { date: formattedDate })}
+              </div>
             </div>
-            {isUnlimited ? (
+            <div
+              className="min-w-0 border-s ps-3 sm:ps-5"
+              style={{ borderColor: contrast.innerBorder }}
+            >
               <div
-                className="break-words text-xl font-bold tracking-tight sm:text-3xl"
-                style={{ color: contrast.primary }}
+                className="mb-1 flex items-center gap-2 text-xs font-medium"
+                style={{ color: contrast.secondary }}
               >
-                {t('dashboard.unlimited')}
+                <span
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+                  style={{ background: contrast.innerBackground }}
+                >
+                  <ChartIcon className="h-4 w-4" />
+                </span>
+                {t('subscription.traffic')}
               </div>
-            ) : (
-              <div
-                className="text-2xl font-bold tracking-tight sm:text-3xl"
-                style={{ color: zoneColor }}
-                data-traffic-percentage
-              >
-                {animatedPercent.toFixed(0)}
-                <span className="text-lg">%</span>
-              </div>
-            )}
-            <div className="mt-1 break-words text-xs" style={{ color: contrast.secondary }}>
-              {!unknownManagedTraffic && `${formatTraffic(usedGb)} / `}
-              {unknownManagedTraffic ? (
-                '—'
-              ) : isUnlimited ? (
-                <span className="inline-block align-baseline text-base leading-none">∞</span>
+              {isUnlimited ? (
+                <div
+                  className="break-words text-xl font-bold tracking-tight sm:text-3xl"
+                  style={{ color: contrast.primary }}
+                >
+                  {t('dashboard.unlimited')}
+                </div>
               ) : (
-                formatTraffic(subscription.traffic_limit_gb)
+                <div
+                  className="text-2xl font-bold tracking-tight sm:text-3xl"
+                  style={{ color: zoneColor }}
+                  data-traffic-percentage
+                >
+                  {animatedPercent.toFixed(0)}
+                  <span className="text-lg">%</span>
+                </div>
               )}
+              <div className="mt-1 break-words text-xs" style={{ color: contrast.secondary }}>
+                {!unknownManagedTraffic && `${formatTraffic(usedGb)} / `}
+                {unknownManagedTraffic ? (
+                  '—'
+                ) : isUnlimited ? (
+                  <span className="inline-block align-baseline text-base leading-none">∞</span>
+                ) : (
+                  formatTraffic(subscription.traffic_limit_gb)
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {!isUnlimited && !unknownManagedTraffic && (
-          <div className="mt-2">
-            <TrafficProgressBar
-              usedGb={usedGb}
-              limitGb={subscription.traffic_limit_gb}
-              percent={usedPercent}
-              isUnlimited={false}
-              compact
-              inverseSurface={!isDark}
+          {!isUnlimited && !unknownManagedTraffic && (
+            <div className="mt-2">
+              <TrafficProgressBar
+                usedGb={usedGb}
+                limitGb={subscription.traffic_limit_gb}
+                percent={usedPercent}
+                isUnlimited={false}
+                compact
+                inverseSurface={!isDark}
+              />
+            </div>
+          )}
+
+          <ManagedTrafficSummary subscription={subscription} refreshed={trafficData} />
+
+          <div className="mt-auto pt-3">
+            <SubscriptionPrimaryAction
+              subscription={subscription}
+              onManageSubscription={onManageSubscription}
+              managementOpen={managementOpen}
+              neutralSurface
             />
           </div>
-        )}
-
-        <ManagedTrafficSummary subscription={subscription} refreshed={trafficData} />
-
-        <div className="mt-3">
-          <SubscriptionPrimaryAction
-            subscription={subscription}
-            onManageSubscription={onManageSubscription}
-            managementOpen={managementOpen}
-            neutralSurface
-          />
         </div>
       </section>
       <SubscriptionActiveActions

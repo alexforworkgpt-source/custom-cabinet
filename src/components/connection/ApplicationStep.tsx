@@ -10,7 +10,6 @@ interface ApplicationStepProps {
   selectedApp: RemnawaveAppClient;
   availableApps: RemnawaveAppClient[];
   installBlocks: RenderBlock[];
-  platformName: string;
   isRecommended: boolean;
   onSelectApp: (app: RemnawaveAppClient) => void;
   onContinue: () => void;
@@ -22,7 +21,6 @@ export function ApplicationStep({
   selectedApp,
   availableApps,
   installBlocks,
-  platformName,
   isRecommended,
   onSelectApp,
   onContinue,
@@ -38,10 +36,7 @@ export function ApplicationStep({
       <ConnectionSelectionCard
         label={
           isRecommended
-            ? t('subscription.connection.recommendedApp', {
-                defaultValue: 'Recommended for {{platform}}',
-                platform: platformName,
-              })
+            ? t('subscription.connection.recommendedApp', 'Recommended')
             : t('subscription.connection.selectedApp', 'Selected app')
         }
         name={selectedApp.name}
