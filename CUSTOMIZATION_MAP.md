@@ -12,12 +12,12 @@
 
 ## Profile identity / avatar — 2026-10-28
 
-- Profile owns the existing useUserAvatar query; ProfileIdentity owns only the
-  read-only56/64px presentation, real-name initials and loaded-image state.
-  Placeholder remains until image onLoad; name/username are no longer duplicated.
-- Existing Telegram initData/API sources, query/cache/error policy and account
-  actions retain their owners. No upload/edit, backend contract, global style or
-  dependency changes. Accessible avatar label uses all4existing locales.
+- AppShell preloads the avatar after sign-in. Profile owns the direct-entry
+  query and ProfileIdentity owns its presentation, initials and loaded-image state.
+- Both consumers share the query keyed by the Cabinet account and Telegram ID.
+  The Telegram initData photo is used only when its ID matches that account.
+  The placeholder remains until the image loads, and the accessible label uses
+  the four existing locales.
 - [Browser TDD and exact local proof](docs/profile-avatar-20261028.md).
 
 ## Secondary mobile navigation — 2026-10-28
