@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { initDataUser } from '@telegram-apps/sdk-react';
 import { authApi } from '../api/auth';
@@ -6,9 +6,11 @@ import type { User } from '../types';
 
 const AVATAR_STALE_MS = 60 * 60 * 1000;
 
-function readInitDataPhoto(): string | null {
+function readInitDataPhoto(telegramId: number | null): string | null {
+  if (telegramId === null) return null;
   try {
-    return initDataUser()?.photo_url ?? null;
+    const telegramUser = initDataUser();
+    return telegramUser?.id === telegramId ? (telegramUser.photo_url ?? null) : null;
   } catch {
     return null;
   }
@@ -19,14 +21,15 @@ export interface UserAvatar {
   onError: () => void;
 }
 
-export function useUserAvatar(user: User | null): UserAvatar {
-  const initDataPhoto = useMemo(readInitDataPhoto, []);
+export function useUserAvatar(user: User | null, fetchEnabled = true): UserAvatar {
+  const telegramId = user?.telegram_id ?? null;
+  const initDataPhoto = useMemo(() => readInitDataPhoto(telegramId), [telegramId]);
   const [failed, setFailed] = useState<readonly string[]>([]);
 
   const { data } = useQuery({
-    queryKey: ['my-avatar', user?.id ?? null],
+    queryKey: ['my-avatar', user?.id ?? null, telegramId],
     queryFn: authApi.getMyAvatar,
-    enabled: Boolean(user?.telegram_id),
+    enabled: fetchEnabled && Boolean(telegramId),
     staleTime: AVATAR_STALE_MS,
     retry: false,
   });
@@ -42,4 +45,20 @@ export function useUserAvatar(user: User | null): UserAvatar {
   }, [src]);
 
   return { src, onError };
+}
+
+export function useAvatarPreload(user: User | null, fetchEnabled: boolean) {
+  const { src, onError } = useUserAvatar(user, fetchEnabled);
+
+  useEffect(() => {
+    if (!src) return;
+    const image = new Image();
+    image.fetchPriority = 'low';
+    image.onerror = onError;
+    image.src = src;
+
+    return () => {
+      image.onerror = null;
+    };
+  }, [src, onError]);
 }

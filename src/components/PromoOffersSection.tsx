@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { promoApi } from '../api/promo';
+import { promoApi, type ActiveDiscount, type PromoOffer } from '../api/promo';
 import { getApiErrorMessage } from '../utils/api-error';
 import { ClockIcon, CheckIcon } from './icons';
 import { useDestructiveConfirm } from '@/platform/hooks/useNativeDialog';
@@ -23,9 +23,20 @@ import {
 interface PromoOffersSectionProps {
   className?: string;
   context: DiscountNavigationContext;
+  offers?: PromoOffer[];
+  activeDiscount?: ActiveDiscount;
+  refreshing: boolean;
 }
 
-export default function PromoOffersSection({ className = '', context }: PromoOffersSectionProps) {
+const emptyOffers: PromoOffer[] = [];
+
+export default function PromoOffersSection({
+  className = '',
+  context,
+  offers = emptyOffers,
+  activeDiscount,
+  refreshing,
+}: PromoOffersSectionProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const confirmDeactivate = useDestructiveConfirm();
@@ -33,19 +44,6 @@ export default function PromoOffersSection({ className = '', context }: PromoOff
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Fetch available offers
-  const { data: offers = [], isFetching: offersRefreshing } = useQuery({
-    queryKey: ['promo-offers'],
-    queryFn: promoApi.getOffers,
-    staleTime: 30000,
-  });
-
-  // Fetch active discount
-  const { data: activeDiscount, isFetching: discountRefreshing } = useQuery({
-    queryKey: ['active-discount'],
-    queryFn: promoApi.getActiveDiscount,
-    staleTime: 30000,
-  });
   const availability = usePromoAvailability(activeDiscount, offers);
   const discountNavigation = useDiscountAction(context, availability.currentDiscount);
 
@@ -182,7 +180,7 @@ export default function PromoOffersSection({ className = '', context }: PromoOff
       )}
       {availability.unavailableDiscount && (
         <UnavailableDiscountBanner
-          refreshing={discountRefreshing || offersRefreshing}
+          refreshing={refreshing}
           deactivating={deactivateMutation.isPending}
           onRefresh={() => invalidatePromoState(queryClient)}
           onDeactivate={() => {

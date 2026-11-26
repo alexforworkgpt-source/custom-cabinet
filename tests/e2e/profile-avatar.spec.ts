@@ -1,6 +1,42 @@
 import { expect, test } from '@playwright/test';
 import { avatarUser, prepareAvatarPage } from './profileAvatarFixture';
 
+test('starts loading the photo on the dashboard and reuses it when opening Profile', async ({
+  page,
+}) => {
+  const fixture = await prepareAvatarPage(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route(
+    (url) => ['fonts.googleapis.com', 'fonts.gstatic.com'].includes(url.hostname),
+    (route) => route.abort(),
+  );
+  let imageRequests = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/profile-avatar-fixture.svg') imageRequests += 1;
+  });
+  const photo = page.waitForResponse('**/profile-avatar-fixture.svg', { timeout: 5000 });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await (await photo).finished();
+  expect(
+    fixture.apiRequests.filter((key) => key === 'GET /api/cabinet/auth/me/avatar'),
+  ).toHaveLength(1);
+  expect(new URL(page.url()).pathname).toBe('/');
+
+  const profile = page.locator('nav:visible a[href="/profile"]').first();
+  const home = page.locator('nav:visible a[href="/"]').first();
+  const picture = page.getByRole('img', { name: 'Profile picture', exact: true });
+  for (let visit = 0; visit < 2; visit++) {
+    await profile.click();
+    await expect(picture.locator('img')).toHaveCSS('opacity', '1');
+    await expect(picture.getByText('DI', { exact: true })).toHaveCount(0);
+    await home.click();
+  }
+  expect(
+    fixture.apiRequests.filter((key) => key === 'GET /api/cabinet/auth/me/avatar'),
+  ).toHaveLength(1);
+  expect(imageRequests).toBe(1);
+});
+
 test('Profile shows the existing account photo beside a single name and username while retaining account details', async ({
   page,
 }) => {

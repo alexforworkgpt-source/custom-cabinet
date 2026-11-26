@@ -13,6 +13,46 @@ const responses = {
   '/api/cabinet/tickets': { items: [], total: 0, page: 1, per_page: 20, pages: 0 },
 };
 
+for (const language of ['ru', 'en'] as const) {
+  test(`paints Support with Manrope on a cold ${language} visit even if Google Fonts is unavailable`, async ({
+    page,
+    context,
+  }) => {
+    await prepareAuthenticatedPage(page, { language, responses });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.route(
+      (url) => ['fonts.googleapis.com', 'fonts.gstatic.com'].includes(url.hostname),
+      (route) => route.abort(),
+    );
+
+    const devtools = await context.newCDPSession(page);
+    await devtools.send('DOM.enable');
+    await devtools.send('CSS.enable');
+    await page.goto('/support', { waitUntil: 'domcontentloaded' });
+
+    const heading = page.getByRole('heading', { level: 1, name: /Support|Поддержка/ });
+    await expect(heading).toBeVisible();
+    const { root } = await devtools.send('DOM.getDocument');
+    const readFonts = async (selector: string) => {
+      const { nodeId } = await devtools.send('DOM.querySelector', {
+        nodeId: root.nodeId,
+        selector,
+      });
+      const { fonts } = await devtools.send('CSS.getPlatformFontsForNode', { nodeId });
+      return fonts.filter((font) => font.glyphCount > 0).map((font) => font.familyName);
+    };
+
+    const firstFonts = await readFonts('main h1');
+    expect(firstFonts.length).toBeGreaterThan(0);
+    expect(firstFonts.every((family) => family.startsWith('Manrope'))).toBe(true);
+    const firstHeading = await heading.boundingBox();
+    await page.evaluate(() => document.fonts.ready);
+    expect(await readFonts('main h1')).toEqual(firstFonts);
+    expect(await heading.boundingBox()).toEqual(firstHeading);
+    expect((await readFonts('main p')).join()).toContain('Manrope');
+  });
+}
+
 test('places instructions below New Ticket and returns from an article to Support', async ({
   page,
 }) => {

@@ -111,14 +111,12 @@ test('reserves the trial action while conditions are pending without allowing na
   );
 });
 
-test('keeps the cached action visible and blocked until both subscription and conditions are fresh', async ({
-  page,
-}) => {
+test('shows the same cached action until both fresh responses arrive', async ({ page }) => {
   const details = deferred();
   const options = deferred();
   let hold = false;
   let optionRequests = 0;
-  const { apiRequests } = await prepareAuthenticatedPage(page, { language: 'ru', responses });
+  await prepareAuthenticatedPage(page, { language: 'ru', responses });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.route(
     (url) => url.pathname === '/api/cabinet/subscription',
@@ -137,40 +135,39 @@ test('keeps the cached action visible and blocked until both subscription and co
     await route.fallback();
   });
   await page.goto('/subscriptions/42');
-  await page.getByRole('link', { name: /Продлить подписку/ }).waitFor();
-  await page.locator('nav:visible a[href="/profile"]').first().click();
-  await page.getByRole('heading', { name: 'Профиль', exact: true }).waitFor();
+  const renewal = page.getByRole('link', { name: /Продлить подписку/ });
+  const selectTariff = page.getByRole('link', { name: /Выберите тариф/ });
+  await expect(renewal).toHaveAttribute('href', '/subscriptions/42/renew');
+  await page.locator('nav:visible a[href="/"]').first().click();
+  await expect(page.locator('main [data-onboarding=balance]')).toBeVisible();
   hold = true;
   try {
     await page.locator('nav:visible a[href="/subscriptions/42"]').first().click();
-    const pending = page.locator('[data-subscription-purchase-loading]');
-    await expect(pending).toBeVisible();
-    await expect(pending.locator('button, a')).toHaveCount(0);
     await expect(page.locator('[data-subscription-overview]')).toBeVisible();
-    await expect(page.getByRole('link', { name: /Продлить подписку/ })).toHaveCount(0);
+    await expect(renewal).toBeVisible();
+    await expect(renewal).toHaveAttribute('aria-disabled', 'true');
+    await expect(renewal).not.toHaveAttribute('href');
+    await expect(page.locator('[data-subscription-purchase-loading]')).toHaveCount(0);
     await expect.poll(() => optionRequests).toBe(2);
-    const freshOptions = page.waitForResponse(
-      (response) =>
-        new URL(response.url()).pathname === '/api/cabinet/subscription/purchase-options',
+
+    const freshDetails = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === '/api/cabinet/subscription',
     );
-    options.release();
-    await (await freshOptions).finished();
-    await page.evaluate(
-      () =>
-        new Promise<void>((resolve) =>
-          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-        ),
-    );
-    await expect
-      .poll(
-        () =>
-          apiRequests.filter((r) => r === 'GET /api/cabinet/subscription/purchase-options').length,
-      )
-      .toBe(2);
-    await expect(pending).toBeVisible();
-    await expect(pending.locator('button, a')).toHaveCount(0);
-    await expect(page.locator('[data-subscription-overview]')).toBeVisible();
-    await expect(page.getByRole('link', { name: /Продлить подписку/ })).toHaveCount(0);
+    details.release();
+    await (await freshDetails).finished();
+    await expect(page.locator('[data-subscription-overview]')).toContainText(/Пробн/i);
+    await expect(renewal).toHaveAttribute('aria-disabled', 'true');
+    await expect(renewal).not.toHaveAttribute('href');
+    await expect(selectTariff).toHaveCount(0);
+
+    // A partial refresh can leave the trial in the request cache.
+    await page.locator('nav:visible a[href="/"]').first().click();
+    await expect(page.locator('main [data-onboarding=balance]')).toBeVisible();
+    await page.locator('nav:visible a[href="/subscriptions/42"]').first().click();
+    await expect(renewal).toBeVisible();
+    await expect(renewal).toHaveAttribute('aria-disabled', 'true');
+    await expect(renewal).not.toHaveAttribute('href');
+    await expect(selectTariff).toHaveCount(0);
   } finally {
     details.release();
     options.release();
@@ -180,6 +177,82 @@ test('keeps the cached action visible and blocked until both subscription and co
     '/subscription/purchase?subscriptionId=42',
   );
 });
+
+test('keeps cached actions blocked offline and unlocks after reconnection', async ({
+  page,
+  context,
+}) => {
+  const options = deferred();
+  let hold = false;
+  await prepareAuthenticatedPage(page, { language: 'ru', responses });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route('**/api/cabinet/subscription/purchase-options**', async (route) => {
+    if (hold) await options.promise;
+    await route.fallback();
+  });
+  const renewal = page.getByRole('link', { name: /Продлить подписку/ });
+  await page.goto('/subscriptions/42');
+  await expect(renewal).toHaveAttribute('href', '/subscriptions/42/renew');
+  await page.locator('nav:visible a[href="/"]').first().click();
+  await expect(page.locator('main [data-onboarding=balance]')).toBeVisible();
+  hold = true;
+  try {
+    await context.setOffline(true);
+    await page.waitForFunction(() => !navigator.onLine);
+    await page.locator('nav:visible a[href="/subscriptions/42"]').first().click();
+    await expect(renewal).toBeVisible();
+    await expect(renewal).toHaveAttribute('aria-disabled', 'true');
+    await expect(renewal).not.toHaveAttribute('href');
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Нет подключения к интернету' }),
+    ).toBeVisible();
+    await renewal.focus();
+    await renewal.press('Enter');
+    await expect(page).toHaveURL('/subscriptions/42');
+    await context.setOffline(false);
+    await expect(renewal).not.toHaveAttribute('href');
+    options.release();
+    await expect(renewal).toHaveAttribute('href', '/subscriptions/42/renew');
+    await expect(renewal).toBeFocused();
+  } finally {
+    options.release();
+    await context.setOffline(false);
+  }
+});
+
+for (const path of ['/api/cabinet/subscription', '/api/cabinet/subscription/purchase-options']) {
+  test(`retains disabled actions after a refresh error and enables them on retry ${path}`, async ({
+    page,
+  }) => {
+    let fail = false;
+    await prepareAuthenticatedPage(page, { language: 'ru', responses });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.route(
+      (url) => url.pathname === path,
+      async (route) => {
+        if (fail) await route.fulfill({ status: 500, json: { detail: 'Mock refresh failure' } });
+        else await route.fallback();
+      },
+    );
+    const renewal = page.getByRole('link', { name: /Продлить подписку/ });
+    await page.goto('/subscriptions/42');
+    await expect(renewal).toHaveAttribute('href', '/subscriptions/42/renew');
+    await page.locator('nav:visible a[href="/"]').first().click();
+    await expect(page.locator('main [data-onboarding=balance]')).toBeVisible();
+    fail = true;
+    await page.locator('nav:visible a[href="/subscriptions/42"]').first().click();
+    const notice = page.getByRole('alert');
+    await expect(notice).toBeVisible();
+    await expect(page.locator('[data-subscription-overview]')).toBeVisible();
+    await expect(renewal).toBeVisible();
+    await expect(renewal).toHaveAttribute('aria-disabled', 'true');
+    await expect(renewal).not.toHaveAttribute('href');
+    fail = false;
+    await notice.getByRole('button', { name: 'Повторить' }).click();
+    await expect(renewal).toHaveAttribute('href', '/subscriptions/42/renew');
+    await expect(notice).toHaveCount(0);
+  });
+}
 
 test('offers purchase before trial availability resolves and keeps it in place when trial appears', async ({
   page,
@@ -206,14 +279,12 @@ test('offers purchase before trial availability resolves and keeps it in place w
     await route.fallback();
   });
   const purchase = page.getByRole('link', { name: 'Выберите тариф', exact: true });
+  const balance = page.getByRole('link', { name: /Баланс/ }).first();
   let before: { y: number } | null = null;
   try {
     await page.goto('/');
-    await page
-      .getByRole('link', { name: /Баланс/ })
-      .first()
-      .waitFor();
     await expect(purchase).toBeVisible();
+    await expect(balance).toHaveCount(0);
     await expect(purchase).toHaveAttribute('href', '/subscription/purchase');
     await page.evaluate(() => document.fonts.ready);
     before = await purchase.boundingBox();
@@ -228,4 +299,5 @@ test('offers purchase before trial availability resolves and keeps it in place w
     throw new Error('Purchase must remain visible before and after trial data');
   expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1);
   await expect(purchase).toHaveCount(1);
+  await expect(balance).toBeVisible();
 });

@@ -169,13 +169,16 @@ for (const theme of ['light', 'dark']) {
     await page.goBack();
     await expect(page.locator('[data-subscription-overview]')).toBeVisible();
     await expect(page.locator('[data-subscription-management-loading]')).toHaveCount(0);
-    await expect(page.locator('[data-subscription-purchase-loading]')).toBeVisible();
-    await expect(page.getByRole('link', { name: /Продлить подписку/ })).toHaveCount(0);
+    await expect(page.locator('[data-subscription-purchase-loading]')).toHaveCount(0);
+    const renewal = page.getByRole('link', { name: /Продлить подписку/ });
+    await expect(renewal).toBeVisible();
+    await expect(renewal).toHaveAttribute('aria-disabled', 'true');
+    await expect(renewal).not.toHaveAttribute('href');
     expectStable(before, await devices.boundingBox());
     await devices.focus();
     details.release();
     options.release();
-    await expect(page.getByRole('link', { name: /Продлить подписку/ })).toBeVisible();
+    await expect(renewal).toHaveAttribute('href', '/subscriptions/42/renew');
     expectStable(before, await devices.boundingBox());
     await expect(devices).toBeFocused();
   });
@@ -278,12 +281,17 @@ test('cached expired classic management reserves both action cards', async ({ pa
   await expect(page).toHaveURL('/profile');
   hold = true;
   await page.goBack();
-  await expect(page.locator('[data-subscription-purchase-loading]')).toBeVisible();
-  await expect(configure).toHaveCount(0);
+  await expect(page.locator('[data-subscription-purchase-loading]')).toHaveCount(0);
+  await expect(configure).toBeVisible();
+  await expect(configure).toHaveAttribute('aria-disabled', 'true');
+  await expect(configure).not.toHaveAttribute('href');
   expectStable(before, await devices.boundingBox());
 
   options.release();
-  await expect(configure).toBeVisible();
+  await expect(configure).toHaveAttribute(
+    'href',
+    '/subscription/purchase?subscriptionId=42&mode=configure',
+  );
   expectStable(before, await devices.boundingBox());
 });
 

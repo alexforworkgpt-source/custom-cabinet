@@ -4,6 +4,7 @@ import { hasUnknownManagedTraffic } from '@/utils/trafficAccounting';
 import { uiLocale } from '@/utils/uiLocale';
 import { useTranslation } from 'react-i18next';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { subscriptionSummaryLayout } from './subscriptionSummaryLayout';
 import ManagedTrafficSummary from '../subscription/ManagedTrafficSummary';
 import { connectFooterState } from '../subscription/connectFooterState';
 
@@ -16,38 +17,28 @@ export default function SubscriptionCardSkeleton({
   hideSubscriptionLink?: boolean;
 }) {
   const { t } = useTranslation();
-  if (
-    !subscription ||
-    !['active', 'trial', 'expired', 'disabled', 'limited'].includes(subscription.status)
-  ) {
-    return (
-      <SkeletonGroup>
-        <h2 className="sr-only">{t('dashboard.yourSubscription')}</h2>
-        <Skeleton variant="card" className="h-36" />
-      </SkeletonGroup>
-    );
-  }
   const showConnection =
+    !subscription ||
     connectFooterState({
       status: subscription.status,
       subscriptionUrl: subscription.subscription_url,
       deviceLimit: subscription.device_limit,
       connected: undefined,
     }).kind !== 'hidden';
-  if (['expired', 'disabled', 'limited'].includes(subscription.status)) {
+  if (subscription && ['expired', 'disabled', 'limited'].includes(subscription.status)) {
     return (
       <InactiveSubscriptionSkeleton subscription={subscription} showConnection={showConnection} />
     );
   }
   const showTrafficProgress =
-    subscription.traffic_limit_gb > 0 && !hasUnknownManagedTraffic(subscription);
+    !subscription || (subscription.traffic_limit_gb > 0 && !hasUnknownManagedTraffic(subscription));
   return (
     <SkeletonGroup className="space-y-3">
-      <section className="overflow-hidden rounded-3xl border border-dark-700/60 bg-dark-900 px-5 py-3 sm:px-6">
+      <section className={`${subscriptionSummaryLayout} border border-dark-700/60 bg-dark-900`}>
         <div className="flex items-center justify-between gap-2" aria-hidden="true">
           <div className="flex min-w-0 gap-2">
             <Skeleton className="h-7 w-20 rounded-lg" />
-            {!subscription.is_trial && <Skeleton className="h-7 w-24 rounded-lg" />}
+            {!subscription?.is_trial && <Skeleton className="h-7 w-24 rounded-lg" />}
           </div>
           <Skeleton className="h-11 w-20 shrink-0 rounded-xl" />
         </div>
@@ -64,7 +55,7 @@ export default function SubscriptionCardSkeleton({
           </div>
         </div>
         {showTrafficProgress && <Skeleton className="mt-2 h-2 w-full rounded-full" />}
-        {subscription.traffic_accounting_mode === 'managed' && (
+        {subscription?.traffic_accounting_mode === 'managed' && (
           <div aria-hidden="true" className="relative">
             <div className="invisible">
               <ManagedTrafficSummary subscription={subscription} />
@@ -72,7 +63,9 @@ export default function SubscriptionCardSkeleton({
             <Skeleton className="absolute inset-0 h-full" />
           </div>
         )}
-        <Skeleton className="mt-3 h-12 w-full rounded-[14px]" />
+        <div className="mt-auto pt-3">
+          <Skeleton className="h-12 w-full rounded-[14px]" />
+        </div>
       </section>
       {showConnection && (
         <div
@@ -87,7 +80,9 @@ export default function SubscriptionCardSkeleton({
         </div>
       )}
       {!hideSubscriptionLink &&
-        (subscription.subscription_url || subscription.subscription_crypto_link) && (
+        (!subscription ||
+          subscription.subscription_url ||
+          subscription.subscription_crypto_link) && (
           <div className="flex min-h-11 gap-2" aria-hidden="true">
             <Skeleton className="min-w-0 flex-1 rounded-[14px]" />
             <Skeleton className="w-11 shrink-0 rounded-[14px]" />

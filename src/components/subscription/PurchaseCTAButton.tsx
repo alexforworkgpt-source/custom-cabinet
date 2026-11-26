@@ -1,5 +1,5 @@
-import { useState, type MouseEvent } from 'react';
-import { Link } from 'react-router';
+import { Fragment, useState, type ComponentPropsWithoutRef } from 'react';
+import { useHref, useLinkClickHandler } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import type { Subscription } from '../../types';
 import { AdjustmentsIcon, ChevronRightIcon } from '../icons';
@@ -21,6 +21,8 @@ interface PurchaseCTAButtonProps {
   /** Explicit sales mode from purchase-options; a missing tariff alone is ambiguous. */
   isClassic?: boolean;
   loading?: boolean;
+  disabled?: boolean;
+  animateEntrance?: boolean;
   /** Cached conditions may describe the action while fresh data is still pending. */
   conditionsKnown?: boolean;
   reserveSpace?: boolean;
@@ -28,11 +30,35 @@ interface PurchaseCTAButtonProps {
   withinLoadingGroup?: boolean;
 }
 
+function PurchaseActionLink({
+  to,
+  disabled,
+  ...props
+}: Omit<ComponentPropsWithoutRef<'a'>, 'href' | 'onClick'> & {
+  to: string;
+  disabled: boolean;
+}) {
+  const href = useHref(to);
+  const navigate = useLinkClickHandler(to);
+  return (
+    <a
+      {...props}
+      href={disabled ? undefined : href}
+      role={disabled ? 'link' : undefined}
+      aria-disabled={disabled || undefined}
+      tabIndex={disabled ? 0 : undefined}
+      onClick={disabled ? (event) => event.preventDefault() : navigate}
+    />
+  );
+}
+
 export default function PurchaseCTAButton({
   subscription,
   isMultiTariff = false,
   isClassic = false,
   loading = false,
+  disabled = false,
+  animateEntrance = true,
   conditionsKnown = true,
   reserveSpace = false,
   compactOnMobile = false,
@@ -40,6 +66,7 @@ export default function PurchaseCTAButton({
 }: PurchaseCTAButtonProps) {
   const { t } = useTranslation();
   const [focused, setFocused] = useState(false);
+  const Entrance = animateEntrance ? PageEntranceItem : Fragment;
   const preserveFocus = loading && focused && !withinLoadingGroup;
 
   const isExpired =
@@ -168,35 +195,33 @@ export default function PurchaseCTAButton({
     return withinLoadingGroup ? placeholder : <PageEntranceItem>{placeholder}</PageEntranceItem>;
   }
 
-  if (unavailable) return <PageEntranceItem>{unavailable}</PageEntranceItem>;
+  if (unavailable) return <Entrance>{unavailable}</Entrance>;
 
   const actionProps = {
     onFocus: () => setFocused(true),
     onBlur: () => setFocused(false),
-    'aria-disabled': loading || undefined,
-    tabIndex: loading ? -1 : undefined,
-    onClick: loading ? (event: MouseEvent<HTMLAnchorElement>) => event.preventDefault() : undefined,
+    disabled: disabled || loading,
   };
 
   return (
-    <PageEntranceItem>
-      <Link {...actionProps} to={loading ? '' : linkTo} className="block">
+    <Entrance>
+      <PurchaseActionLink
+        {...actionProps}
+        to={linkTo}
+        className="block aria-disabled:cursor-not-allowed"
+      >
         {content}
-      </Link>
+      </PurchaseActionLink>
       {secondary && subscription && (
-        <Link
+        <PurchaseActionLink
           {...actionProps}
-          to={
-            loading
-              ? ''
-              : tariffSelectionPath(subscription.id) + (configureClassic ? '&mode=configure' : '')
-          }
+          to={tariffSelectionPath(subscription.id) + (configureClassic ? '&mode=configure' : '')}
           aria-label={secondaryTitle}
-          className={`mt-3 ${secondaryClassName}`}
+          className={`mt-3 ${secondaryClassName} aria-disabled:cursor-not-allowed`}
         >
           {secondary}
-        </Link>
+        </PurchaseActionLink>
       )}
-    </PageEntranceItem>
+    </Entrance>
   );
 }

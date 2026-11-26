@@ -108,25 +108,19 @@ export function StatCard({
           role={loading || subValueLoading ? 'status' : undefined}
           aria-label={loading || subValueLoading ? (loadingLabel ?? label) : undefined}
         >
-          {loading ? (
-            <Skeleton className="h-7 w-20 rounded" />
-          ) : (
-            <div
-              className={cn(
-                'font-semibold [overflow-wrap:anywhere] tile-wide:text-lg sm:tile-wide:text-xl',
-                longValue ? 'text-[length:clamp(0.75rem,10cqi,1rem)]' : 'text-base',
-                valueClass,
-              )}
-            >
-              {value}
+          <div
+            className={cn(
+              'font-semibold [overflow-wrap:anywhere] tile-wide:text-lg sm:tile-wide:text-xl',
+              longValue ? 'text-[length:clamp(0.75rem,10cqi,1rem)]' : 'text-base',
+              valueClass,
+            )}
+          >
+            {loading ? <Skeleton className="h-[1lh] w-20 rounded" /> : value}
+          </div>
+          {(subValueLoading || subValue) && (
+            <div className="text-xs text-dark-500 [overflow-wrap:anywhere]">
+              {subValueLoading ? <Skeleton className="h-[1lh] w-24 rounded" /> : subValue}
             </div>
-          )}
-          {subValueLoading ? (
-            <Skeleton className="mt-0.5 h-4 w-24 rounded" />
-          ) : (
-            subValue && (
-              <div className="text-xs text-dark-500 [overflow-wrap:anywhere]">{subValue}</div>
-            )
           )}
         </div>
       </div>
