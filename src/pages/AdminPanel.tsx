@@ -112,6 +112,7 @@ interface AdminNavItem {
 interface AdminSection {
   id: string;
   titleKey: string;
+  icon: IconName;
   accent: string;
   gradient: string;
   items: AdminNavItem[];
@@ -121,6 +122,7 @@ const sections: AdminSection[] = [
   {
     id: 'analytics',
     titleKey: 'admin.groups.analytics',
+    icon: 'bar-chart',
     accent: 'rgb(var(--color-success-400))',
     gradient:
       'linear-gradient(135deg, rgb(var(--color-success-400)), rgb(var(--color-accent-500)))',
@@ -154,6 +156,7 @@ const sections: AdminSection[] = [
   {
     id: 'users',
     titleKey: 'admin.groups.users',
+    icon: 'users',
     accent: 'rgb(var(--color-accent-400))',
     gradient: 'linear-gradient(135deg, rgb(var(--color-accent-400)), rgb(var(--color-error-400)))',
     items: [
@@ -181,6 +184,7 @@ const sections: AdminSection[] = [
   {
     id: 'tariffs',
     titleKey: 'admin.groups.tariffs',
+    icon: 'tag',
     accent: 'rgb(var(--color-warning-400))',
     gradient: 'linear-gradient(135deg, rgb(var(--color-warning-400)), rgb(var(--color-error-300)))',
     items: [
@@ -226,6 +230,7 @@ const sections: AdminSection[] = [
   {
     id: 'marketing',
     titleKey: 'admin.groups.marketing',
+    icon: 'megaphone',
     accent: 'rgb(var(--color-accent-300))',
     gradient: 'linear-gradient(135deg, rgb(var(--color-accent-300)), rgb(var(--color-accent-600)))',
     items: [
@@ -289,6 +294,7 @@ const sections: AdminSection[] = [
   {
     id: 'system',
     titleKey: 'admin.groups.system',
+    icon: 'settings',
     accent: 'rgb(var(--color-accent-500))',
     gradient:
       'linear-gradient(135deg, rgb(var(--color-accent-500)), rgb(var(--color-success-500)))',
@@ -357,6 +363,7 @@ const sections: AdminSection[] = [
   {
     id: 'security',
     titleKey: 'admin.groups.security',
+    icon: 'shield',
     accent: 'rgb(var(--color-error-400))',
     gradient: 'linear-gradient(135deg, rgb(var(--color-error-400)), rgb(var(--color-accent-600)))',
     items: [
@@ -554,12 +561,11 @@ const GlassCard = memo(function GlassCard({ section, index, searchTerm }: GlassC
       {/* Header */}
       <div className="flex items-center gap-2.5 border-b border-dark-700/30 px-3.5 py-2.5 light:border-champagne-300/30">
         <div
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white [&>svg]:h-4 [&>svg]:w-4"
           style={{ background: section.gradient }}
+          aria-hidden="true"
         >
-          <span className="text-xs font-bold text-dark-50" aria-hidden="true">
-            {visibleItems.length}
-          </span>
+          {icons[section.icon]}
         </div>
         <h2 className="truncate text-[13px] font-semibold text-dark-100 light:text-champagne-900">
           {t(section.titleKey)}
@@ -664,14 +670,14 @@ export default function AdminPanel() {
   }, [search, t]);
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col">
-      <div
-        className="relative z-10 mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-3 overflow-hidden px-4 sm:px-6"
-        style={{
-          paddingTop: safeTop > 0 ? `${safeTop}px` : 'env(safe-area-inset-top, 0px)',
-          paddingBottom: safeBottom > 0 ? `${safeBottom}px` : 'env(safe-area-inset-bottom, 0px)',
-        }}
-      >
+    <div
+      className="relative flex min-h-0 flex-1 flex-col"
+      style={{
+        paddingTop: safeTop > 0 ? `${safeTop}px` : 'env(safe-area-inset-top, 0px)',
+        paddingBottom: safeBottom > 0 ? `${safeBottom}px` : 'env(safe-area-inset-bottom, 0px)',
+      }}
+    >
+      <div className="relative z-10 mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-3 overflow-hidden [zoom:1.2] lg:px-6">
         {/* Stats Bar */}
         <div className="hidden shrink-0 sm:flex">
           <StatsBar systemInfo={systemInfo} dashboardStats={dashboardStats} loading={loading} />

@@ -5,6 +5,7 @@ import { responses, subscription } from './classicRenewalFixture';
 import {
   clearEntrances,
   expectEntrance,
+  expectFadeEntrance,
   expectStationary,
   recordEntrances,
   waitForRestingGeometry,
@@ -102,9 +103,6 @@ for (const theme of ['light', 'dark']) {
     await expect(page.getByRole('link', { name: /Продлить подписку/ })).toHaveCount(0);
     await page.evaluate(() => document.fonts.ready.then(() => undefined));
     const initial = await skeleton.boundingBox();
-    const initialDevices = await page
-      .locator('[data-subscription-devices-placeholder]')
-      .boundingBox();
     const capture = ['mobile-320', 'desktop-1280'].includes(info.project.name);
     if (capture)
       await page.screenshot({ path: info.outputPath(`skeleton-${theme}.png`), fullPage: true });
@@ -117,14 +115,22 @@ for (const theme of ['light', 'dark']) {
     const devicesLink = page.getByRole('link', { name: /Мои устройства/ });
     await expect(page.locator('[data-subscription-management-loading]')).toBeVisible();
     await expect(overview).toHaveCount(0);
+    await expect(skeleton).toHaveAttribute('data-subscription-overview-skeleton', 'known');
+    const knownOverview = await skeleton.boundingBox();
+    expectStable(initial, knownOverview);
+    const knownDevices = await page
+      .locator('[data-subscription-devices-placeholder]')
+      .boundingBox();
     options.release();
     await expect(overview).toBeVisible();
     await expect(devicesLink.getByRole('status')).toBeVisible();
     await expect(devicesLink).not.toContainText('Недоступно');
     expectStable(initial, await overview.boundingBox());
-    expectStable(initialDevices, await devicesLink.boundingBox());
+    expectStable(knownDevices, await devicesLink.boundingBox());
     const loadedOverview = await overview.boundingBox();
-    expect(Math.abs((loadedOverview?.height ?? 0) - (initial?.height ?? 0))).toBeLessThanOrEqual(4);
+    expect(
+      Math.abs((loadedOverview?.height ?? 0) - (knownOverview?.height ?? 0)),
+    ).toBeLessThanOrEqual(4);
     const beforeOptions = await devicesLink.boundingBox();
     await expect(page.getByRole('link', { name: /Продлить подписку/ })).toBeVisible();
     expectStable(beforeOptions, await devicesLink.boundingBox());
@@ -231,6 +237,7 @@ test('expired trial reserves only its own management sections while conditions l
     days_left: 0,
   };
   await prepareManagement(page, 'light');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.route(/\/api\/cabinet\/subscription(?:\?|$)/, (route) =>
     route.fulfill({ json: { has_subscription: true, subscription: trial } }),
   );
@@ -250,7 +257,9 @@ test('expired trial reserves only its own management sections while conditions l
   await expect(loading.locator('[data-subscription-overview-skeleton]')).toBeVisible();
   await expect(loading.locator('[data-subscription-devices-placeholder]')).toBeVisible();
   await expect(loading.locator('[data-subscription-additional-options-skeleton]')).toHaveCount(0);
-  await expect(loading.getByRole('status')).toHaveCount(1);
+  await expect(loading.and(page.getByRole('status')).or(loading.getByRole('status'))).toHaveCount(
+    1,
+  );
   await expect(loading.locator('a, button, input, [tabindex]')).toHaveCount(0);
 
   options.release();
@@ -279,6 +288,8 @@ test('cached expired classic management reserves both action cards', async ({ pa
   const before = await devices.boundingBox();
   await page.getByRole('link', { name: 'Профиль', exact: true }).first().click();
   await expect(page).toHaveURL('/profile');
+  await expect(page.getByRole('heading', { name: 'Профиль', exact: true })).toBeVisible();
+  await expect(page.locator('[data-subscription-overview]')).toHaveCount(0);
   hold = true;
   await page.goBack();
   await expect(page.locator('[data-subscription-purchase-loading]')).toHaveCount(0);
@@ -372,6 +383,14 @@ const layoutCases = [
     language: 'fa',
   },
   {
+    name: 'expired paid',
+    data: { status: 'expired', is_active: false, is_expired: true },
+    addons: 0,
+    autopay: true,
+    daily: false,
+    language: 'ru',
+  },
+  {
     name: 'traffic limited',
     data: { status: 'limited', is_active: false, is_limited: true, traffic_used_percent: 100 },
     addons: 4,
@@ -385,6 +404,14 @@ const layoutCases = [
     addons: 0,
     autopay: true,
     daily: false,
+    language: 'ru',
+  },
+  {
+    name: 'disabled daily',
+    data: { status: 'disabled', is_daily: true, is_active: false, is_daily_paused: false },
+    addons: 0,
+    autopay: false,
+    daily: true,
     language: 'ru',
   },
   {
@@ -420,6 +447,18 @@ for (const { name, data, addons, autopay, daily, language } of layoutCases) {
     const options = deferred();
     const current = { ...subscription, ...data };
     await prepareManagement(page, 'dark', {}, language);
+    if (
+      [
+        'expired paid',
+        'traffic limited',
+        'expired daily',
+        'paused daily',
+        'disabled periodic',
+        'disabled daily',
+      ].includes(name)
+    ) {
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+    }
     await page.route(/\/api\/cabinet\/subscription(?:\?|$)/, (route) =>
       route.fulfill({ json: { has_subscription: true, subscription: current } }),
     );
@@ -449,13 +488,30 @@ for (const { name, data, addons, autopay, daily, language } of layoutCases) {
       true,
     );
     await page.evaluate(() => document.fonts.ready.then(() => undefined));
-    const before = await loading.locator('[data-subscription-overview-skeleton]').boundingBox();
+    const skeleton = loading.locator('[data-subscription-overview-skeleton]');
+    await expect
+      .poll(() => skeleton.evaluate((node) => (node as HTMLElement).style.height))
+      .toBe('');
+    const before = await skeleton.boundingBox();
     if (language === 'fa') await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
 
     options.release();
     const overview = page.locator('[data-subscription-overview]');
     await expect(overview).toBeVisible();
     await expect(loading).toHaveCount(0);
+    if (name === 'expired daily') {
+      await expect(page.getByRole('heading', { name: 'Пауза подписки' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Приостановить', exact: true })).toBeVisible();
+    }
+    if (name === 'disabled daily') {
+      await expect(page.getByRole('button', { name: 'Возобновить', exact: true })).toBeVisible();
+    }
+    if (name === 'disabled periodic') {
+      await expect(page.getByRole('button', { name: 'Возобновить', exact: true })).toHaveCount(0);
+    }
+    if (name === 'paused daily') {
+      await expect(page.getByRole('button', { name: 'Возобновить', exact: true })).toBeVisible();
+    }
     const after = await overview.boundingBox();
     if (!before || !after) throw new Error('Overview must occupy space before and after loading');
     expect(Math.abs(before.height - after.height)).toBeLessThanOrEqual(4);
@@ -597,7 +653,9 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
 
     const cards = ['overview', 'action', 'devices'];
     if (reducedMotion === 'no-preference') {
-      for (const name of cards) await expectEntrance(page, name);
+      await expectEntrance(page, 'devices');
+      await expectFadeEntrance(page, 'overview');
+      await expectFadeEntrance(page, 'action');
       await waitForRestingGeometry(page.getByRole('link', { name: /Мои устройства/ }));
       const startFartherThanOneCard = await page.evaluate(() =>
         Object.values(window.entranceFrames).some((frames) => frames.some(({ y }) => y > 8.05)),
@@ -612,3 +670,279 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
     await expectStationary(page, ['title']);
   });
 }
+
+for (const scenario of [
+  'expired',
+  'expired-trial',
+  'limited',
+  'expired-daily',
+  'paused-daily',
+  'disabled-periodic',
+  'disabled-daily',
+] as const) {
+  test(`${scenario} management moves controls smoothly through both cold loading stages`, async ({
+    page,
+  }) => {
+    const details = deferred();
+    const options = deferred();
+    const current = {
+      ...subscription,
+      status:
+        scenario === 'paused-daily' || scenario.startsWith('disabled')
+          ? 'disabled'
+          : scenario === 'limited'
+            ? 'limited'
+            : 'expired',
+      is_active: false,
+      is_expired: scenario.startsWith('expired'),
+      is_daily: scenario.endsWith('-daily'),
+      is_daily_paused: scenario === 'paused-daily',
+      is_trial: scenario === 'expired-trial',
+      is_limited: scenario === 'limited',
+      servers: [{ uuid: 'nl', name: 'Нидерланды', country_code: 'NL' }],
+    };
+    await prepareManagement(page, 'light');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.route(/\/api\/cabinet\/subscription(?:\?|$)/, async (route) => {
+      await details.promise;
+      await route.fulfill({ json: { has_subscription: true, subscription: current } });
+    });
+    await page.route('**/api/cabinet/subscription/purchase-options**', async (route) => {
+      await options.promise;
+      await route.fallback();
+    });
+
+    try {
+      await page.goto('/subscriptions/42', { waitUntil: 'domcontentloaded' });
+      const skeleton = page.locator('[data-subscription-overview-skeleton]');
+      await expect(skeleton).toHaveAttribute('data-subscription-overview-skeleton', 'pending');
+      await page.evaluate(() => document.fonts.ready);
+      await page.evaluate(() => {
+        const frames: { stage: string; top: number; height: number; actionsEnd: number }[] = [];
+        Object.assign(window, { subscriptionLoadingFrames: frames });
+        const record = () => {
+          const pending = document.querySelector('[data-subscription-overview-skeleton]');
+          const overview = pending ?? document.querySelector('[data-subscription-overview]');
+          const devices = document.querySelector(
+            '[data-subscription-devices-placeholder], main a[href$="?overlay=devices"]',
+          );
+          if (overview && devices) {
+            frames.push({
+              stage: pending?.getAttribute('data-subscription-overview-skeleton') ?? 'ready',
+              top: overview.getBoundingClientRect().top,
+              height: overview.getBoundingClientRect().height,
+              actionsEnd: devices.getBoundingClientRect().top,
+            });
+          }
+          if (frames.filter(({ stage }) => stage === 'ready').length < 36)
+            requestAnimationFrame(record);
+        };
+        requestAnimationFrame(record);
+      });
+      await page.waitForFunction(
+        () =>
+          'subscriptionLoadingFrames' in window &&
+          (window.subscriptionLoadingFrames as { stage: string }[]).length >= 3,
+      );
+      details.release();
+      await expect(skeleton).toHaveAttribute('data-subscription-overview-skeleton', 'known');
+      await expect(
+        page.getByRole('link', { name: /Изменить подписку|Продлить подписку|Выберите тариф/ }),
+      ).toHaveCount(0);
+      await page.waitForFunction(
+        () =>
+          'subscriptionLoadingFrames' in window &&
+          (window.subscriptionLoadingFrames as { stage: string }[]).filter(
+            ({ stage }) => stage === 'known',
+          ).length >= 36,
+      );
+      options.release();
+      await expect(page.getByRole('link', { name: /Мои устройства/ })).toBeVisible();
+      await page.waitForFunction(
+        () =>
+          'subscriptionLoadingFrames' in window &&
+          (window.subscriptionLoadingFrames as { stage: string }[]).filter(
+            ({ stage }) => stage === 'ready',
+          ).length >= 36,
+      );
+      const frames = await page.evaluate(
+        () =>
+          (
+            window as unknown as {
+              subscriptionLoadingFrames: {
+                stage: string;
+                top: number;
+                height: number;
+                actionsEnd: number;
+              }[];
+            }
+          ).subscriptionLoadingFrames,
+      );
+      for (const [index, frame] of frames.entries()) {
+        expect(frame.top).toBeCloseTo(frames[0].top, 0);
+        if (index > 0) {
+          const previous = frames[index - 1];
+          expect(Math.abs(frame.height - previous.height)).toBeLessThan(20);
+          expect(
+            Math.abs(frame.actionsEnd - previous.actionsEnd),
+            JSON.stringify(frames.slice(Math.max(0, index - 3), index + 4)),
+          ).toBeLessThan(20);
+        }
+      }
+    } finally {
+      details.release();
+      options.release();
+    }
+  });
+}
+
+test('reduced motion keeps the original placeholder while the exhausted-traffic conditions load', async ({
+  page,
+}) => {
+  const details = deferred();
+  const options = deferred();
+  const current = {
+    ...subscription,
+    status: 'limited',
+    is_active: false,
+    is_limited: true,
+  };
+  await prepareManagement(page, 'light');
+  await page.route(
+    (url) => url.pathname === '/api/cabinet/subscription',
+    async (route) => {
+      await details.promise;
+      await route.fulfill({ json: { has_subscription: true, subscription: current } });
+    },
+  );
+  await page.route('**/api/cabinet/subscription/purchase-options**', async (route) => {
+    await options.promise;
+    await route.fallback();
+  });
+  try {
+    await page.goto('/subscriptions/42', { waitUntil: 'domcontentloaded' });
+    const shell = page.locator('[data-subscription-overview-skeleton]');
+    const devices = page.locator('[data-subscription-devices-placeholder]');
+    await expect(shell).toHaveAttribute('data-subscription-overview-skeleton', 'pending');
+    await page.evaluate(() => document.fonts.ready);
+    const initialShell = await shell.boundingBox();
+    const initialDevices = await devices.boundingBox();
+    const delivered = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === '/api/cabinet/subscription',
+    );
+    details.release();
+    await (await delivered).finished();
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    );
+    await expect(shell).toHaveAttribute('data-subscription-overview-skeleton', 'pending');
+    expect(await shell.boundingBox()).toEqual(initialShell);
+    expect(await devices.boundingBox()).toEqual(initialDevices);
+    options.release();
+    await expect(page.getByText('Трафик исчерпан', { exact: true })).toBeVisible();
+    await expect(shell).toHaveCount(0);
+  } finally {
+    details.release();
+    options.release();
+  }
+});
+
+for (const state of ['paused daily', 'disabled daily', 'disabled periodic'] as const) {
+  test(`a late tariff list keeps ${state} controls in place`, async ({ page }) => {
+    const list = deferred();
+    const current = {
+      ...subscription,
+      tariff_id: 102,
+      tariff_name: state.endsWith('daily') ? 'Посуточный тариф' : 'Личная',
+      status: 'disabled',
+      is_active: false,
+      is_daily: state.endsWith('daily'),
+      is_daily_paused: state === 'paused daily',
+    };
+    await prepareManagement(page, 'light');
+    await page.route(
+      (url) => url.pathname === '/api/cabinet/subscription',
+      (route) => route.fulfill({ json: { has_subscription: true, subscription: current } }),
+    );
+    await page.route(
+      (url) => url.pathname === '/api/cabinet/subscriptions',
+      async (route) => {
+        await list.promise;
+        await route.fulfill({ json: { subscriptions: [current], multi_tariff_enabled: true } });
+      },
+    );
+    await page.route('**/api/cabinet/subscription/purchase-options**', (route) =>
+      route.fulfill({
+        json: {
+          sales_mode: 'tariffs',
+          tariffs: [],
+          balance_kopeks: 20000,
+          platega_recurrent_enabled: false,
+          lava_recurrent_enabled: false,
+        },
+      }),
+    );
+    try {
+      await page.goto('/subscriptions/42', { waitUntil: 'domcontentloaded' });
+      const devices = page.getByRole('link', { name: /Мои устройства/ });
+      await expect(devices).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      const before = await devices.boundingBox();
+      const delivered = page.waitForResponse(
+        (response) => new URL(response.url()).pathname === '/api/cabinet/subscriptions',
+      );
+      list.release();
+      await delivered;
+      const renewal = page.getByRole('link', { name: /Оформить подписку|Купить подписку/ });
+      await expect(renewal).toHaveAttribute('href', '/subscriptions/42/renew');
+      expectStable(before, await devices.boundingBox());
+    } finally {
+      list.release();
+    }
+  });
+}
+
+test('resuming a disabled daily plan requests an explicit unpause for that subscription', async ({
+  page,
+}) => {
+  const current = {
+    ...subscription,
+    tariff_id: 102,
+    tariff_name: 'Посуточный тариф',
+    status: 'disabled',
+    is_active: false,
+    is_daily: true,
+    is_daily_paused: false,
+  };
+  let resumed = false;
+  await prepareManagement(page, 'light');
+  await page.route(
+    (url) => url.pathname === '/api/cabinet/subscription',
+    (route) =>
+      route.fulfill({
+        json: {
+          has_subscription: true,
+          subscription: resumed ? { ...current, status: 'active', is_active: true } : current,
+        },
+      }),
+  );
+  await page.route('**/api/cabinet/subscription/pause**', (route) => {
+    resumed = new URL(route.request().url()).searchParams.get('paused') === 'false';
+    return route.fulfill({ json: { success: true, is_paused: !resumed } });
+  });
+
+  await page.goto('/subscriptions/42', { waitUntil: 'domcontentloaded' });
+  const response = page.waitForResponse(
+    (item) => new URL(item.url()).pathname === '/api/cabinet/subscription/pause',
+  );
+  await page.getByRole('button', { name: 'Возобновить', exact: true }).click();
+  const url = new URL((await response).url());
+  expect(url.searchParams.get('subscription_id')).toBe('42');
+  expect(url.searchParams.get('paused')).toBe('false');
+  await expect(
+    page.locator('[data-subscription-overview]').getByText('Активна', { exact: true }),
+  ).toBeVisible();
+});

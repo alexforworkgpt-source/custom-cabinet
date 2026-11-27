@@ -142,6 +142,9 @@ test('mobile density stops exactly at sm and preserves the painted section gap @
 
 test('open add-on forms retain controls, close targets and desktop density', async ({ page }) => {
   const { apiRequests } = await prepare(page);
+  await page.route('**/api/cabinet/balance', (route) =>
+    route.fulfill({ json: { balance_kopeks: 125_000, balance_rubles: 1250 } }),
+  );
   await ready(page);
   const mobile = (page.viewportSize()?.width ?? 1280) < 640;
   const options = page.locator('#subscription-additional-options-panel');
@@ -156,6 +159,9 @@ test('open add-on forms retain controls, close targets and desktop density', asy
       expect((await close.boundingBox())?.width).toBe(44);
     }
     if (label !== 'Докупить трафик') {
+      await expect(
+        panel.getByText(/Расширьте лимит устройств|Вы можете уменьшить количество устройств/),
+      ).toHaveCount(0);
       const increment = options.getByRole('button', {
         name: 'Увеличить кол-во устройств',
         exact: true,
@@ -163,6 +169,11 @@ test('open add-on forms retain controls, close targets and desktop density', asy
       await expect(increment).toBeVisible();
       expect((await increment.boundingBox())?.height).toBe(48);
       expect((await increment.boundingBox())?.width).toBe(48);
+      await expect(panel.getByText(/Текущий лимит: .* → Новый лимит:/)).toBeVisible();
+      if (label === 'Докупить устройства') {
+        await expect(panel.getByRole('button', { name: 'Купить за 99 ₽' })).toBeVisible();
+      }
+      expect((await panel.boundingBox())?.height).toBeLessThanOrEqual(300);
     } else {
       const choice = options.getByRole('button', { name: /20 ГБ/ });
       await expect(choice).toBeVisible();

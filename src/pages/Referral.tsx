@@ -1,4 +1,5 @@
 import { RewardSettings } from '@/components/referral/RewardSettings';
+import '@/styles/cabinetPageHero.css';
 import { ProgrammeTerms } from '@/components/referral/ProgrammeTerms';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -16,7 +17,7 @@ import { StatCard } from '@/components/stats';
 import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import { PageEntrance } from '@/components/motion/PageEntrance';
-import { staggerItem } from '@/components/motion/transitions';
+import { fadeIn, staggerItem } from '@/components/motion/transitions';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -72,7 +73,12 @@ export default function Referral() {
     };
   }, []);
 
-  const { data: info, isLoading } = useQuery({
+  const {
+    data: info,
+    isLoading,
+    isError: infoError,
+    refetch: refetchInfo,
+  } = useQuery({
     queryKey: ['referral-info'],
     queryFn: referralApi.getReferralInfo,
   });
@@ -91,7 +97,7 @@ export default function Referral() {
     onError: () => setRewardChoiceError(t('referral.rewardSettings.saveError')),
   });
 
-  const { data: terms } = useQuery({
+  const { data: terms, isLoading: termsLoading } = useQuery({
     queryKey: ['referral-terms'],
     queryFn: referralApi.getReferralTerms,
   });
@@ -283,9 +289,10 @@ export default function Referral() {
     openTelegramLink(telegramUrl);
   };
 
-  if (isLoading) {
+  if (isLoading || termsLoading) {
     return (
       <PageSkeleton titleWidth="w-40">
+        <Skeleton variant="card" className="h-[145px] sm:h-[152px]" />
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
           <div className="col-span-2 md:col-span-1">
             <StatCard loading />
@@ -313,6 +320,14 @@ export default function Referral() {
     );
   }
 
+  const invitationUnavailable = infoError && !info;
+  const invitationHint = botReferralLink
+    ? referralLink
+      ? 'referral.inviteBothLinks'
+      : 'referral.inviteBotLink'
+    : referralLink
+      ? 'referral.inviteCabinetLink'
+      : 'referral.inviteNoLinks';
   const partnerStatusValue = partnerStatus?.partner_status ?? 'none';
   const showApplySection = partnerStatusValue === 'none';
   const showPendingSection = partnerStatusValue === 'pending';
@@ -321,24 +336,51 @@ export default function Referral() {
 
   return (
     <PageEntrance className="space-y-6">
-      <motion.h1 variants={staggerItem} className="text-2xl font-bold text-dark-50 sm:text-3xl">
+      <motion.h1
+        variants={fadeIn}
+        className="text-xl font-bold leading-8 text-dark-50 min-[360px]:text-2xl sm:text-3xl"
+      >
         {t('referral.title')}
       </motion.h1>
+
+      <motion.section
+        variants={fadeIn}
+        className="cabinet-page-hero cabinet-page-hero--referral"
+        aria-labelledby="referral-invite-title"
+      >
+        <h2 id="referral-invite-title" className="text-base font-semibold sm:text-xl">
+          {t('dashboard.inviteFriends')}
+        </h2>
+        {invitationUnavailable ? (
+          <div className="space-y-2" role="alert">
+            <p className="text-xs leading-snug sm:text-sm">{t('referral.inviteLoadError')}</p>
+            <button type="button" className="btn-secondary" onClick={() => void refetchInfo()}>
+              {t('common.retry')}
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs leading-snug sm:text-sm">{t(invitationHint)}</p>
+        )}
+      </motion.section>
 
       {/* Stats Cards */}
       <motion.div variants={staggerItem} className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
         <div className="col-span-2 md:col-span-1">
           <StatCard
             label={t('referral.stats.totalReferrals')}
-            value={info?.total_referrals || 0}
+            value={invitationUnavailable ? '—' : info?.total_referrals || 0}
             icon={<UsersIcon className="h-5 w-5" />}
             tone="neutral"
-            subValue={`${info?.active_referrals || 0} ${t('referral.stats.activeReferrals').toLowerCase()}`}
+            subValue={
+              invitationUnavailable
+                ? undefined
+                : `${info?.active_referrals || 0} ${t('referral.stats.activeReferrals').toLowerCase()}`
+            }
           />
         </div>
         <StatCard
           label={t('referral.stats.totalEarnings')}
-          value={formatPositive(info?.total_earnings_rubles || 0)}
+          value={invitationUnavailable ? '—' : formatPositive(info?.total_earnings_rubles || 0)}
           icon={<BanknotesIcon className="h-5 w-5" />}
           tone="success"
           subValue={
@@ -365,7 +407,9 @@ export default function Referral() {
                 : String(terms?.tier_current_level)
               : isLevelsScheme
                 ? t('referral.stats.levelsValue', { count: terms?.max_level_depth || 1 })
-                : `${info?.commission_percent || 0}%`
+                : invitationUnavailable
+                  ? '—'
+                  : `${info?.commission_percent || 0}%`
           }
           icon={<PercentIcon className="h-5 w-5" />}
           tone="accent"
@@ -373,78 +417,87 @@ export default function Referral() {
       </motion.div>
 
       {/* Referral Links */}
-      <div className="bento-card">
-        <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('referral.yourLink')}</h2>
-        <div className="space-y-3">
-          {/* Bot link */}
-          {botReferralLink && (
-            <div>
-              <div className="mb-1.5 flex items-center gap-2 text-sm font-medium text-dark-300">
-                <TelegramIcon className="h-4 w-4 text-accent-400" />
-                {t('referral.botLink')}
+      {(referralLink || botReferralLink) && (
+        <section className="bento-card" aria-labelledby="referral-links-title">
+          <h2 id="referral-links-title" className="mb-4 text-lg font-semibold text-dark-100">
+            {t('referral.yourLink')}
+          </h2>
+          <div className="space-y-3">
+            {/* Bot link */}
+            {botReferralLink && (
+              <div>
+                <div className="mb-1.5 flex items-center gap-2 text-sm font-medium text-dark-300">
+                  <TelegramIcon className="h-4 w-4 text-accent-400" />
+                  {t('referral.botLink')}
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    type="text"
+                    readOnly
+                    value={botReferralLink}
+                    aria-label={t('referral.botLink')}
+                    className="input flex-1 text-sm"
+                  />
+                  <button
+                    onClick={() => copyLink(botReferralLink, 'bot')}
+                    className={`btn-primary shrink-0 px-4 ${
+                      copiedLink === 'bot' ? 'bg-success-500 hover:bg-success-500' : ''
+                    }`}
+                  >
+                    {copiedLink === 'bot' ? <CheckIcon /> : <CopyIcon />}
+                    <span className="ml-2">
+                      {copiedLink === 'bot' ? t('referral.copied') : t('referral.copyLink')}
+                    </span>
+                  </button>
+                </div>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <input
-                  type="text"
-                  readOnly
-                  value={botReferralLink}
-                  className="input flex-1 text-sm"
-                />
-                <button
-                  onClick={() => copyLink(botReferralLink, 'bot')}
-                  className={`btn-primary shrink-0 px-4 ${
-                    copiedLink === 'bot' ? 'bg-success-500 hover:bg-success-500' : ''
-                  }`}
-                >
-                  {copiedLink === 'bot' ? <CheckIcon /> : <CopyIcon />}
-                  <span className="ml-2">
-                    {copiedLink === 'bot' ? t('referral.copied') : t('referral.copyLink')}
-                  </span>
-                </button>
+            )}
+            {/* Cabinet link */}
+            {referralLink && (
+              <div>
+                <div className="mb-1.5 flex items-center gap-2 text-sm font-medium text-dark-300">
+                  <LinkIcon className="h-4 w-4 text-accent-400" />
+                  {t('referral.cabinetLink')}
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    type="text"
+                    readOnly
+                    value={referralLink}
+                    aria-label={t('referral.cabinetLink')}
+                    className="input flex-1 text-sm"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => copyLink(referralLink, 'cabinet')}
+                      className={`btn-primary shrink-0 px-4 ${
+                        copiedLink === 'cabinet' ? 'bg-success-500 hover:bg-success-500' : ''
+                      }`}
+                    >
+                      {copiedLink === 'cabinet' ? <CheckIcon /> : <CopyIcon />}
+                      <span className="ml-2">
+                        {copiedLink === 'cabinet' ? t('referral.copied') : t('referral.copyLink')}
+                      </span>
+                    </button>
+                    <button
+                      onClick={shareLink}
+                      className="btn-secondary flex shrink-0 items-center px-4"
+                    >
+                      <ShareIcon className="h-4 w-4" />
+                      <span className="ml-2">{t('referral.shareButton')}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
-          {/* Cabinet link */}
-          <div>
-            <div className="mb-1.5 flex items-center gap-2 text-sm font-medium text-dark-300">
-              <LinkIcon className="h-4 w-4 text-accent-400" />
-              {t('referral.cabinetLink')}
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input type="text" readOnly value={referralLink} className="input flex-1 text-sm" />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => copyLink(referralLink, 'cabinet')}
-                  disabled={!referralLink}
-                  className={`btn-primary shrink-0 px-4 ${
-                    copiedLink === 'cabinet' ? 'bg-success-500 hover:bg-success-500' : ''
-                  } ${!referralLink ? 'cursor-not-allowed opacity-50' : ''}`}
-                >
-                  {copiedLink === 'cabinet' ? <CheckIcon /> : <CopyIcon />}
-                  <span className="ml-2">
-                    {copiedLink === 'cabinet' ? t('referral.copied') : t('referral.copyLink')}
-                  </span>
-                </button>
-                <button
-                  onClick={shareLink}
-                  disabled={!referralLink}
-                  className={`btn-secondary flex shrink-0 items-center px-4 ${
-                    !referralLink ? 'cursor-not-allowed opacity-50' : ''
-                  }`}
-                >
-                  <ShareIcon className="h-4 w-4" />
-                  <span className="ml-2">{t('referral.shareButton')}</span>
-                </button>
-              </div>
-            </div>
+            )}
           </div>
-        </div>
-        <p className="mt-3 text-sm text-dark-500">
-          {isLevelsScheme
-            ? t('referral.shareHintLevels')
-            : t('referral.shareHint', { percent: info?.commission_percent || 0 })}
-        </p>
-      </div>
+          <p className="mt-3 text-sm text-dark-500">
+            {isLevelsScheme
+              ? t('referral.shareHintLevels')
+              : t('referral.shareHint', { percent: info?.commission_percent || 0 })}
+          </p>
+        </section>
+      )}
 
       {/* Program Terms */}
       {programTerms}

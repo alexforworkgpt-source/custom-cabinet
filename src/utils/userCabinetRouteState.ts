@@ -9,6 +9,11 @@ export interface UserCabinetRouteState {
 
 const SUBSCRIPTION_PATH = /^\/subscriptions\/(\d+)\/?$/;
 
+/** These overlays keep the Dashboard mounted behind them. */
+export function sharesDashboardScroll(pathname: string): boolean {
+  return pathname === '/connection' || pathname === '/balance';
+}
+
 function positiveInteger(value: string | null): number | undefined {
   if (!value || !/^\d+$/.test(value)) return undefined;
   const parsed = Number(value);

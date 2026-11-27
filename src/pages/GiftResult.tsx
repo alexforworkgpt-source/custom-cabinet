@@ -27,8 +27,8 @@ function PendingState() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="flex flex-col items-center gap-6 text-center"
     >
       <Spinner className="h-16 w-16 border-[3px]" />
@@ -98,8 +98,8 @@ function CodeOnlySuccessState({
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="flex flex-col items-center gap-6 text-center"
     >
       <AnimatedCheckmark />
@@ -211,8 +211,8 @@ function DeliveredState({
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="flex flex-col items-center gap-6 text-center"
     >
       <AnimatedCheckmark />
@@ -270,8 +270,8 @@ function PendingActivationState({
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="flex flex-col items-center gap-6 text-center"
     >
       {/* Info icon */}
@@ -327,8 +327,8 @@ function FailedState() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="flex flex-col items-center gap-6 text-center"
     >
       <AnimatedCrossmark />
@@ -359,8 +359,8 @@ function PollErrorState() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="flex flex-col items-center gap-6 text-center"
     >
       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-warning-500/10">
@@ -395,8 +395,8 @@ function PollTimedOutState({ onRetry }: { onRetry: () => void }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="flex flex-col items-center gap-6 text-center"
     >
       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-dark-800/50">
@@ -430,8 +430,8 @@ function NoTokenState() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="flex flex-col items-center gap-6 text-center"
     >
       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-dark-800/50">

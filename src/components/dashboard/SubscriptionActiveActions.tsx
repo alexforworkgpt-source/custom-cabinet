@@ -1,7 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
+import { Link, type LinkProps } from 'react-router';
+import { motion, useReducedMotion } from 'framer-motion';
+import { forwardRef } from 'react';
+import { buttonHover, buttonTap, springTransition } from '@/components/motion/transitions';
 import { CheckIcon, CopyIcon, QrCodeIcon, SettingsIcon, TariffsIcon } from '@/components/icons';
-import { Button } from '@/components/primitives/Button';
+import { Button, type ButtonProps } from '@/components/primitives/Button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTheme } from '@/hooks/useTheme';
 import { getGlassColors } from '@/utils/glassTheme';
@@ -27,6 +30,7 @@ interface SubscriptionActiveActionsProps {
   onManageSubscription: () => void;
   managementOpen: boolean;
   showManagementAction?: boolean;
+  illustratedConnection?: boolean;
 }
 
 export function SubscriptionActiveActions({
@@ -46,6 +50,7 @@ export function SubscriptionActiveActions({
   onManageSubscription,
   managementOpen,
   showManagementAction = true,
+  illustratedConnection = false,
 }: SubscriptionActiveActionsProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -65,6 +70,7 @@ export function SubscriptionActiveActions({
       <SubscriptionConnectFooter
         state={connectState}
         variant="prominent"
+        illustrated={illustratedConnection}
         managementOpen={devicesOpen}
         onConnect={onConnectDevice}
         onManage={onManageDevices}
@@ -144,37 +150,103 @@ export function SubscriptionActiveActions({
   );
 }
 
+const defaultActionClassName =
+  'flex min-h-11 w-full items-center justify-center gap-2 rounded-[14px] border border-accent-400/20 bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_15%,rgba(var(--color-dark-900),0.80)_85%)] px-4 py-3 text-center text-sm font-semibold text-accent-400 shadow-sm transition-[background-color,box-shadow] duration-200 ease-out active:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_25%,rgba(var(--color-dark-900),0.80)_75%)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-950 motion-reduce:transition-none md:hover:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_20%,rgba(var(--color-dark-900),0.80)_80%)] md:hover:shadow-md lg:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_15%,rgba(var(--color-dark-900),0.85)_85%)] lg:hover:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_20%,rgba(var(--color-dark-900),0.85)_80%)] lg:active:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_25%,rgba(var(--color-dark-900),0.85)_75%)]';
+const heroActionClassName =
+  'subscription-hero-action flex min-h-11 w-full items-center justify-center gap-2 rounded-[14px] border border-accent-500 bg-accent-500 px-4 py-2 text-center text-sm font-semibold text-on-accent shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-950';
+
 export function SubscriptionPrimaryAction({
   subscription,
   onManageSubscription,
-  neutralSurface = false,
+  accent = false,
 }: Pick<
   SubscriptionActiveActionsProps,
   'subscription' | 'onManageSubscription' | 'managementOpen'
-> & { neutralSurface?: boolean }) {
+> & { accent?: boolean }) {
   const { t } = useTranslation();
-  const primaryActionClassName =
-    'flex min-h-11 w-full items-center justify-center gap-2 rounded-[14px] border border-accent-400/20 bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_15%,rgba(var(--color-dark-900),0.80)_85%)] px-4 py-3 text-center text-sm font-semibold text-accent-400 shadow-sm transition-[background-color,box-shadow,transform] duration-200 ease-out active:scale-[0.98] active:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_25%,rgba(var(--color-dark-900),0.80)_75%)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-950 motion-reduce:transform-none motion-reduce:transition-none md:hover:-translate-y-0.5 md:hover:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.80)_20%,rgba(var(--color-dark-900),0.80)_80%)] md:hover:shadow-md lg:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_15%,rgba(var(--color-dark-900),0.85)_85%)] lg:hover:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_20%,rgba(var(--color-dark-900),0.85)_80%)] lg:active:bg-[color-mix(in_srgb,rgba(var(--color-accent-500),0.85)_25%,rgba(var(--color-dark-900),0.85)_75%)]';
-  return needsTariff(subscription) ? (
-    <Link to={tariffSelectionPath(subscription.id)} className={primaryActionClassName}>
-      <TariffsIcon className="h-4 w-4 shrink-0 text-accent-400" />
+  if (!needsTariff(subscription)) {
+    return <SubscriptionManageAction accent={accent} onManageSubscription={onManageSubscription} />;
+  }
+
+  const to = tariffSelectionPath(subscription.id);
+  const label = (
+    <>
+      <TariffsIcon className="h-4 w-4 shrink-0" />
       {t('subscription.cta.moveToTariff')}
-    </Link>
+    </>
+  );
+  return accent ? (
+    <SubscriptionHeroLink to={to}>{label}</SubscriptionHeroLink>
   ) : (
+    <Link to={to} className={defaultActionClassName}>
+      {label}
+    </Link>
+  );
+}
+
+export function SubscriptionManageAction({
+  onManageSubscription,
+  accent = false,
+  managementOpen,
+}: Pick<SubscriptionActiveActionsProps, 'onManageSubscription'> & {
+  accent?: boolean;
+  managementOpen?: boolean;
+}) {
+  const { t } = useTranslation();
+  const props = {
+    onClick: onManageSubscription,
+    'aria-haspopup': managementOpen === undefined ? undefined : ('dialog' as const),
+    'aria-expanded': managementOpen,
+    children: (
+      <>
+        <SettingsIcon className="h-4 w-4 shrink-0" />
+        {t('dashboard.manageSubscription')}
+      </>
+    ),
+  };
+
+  if (accent) return <SubscriptionHeroButton {...props} />;
+  return (
     <Button
+      {...props}
       type="button"
       variant="outline"
       size={null}
       haptic={false}
-      onClick={onManageSubscription}
-      className={
-        neutralSurface
-          ? 'flex min-h-11 w-full items-center justify-center gap-2 rounded-[14px] border border-champagne-50/15 bg-champagne-50/5 px-4 py-3 text-center text-sm font-semibold text-champagne-50 shadow-sm transition-colors hover:border-champagne-50/25 hover:bg-champagne-50/10 hover:text-champagne-50 active:bg-champagne-50/15 focus-visible:ring-champagne-50/50'
-          : primaryActionClassName
-      }
-    >
-      <SettingsIcon className="h-4 w-4 shrink-0" />
-      {t('dashboard.manageSubscription')}
-    </Button>
+      className={defaultActionClassName}
+    />
+  );
+}
+
+export const SubscriptionHeroButton = forwardRef<
+  HTMLButtonElement,
+  Pick<
+    ButtonProps,
+    'children' | 'disabled' | 'onClick' | 'aria-haspopup' | 'aria-expanded' | 'aria-controls'
+  >
+>((props, ref) => (
+  <Button
+    {...props}
+    ref={ref}
+    type="button"
+    variant="primary"
+    size={null}
+    haptic={false}
+    className={heroActionClassName}
+  />
+));
+
+const MotionLink = motion.create(Link);
+
+export function SubscriptionHeroLink(props: Pick<LinkProps, 'children' | 'onClick' | 'to'>) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <MotionLink
+      {...props}
+      className={heroActionClassName}
+      whileHover={reduceMotion ? undefined : buttonHover}
+      whileTap={reduceMotion ? undefined : buttonTap}
+      transition={springTransition}
+    />
   );
 }

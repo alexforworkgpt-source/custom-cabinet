@@ -1,4 +1,5 @@
 import { uiLocale } from '@/utils/uiLocale';
+import '@/styles/cabinetPageHero.css';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -16,7 +17,7 @@ import type { SupportConfig, TicketDetail } from '../types';
 import { Card } from '@/components/data-display/Card';
 import { Button } from '@/components/primitives/Button';
 import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
-import { staggerItem } from '@/components/motion/transitions';
+import { fadeIn, staggerItem } from '@/components/motion/transitions';
 import { ChatIcon, CloseIcon, ImageIcon, PlusIcon, SendIcon } from '@/components/icons';
 import { usePlatform } from '@/platform';
 import { linkifyText } from '../utils/linkify';
@@ -363,7 +364,7 @@ export default function Support() {
 
   const newTicketButton = (
     <Button
-      className="w-full sm:w-auto"
+      className="support-hero-action min-h-11 w-full border-2 border-dark-900"
       disabled={configLoading}
       onClick={() => {
         setShowCreateForm(true);
@@ -379,13 +380,19 @@ export default function Support() {
 
   return (
     <PageEntrance className="space-y-6">
-      <PageEntranceItem className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('support.title')}</h1>
-          {configLoading ? <SkeletonSurface>{newTicketButton}</SkeletonSurface> : newTicketButton}
+      <motion.div variants={fadeIn} className="flex flex-col gap-4">
+        <h1 className="mb-2 text-2xl font-bold text-dark-50 sm:text-3xl">{t('support.title')}</h1>
+        <div>
+          <div className="cabinet-page-hero cabinet-page-hero--support">
+            <h2 className="text-base font-semibold sm:text-xl">{t('support.bannerTitle')}</h2>
+            <p className="text-xs leading-snug sm:text-sm">{t('support.selectTicket')}</p>
+          </div>
+          <div className="relative -mt-4">
+            {configLoading ? <SkeletonSurface>{newTicketButton}</SkeletonSurface> : newTicketButton}
+          </div>
         </div>
         {!showCreateForm && !selectedTicket && <SupportInstructionsCard />}
-      </PageEntranceItem>
+      </motion.div>
 
       {/* Contact support card for "both" mode — self-animated: mounts after the
           config query resolves, when the parent stagger orchestration has already

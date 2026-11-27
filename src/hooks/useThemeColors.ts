@@ -152,9 +152,11 @@ function prefersWhiteText(bg: Rgb): boolean {
 }
 
 // Black-or-white text for a given button/badge background.
-function onColorFor(bgTriplet: string): string {
+function onColorFor(bgTriplet: string, darkForeground = INK): string {
   const bg = parseTriplet(bgTriplet);
-  return contrastRatio(WHITE, bg) >= contrastRatio(INK, bg) ? '255, 255, 255' : '15, 23, 42';
+  return tripletOf(
+    contrastRatio(WHITE, bg) >= contrastRatio(darkForeground, bg) ? WHITE : darkForeground,
+  );
 }
 
 /** Тот же выбор белый/тёмный для hex-заливки — для иконок, рисуемых вне CSS. */
@@ -291,6 +293,10 @@ export function computeThemeCssVars(themeColors: ThemeColors): Record<string, st
   // Custom Cabinet keeps white accent actions; status fills choose the more readable foreground.
   const onColorVars = {
     '--color-on-accent': '255, 255, 255',
+    '--color-accent-with-white-text': tripletOf(
+      ensureReadable(parseTriplet(accent[500]), { r: 0, g: 0, b: 0 }, WHITE, 4.5),
+    ),
+    '--color-on-accent-readable': onColorFor(accent[500], { r: 0, g: 0, b: 0 }),
     '--color-on-success': onColorFor(success[500]),
     '--color-on-warning': onColorFor(warning[500]),
     '--color-on-error': onColorFor(error[500]),

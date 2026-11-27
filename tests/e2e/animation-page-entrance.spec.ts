@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { prepareAuthenticatedPage } from './cabinetTestHarness';
 import {
   clearEntrances,
-  expectEntrance,
+  expectFadeEntrance,
   expectStationary,
   recordEntrances,
   expectNoEntranceErrors,
@@ -55,20 +55,20 @@ for (const feature of ['contests', 'polls'])
     try {
       await page.goto(`/${feature}`);
       await expect(page.locator('main h1')).toBeVisible();
-      await expectEntrance(page, 'heading');
+      await expectFadeEntrance(page, 'heading');
       await page.waitForTimeout(700);
       await clearEntrances(page);
     } finally {
       release();
     }
-    await expectEntrance(page, 'list');
+    await expectFadeEntrance(page, 'list');
     await page.waitForTimeout(700);
     await expectStationary(page, ['heading']);
     await page.getByRole('main').getByRole('link', { name: 'Back', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Profile', exact: true })).toBeVisible();
     await clearEntrances(page);
     await page.goBack();
-    await expectEntrance(page, 'list');
+    await expectFadeEntrance(page, 'list');
     expect([...fixture.unexpectedApiRequests]).toEqual([]);
   });
 
@@ -78,13 +78,13 @@ for (const feature of ['contests', 'polls'])
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await recordEntrances(page, { empty: { css: 'main .py-12.text-center' } });
     await page.goto(`/${feature}`);
-    await expectEntrance(page, 'empty');
+    await expectFadeEntrance(page, 'empty');
   });
 
 for (const item of [
   { route: '/info', content: 'main nav[aria-label="Information"], main div.flex-wrap.gap-2.pb-1' },
   { route: '/info/entrance', content: 'main .prose' },
-  { route: '/referral', content: 'main h1 + .grid > div' },
+  { route: '/referral', content: 'main .cabinet-page-hero--referral' },
 ])
   test(`complete heading and ready section enter on ${item.route}`, async ({ page }) => {
     const fixture = await prepareAuthenticatedPage(page, {
@@ -94,8 +94,8 @@ for (const item of [
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await recordEntrances(page, { heading: { css: 'main h1' }, content: { css: item.content } });
     await page.goto(item.route);
-    await expectEntrance(page, 'heading');
-    await expectEntrance(page, 'content');
+    await expectFadeEntrance(page, 'heading');
+    await expectFadeEntrance(page, 'content');
     await page.waitForTimeout(1200);
     await clearEntrances(page);
     await page.evaluate(() => {
@@ -111,7 +111,7 @@ for (const item of [
     await expect(page.getByRole('heading', { name: 'Profile', exact: true })).toBeVisible();
     await clearEntrances(page);
     await page.goBack();
-    await expectEntrance(page, 'heading');
-    await expectEntrance(page, 'content');
+    await expectFadeEntrance(page, 'heading');
+    await expectFadeEntrance(page, 'content');
     expect([...fixture.unexpectedApiRequests]).toEqual([]);
   });

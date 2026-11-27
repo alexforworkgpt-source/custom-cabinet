@@ -1,5 +1,40 @@
 # Custom Cabinet Ownership Map
 
+## Dashboard robot design
+
+- Dashboard owns subscription selection, automatic traffic refresh, data states
+  and route callbacks. The active card and its placeholder share the visual grid.
+- SubscriptionHero presents the term and limits and reuses SubscriptionIdentityBadges.
+  DashboardHeader and AppShell place the existing TicketNotificationBell at the
+  shared desktop breakpoint.
+- SubscriptionScenarioHero shares the artwork layout across inactive subscriptions
+  and the first visit. SubscriptionCardExpired keeps the existing subscription actions.
+  DashboardWelcome shows a loading placeholder until trial eligibility is known.
+  The welcome banner pairs the gift pose with the available trial action, or shows
+  the tariff link when no trial is offered. DashboardTrialOffer groups the
+  period, traffic and device limits in one row.
+  The subscription list uses the standard trial-offer presentation.
+- SubscriptionHeroButton and SubscriptionHeroLink use the same hover and press motion.
+  SubscriptionCardSkeleton reserves the scenario layout once status is known.
+  DashboardSubscriptionLoading animates the cold transition once. Cached status starts at
+  the known layout, and reduced motion holds the initial placeholder until the card is ready.
+- DashboardPromoCarousel and DashboardWheelBanner own the illustration layout.
+  Slide selection, eligibility and destinations remain with the existing route and
+  carousel logic. The illustrated Dashboard actions use the operator accent and its
+  readable foreground.
+
+## Subscription, sales, support, profile and referral design
+
+- SubscriptionOverviewCard uses SubscriptionHero and SubscriptionIdentityBadges
+  for active and supported inactive states. Subscription retains its data, renewal,
+  selection and device navigation. The measured loading surface uses the same card shape.
+- Purchase, renewal and gift keep their existing price, eligibility and payment
+  code. The removed banners had their own display-only dependency. The Profile
+  page reads the canonical promo-group-discounts key for its Statuses link.
+- Support, ProfileIdentity and Referral share decorative artwork styles. Support
+  retains ticket creation and the instructions return context. Referral retains
+  its referral-link construction, sharing, balances and rewards.
+
 ## QR/Wheel entrance and wheel sizing — 2026-10-29
 
 - ConnectionQR and Wheel adopt existing PageEntrance/staggerItem at the complete

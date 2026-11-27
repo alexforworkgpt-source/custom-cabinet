@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useLocation } from 'react-router';
+import { sharesDashboardScroll } from '@/utils/userCabinetRouteState';
 
 /**
  * Saves and restores scroll position for admin pages.
@@ -8,6 +9,7 @@ import { useLocation } from 'react-router';
 export function useScrollRestoration() {
   const location = useLocation();
   const scrollPositions = useRef<Record<string, number>>({});
+  const scrollPath = sharesDashboardScroll(location.pathname) ? '/' : location.pathname;
 
   // Disable browser's automatic scroll restoration
   useEffect(() => {
@@ -16,28 +18,20 @@ export function useScrollRestoration() {
     }
   }, []);
 
-  // Start regular pages at the top; save/restore scroll for admin pages.
-  useEffect(() => {
-    const currentPath = location.pathname;
+  useLayoutEffect(() => {
+    const isAdminPage = scrollPath.startsWith('/admin');
+    const savedPosition = isAdminPage ? (scrollPositions.current[scrollPath] ?? 0) : 0;
+    window.scrollTo({ top: savedPosition, behavior: 'instant' });
 
-    if (!currentPath.startsWith('/admin')) {
-      window.scrollTo({ top: 0, behavior: 'instant' });
-      return;
-    }
+    if (!isAdminPage) return;
 
     const handleScroll = () => {
-      scrollPositions.current[currentPath] = window.scrollY;
+      scrollPositions.current[scrollPath] = window.scrollY;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-
-    const savedPosition = scrollPositions.current[currentPath];
-    if (savedPosition !== undefined && savedPosition > 0) {
-      window.scrollTo({ top: savedPosition, behavior: 'instant' });
-    }
-
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [location.pathname]);
+  }, [scrollPath]);
 }

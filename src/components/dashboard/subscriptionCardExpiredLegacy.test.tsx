@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -79,7 +79,6 @@ function renderCard(subscription: Subscription) {
           <SubscriptionCardExpired
             subscription={subscription}
             balanceKopeks={500_000}
-            balanceRubles={5_000}
             isTrafficTopupOpen={false}
             trafficTopupTriggerRef={{ current: null }}
             onBuyTraffic={() => {}}
@@ -105,6 +104,18 @@ describe('legacy subscription on the Unified Dashboard', () => {
     const action = screen.getByRole('link', { name: 'subscription.cta.moveToTariff' });
     expect(action.getAttribute('href')).toBe('/subscription/purchase?subscriptionId=42');
     expect(screen.queryByText('dashboard.expired.quickRenew')).toBeNull();
+  });
+
+  it('presents an expired trial in a named summary with its date and existing management action', () => {
+    renderCard(legacyExpired({ is_trial: true, requires_tariff_selection: false }));
+
+    const summary = screen.getByRole('region', { name: 'dashboard.expired.trialTitle' });
+    const trial = within(summary);
+    expect(
+      trial.getByText('dashboard.expired.expiredDate').nextElementSibling?.getAttribute('datetime'),
+    ).toBe('2026-09-07T00:00:00Z');
+    expect(trial.getByRole('button', { name: 'dashboard.manageSubscription' })).toBeTruthy();
+    expect(trial.queryByText('dashboard.expired.balance')).toBeNull();
   });
 
   it('replaces the traffic addon action when the legacy subscription is limited', () => {

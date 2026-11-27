@@ -10,12 +10,17 @@ import { useHeaderHeight } from '../hooks/useHeaderHeight';
 import type { TicketNotification } from '../types';
 import { BellIcon, CheckIcon } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 interface TicketNotificationBellProps {
   isAdmin?: boolean;
+  className?: string;
 }
 
-export default function TicketNotificationBell({ isAdmin = false }: TicketNotificationBellProps) {
+export default function TicketNotificationBell({
+  isAdmin = false,
+  className,
+}: TicketNotificationBellProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -215,19 +220,25 @@ export default function TicketNotificationBell({ isAdmin = false }: TicketNotifi
     }
   };
 
+  const label = t('notifications.ticketNotifications', 'Ticket notifications');
   const unreadCount = unreadData?.unread_count || 0;
 
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell button */}
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`relative rounded-xl border p-2 transition-all duration-200 ${
+        className={cn(
+          'relative rounded-xl border p-2 transition-all duration-200',
           isOpen
             ? 'border-dark-600 bg-dark-700 text-accent-400'
-            : 'border-dark-700/50 bg-dark-800/50 text-dark-400 hover:bg-dark-700 hover:text-accent-400'
-        }`}
-        title={t('notifications.ticketNotifications', 'Ticket notifications')}
+            : 'border-dark-700/50 bg-dark-800/50 text-dark-400 hover:bg-dark-700 hover:text-accent-400',
+          className,
+        )}
+        aria-label={label}
+        aria-expanded={isOpen}
+        title={label}
       >
         <BellIcon />
         {unreadCount > 0 && (

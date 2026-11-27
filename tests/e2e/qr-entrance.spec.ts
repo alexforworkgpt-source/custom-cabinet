@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { prepareQrWheel, qrTargets } from './qrWheelFixture';
 import {
   clearEntrances,
-  expectEntrance,
+  expectFadeEntrance,
   expectNoEntranceErrors,
   expectStationary,
   recordEntrances,
@@ -27,8 +27,8 @@ test('the complete QR block and its header enter on opening and reopening', asyn
       page.getByRole('heading', { name: 'Subscription QR Code', exact: true }),
     ).toBeVisible();
     await expect(page.locator(qrTargets.qr.css)).toBeVisible();
-    await expectEntrance(page, 'qr');
-    await expectEntrance(page, 'header');
+    await expectFadeEntrance(page, 'qr');
+    await expectFadeEntrance(page, 'header');
     await waitForRestingGeometry(page.locator(qrTargets.qr.css));
     await clearEntrances(page);
     await page.waitForTimeout(300);

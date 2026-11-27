@@ -2,7 +2,7 @@ import { safeLocal } from '../utils/safeStorage';
 import { getApiErrorMessage } from '../utils/api-error';
 import { lazy, Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/auth';
 import { useBlockingStore } from '../store/blocking';
@@ -17,12 +17,11 @@ import ReminderCards from '../components/dashboard/ReminderCards';
 import SubscriptionCardActive from '../components/dashboard/SubscriptionCardActive';
 import SubscriptionCardSkeleton from '../components/dashboard/SubscriptionCardSkeleton';
 import SubscriptionCardExpired from '../components/dashboard/SubscriptionCardExpired';
-import TrialOfferCard from '../components/dashboard/TrialOfferCard';
+import DashboardWelcome from '../components/dashboard/DashboardWelcome';
 import StatsGrid from '../components/dashboard/StatsGrid';
 import { giftApi } from '../api/gift';
 import PendingGiftCard from '../components/dashboard/PendingGiftCard';
 import { API } from '../config/constants';
-import { ChevronRightIcon } from '@/components/icons';
 import { ResponsiveOverlay } from '@/components/primitives/ResponsiveOverlay';
 import { getCabinetClosePath, getUserCabinetRouteState } from '@/utils/userCabinetRouteState';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
@@ -32,11 +31,15 @@ import { TrafficTopupSheet } from '@/components/subscription/sheets/TrafficTopup
 import { copyToClipboard } from '@/utils/clipboard';
 import { resolveConnectionUrlForUi } from '@/utils/connectionLink';
 import { MirrorSelector } from '@/components/connection/MirrorSelector';
+import { ConnectionLoading } from '@/components/connection/ConnectionLoading';
 import { useSubscriptionMirror } from '@/hooks/useSubscriptionMirror';
 import { hasBot53Contract } from '@/config/upstreamBotContract';
 import { brandingApi } from '@/api/branding';
 import { authApi } from '@/api/auth';
 import { promoApi } from '@/api/promo';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { DashboardSubscriptionLoading } from '@/components/dashboard/DashboardSubscriptionLoading';
+import { DashboardWheelBanner } from '@/components/dashboard/DashboardWheelBanner';
 import DashboardPromoCarousel from '@/components/dashboard/DashboardPromoCarousel';
 import {
   resolveEmailIdentityLinked,
@@ -152,6 +155,8 @@ export default function Dashboard() {
   });
 
   const subscription = subscriptionResponse?.subscription ?? null;
+  const selectedSubscription = subscriptions.find((item) => item.id === selectedSubscriptionId);
+  const loadingSubscription = subscriptionResponse ? subscription : selectedSubscription;
   const managementOpen = false;
 
   const { data: connectionLink, isLoading: isConnectionLinkLoading } = useQuery({
@@ -204,6 +209,7 @@ export default function Dashboard() {
     queryFn: () => subscriptionApi.getTrialInfo(),
     enabled: !subscription && !subLoading && !subscriptionsError && !subscriptionError,
   });
+  const [trialOfferCached] = useState(() => !!trialInfo?.is_available);
 
   const {
     data: devicesData,
@@ -280,7 +286,6 @@ export default function Dashboard() {
   });
 
   // Traffic refresh state and mutation
-  const [trafficCooldowns, setTrafficCooldowns] = useState<Record<number, number>>({});
   const [refreshedTrafficById, setRefreshedTrafficById] = useState<
     Record<number, Awaited<ReturnType<typeof subscriptionApi.refreshTraffic>>>
   >({});
@@ -288,8 +293,6 @@ export default function Dashboard() {
   const overlayTriggerRef = useRef<HTMLElement | null>(null);
   currentSubscriptionIdRef.current = subscription?.id;
   const trafficData = subscription ? (refreshedTrafficById[subscription.id] ?? null) : null;
-  const trafficRefreshCooldown = subscription ? (trafficCooldowns[subscription.id] ?? 0) : 0;
-  const hasTrafficCooldown = Object.values(trafficCooldowns).some((seconds) => seconds > 0);
 
   const refreshTrafficMutation = useMutation({
     mutationFn: async (subscriptionId: number) => {
@@ -305,42 +308,8 @@ export default function Dashboard() {
         queryClient.invalidateQueries({ queryKey: ['subscription'] });
       }
       safeLocal.setItem(`traffic_refresh_ts_${subscriptionId}`, Date.now().toString());
-      setTrafficCooldowns((current) => ({
-        ...current,
-        [subscriptionId]:
-          data.rate_limited && data.retry_after_seconds ? data.retry_after_seconds : 30,
-      }));
-    },
-    onError: (
-      error: {
-        response?: { status?: number; headers?: { get?: (key: string) => string } };
-      },
-      subscriptionId,
-    ) => {
-      if (error.response?.status === 429) {
-        const retryAfter = error.response.headers?.get?.('Retry-After');
-        setTrafficCooldowns((current) => ({
-          ...current,
-          [subscriptionId]: retryAfter ? parseInt(retryAfter, 10) : 30,
-        }));
-      }
     },
   });
-
-  // Cooldown timer
-  useEffect(() => {
-    if (!hasTrafficCooldown) return;
-    const timer = setInterval(() => {
-      setTrafficCooldowns((current) => {
-        const next = { ...current };
-        for (const id of Object.keys(next)) {
-          next[Number(id)] = Math.max(0, next[Number(id)] - 1);
-        }
-        return next;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [hasTrafficCooldown]);
 
   // Auto-refresh traffic on mount (with 30s caching)
   const autoRefreshedSubscriptionId = useRef<number | null>(null);
@@ -354,14 +323,7 @@ export default function Dashboard() {
     const now = Date.now();
     const cacheMs = API.TRAFFIC_CACHE_MS;
 
-    if (lastRefresh && now - parseInt(lastRefresh, 10) < cacheMs) {
-      const elapsed = now - parseInt(lastRefresh, 10);
-      const remaining = Math.ceil((cacheMs - elapsed) / 1000);
-      if (remaining > 0) {
-        setTrafficCooldowns((current) => ({ ...current, [subscription.id]: remaining }));
-      }
-      return;
-    }
+    if (lastRefresh && now - parseInt(lastRefresh, 10) < cacheMs) return;
 
     refreshTrafficMutation.mutate(subscription.id);
   }, [subscription, refreshTrafficMutation]);
@@ -517,7 +479,7 @@ export default function Dashboard() {
         </DeviceLimitPanel>
       );
     }
-    if (routeState.overlay === 'connection') return <Connection />;
+    if (routeState.overlay === 'connection') return <Connection search={location.search} />;
     if (routeState.overlay === 'balance') return <Balance />;
     if (routeState.overlay === 'topup') {
       return location.pathname === '/balance/top-up' || location.pathname === '/balance' ? (
@@ -608,7 +570,7 @@ export default function Dashboard() {
 
       {!subscriptionsError && !subscriptionError && (subLoading || subscriptionsLoading) ? (
         <SubscriptionCardSkeleton
-          subscription={subscriptions.find((item) => item.id === selectedSubscriptionId)}
+          subscription={selectedSubscription}
           hideSubscriptionLink={Boolean(
             selectedSubscriptionId &&
               subscription?.id === selectedSubscriptionId &&
@@ -623,7 +585,6 @@ export default function Dashboard() {
           <SubscriptionCardExpired
             subscription={subscription}
             balanceKopeks={balanceData?.balance_kopeks ?? null}
-            balanceRubles={balanceData?.balance_rubles ?? null}
             isTrafficTopupOpen={showTrafficTopup}
             trafficTopupTriggerRef={trafficTopupTriggerRef}
             onBuyTraffic={() => {
@@ -652,8 +613,6 @@ export default function Dashboard() {
         <SubscriptionCardActive
           subscription={subscription}
           trafficData={trafficData}
-          refreshTrafficMutation={refreshTrafficMutation}
-          trafficRefreshCooldown={trafficRefreshCooldown}
           connectedDevices={devicesData?.total}
           devicesError={devicesError && !devicesData}
           connectionUrl={shouldHideConnectionLink ? null : displayedConnectionUrl}
@@ -711,32 +670,15 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Нет подписок: показываем триал (если доступен) и ВСЕГДА одну явную
-          кнопку покупки. Триал не обязателен, чтобы попасть в витрину — раньше
-          при доступном триале это был единственный экран без кнопки покупки
-          (Telegram-баг #605056/#605063). Единственная кнопка тут (вместо дубля
-          с мульти-тариф блоком). */}
       {hasNoSubscription && (
-        <div className="space-y-3">
-          {/* Keep purchase available and stationary while optional trial data arrives. */}
-          <PageEntranceItem>
-            <Link
-              to="/subscription/purchase"
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent-500 p-3.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-600"
-            >
-              {t('subscriptions.chooseTariff')}
-            </Link>
-          </PageEntranceItem>
-          {trialInfo?.is_available && (
-            <TrialOfferCard
-              trialInfo={trialInfo}
-              balanceKopeks={balanceData?.balance_kopeks ?? null}
-              balanceRubles={balanceData?.balance_rubles ?? null}
-              activateTrialMutation={activateTrialMutation}
-              trialError={trialError}
-            />
-          )}
-        </div>
+        <DashboardWelcome
+          trialInfo={trialInfo}
+          trialLoading={trialLoading}
+          trialOfferCached={trialOfferCached}
+          balanceKopeks={balanceData?.balance_kopeks ?? null}
+          activateTrialMutation={activateTrialMutation}
+          trialError={trialError}
+        />
       )}
 
       {subscription && devicesError && (
@@ -785,23 +727,7 @@ export default function Dashboard() {
 
           <DashboardPromoCarousel slides={promoSlides} loading={!promoDataReady} />
 
-          {/* Fortune Wheel Banner */}
-          {wheelConfig?.is_enabled && (
-            <Link to="/wheel" className="bento-card-hover group flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <span className="text-3xl">🎰</span>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-semibold text-dark-100">
-                    {t('wheel.banner.title')}
-                  </h3>
-                  <p className="text-sm text-dark-400">{t('wheel.banner.description')}</p>
-                </div>
-              </div>
-              <div className="flex-shrink-0 text-dark-500 transition-all duration-300 group-hover:translate-x-1 group-hover:text-accent-400">
-                <ChevronRightIcon />
-              </div>
-            </Link>
-          )}
+          {wheelConfig?.is_enabled && <DashboardWheelBanner />}
 
           {/* Reminders configured by an administrator */}
           <ReminderCards />
@@ -837,7 +763,14 @@ export default function Dashboard() {
 
   return (
     <>
-      {showInitialSubscriptionSkeleton ? <SubscriptionCardSkeleton /> : dashboardContent}
+      <DashboardHeader />
+      <DashboardSubscriptionLoading
+        pending={showInitialSubscriptionSkeleton}
+        welcome={hasNoSubscription && !subscriptionError && !subscriptionsError}
+        subscription={loadingSubscription ?? undefined}
+      >
+        {dashboardContent}
+      </DashboardSubscriptionLoading>
       <ResponsiveOverlay
         open={routeState.overlay !== null}
         onOpenChange={(open) => {
@@ -846,6 +779,15 @@ export default function Dashboard() {
         title={overlayTitle}
         description={overlayDescription}
         restoreFocusTo={overlayTriggerRef.current}
+        stationary
+        panelClassName={
+          routeState.overlay === 'balance' ||
+          routeState.overlay === 'topup' ||
+          routeState.overlay === 'connection'
+            ? 'h-[min(36rem,85dvh)] content-start'
+            : undefined
+        }
+        contentClassName="pt-6 md:pt-2"
         centerHeader={
           routeState.overlay === 'connection' ||
           routeState.overlay === 'devices' ||
@@ -855,9 +797,13 @@ export default function Dashboard() {
       >
         <Suspense
           fallback={
-            <div className="flex justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-            </div>
+            routeState.overlay === 'connection' ? (
+              <ConnectionLoading search={location.search} />
+            ) : (
+              <div className="flex justify-center py-12">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
+              </div>
+            )
           }
         >
           {overlayContent}

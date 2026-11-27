@@ -12,7 +12,6 @@ interface Props {
 /** Shared read-only conditions for management and renewal; no queries or actions. */
 export function SubscriptionConditions({ subscription, endDate, serverFlagsOnly = false }: Props) {
   const { t } = useTranslation();
-  const servers = subscription.servers ?? [];
   return (
     <div className="space-y-4">
       {endDate && (
@@ -63,26 +62,47 @@ export function SubscriptionConditions({ subscription, endDate, serverFlagsOnly 
           </dd>
         </div>
       </dl>
-      {servers.length > 0 && (
-        <dl className="border-t border-dark-700/65 pt-4">
-          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
-            <dt className="flex items-start gap-2 text-xs text-dark-400">
-              <span aria-hidden="true" className="shrink-0 text-accent-400">
-                <ServerIcon className="h-4 w-4" />
-              </span>
-              {t('subscription.serversLabel')}
-            </dt>
-            <dd className="min-w-0 break-words text-end text-xs font-medium leading-relaxed text-dark-200">
-              {servers.map((server, index) => (
-                <span key={server.uuid} title={server.name}>
-                  {index > 0 && ' · '}
-                  {serverFlagsOnly ? getFlagEmoji(server.country_code) || server.name : server.name}
-                </span>
-              ))}
-            </dd>
-          </div>
-        </dl>
-      )}
+      <SubscriptionServers servers={subscription.servers} flagsOnly={serverFlagsOnly} />
     </div>
+  );
+}
+
+export function SubscriptionServers({
+  servers,
+  flagsOnly = false,
+  panel = false,
+}: {
+  servers: Subscription['servers'] | undefined;
+  flagsOnly?: boolean;
+  panel?: boolean;
+}) {
+  const { t } = useTranslation();
+  if (!servers?.length) return null;
+
+  return (
+    <dl
+      className={
+        panel
+          ? 'rounded-2xl border border-dark-700/60 bg-dark-900/70 px-3 py-2.5'
+          : 'border-t border-dark-700/65 pt-4'
+      }
+    >
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
+        <dt className="flex items-start gap-2 text-xs text-dark-400">
+          <span aria-hidden="true" className="shrink-0 text-accent-400">
+            <ServerIcon className="h-4 w-4" />
+          </span>
+          {t('subscription.serversLabel')}
+        </dt>
+        <dd className="min-w-0 break-words text-end text-xs font-medium leading-relaxed text-dark-200">
+          {servers.map((server, index) => (
+            <span key={server.uuid} title={server.name}>
+              {index > 0 && ' · '}
+              {flagsOnly ? getFlagEmoji(server.country_code) || server.name : server.name}
+            </span>
+          ))}
+        </dd>
+      </div>
+    </dl>
   );
 }

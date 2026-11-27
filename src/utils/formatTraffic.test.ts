@@ -6,6 +6,14 @@ vi.mock('../i18n', () => ({
 }));
 
 describe('formatTraffic', () => {
+  it('omits a trailing zero for compact traffic limits and retains fractional values', () => {
+    const options = { trimTrailingZero: true };
+    expect(formatTraffic(100, 'en-US', options)).toBe('100 GB');
+    expect(formatTraffic(100.5, 'ru-RU', options)).toBe('100,5 GB');
+    expect(formatTraffic(1000, 'en-US', options)).toBe('1 TB');
+    expect(formatTraffic(0.5, 'en-US', options)).toBe('512 MB');
+  });
+
   it('formats terabytes from 1000 GB up', () => {
     expect(formatTraffic(1000, 'en-US')).toBe('1.0\u00A0TB');
     expect(formatTraffic(2500, 'en-US')).toBe('2.5\u00A0TB');

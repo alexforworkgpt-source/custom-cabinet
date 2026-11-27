@@ -15,7 +15,7 @@ import type { PaginatedResponse, Transaction } from '../types';
 import { Card } from '@/components/data-display/Card';
 import { Button } from '@/components/primitives/Button';
 import { ChevronDownIcon, ChevronRightIcon, CreditCardIcon, WalletIcon } from '@/components/icons';
-import { staggerContainer, staggerItem } from '@/components/motion/transitions';
+import { fadeIn, staggerContainer, staggerItem } from '@/components/motion/transitions';
 import { isPaidStatus, isFailedStatus } from '../utils/paymentStatus';
 import { transactionTypeBadge, transactionTypeLabelKey } from '../utils/transactionType';
 import { invalidatePromoState } from '../utils/invalidatePromoState';
@@ -175,7 +175,7 @@ export default function Balance() {
       initial="initial"
       animate="animate"
     >
-      <motion.div variants={staggerItem}>
+      <motion.div variants={fadeIn}>
         <Card size="sm" data-balance-summary>
           {balanceLoading ? (
             <div
@@ -206,7 +206,7 @@ export default function Balance() {
         </Card>
       </motion.div>
 
-      <motion.div variants={staggerItem}>
+      <motion.div variants={fadeIn}>
         <Card asChild size="sm" interactive>
           <Link
             to="/balance/top-up"
@@ -223,7 +223,7 @@ export default function Balance() {
         </Card>
       </motion.div>
 
-      <motion.div variants={staggerItem}>
+      <motion.div variants={fadeIn}>
         <Card size="sm" data-balance-promocode>
           <label
             htmlFor="balance-promocode"
@@ -323,7 +323,7 @@ export default function Balance() {
       </motion.div>
 
       {/* Transaction History */}
-      <motion.div variants={staggerItem}>
+      <motion.div variants={fadeIn}>
         <Card size="sm" className="overflow-hidden" data-balance-history>
           <button
             type="button"
@@ -466,7 +466,7 @@ export default function Balance() {
 
       {/* Saved Cards Navigation self-animates when its query resolves. */}
       {savedCardsData?.recurrent_enabled && (
-        <motion.div variants={staggerItem} initial="initial" animate="animate">
+        <motion.div variants={fadeIn} initial="initial" animate="animate">
           <Card size="sm" interactive onClick={() => navigate('/balance/saved-cards')}>
             <div className="flex min-h-11 items-center justify-between">
               <div className="flex items-center gap-3">

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import { canConfigureExpiredClassic } from '../../../utils/legacySubscription';
@@ -68,8 +68,10 @@ export function ClassicPurchaseWizard({
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { formatAmount, currencySymbol } = useCurrency();
-  const { applyPromoDiscount } = usePromoDiscount();
+  const { formatAmount, currencySymbol, isRussian, isRatesPending } = useCurrency();
+  const { applyPromoDiscount, isPending: isDiscountPending } = usePromoDiscount();
+  const isCurrencyPending = !isRussian && isRatesPending;
+  const pricesLoading = isDiscountPending || isCurrencyPending;
   const hasPaidSubscription =
     !!subscription &&
     !subscription.is_trial &&
@@ -90,10 +92,19 @@ export function ClassicPurchaseWizard({
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState<PurchaseStep>('period');
-  const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption | null>(null);
-  const [selectedTraffic, setSelectedTraffic] = useState<number | null>(null);
-  const [selectedServers, setSelectedServers] = useState<string[]>([]);
-  const [selectedDevices, setSelectedDevices] = useState<number>(1);
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption | null>(
+    () => getClassicDefaultPeriod(classicOptions) ?? null,
+  );
+  const [selectedTraffic, setSelectedTraffic] = useState<number | null>(
+    classicOptions.selection.traffic_value,
+  );
+  const [selectedServers, setSelectedServers] = useState<string[]>(() => {
+    const availableServers = getClassicServers(selectedPeriod, subscription?.is_trial);
+    if (availableServers.length === 1) return [availableServers[0].uuid];
+    const availableServerUuids = new Set(availableServers.map((server) => server.uuid));
+    return classicOptions.selection.servers.filter((uuid) => availableServerUuids.has(uuid));
+  });
+  const [selectedDevices, setSelectedDevices] = useState(classicOptions.selection.devices);
   const [showPurchaseForm, setShowPurchaseForm] = useState(true);
   const purchaseInFlightRef = useRef(false);
 
@@ -105,35 +116,15 @@ export function ClassicPurchaseWizard({
     setCurrentStep('period');
   });
 
-  const defaultPeriod = getClassicDefaultPeriod(classicOptions);
   const getAvailableServers = useCallback(
     (period: PeriodOption | null | undefined) => getClassicServers(period, subscription?.is_trial),
     [subscription?.is_trial],
   );
-  const steps = getClassicPurchaseSteps(selectedPeriod ?? defaultPeriod, subscription?.is_trial);
+  const steps = getClassicPurchaseSteps(selectedPeriod, subscription?.is_trial);
 
   const currentStepIndex = steps.indexOf(currentStep);
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === steps.length - 1;
-
-  // Seed defaults from classicOptions.selection on first mount.
-  useEffect(() => {
-    if (!selectedPeriod) {
-      if (!defaultPeriod) return;
-      setSelectedPeriod(defaultPeriod);
-      setSelectedTraffic(classicOptions.selection.traffic_value);
-      const availableServers = getAvailableServers(defaultPeriod);
-      const availableServerUuids = new Set(availableServers.map((s) => s.uuid));
-      if (availableServers.length === 1) {
-        setSelectedServers([availableServers[0].uuid]);
-      } else {
-        setSelectedServers(
-          classicOptions.selection.servers.filter((uuid) => availableServerUuids.has(uuid)),
-        );
-      }
-      setSelectedDevices(classicOptions.selection.devices);
-    }
-  }, [classicOptions, defaultPeriod, selectedPeriod, getAvailableServers]);
 
   const currentSelection: PurchaseSelection = useMemo(
     () => ({
@@ -160,11 +151,10 @@ export function ClassicPurchaseWizard({
   );
 
   const summaryPreview = summary?.preview;
-  const previewTotal = preview
-    ? { price: preview.total_price_kopeks, original: preview.original_price_kopeks }
-    : null;
   const ctaPrice =
-    previewTotal && !previewLoading && !previewError ? formatCtaPrice(previewTotal.price) : null;
+    summaryPreview && !previewError && !isCurrencyPending
+      ? formatCtaPrice(summaryPreview.total_price_kopeks)
+      : null;
   const previewTotalValue = summaryPreview
     ? formatPrice(summaryPreview.total_price_kopeks)
     : undefined;
@@ -283,7 +273,10 @@ export function ClassicPurchaseWizard({
 
           {/* Step: Period Selection */}
           {currentStep === 'period' && (
-            <div className="grid auto-rows-fr grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
+            <div
+              className="grid auto-rows-fr grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3"
+              aria-busy={pricesLoading}
+            >
               {classicOptions.periods.map((period) => {
                 const promoPeriod = applyPromoDiscount(
                   period.price_kopeks,
@@ -316,9 +309,9 @@ export function ClassicPurchaseWizard({
                         setSelectedDevices(period.devices.current);
                       }
                     }}
-                    className={`bento-card-hover relative flex min-w-0 flex-col !p-3 text-start transition-all sm:!p-4 ${
+                    className={`bento-card-hover period-option animate-none relative flex min-w-0 flex-col !p-3 text-start light:border-2 sm:!p-4 ${
                       selectedPeriod?.id === period.id
-                        ? 'bento-card-glow border-accent-500 light:!border-accent-500 light:border-2'
+                        ? 'bento-card-glow border-accent-500 light:!border-accent-500'
                         : ''
                     }`}
                   >
@@ -336,7 +329,8 @@ export function ClassicPurchaseWizard({
                           ? `${formatAmount(monthly / 100, 0)} ${currencySymbol}/${t('subscription.month')}`
                           : null
                       }
-                      discountPercent={promoPeriod.percent}
+                      priceLoading={pricesLoading}
+                      discountPercent={isDiscountPending ? null : promoPeriod.percent}
                       discountClassName={
                         promoPeriod.isPromoGroup
                           ? 'bg-success-500 text-white'
@@ -364,7 +358,7 @@ export function ClassicPurchaseWizard({
                     aria-pressed={selectedTraffic === option.value}
                     onClick={() => setSelectedTraffic(option.value)}
                     disabled={!option.is_available}
-                    className={`bento-card-hover relative p-4 text-center transition-all ${
+                    className={`bento-card-hover animate-none relative p-4 text-center transition-all ${
                       selectedTraffic === option.value
                         ? 'bento-card-glow border-accent-500 light:!border-accent-500 light:border-2'
                         : ''
@@ -597,6 +591,7 @@ export function ClassicPurchaseWizard({
               <button
                 onClick={goToNextStep}
                 disabled={!selectedPeriod}
+                aria-busy={previewLoading || isCurrencyPending}
                 className="btn-primary flex-1"
               >
                 {ctaPrice

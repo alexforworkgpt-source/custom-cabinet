@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { createInstance } from 'i18next';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { I18nextProvider } from 'react-i18next';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { PlatformProvider } from '@/platform/PlatformProvider';
 import type { Subscription } from '@/types';
 import ru from '@/locales/ru.json';
@@ -11,17 +12,27 @@ import { SubscriptionOverviewCard } from './SubscriptionOverviewCard';
 
 const i18n = createInstance();
 beforeAll(async () => {
+  vi.stubGlobal('matchMedia', (media: string) => ({
+    media,
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
   await i18n.init({ lng: 'ru', resources: { ru: { translation: ru } } });
 });
 afterEach(cleanup);
+afterAll(() => vi.unstubAllGlobals());
 
 function renderOverview(fields: Partial<Subscription> = {}) {
+  const client = new QueryClient({ defaultOptions: { queries: { enabled: false } } });
   return render(
-    <I18nextProvider i18n={i18n}>
-      <PlatformProvider>
-        <SubscriptionOverviewCard subscription={{ ...subscription, ...fields }} />
-      </PlatformProvider>
-    </I18nextProvider>,
+    <QueryClientProvider client={client}>
+      <I18nextProvider i18n={i18n}>
+        <PlatformProvider>
+          <SubscriptionOverviewCard subscription={{ ...subscription, ...fields }} />
+        </PlatformProvider>
+      </I18nextProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -29,15 +40,118 @@ describe('compact management overview', () => {
   it('shows the API plan name, current limits and servers without financial controls', () => {
     const { container } = renderOverview({
       tariff_name: 'Семейная',
+      traffic_used_gb: 25,
+      traffic_used_percent: 25,
       servers: [{ uuid: 'nl', name: 'Нидерланды', country_code: 'NL' }],
     });
     expect(screen.getByRole('heading', { name: 'Семейная' })).toBeTruthy();
-    expect(screen.getByText('100 ГБ')).toBeTruthy();
+    expect(screen.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('25');
+    expect(screen.getByText(/25[.,]0.*100[.,]0/)).toBeTruthy();
     expect(screen.getByText('3 устройства')).toBeTruthy();
     expect(screen.getByText('🇳🇱')).toBeTruthy();
     expect(container.querySelector('time')?.getAttribute('dateTime')).toBe(subscription.end_date);
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.queryByRole('note')).toBeNull();
+  });
+
+  it('shows an expired paid plan in the subscription banner with its former conditions', () => {
+    renderOverview({
+      status: 'expired',
+      is_active: false,
+      is_expired: true,
+      servers: [{ uuid: 'nl', name: 'Нидерланды', country_code: 'NL' }],
+    });
+    const banner = within(screen.getByRole('region', { name: 'Текущий тариф' }));
+    expect(banner.getByText('Истекла', { exact: true })).toBeTruthy();
+    expect(banner.getByText('Подписка действовала', { exact: true })).toBeTruthy();
+    expect(banner.getByText('100 ГБ', { exact: true })).toBeTruthy();
+    expect(banner.getByText('3 устройства', { exact: true })).toBeTruthy();
+    expect(screen.getByText('🇳🇱')).toBeTruthy();
+  });
+
+  it('shows the expired trial in the subscription banner with its former conditions', () => {
+    const { container } = renderOverview({
+      status: 'expired',
+      is_active: false,
+      is_expired: true,
+      is_trial: true,
+      servers: [{ uuid: 'nl', name: 'Нидерланды', country_code: 'NL' }],
+    });
+    const banner = within(screen.getByRole('region', { name: 'Пробный' }));
+    expect(banner.getByText('Истекла', { exact: true })).toBeTruthy();
+    expect(banner.getByText('Подписка действовала', { exact: true })).toBeTruthy();
+    expect(banner.getByText('100 ГБ', { exact: true })).toBeTruthy();
+    expect(banner.getByText('3 устройства', { exact: true })).toBeTruthy();
+    expect(container.querySelector('time')?.getAttribute('dateTime')).toBe(subscription.end_date);
+    expect(screen.getByText('🇳🇱')).toBeTruthy();
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('shows exhausted traffic in the subscription banner while retaining the end date and limit', () => {
+    renderOverview({
+      status: 'limited',
+      is_active: false,
+      is_limited: true,
+      traffic_used_gb: 100,
+      traffic_used_percent: 100,
+    });
+    const banner = within(screen.getByRole('region', { name: 'Текущий тариф' }));
+    expect(banner.getByText('Трафик исчерпан', { exact: true })).toBeTruthy();
+    expect(banner.getByText('Текущая подписка действует', { exact: true })).toBeTruthy();
+    expect(banner.getByText('100 ГБ', { exact: true })).toBeTruthy();
+    expect(banner.getByText('3 устройства', { exact: true })).toBeTruthy();
+  });
+
+  it.each([
+    {
+      status: 'expired',
+      is_expired: true,
+      is_daily_paused: false,
+      badge: 'Истекла',
+      dateLabel: 'Подписка действовала',
+    },
+    {
+      status: 'disabled',
+      is_expired: false,
+      is_daily_paused: true,
+      badge: 'На паузе',
+      dateLabel: 'Текущая подписка действует',
+    },
+  ])(
+    'shows the daily $status state in the subscription banner',
+    ({ badge, dateLabel, ...fields }) => {
+      renderOverview({
+        ...fields,
+        is_active: false,
+        is_daily: true,
+        tariff_name: 'Посуточный тариф',
+      });
+      const banner = within(screen.getByRole('region', { name: 'Посуточный тариф' }));
+      expect(banner.getByText(badge, { exact: true })).toBeTruthy();
+      expect(banner.getByText(dateLabel, { exact: true })).toBeTruthy();
+      expect(banner.getByText('100 ГБ', { exact: true })).toBeTruthy();
+    },
+  );
+
+  it.each([
+    { tariff_name: 'Личная', is_daily: false },
+    { tariff_name: 'Посуточный тариф', is_daily: true },
+  ])('shows an illustrated subscription overview for the disabled $tariff_name plan', (plan) => {
+    const { container } = renderOverview({
+      ...plan,
+      status: 'disabled',
+      is_active: false,
+      is_daily_paused: false,
+      servers: [{ uuid: 'nl', name: 'Нидерланды', country_code: 'NL' }],
+    });
+    const banner = within(screen.getByRole('region', { name: plan.tariff_name }));
+    expect(banner.getByText('Приостановлена (недостаточно средств)', { exact: true })).toBeTruthy();
+    expect(banner.getByText('Текущая подписка действует', { exact: true })).toBeTruthy();
+    expect(banner.getByText('100 ГБ', { exact: true })).toBeTruthy();
+    expect(banner.getByText('3 устройства', { exact: true })).toBeTruthy();
+    expect(container.querySelector('time')?.getAttribute('dateTime')).toBe(subscription.end_date);
+    expect(screen.getByText('🇳🇱')).toBeTruthy();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   const states: Array<{ label: string; fields: Partial<Subscription> }> = [

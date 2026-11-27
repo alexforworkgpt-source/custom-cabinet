@@ -1,7 +1,7 @@
 import { uiLocale } from '@/utils/uiLocale';
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate, useSearchParams, useLocation, Link } from 'react-router';
+import { useNavigate, useSearchParams, Link } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,7 +40,6 @@ import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import {
   SparklesIcon,
   GiftIcon,
-  UsersIcon,
   CheckIcon,
   CheckCircleIcon,
   KeyIcon,
@@ -407,7 +406,6 @@ function BuyTabContent({
   onPurchaseComplete: () => void;
 }) {
   const { t } = useTranslation();
-  const location = useLocation();
   const queryClient = useQueryClient();
   const { openInvoice, capabilities, openLink, platform } = usePlatform();
   const haptic = useHaptic();
@@ -594,30 +592,6 @@ function BuyTabContent({
         <div className="hidden rounded-xl border border-dark-800/30 bg-dark-800/20 px-4 py-3 sm:block">
           <p className="text-sm text-dark-300">{selectedTariff.description}</p>
         </div>
-      )}
-
-      {/* Promo group banner */}
-      {config.promo_group_name && (
-        <Link
-          to="/info"
-          state={{
-            infoSection: 'loyalty',
-            infoReturnTo: `${location.pathname}${location.search}${location.hash}`,
-          }}
-          className="flex items-center gap-3 rounded-xl border border-success-500/30 bg-success-500/10 p-3 transition-colors hover:border-success-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success-500"
-        >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success-500/20">
-            <UsersIcon className="h-4 w-4 text-success-400" />
-          </div>
-          <div>
-            <div className="text-sm font-medium text-success-400">
-              {t('subscription.promoGroup.yourGroup', { name: config.promo_group_name })}
-            </div>
-            <div className="text-xs text-dark-400">
-              {t('subscription.promoGroup.personalDiscountsApplied')}
-            </div>
-          </div>
-        </Link>
       )}
 
       {/* Active discount banner */}
@@ -1326,21 +1300,16 @@ export default function GiftSubscription() {
   });
 
   const header = (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="mb-3 flex items-center gap-3 sm:mb-6"
-    >
-      <WebBackButton to="/profile" />
-      <h1 className="min-w-0 text-2xl font-bold text-dark-50">{t('gift.pageTitle')}</h1>
-    </motion.div>
+    <div className="mb-6 flex items-end gap-3">
+      <WebBackButton to="/profile" inPageHeading />
+      <h1 className="min-w-0 text-2xl font-bold text-dark-50 sm:text-3xl">{t('gift.pageTitle')}</h1>
+    </div>
   );
 
   // Loading state
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-2xl space-y-4">
+      <div className="mx-auto max-w-2xl sm:px-4 sm:pb-6">
         {header}
         <LoadingSkeleton />
       </div>
@@ -1351,7 +1320,7 @@ export default function GiftSubscription() {
   if (error || !config) {
     const errMsg = getApiErrorMessage(error, t('gift.notFound'));
     return (
-      <div className="mx-auto max-w-2xl space-y-4">
+      <div className="mx-auto max-w-2xl sm:px-4 sm:pb-6">
         {header}
         <ErrorState message={errMsg} />
       </div>
@@ -1361,7 +1330,7 @@ export default function GiftSubscription() {
   // Disabled state
   if (!config.is_enabled) {
     return (
-      <div className="mx-auto max-w-2xl space-y-4">
+      <div className="mx-auto max-w-2xl sm:px-4 sm:pb-6">
         {header}
         <DisabledState />
       </div>
@@ -1376,14 +1345,14 @@ export default function GiftSubscription() {
 
   return (
     <div className="min-h-dvh">
-      <div className="mx-auto max-w-2xl sm:px-4 sm:py-6">
+      <div className="mx-auto max-w-2xl sm:px-4 sm:pb-6">
         {/* Header */}
         {header}
 
         {/* Tab bar */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.05 }}
           className="mb-3 rounded-2xl bg-dark-800/50 p-1 sm:mb-6"
         >

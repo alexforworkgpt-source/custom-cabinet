@@ -596,6 +596,10 @@ img.twemoji {
     transform: translateY(-2px) translateZ(0);
   }
 
+  .bento-card-hover.period-option:is(:hover, :active) {
+    transform: none;
+  }
+
   /* ========== DARK THEME COMPONENTS (default) ========== */
 
   /* Cards - Dark (unified style) */

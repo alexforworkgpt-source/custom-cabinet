@@ -47,18 +47,11 @@ function withoutTrailingSlash(pathname: string): string {
   return pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
 }
 
-/**
- * Subscription routes are rendered inside the unified Dashboard. A card route
- * is therefore still the screen behind the Dashboard button, while renewal is
- * a separate action screen and must not carry the global panel with it.
- */
-const DASHBOARD_SUBSCRIPTION_SCREENS: readonly RegExp[] = [
-  /^\/subscriptions$/,
-  /^\/subscriptions\/\d+$/,
-];
+const SUBSCRIPTION_SCREENS = /^\/subscriptions(?:\/\d+(?:\/renew)?)?$/;
 
-/** Browsing/settings screens retain global navigation; action routes stay separate. */
+/** Browsing and settings screens that highlight their parent section. */
 const SECONDARY_SCREENS: readonly { pattern: RegExp; parent: 'dashboard' | 'profile' }[] = [
+  { pattern: /^\/admin$/, parent: 'profile' },
   { pattern: /^\/profile\/(accounts|notifications)$/, parent: 'profile' },
   { pattern: /^\/referral$/, parent: 'profile' },
   { pattern: /^\/(contests|polls|wheel|gift)$/, parent: 'profile' },
@@ -84,7 +77,6 @@ export function isMobileNavScreen(pathname: string, items: readonly MobileNavIte
   const path = withoutTrailingSlash(pathname);
   if (items.some((item) => item.path === path)) return true;
   return (
-    DASHBOARD_SUBSCRIPTION_SCREENS.some((pattern) => pattern.test(path)) ||
-    SECONDARY_SCREENS.some(({ pattern }) => pattern.test(path))
+    SUBSCRIPTION_SCREENS.test(path) || SECONDARY_SCREENS.some(({ pattern }) => pattern.test(path))
   );
 }

@@ -11,7 +11,7 @@ import {
 } from '@/components/icons';
 import { InstructionSteps } from '@/components/instructions/InstructionSteps';
 import { InstructionSupportReturn } from '@/components/instructions/InstructionSupportReturn';
-import { staggerContainer, staggerItem } from '@/components/motion/transitions';
+import { fadeIn, staggerContainer, staggerItem } from '@/components/motion/transitions';
 import { Button } from '@/components/primitives/Button';
 import { Card } from '@/components/data-display/Card';
 import { getInstructionArticle } from '@/content/instructionArticles';
@@ -82,7 +82,7 @@ export default function InstructionArticlePage() {
       initial="initial"
       animate="animate"
     >
-      <motion.div variants={staggerItem}>
+      <motion.div variants={fadeIn}>
         <div className="mb-6">
           <Link
             to="/instructions"

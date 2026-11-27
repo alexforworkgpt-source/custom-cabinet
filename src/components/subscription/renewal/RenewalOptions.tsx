@@ -54,7 +54,7 @@ export function RenewalOptions({ options, selectedPeriod, disabled, onSelect }: 
                 aria-pressed={selected}
                 disabled={disabled}
                 onClick={() => onSelect(option.period_days)}
-                className={`bento-card-hover relative flex min-w-0 flex-col !px-1.5 !py-2 text-start transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 disabled:opacity-50 min-[375px]:!p-3 sm:!p-4 ${selected ? 'bento-card-glow border-accent-500 bg-accent-500/10 light:!border-accent-500 light:border-2' : ''}`}
+                className={`bento-card-hover period-option animate-none relative flex min-w-0 flex-col !px-1.5 !py-2 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 disabled:opacity-50 light:border-2 min-[375px]:!p-3 sm:!p-4 ${selected ? 'bento-card-glow border-accent-500 bg-accent-500/10 light:!border-accent-500' : ''}`}
               >
                 <PeriodCardContent
                   label={`${option.period_days} ${t('subscription.days')}`}

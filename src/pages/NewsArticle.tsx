@@ -302,8 +302,8 @@ export default function NewsArticlePage() {
 
       {/* Article header */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
       >
         {/* Category + tag */}
@@ -352,7 +352,7 @@ export default function NewsArticlePage() {
         </h1>
 
         {/* Meta info */}
-        <div className="mb-6 flex flex-wrap items-center gap-4 text-sm text-dark-400">
+        <div className="flex flex-wrap items-center gap-4 text-sm text-dark-400">
           {article.published_at && (
             <span className="inline-flex items-center gap-1.5 font-mono text-xs">
               <CalendarIcon className="h-4 w-4" />
@@ -369,8 +369,8 @@ export default function NewsArticlePage() {
       {/* Featured image - only render if URL uses safe protocol */}
       {isSafeUrl(article.featured_image_url) && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
           className="overflow-hidden rounded-xl"
         >
@@ -386,8 +386,8 @@ export default function NewsArticlePage() {
 
       {/* Article content - sanitized with DOMPurify */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.2 }}
         className="prose max-w-none lg:max-w-3xl"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitizedContent is produced by the strict DOMPurify article sanitizer.

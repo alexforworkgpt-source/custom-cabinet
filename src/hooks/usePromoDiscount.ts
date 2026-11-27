@@ -25,7 +25,7 @@ export type { PromoDiscountResult } from '../utils/promoDiscount';
 // ──────────────────────────────────────────────────────────────────
 
 export function usePromoDiscount() {
-  const { data: activeDiscount } = useQuery({
+  const { data: activeDiscount, isPending } = useQuery({
     queryKey: ['active-discount'],
     queryFn: promoApi.getActiveDiscount,
     staleTime: 30000,
@@ -39,5 +39,5 @@ export function usePromoDiscount() {
     [availableDiscount],
   );
 
-  return { activeDiscount: availableDiscount, applyPromoDiscount };
+  return { activeDiscount: availableDiscount, applyPromoDiscount, isPending };
 }

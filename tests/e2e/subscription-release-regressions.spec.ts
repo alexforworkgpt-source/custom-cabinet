@@ -134,7 +134,7 @@ test('device funding return permits a smaller quantity under fresh limits and ch
   await increment.click();
   await increment.click();
   await increment.click();
-  await expect(page.getByText('400 ₽', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Купить за 400 ₽', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Пополнить', exact: true }).click();
   await expect(page).toHaveURL(
     `/balance/top-up?amount=400&returnTo=${encodeURIComponent(returnTo)}`,
@@ -144,13 +144,13 @@ test('device funding return permits a smaller quantity under fresh limits and ch
   await expect(
     page.getByText('Можно добавить максимум 2 устройства', { exact: true }),
   ).toBeVisible();
-  const buy = page.getByRole('button', { name: 'Купить', exact: true });
+  const buy = page.getByRole('button', { name: /^Купить(?: за .+)?$/ });
   await expect(buy).toBeDisabled();
   expect(purchases).toEqual([]);
   const decrement = page.getByRole('button', { name: 'Уменьшить кол-во устройств', exact: true });
   await decrement.click();
   await decrement.click();
-  await expect(page.getByText('200 ₽', { exact: true })).toBeVisible();
+  await expect(buy).toHaveText('Купить за 200 ₽');
   await expect(buy).toBeEnabled();
   expect(purchases).toEqual([]);
   await buy.click();

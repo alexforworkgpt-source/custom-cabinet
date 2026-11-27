@@ -1,6 +1,43 @@
 import { AxiosError } from 'axios';
+import type { Subscription } from '@/types';
 import i18n from '../i18n';
 import { getSafeRedirectPath } from './safeRedirect';
+
+export type DashboardSubscriptionScenario =
+  | 'expired-trial'
+  | 'expired-paid'
+  | 'expired-daily'
+  | 'limited'
+  | 'paused'
+  | 'disabled';
+
+export function dashboardSubscriptionScenario(
+  subscription:
+    | (Pick<Subscription, 'is_trial' | 'status' | 'is_daily'> &
+        Partial<Pick<Subscription, 'is_expired' | 'is_limited'>>)
+    | null
+    | undefined,
+): DashboardSubscriptionScenario | undefined {
+  if (!subscription) return undefined;
+  if (subscription.is_limited ?? subscription.status === 'limited') return 'limited';
+  if (subscription.status === 'disabled') return subscription.is_daily ? 'paused' : 'disabled';
+  if (!(subscription.is_expired ?? subscription.status === 'expired')) return undefined;
+  if (subscription.is_trial) return 'expired-trial';
+  return subscription.is_daily ? 'expired-daily' : 'expired-paid';
+}
+
+export function dashboardScenarioHasManagement(scenario: DashboardSubscriptionScenario) {
+  return scenario === 'expired-trial' || scenario === 'expired-daily' || scenario === 'limited';
+}
+
+export const dashboardSubscriptionScenarioTitle = {
+  'expired-trial': 'dashboard.expired.trialTitle',
+  'expired-paid': 'dashboard.expired.title',
+  'expired-daily': 'dashboard.expired.title',
+  limited: 'subscription.trafficLimitedTitle',
+  paused: 'dashboard.suspended.title',
+  disabled: 'dashboard.disabledTitle',
+} as const satisfies Record<DashboardSubscriptionScenario, string>;
 
 export type PurchaseStep = 'period' | 'traffic' | 'servers' | 'devices' | 'confirm';
 

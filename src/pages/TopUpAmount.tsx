@@ -12,7 +12,7 @@ import { useCurrency } from '../hooks/useCurrency';
 import { checkRateLimit, getRateLimitResetTime, RATE_LIMIT_KEYS } from '../utils/rateLimit';
 import { useCloseOnSuccessNotification } from '../store/successNotification';
 import { useHaptic, usePlatform } from '@/platform';
-import { staggerContainer, staggerItem } from '@/components/motion/transitions';
+import { fadeIn, staggerContainer, staggerItem } from '@/components/motion/transitions';
 import type { PaymentMethod, PaymentMethodOption, SubscriptionsListResponse } from '../types';
 import BentoCard from '../components/ui/BentoCard';
 import { saveTopUpPendingInfo } from '../utils/topUpStorage';
@@ -340,7 +340,7 @@ export default function TopUpAmount() {
     if (platform === 'telegram') return;
     const timer = setTimeout(() => {
       if (inputRef.current) {
-        inputRef.current.focus();
+        inputRef.current.focus({ preventScroll: true });
       }
     }, 100);
     return () => clearTimeout(timer);
@@ -473,7 +473,7 @@ export default function TopUpAmount() {
       animate="animate"
     >
       {/* Header icon and method */}
-      <motion.div variants={staggerItem} className="flex items-center gap-4 pb-1">
+      <motion.div variants={fadeIn} className="flex items-center gap-4 pb-1">
         <div
           className={`flex h-14 w-14 items-center justify-center rounded-2xl ${
             isStarsMethod

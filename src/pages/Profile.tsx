@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { usePlatform } from '@/platform';
 import { useQuery } from '@tanstack/react-query';
+import { promoApi } from '@/api/promo';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/auth';
 import { useUserAvatar } from '@/hooks/useUserAvatar';
@@ -10,9 +11,15 @@ import { ProfileIdentity } from '@/components/profile/ProfileIdentity';
 import { brandingApi, type EmailAuthEnabled } from '../api/branding';
 import { Card } from '@/components/data-display/Card';
 import { LogoutButton } from '@/components/LogoutButton';
-import { staggerItem } from '@/components/motion/transitions';
+import { fadeIn, staggerItem } from '@/components/motion/transitions';
 import { PageEntrance } from '@/components/motion/PageEntrance';
-import { ChevronRightIcon, UsersIcon } from '@/components/icons';
+import {
+  CalendarBlankIcon,
+  ChevronRightIcon,
+  MailIcon,
+  TelegramIcon,
+  UsersIcon,
+} from '@/components/icons';
 import ProfileHubSections, { ProfileAdminSection } from '@/components/profile/ProfileHubSections';
 import { useTheme } from '@/hooks/useTheme';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
@@ -21,6 +28,13 @@ export default function Profile() {
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const avatar = useUserAvatar(user);
+  const { data: promoGroup } = useQuery({
+    queryKey: ['promo-group-discounts'],
+    queryFn: promoApi.getGroupDiscounts,
+    enabled: Boolean(user),
+    staleTime: 30_000,
+    retry: false,
+  });
   const isAdmin = useAuthStore((state) => state.isAdmin);
   const logout = useAuthStore((state) => state.logout);
   const { toggleTheme, isDark, canToggle: canToggleTheme } = useTheme();
@@ -38,18 +52,21 @@ export default function Profile() {
 
   return (
     <PageEntrance className="space-y-6">
-      <motion.div variants={staggerItem}>
+      <motion.div variants={fadeIn}>
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('profile.title')}</h1>
       </motion.div>
 
       {/* User Info Card */}
-      <motion.div variants={staggerItem}>
-        <Card size="md">
-          <ProfileIdentity user={user} avatar={avatar} />
-          <div>
+      <motion.div variants={fadeIn}>
+        <Card size="md" className="p-0">
+          <ProfileIdentity user={user} avatar={avatar} groupName={promoGroup?.group_name?.trim()} />
+          <div className="relative -mt-3 rounded-t-2xl bg-dark-900 px-4 pb-4 pt-2">
             <div className="divide-y divide-dark-700">
               <div className="flex min-h-12 items-center justify-between gap-4 py-2">
-                <span className="text-dark-400">{t('profile.telegramId')}</span>
+                <span className="flex min-w-0 items-center gap-3 text-dark-400">
+                  <TelegramIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                  <span>{t('profile.telegramId')}</span>
+                </span>
                 {user?.telegram_id ? (
                   <span className="min-w-0 break-all text-right font-medium text-dark-100">
                     {user.telegram_id}
@@ -66,7 +83,10 @@ export default function Profile() {
               </div>
               {isEmailAuthEnabled && (
                 <div className="flex min-h-12 items-center justify-between gap-4 py-2">
-                  <span className="text-dark-400">{t('auth.email')}</span>
+                  <span className="flex min-w-0 items-center gap-3 text-dark-400">
+                    <MailIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                    <span>{t('auth.email')}</span>
+                  </span>
                   {user?.email ? (
                     <span className="min-w-0 break-all text-right text-sm font-medium text-dark-100">
                       {user.email}
@@ -83,7 +103,10 @@ export default function Profile() {
                 </div>
               )}
               <div className="flex min-h-12 items-center justify-between gap-4 py-2">
-                <span className="text-dark-400">{t('profile.registeredAt')}</span>
+                <span className="flex min-w-0 items-center gap-3 text-dark-400">
+                  <CalendarBlankIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                  <span>{t('profile.registeredAt')}</span>
+                </span>
                 <span className="font-medium text-dark-100">
                   {user?.created_at
                     ? new Date(user.created_at).toLocaleDateString(uiLocale())

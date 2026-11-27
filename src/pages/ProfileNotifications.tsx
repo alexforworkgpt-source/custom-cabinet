@@ -8,7 +8,7 @@ import {
   type NotificationSettingsUpdate,
 } from '@/api/notifications';
 import { Card } from '@/components/data-display/Card';
-import { staggerItem } from '@/components/motion/transitions';
+import { fadeIn } from '@/components/motion/transitions';
 import { PageEntrance } from '@/components/motion/PageEntrance';
 import { Button } from '@/components/primitives/Button';
 import { Switch } from '@/components/primitives/Switch';
@@ -43,14 +43,14 @@ export default function ProfileNotifications() {
 
   return (
     <PageEntrance className="space-y-6">
-      <motion.div variants={staggerItem} className="flex items-center gap-3">
-        <WebBackButton to="/profile" />
+      <motion.div variants={fadeIn} className="flex items-end gap-3">
+        <WebBackButton to="/profile" inPageHeading />
         <h1 className="min-w-0 text-2xl font-bold text-dark-50 sm:text-3xl">
           {t('profile.notifications.title')}
         </h1>
       </motion.div>
 
-      <motion.div variants={staggerItem}>
+      <motion.div variants={fadeIn}>
         <Card size="md">
           {isLoading ? (
             <SkeletonGroup className="space-y-3">

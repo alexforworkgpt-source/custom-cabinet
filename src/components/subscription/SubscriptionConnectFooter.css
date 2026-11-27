@@ -1,0 +1,29 @@
+.connect-device-gradient-button.connect-device-illustrated {
+  --border-inner-bg: rgb(var(--color-accent-with-white-text, var(--color-accent-500)));
+  position: relative;
+}
+
+.connect-device-portrait {
+  position: absolute;
+  inset-block-start: -5px;
+  inset-inline-end: -21px;
+  width: clamp(166px, 51vw, 215px);
+  max-width: none;
+  mask-image: linear-gradient(to right, transparent, #000 34%);
+  pointer-events: none;
+  user-select: none;
+}
+
+[dir="rtl"] .connect-device-portrait {
+  transform: scaleX(-1);
+}
+
+.connect-device-gradient-button.connect-device-illustrated:is(:hover, :active) {
+  --border-inner-bg: rgb(var(--color-accent-with-white-text, var(--color-accent-500)));
+}
+
+@media (min-width: 360px) {
+  .connect-device-portrait {
+    inset-inline-end: -34px;
+  }
+}

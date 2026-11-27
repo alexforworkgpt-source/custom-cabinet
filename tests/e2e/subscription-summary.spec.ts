@@ -10,7 +10,7 @@ const unlimitedSubscription = {
   tariff_name: 'Базовый',
 };
 
-test('unlimited subscription shows term and usage without progress @critical-flow', async ({
+test('unlimited subscription shows term and device limit without a manual traffic refresh @critical-flow', async ({
   page,
 }, testInfo) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
@@ -37,26 +37,14 @@ test('unlimited subscription shows term and usage without progress @critical-flo
   await expect(summary.getByText('Безлимит', { exact: true })).toBeVisible();
   await expect(summary.getByText('Осталось', { exact: true })).toBeVisible();
   await expect(summary.getByRole('progressbar')).toHaveCount(0);
-  await expect(summary.getByText(/123,4\s+ГБ\s*\/\s*∞/)).toBeVisible();
+  await expect(summary.getByText('3 устройства', { exact: true })).toBeVisible();
+  await expect(summary.getByRole('button', { name: /Обновить/ })).toHaveCount(0);
   await expect(summary.getByRole('button', { name: 'Управление подпиской' })).toBeVisible();
-  const badges = summary.locator('span.uppercase');
+  const badges = summary.locator('[data-subscription-status], [data-subscription-plan]');
   await expect(badges).toHaveCount(2);
   for (const badge of await badges.all()) {
-    expect(await badge.evaluate((element) => getComputedStyle(element).textTransform)).toBe(
-      'uppercase',
-    );
+    await expect(badge).toHaveCSS('text-transform', 'none');
   }
-  const header = badges.first().locator('..');
-  const [badgeBox, refreshBox] = await Promise.all([
-    header.boundingBox(),
-    summary.locator('[data-traffic-refresh]').boundingBox(),
-  ]);
-  if (!badgeBox || !refreshBox) throw new Error('Subscription header must have visible bounds');
-  expect(
-    Math.abs(badgeBox.y + badgeBox.height / 2 - (refreshBox.y + refreshBox.height / 2)),
-  ).toBeLessThan(1);
-  const titleBox = await summary.getByRole('heading').boundingBox();
-  expect(titleBox?.height).toBeLessThanOrEqual(1);
   await expect(summary.getByText('Сервис доступен для подключения', { exact: true })).toHaveCount(
     0,
   );
@@ -95,7 +83,8 @@ for (const theme of ['dark', 'light']) {
       await expect(summary).toBeVisible();
       await expect(summary.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '25');
       await expect(summary.locator('[data-traffic-percentage]')).toContainText('25');
-      await expect(summary.locator('span.uppercase')).toHaveCount(1);
+      const plan = summary.locator('[data-subscription-plan]');
+      await expect(plan).toHaveCSS('text-transform', 'none');
       await expect(summary.getByText(current.tariff_name, { exact: true })).toHaveCount(
         language === 'ru' ? 1 : 0,
       );
@@ -189,4 +178,41 @@ test('management, connection and link controls keep their order and transitions 
     }),
   ).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('Dashboard subscription metrics use the same inline padding as subscription management', async ({
+  page,
+}) => {
+  await prepareAuthenticatedPage(page, {
+    language: 'ru',
+    responses: {
+      ...responses,
+      '/api/cabinet/subscription': { has_subscription: true, subscription: unlimitedSubscription },
+      '/api/cabinet/subscriptions': {
+        subscriptions: [unlimitedSubscription],
+        multi_tariff_enabled: false,
+      },
+    },
+  });
+
+  const insets = (tiles: ReturnType<typeof page.locator>) =>
+    tiles.evaluateAll((cards) =>
+      cards.map((card) => {
+        const { paddingInlineStart, paddingInlineEnd } = getComputedStyle(card);
+        return { paddingInlineStart, paddingInlineEnd };
+      }),
+    );
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const dashboardTiles = page
+    .getByRole('region', { name: 'Подписка активна', exact: true })
+    .locator('.subscription-hero-metric');
+  await expect(dashboardTiles).toHaveCount(2);
+  const dashboardInsets = await insets(dashboardTiles);
+  await page.getByRole('button', { name: 'Управление подпиской', exact: true }).click();
+  const managementTiles = page.locator(
+    '[data-subscription-overview] .subscription-hero--management .subscription-hero-metric',
+  );
+  await expect(managementTiles).toHaveCount(2);
+  expect(dashboardInsets).toEqual(await insets(managementTiles));
 });

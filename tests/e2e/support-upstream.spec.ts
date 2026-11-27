@@ -85,7 +85,7 @@ test('keeps support instructions and ticket list in place during initial loading
     );
   }
 
-  const instructions = page.getByRole('region', { name: 'Instructions and setup' });
+  const instructions = page.getByRole('link', { name: 'Instructions and setup', exact: true });
   const listTitle = page.getByRole('heading', { name: 'Your Tickets' });
   const newTicket = page.getByRole('button', { name: 'New Ticket' });
 

@@ -6,6 +6,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '@/components/Toast';
 import { PlatformProvider } from '@/platform/PlatformProvider';
+import { WebSocketProvider } from '@/providers/WebSocketProvider';
 
 /**
  * Проверяет, что состояния загрузки страниц действительно рисуют скелетон и не
@@ -142,7 +143,13 @@ const PAGES: PageCase[] = [
   { name: 'SavedCards', load: () => import('./SavedCards') },
   { name: 'ConnectedAccounts', load: () => import('./ConnectedAccounts') },
   { name: 'Dashboard', load: () => import('./Dashboard') },
-  { name: 'Connection', load: () => import('./Connection') },
+  {
+    name: 'Connection',
+    load: async () => {
+      const { default: Connection } = await import('./Connection');
+      return { default: () => <Connection search="?sub=1" /> };
+    },
+  },
   { name: 'SubscriptionPurchase', load: () => import('./SubscriptionPurchase') },
   { name: 'Wheel', load: () => import('./Wheel') },
   { name: 'CouponStatus', load: () => import('./CouponStatus') },
@@ -257,7 +264,9 @@ describe('состояния загрузки страниц', () => {
                     <Route path={path} element={<Page />} />
                   </Routes>
                 ) : (
-                  <Page />
+                  <WebSocketProvider>
+                    <Page />
+                  </WebSocketProvider>
                 )}
               </MemoryRouter>
             </ToastProvider>

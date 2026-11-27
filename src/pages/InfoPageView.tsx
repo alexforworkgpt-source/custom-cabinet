@@ -11,7 +11,7 @@ import type { FaqItem } from '../api/infoPages';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
-import { staggerItem } from '@/components/motion/transitions';
+import { fadeIn } from '@/components/motion/transitions';
 
 /**
  * Sanitization config — same strict allowlist as NewsArticlePage.
@@ -242,7 +242,7 @@ function FaqView({ items }: { items: FaqItem[] }) {
   }, [items, search]);
 
   return (
-    <PageEntranceItem className="space-y-4">
+    <PageEntranceItem variants={fadeIn} className="space-y-4">
       {/* Search */}
       {items.length > 3 && (
         <div className="relative">
@@ -394,7 +394,7 @@ export default function InfoPageView() {
       )}
 
       {/* Page header */}
-      <PageEntranceItem>
+      <PageEntranceItem variants={fadeIn}>
         {page.icon && <span className="mb-2 inline-block text-3xl">{page.icon}</span>}
         <h1 className="text-2xl font-extrabold leading-tight text-dark-50 sm:text-3xl">
           {resolvedTitle}
@@ -407,7 +407,7 @@ export default function InfoPageView() {
       ) : (
         /* Regular page content - sanitized with DOMPurify (strict allowlist) */
         <motion.div
-          variants={staggerItem}
+          variants={fadeIn}
           className="prose max-w-none overflow-x-auto lg:max-w-3xl"
           // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitizedContent is produced by the strict DOMPurify info-page sanitizer.
           dangerouslySetInnerHTML={{ __html: sanitizedContent }}

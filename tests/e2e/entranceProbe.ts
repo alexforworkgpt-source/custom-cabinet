@@ -17,9 +17,16 @@ export async function waitForRestingGeometry(locator: Locator) {
     .toBe(true);
 }
 
-type ProbeTarget = { css: string; closest?: string };
+type ProbeTarget = {
+  css: string;
+  closest?: string;
+  path?: string;
+  inViewport?: boolean;
+  text?: string;
+};
 interface Frame {
   opacity: number;
+  top: number;
   y: number;
   scale: number;
 }
@@ -45,13 +52,19 @@ export async function recordEntrances(page: Page, targets: Record<string, ProbeT
     window.entranceFrames = {};
     const sample = () => {
       for (const [name, target] of Object.entries(targets)) {
+        if (target.path && location.pathname + location.search !== target.path) continue;
         const match = [...document.querySelectorAll<HTMLElement>(target.css)].find(
-          (el) => el.getBoundingClientRect().width && getComputedStyle(el).visibility !== 'hidden',
+          (el) =>
+            el.getBoundingClientRect().width &&
+            getComputedStyle(el).visibility !== 'hidden' &&
+            (target.text === undefined || el.textContent?.trim() === target.text),
         );
         let element: Element | null = target.closest
           ? (match?.closest(target.closest) ?? null)
           : (match ?? null);
-        if (!element) continue;
+        if (!match || !element) continue;
+        const bounds = match.getBoundingClientRect();
+        if (target.inViewport && (bounds.bottom <= 0 || bounds.top >= innerHeight)) continue;
         window.entranceFrames[name] ??= [];
         const frames = window.entranceFrames[name];
         if (frames.length >= 240) continue;
@@ -67,7 +80,7 @@ export async function recordEntrances(page: Page, targets: Record<string, ProbeT
           scale *= matrix.m11;
           element = element.parentElement;
         }
-        frames.push({ opacity, y, scale });
+        frames.push({ opacity, y, scale, top: bounds.top });
       }
       requestAnimationFrame(sample);
     };
@@ -95,6 +108,22 @@ export async function expectEntrance(page: Page, name: string) {
       { message: `The complete ${name} must enter, not only its children` },
     )
     .toBe(true);
+}
+
+export async function expectFadeEntrance(page: Page, name: string) {
+  await expect
+    .poll(() =>
+      page.evaluate((name) => {
+        const frames = window.entranceFrames[name] ?? [];
+        return (
+          frames.length > 5 &&
+          frames.some(({ opacity }) => opacity > 0.01 && opacity < 0.95) &&
+          (frames.at(-1)?.opacity ?? 0) >= 0.999
+        );
+      }, name),
+    )
+    .toBe(true);
+  await expectStationary(page, [name], true);
 }
 
 export async function expectStationary(page: Page, names: string[], allowFade = false) {

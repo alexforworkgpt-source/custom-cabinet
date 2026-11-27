@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 
 import { balanceApi } from '../api/balance';
 import { Card } from '@/components/data-display/Card';
-import { staggerContainer, staggerItem } from '@/components/motion/transitions';
+import { staggerContainer, fadeIn } from '@/components/motion/transitions';
 import PaymentMethodIcon from '@/components/PaymentMethodIcon';
 
 export default function TopUpMethodSelect() {
@@ -31,18 +31,18 @@ export default function TopUpMethodSelect() {
 
   return (
     <motion.div
-      className="space-y-4"
+      className="space-y-6"
       variants={staggerContainer}
       initial="initial"
       animate="animate"
     >
-      <motion.div variants={staggerItem}>
+      <motion.div variants={fadeIn}>
         <h1 className="text-xl font-bold text-dark-50 sm:text-2xl">
           {t('balance.selectPaymentMethod')}
         </h1>
       </motion.div>
 
-      <motion.div variants={staggerItem}>
+      <motion.div variants={fadeIn}>
         {isLoading ? (
           <Card size="sm">
             <SkeletonGroup className="space-y-3">

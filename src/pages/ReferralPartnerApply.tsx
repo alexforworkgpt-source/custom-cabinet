@@ -59,11 +59,13 @@ export default function ReferralPartnerApply() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <h1 className="text-2xl font-bold text-dark-50">{t('referral.partner.applyTitle')}</h1>
-      <p className="text-sm text-dark-400">{t('referral.partner.applyDesc')}</p>
+      <header className="space-y-2">
+        <h1 className="text-2xl font-bold text-dark-50">{t('referral.partner.applyTitle')}</h1>
+        <p className="text-sm text-dark-400">{t('referral.partner.applyDesc')}</p>
+      </header>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="bento-card space-y-4">
+        <div className="bento-card animate-none space-y-4">
           <div>
             <label
               htmlFor="rp-company-name"

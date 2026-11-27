@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef } from 'react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { openLink as sdkOpenLink } from '@telegram-apps/sdk-react';
@@ -18,13 +18,12 @@ import { MirrorSelector } from '../components/connection/MirrorSelector';
 import { useSubscriptionMirror } from '../hooks/useSubscriptionMirror';
 import { mirrorAppConfig } from '../utils/subscriptionMirrors';
 import { hasBot53Contract } from '../config/upstreamBotContract';
-import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { ConnectionLoading } from '@/components/connection/ConnectionLoading';
 
-export default function Connection() {
+export default function Connection({ search }: { search: string }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [searchParams] = useSearchParams();
+  const searchParams = useMemo(() => new URLSearchParams(search), [search]);
   const rawSubId = searchParams.get('sub');
   const parsedSubId = rawSubId ? Number(rawSubId) : undefined;
   const subId =
@@ -109,7 +108,7 @@ export default function Connection() {
         refreshConnection,
         hideLink: connectionLink?.hide_link ?? appConfig?.hideLink ?? false,
         subscriptionId: targetId,
-        returnPath: `${location.pathname}${location.search}`,
+        returnPath: `/connection${search}`,
       },
     });
   }, [
@@ -120,8 +119,7 @@ export default function Connection() {
     appConfig?.hideLink,
     isTelegramWebApp,
     subId,
-    location.pathname,
-    location.search,
+    search,
   ]);
 
   const resolveUrl = useCallback(
@@ -191,17 +189,7 @@ export default function Connection() {
   }, [appConfig?.platforms]);
 
   if (isLoading || isConnectionLinkLoading) {
-    return (
-      <SkeletonGroup className="space-y-6 pb-6">
-        {/* Повторяет шапку InstallationGuide: кнопка «назад», заголовок, выбор платформы. */}
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
-          <Skeleton className="h-6 flex-1" />
-          <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
-        </div>
-        <Skeleton variant="card" count={3} className="h-24" />
-      </SkeletonGroup>
-    );
+    return <ConnectionLoading search={search} />;
   }
 
   if (error || !appConfig || !hasApps) {
@@ -257,6 +245,7 @@ export default function Connection() {
 
   return (
     <InstallationGuide
+      searchParams={searchParams}
       appConfig={selectedConfig ?? appConfig}
       mirrorSelector={<MirrorSelector selection={mirror} />}
       onOpenDeepLink={openDeepLink}

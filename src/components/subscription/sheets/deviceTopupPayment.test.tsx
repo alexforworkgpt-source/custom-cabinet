@@ -10,6 +10,8 @@ import { useAuthStore } from '@/store/auth';
 import { resetSafeStorage, safeSession } from '@/utils/safeStorage';
 import { PlatformProvider } from '@/platform/PlatformProvider';
 
+const buyLabel = /^subscription\.additionalOptions\.buy(?:AtPrice .+)?$/;
+
 const api = vi.hoisted(() => ({
   getDevicePrice: vi.fn(),
   purchaseDevices: vi.fn(),
@@ -21,7 +23,11 @@ const api = vi.hoisted(() => ({
 vi.mock('@/api/subscription', () => ({ subscriptionApi: api }));
 vi.mock('@/api/balance', () => ({ balanceApi: { getBalance: api.getBalance } }));
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'ru' } }),
+  useTranslation: () => ({
+    t: (key: string, options?: { price?: string }) =>
+      options?.price ? `${key} ${options.price}` : key,
+    i18n: { language: 'ru' },
+  }),
   initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 vi.mock('@/hooks/useCurrency', () => ({
@@ -112,7 +118,7 @@ describe('separate device payment', () => {
       subscription: { ...subscription, status: 'limited', is_active: false, is_limited: true },
     });
     renderDevices(100000);
-    const buy = await screen.findByRole('button', { name: 'subscription.additionalOptions.buy' });
+    const buy = await screen.findByRole('button', { name: buyLabel });
     await waitFor(() => expect(buy.hasAttribute('disabled')).toBe(false));
     fireEvent.click(buy);
     await waitFor(() => expect(api.purchaseDevices).toHaveBeenCalledExactlyOnceWith(1, 42));
@@ -142,7 +148,7 @@ describe('separate device payment', () => {
     renderDevices(100000);
     await waitFor(() => expect(api.getDevicePrice).toHaveBeenLastCalledWith(2, 42));
     expect(api.purchaseDevices).not.toHaveBeenCalled();
-    const buy = await screen.findByRole('button', { name: 'subscription.additionalOptions.buy' });
+    const buy = await screen.findByRole('button', { name: buyLabel });
     fireEvent.click(buy);
     fireEvent.click(buy);
     await waitFor(() => expect(api.purchaseDevices).toHaveBeenCalledExactlyOnceWith(2, 42));
@@ -151,17 +157,19 @@ describe('separate device payment', () => {
   it('requires confirmation of a refreshed quote instead of charging an old price', async () => {
     api.getBalance.mockResolvedValue({ balance_kopeks: 100000 });
     renderDevices(100000);
-    await screen.findByText('161.66 ₽', { selector: '.text-2xl' });
+    await screen.findByRole('button', {
+      name: 'subscription.additionalOptions.buyAtPrice 161.66 ₽',
+    });
     api.getDevicePrice.mockResolvedValue({
       ...quote,
       total_price_kopeks: 20100,
       total_price_label: '201 ₽',
     });
-    fireEvent.click(screen.getByRole('button', { name: 'subscription.additionalOptions.buy' }));
+    fireEvent.click(screen.getByRole('button', { name: buyLabel }));
     await waitFor(() => expect(api.getDevicePrice.mock.calls.length).toBeGreaterThan(1));
     expect(api.purchaseDevices).not.toHaveBeenCalled();
-    await screen.findByText('201 ₽', { selector: '.text-2xl' });
-    const buy = screen.getByRole('button', { name: 'subscription.additionalOptions.buy' });
+    await screen.findByRole('button', { name: 'subscription.additionalOptions.buyAtPrice 201 ₽' });
+    const buy = screen.getByRole('button', { name: buyLabel });
     await waitFor(() => expect(buy.hasAttribute('disabled')).toBe(false));
     fireEvent.click(buy);
     await waitFor(() => expect(api.purchaseDevices).toHaveBeenCalledExactlyOnceWith(1, 42));
@@ -190,7 +198,7 @@ describe('separate device payment', () => {
     const decrement = screen.getByRole('button', {
       name: 'subscription.additionalOptions.decrementDevices',
     });
-    const buy = screen.getByRole('button', { name: 'subscription.additionalOptions.buy' });
+    const buy = screen.getByRole('button', { name: buyLabel });
     expect(buy.hasAttribute('disabled')).toBe(true);
     expect(api.purchaseDevices).not.toHaveBeenCalled();
     fireEvent.click(decrement);
@@ -211,7 +219,7 @@ describe('separate device payment', () => {
     });
     renderDevices();
     await screen.findByText('subscription.switchTariff.free');
-    const buy = screen.getByRole('button', { name: 'subscription.additionalOptions.buy' });
+    const buy = screen.getByRole('button', { name: buyLabel });
     expect(buy.hasAttribute('disabled')).toBe(true);
     expect(api.purchaseDevices).not.toHaveBeenCalled();
   });
@@ -226,11 +234,7 @@ describe('separate device payment', () => {
       });
       renderDevices();
       await waitFor(() => expect(api.getDevicePrice).toHaveBeenCalled());
-      await waitFor(() =>
-        expect(
-          screen.queryByRole('button', { name: 'subscription.additionalOptions.buy' }),
-        ).toBeNull(),
-      );
+      await waitFor(() => expect(screen.queryByRole('button', { name: buyLabel })).toBeNull());
       expect(
         screen.queryByRole('button', { name: 'subscription.additionalOptions.decrementDevices' }),
       ).toBeNull();
@@ -246,7 +250,7 @@ describe('separate device payment', () => {
       }),
     );
     renderDevices(100000);
-    const buy = await screen.findByRole('button', { name: 'subscription.additionalOptions.buy' });
+    const buy = await screen.findByRole('button', { name: buyLabel });
     await waitFor(() => expect(buy.hasAttribute('disabled')).toBe(false));
     fireEvent.click(buy);
     await screen.findByText('subscription.devicePayment.cartSaved');
@@ -255,18 +259,14 @@ describe('separate device payment', () => {
     renderDevices();
     await screen.findByText('subscription.devicePayment.cartSaved');
     expect(screen.queryByRole('button', { name: 'balance.topUp' })).toBeNull();
-    expect(
-      screen
-        .getByRole('button', { name: 'subscription.additionalOptions.buy' })
-        .hasAttribute('disabled'),
-    ).toBe(true);
+    expect(screen.getByRole('button', { name: buyLabel }).hasAttribute('disabled')).toBe(true);
     expect(api.purchaseDevices).toHaveBeenCalledTimes(1);
   });
 
   it('does not charge if the signed-in account changes during confirmation', async () => {
     api.getBalance.mockResolvedValue({ balance_kopeks: 100000 });
     renderDevices(100000);
-    const buy = await screen.findByRole('button', { name: 'subscription.additionalOptions.buy' });
+    const buy = await screen.findByRole('button', { name: buyLabel });
     await waitFor(() => expect(buy.hasAttribute('disabled')).toBe(false));
     api.getDevicePrice.mockImplementation(async () => {
       useAuthStore.setState({ user: { id: 2 } as never });
@@ -293,7 +293,7 @@ describe('separate device payment', () => {
         price_per_device_label: label,
       });
       renderDevices(total);
-      const buy = await screen.findByRole('button', { name: 'subscription.additionalOptions.buy' });
+      const buy = await screen.findByRole('button', { name: buyLabel });
       await waitFor(() => expect(buy.hasAttribute('disabled')).toBe(false));
       expect(screen.queryByRole('button', { name: 'balance.topUp' })).toBeNull();
       fireEvent.click(buy);
@@ -311,18 +311,14 @@ describe('separate device payment', () => {
     api.getDevicePrice.mockResolvedValue({ ...quote, current_device_limit: 2 });
     renderDevices(100000);
     await screen.findByText('subscription.devicePayment.alreadyApplied');
-    expect(
-      screen
-        .getByRole('button', { name: 'subscription.additionalOptions.buy' })
-        .hasAttribute('disabled'),
-    ).toBe(true);
+    expect(screen.getByRole('button', { name: buyLabel }).hasAttribute('disabled')).toBe(true);
     expect(api.purchaseDevices).not.toHaveBeenCalled();
   });
 
   it('does not submit a changed subscription even when its price remains the same', async () => {
     api.getBalance.mockResolvedValue({ balance_kopeks: 100000 });
     renderDevices(100000);
-    const buy = await screen.findByRole('button', { name: 'subscription.additionalOptions.buy' });
+    const buy = await screen.findByRole('button', { name: buyLabel });
     await waitFor(() => expect(buy.hasAttribute('disabled')).toBe(false));
     api.getSubscription.mockResolvedValue({
       subscription: { ...subscription, end_date: '2027-02-23T00:00:00Z' },
@@ -335,7 +331,7 @@ describe('separate device payment', () => {
   it('locks the device quantity while a confirmation is checking the server', async () => {
     api.getBalance.mockResolvedValue({ balance_kopeks: 100000 });
     renderDevices(100000);
-    const buy = await screen.findByRole('button', { name: 'subscription.additionalOptions.buy' });
+    const buy = await screen.findByRole('button', { name: buyLabel });
     await waitFor(() => expect(buy.hasAttribute('disabled')).toBe(false));
     let finish!: (value: typeof quote) => void;
     api.getDevicePrice.mockImplementation(
@@ -357,7 +353,7 @@ describe('separate device payment', () => {
   it('does not start a purchase after leaving during the preflight check', async () => {
     api.getBalance.mockResolvedValue({ balance_kopeks: 100000 });
     renderDevices(100000);
-    const buy = await screen.findByRole('button', { name: 'subscription.additionalOptions.buy' });
+    const buy = await screen.findByRole('button', { name: buyLabel });
     await waitFor(() => expect(buy.hasAttribute('disabled')).toBe(false));
     let finish!: (value: typeof quote) => void;
     api.getDevicePrice.mockImplementation(

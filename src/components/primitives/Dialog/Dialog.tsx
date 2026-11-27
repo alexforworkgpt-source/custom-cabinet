@@ -9,7 +9,14 @@ import {
 } from 'react';
 import { cn } from '@/lib/utils';
 import { CloseIcon } from '@/components/icons';
-import { backdrop, backdropTransition, scale, scaleTransition } from '../../motion/transitions';
+import {
+  backdrop,
+  backdropTransition,
+  fadeIn,
+  fadeInTransition,
+  scale,
+  scaleTransition,
+} from '../../motion/transitions';
 
 export {
   Trigger as DialogTrigger,
@@ -63,10 +70,11 @@ DialogOverlay.displayName = 'DialogOverlay';
 export interface DialogContentProps
   extends ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
   showCloseButton?: boolean;
+  stationary?: boolean;
 }
 
 export const DialogContent = forwardRef<HTMLDivElement, DialogContentProps>(
-  ({ className, children, showCloseButton = true, ...props }, ref) => {
+  ({ className, children, showCloseButton = true, stationary = false, ...props }, ref) => {
     const { open } = useContext(DialogContext);
 
     return (
@@ -91,11 +99,11 @@ export const DialogContent = forwardRef<HTMLDivElement, DialogContentProps>(
               >
                 <motion.div
                   style={{ x: '-50%', y: '-50%' }}
-                  variants={scale}
+                  variants={stationary ? fadeIn : scale}
                   initial="initial"
                   animate="animate"
                   exit="exit"
-                  transition={scaleTransition}
+                  transition={stationary ? fadeInTransition : scaleTransition}
                 >
                   {children}
                   {showCloseButton && (

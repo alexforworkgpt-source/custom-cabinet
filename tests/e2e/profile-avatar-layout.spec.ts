@@ -38,7 +38,7 @@ for (const theme of ['light', 'dark']) {
       await page.evaluate(() => document.fonts.ready.then(() => undefined));
       const [photoBox, nameBox] = await Promise.all([picture.boundingBox(), name.boundingBox()]);
       if (!photoBox || !nameBox) throw new Error('The identity header must remain visible');
-      const size = (page.viewportSize()?.width ?? 1280) < 640 ? 56 : 64;
+      const size = (page.viewportSize()?.width ?? 1280) < 640 ? 60 : 68;
       expect(photoBox.width).toBe(size);
       expect(photoBox.height).toBe(size);
       expect(nameBox.x).toBeGreaterThanOrEqual(photoBox.x + photoBox.width + 8);

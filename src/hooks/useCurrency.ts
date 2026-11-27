@@ -20,7 +20,7 @@ export function useCurrency() {
   const { i18n, t } = useTranslation();
 
   // Fetch exchange rates
-  const { data: exchangeRates = DEFAULT_RATES } = useQuery({
+  const { data: exchangeRates = DEFAULT_RATES, isPending: isRatesPending } = useQuery({
     queryKey: ['exchange-rates'],
     queryFn: currencyApi.getExchangeRates,
     staleTime: 60 * 60 * 1000, // 1 hour
@@ -120,6 +120,7 @@ export function useCurrency() {
       exchangeRates,
       targetCurrency,
       isRussian,
+      isRatesPending,
       currencySymbol,
       formatAmount,
       formatWithCurrency,
@@ -131,6 +132,7 @@ export function useCurrency() {
       exchangeRates,
       targetCurrency,
       isRussian,
+      isRatesPending,
       currencySymbol,
       formatAmount,
       formatWithCurrency,

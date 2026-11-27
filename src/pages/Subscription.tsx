@@ -62,10 +62,13 @@ import { TrafficTopupSheet } from '../components/subscription/sheets/TrafficTopu
 import { ServerManagementSheet } from '../components/subscription/sheets/ServerManagementSheet';
 import { DeleteSubscriptionSheet } from '../components/subscription/sheets/DeleteSubscriptionSheet';
 import { CasheraRecurringPanel } from '../components/subscription/manage/CasheraRecurringPanel';
-import { SubscriptionOverviewCard } from '../components/subscription/SubscriptionOverviewCard';
+import {
+  inactiveSubscriptionOverviewState,
+  SubscriptionOverviewCard,
+} from '../components/subscription/SubscriptionOverviewCard';
 import {
   SubscriptionAddonsSkeleton,
-  SubscriptionManagementSkeleton,
+  SubscriptionManagementLayout,
 } from '../components/subscription/SubscriptionManagementSkeleton';
 import { PurchasedTrafficSummary } from '../components/subscription/PurchasedTrafficSummary';
 import { SubscriptionDailyManagement } from '../components/subscription/SubscriptionDailyManagement';
@@ -331,6 +334,7 @@ export default function Subscription({
     purchaseOptionsQuery,
     isMultiTariff,
   );
+  const smoothLoading = Boolean(inactiveSubscriptionOverviewState(subscription));
   const hasKnownActions = embedded && actions.snapshot !== null;
   const managementLoading =
     (!embedded || !actions.offline) &&
@@ -574,7 +578,11 @@ export default function Subscription({
 
   // Pause subscription mutation
   const pauseMutation = useMutation({
-    mutationFn: () => subscriptionApi.togglePause(subscriptionId),
+    mutationFn: () =>
+      subscriptionApi.togglePause(
+        subscriptionId,
+        subscription?.status === 'disabled' && !subscription.is_daily_paused ? false : undefined,
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
@@ -810,8 +818,9 @@ export default function Subscription({
     if (embedded) {
       const knownSubscription = subscription?.id === subscriptionId ? subscription : null;
       return (
-        <SubscriptionManagementSkeleton
-          subscription={knownSubscription}
+        <SubscriptionManagementLayout
+          loading={{ subscription: knownSubscription }}
+          smoothLoading={smoothLoading}
           purchase={
             knownSubscription && (
               <PurchaseCTAButton
@@ -867,7 +876,7 @@ export default function Subscription({
               )}
             </>
           )}
-        </SubscriptionManagementSkeleton>
+        </SubscriptionManagementLayout>
       );
     }
     return (
@@ -901,10 +910,10 @@ export default function Subscription({
     );
   }
 
-  return (
-    <PageEntrance className={embedded ? 'space-y-4' : 'space-y-6'}>
+  const sections = (
+    <>
       {!embedded && !hideHeader && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-end gap-3">
           <WebBackButton to={isMultiTariff ? '/subscriptions' : '/'} />
           <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
             {isMultiTariff && subscription?.tariff_name
@@ -914,51 +923,28 @@ export default function Subscription({
         </div>
       )}
 
-      {embedded ? (
-        <PageEntranceItem className="space-y-4">
-          {subscription && <SubscriptionOverviewCard subscription={subscription} />}
-          {actions.snapshot && (
-            <div>
-              <PurchaseCTAButton
-                subscription={actions.snapshot.subscription}
-                isMultiTariff={actions.snapshot.isMultiTariff}
-                isClassic={actions.snapshot.salesMode === 'classic'}
-                disabled={!actions.ready}
-                animateEntrance={false}
-                reserveSpace
-                compactOnMobile
-              />
-            </div>
-          )}
-          {actions.offline
-            ? offlineNotice
-            : subscriptionError
-              ? subscriptionStatusError
-              : purchaseOptionsQuery.isError || missingSalesMode
-                ? purchaseOptionsError
-                : null}
-        </PageEntranceItem>
-      ) : purchaseOptionsQuery.isError ? (
-        purchaseOptionsError
-      ) : purchaseOptionsQuery.isSuccess && !purchaseOptionsQuery.isFetching ? (
-        <PurchaseCTAButton
-          subscription={subscription}
-          isMultiTariff={isMultiTariff}
-          isClassic={purchaseOptions?.sales_mode === 'classic'}
-          conditionsKnown={purchaseOptions !== undefined}
-          loading={
-            !purchaseOptionsQuery.isSuccess ||
-            purchaseOptionsQuery.isFetching ||
-            subscriptionFetching
-          }
-          reserveSpace={embedded}
-          compactOnMobile={embedded}
-        />
-      ) : (
-        <div role="status" className="rounded-xl bg-dark-800/50 p-4 text-sm text-dark-400">
-          {t('common.loading')}
-        </div>
-      )}
+      {!embedded &&
+        (purchaseOptionsQuery.isError ? (
+          purchaseOptionsError
+        ) : purchaseOptionsQuery.isSuccess && !purchaseOptionsQuery.isFetching ? (
+          <PurchaseCTAButton
+            subscription={subscription}
+            isMultiTariff={isMultiTariff}
+            isClassic={purchaseOptions?.sales_mode === 'classic'}
+            conditionsKnown={purchaseOptions !== undefined}
+            loading={
+              !purchaseOptionsQuery.isSuccess ||
+              purchaseOptionsQuery.isFetching ||
+              subscriptionFetching
+            }
+            reserveSpace={embedded}
+            compactOnMobile={embedded}
+          />
+        ) : (
+          <div role="status" className="rounded-xl bg-dark-800/50 p-4 text-sm text-dark-400">
+            {t('common.loading')}
+          </div>
+        ))}
 
       {subscription && (
         <PageEntranceItem>
@@ -1802,6 +1788,49 @@ export default function Subscription({
         </PageEntranceItem>
       )}
       {embedded && showAutopay && <PageEntranceItem>{renderAutopay()}</PageEntranceItem>}
-    </PageEntrance>
+    </>
+  );
+
+  if (!embedded) return <PageEntrance className="space-y-6">{sections}</PageEntrance>;
+
+  const actionNotice = actions.offline
+    ? offlineNotice
+    : subscriptionError
+      ? subscriptionStatusError
+      : purchaseOptionsQuery.isError || missingSalesMode
+        ? purchaseOptionsError
+        : null;
+
+  return (
+    <SubscriptionManagementLayout
+      smoothLoading={smoothLoading}
+      overview={
+        subscription && (
+          <SubscriptionOverviewCard subscription={subscription} refreshed={trafficData} />
+        )
+      }
+      purchase={
+        (actions.snapshot || actionNotice) && (
+          <>
+            {actions.snapshot && (
+              <div>
+                <PurchaseCTAButton
+                  subscription={actions.snapshot.subscription}
+                  isMultiTariff={actions.snapshot.isMultiTariff}
+                  isClassic={actions.snapshot.salesMode === 'classic'}
+                  disabled={!actions.ready}
+                  animateEntrance={false}
+                  reserveSpace
+                  compactOnMobile
+                />
+              </div>
+            )}
+            {actionNotice}
+          </>
+        )
+      }
+    >
+      {sections}
+    </SubscriptionManagementLayout>
   );
 }
