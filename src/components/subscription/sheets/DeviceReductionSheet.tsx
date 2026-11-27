@@ -93,8 +93,8 @@ export function DeviceReductionSheet({
 
   return (
     <div className={styles.panel(isDark)}>
-      <div className={styles.header}>
-        <h3 className="font-medium text-dark-100">
+      <div className={styles.deviceHeader}>
+        <h3 className="font-semibold text-dark-100">
           {t('subscription.additionalOptions.reduceDevicesTitle')}
         </h3>
         <button onClick={onClose} className={styles.close} aria-label={t('common.close', 'Close')}>
@@ -111,7 +111,7 @@ export function DeviceReductionSheet({
           )}
         </div>
       ) : deviceReductionInfo ? (
-        <div className={styles.fields}>
+        <div className={styles.deviceFields}>
           <div className={styles.counter}>
             <button
               onClick={() =>
@@ -137,10 +137,10 @@ export function DeviceReductionSheet({
             >
               -
             </button>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-dark-100">{targetDeviceLimit}</div>
+            <div className={styles.counterValue}>
+              <div className={styles.counterNumber}>{targetDeviceLimit}</div>
               <div className="text-sm text-dark-500">
-                {t('subscription.additionalOptions.devicesUnit')}
+                {t('subscription.additionalOptions.devicesUnit', { count: targetDeviceLimit })}
               </div>
             </div>
             <button
@@ -157,21 +157,25 @@ export function DeviceReductionSheet({
             </button>
           </div>
 
-          <div className="space-y-1 text-center text-sm text-dark-400">
-            <div>
-              {t('subscription.additionalOptions.currentDeviceLimit', {
-                count: deviceReductionInfo.current_device_limit,
-              })}
-            </div>
-            <div>
-              {t('subscription.additionalOptions.minDeviceLimit', {
-                count: deviceReductionInfo.min_device_limit,
-              })}
-            </div>
-            <div>
-              {t('subscription.additionalOptions.connectedDevices', {
-                count: deviceReductionInfo.connected_devices_count,
-              })}
+          <p className={styles.deviceLimit}>
+            {t('subscription.additionalOptions.currentDeviceLimit', {
+              count: deviceReductionInfo.current_device_limit,
+            })}
+            {' → '}
+            {t('subscription.additionalOptions.newDeviceLimit', { count: targetDeviceLimit })}
+          </p>
+          <div className="text-center">
+            <div className={styles.devicePrice}>
+              <span>
+                {t('subscription.additionalOptions.minDeviceLimit', {
+                  count: deviceReductionInfo.min_device_limit,
+                })}
+              </span>
+              <span>
+                {t('subscription.additionalOptions.connectedDevices', {
+                  count: deviceReductionInfo.connected_devices_count,
+                })}
+              </span>
             </div>
           </div>
 
@@ -183,14 +187,6 @@ export function DeviceReductionSheet({
             </div>
           )}
 
-          <div className="text-center">
-            <div className="text-sm text-dark-400">
-              {t('subscription.additionalOptions.newDeviceLimit', {
-                count: targetDeviceLimit,
-              })}
-            </div>
-          </div>
-
           <button
             onClick={() => reduceMutation.mutate()}
             disabled={
@@ -199,7 +195,7 @@ export function DeviceReductionSheet({
               targetDeviceLimit < deviceReductionInfo.min_device_limit ||
               targetDeviceLimit < deviceReductionInfo.connected_devices_count
             }
-            className="btn-primary w-full py-3"
+            className="btn-primary min-h-11 w-full py-2"
           >
             {reduceMutation.isPending ? (
               <span className="flex items-center justify-center gap-2">

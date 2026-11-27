@@ -1,0 +1,63 @@
+.dashboard-promo-slide {
+  --promo-primary: #9accf7;
+  --promo-secondary: #b8cee4;
+  --promo-title: #f1f8ff;
+  --promo-artwork: url("../../assets/cabinet-robot/banner-objects.webp");
+  --promo-artwork-size: 300% 200%;
+  --promo-artwork-position: 0% 0%;
+  background:
+    radial-gradient(ellipse at 83% 62%, #2b5790, transparent 57%),
+    linear-gradient(115deg, #13223a, #162c49);
+}
+
+.light .dashboard-promo-slide {
+  --promo-primary: #275884;
+  --promo-secondary: #34516c;
+  --promo-title: #10263b;
+  background:
+    radial-gradient(ellipse at 83% 67%, #afd5fc, transparent 61%),
+    linear-gradient(115deg, #f6fbff 17%, #edf6ff 66%, #d3e8ff);
+}
+
+.dashboard-promo-slide[data-dashboard-promo-slide="email"] {
+  --promo-artwork-position: 50% 0%;
+}
+
+.dashboard-promo-slide[data-dashboard-promo-slide="tariff"] {
+  --promo-artwork-position: 100% 0%;
+}
+
+.dashboard-promo-slide[data-dashboard-promo-slide="channel"] {
+  --promo-artwork-position: 0% 100%;
+}
+
+.dashboard-promo-slide[data-dashboard-promo-slide="gift"] {
+  --promo-artwork-position: 50% 100%;
+}
+
+.dashboard-promo-slide[data-dashboard-promo-slide="earnings"] {
+  --promo-artwork-position: 100% 100%;
+}
+
+.dashboard-promo-slide[data-dashboard-promo-slide="connection"] {
+  --promo-artwork: url("../../assets/cabinet-robot/banner-connection.webp");
+  --promo-artwork-size: contain;
+  --promo-artwork-position: center;
+}
+
+.dashboard-promo-artwork {
+  width: min(100%, 156px);
+  aspect-ratio: 1;
+  background:
+    var(--promo-artwork) var(--promo-artwork-position) / var(--promo-artwork-size) no-repeat;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .dashboard-promo-artwork {
+    transition: transform 250ms ease;
+  }
+
+  .dashboard-promo-slide:hover .dashboard-promo-artwork {
+    transform: scale(1.04);
+  }
+}

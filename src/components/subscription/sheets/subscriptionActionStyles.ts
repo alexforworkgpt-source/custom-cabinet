@@ -29,5 +29,12 @@ export const subscriptionActionStyles = {
   close:
     'flex h-11 w-11 shrink-0 items-center justify-center text-sm text-dark-400 hover:text-dark-200 sm:h-auto sm:w-auto',
   fields: 'space-y-3 sm:space-y-4',
+  deviceHeader: 'mb-2 flex items-center justify-between gap-2 sm:mb-3',
+  deviceFields: 'space-y-2.5 sm:space-y-3',
   counter: 'flex items-center justify-center gap-4 sm:gap-6',
+  counterValue: 'min-w-14 text-center',
+  counterNumber: 'text-3xl font-bold leading-none tabular-nums text-dark-100',
+  deviceLimit: 'text-center text-xs leading-5 text-dark-300 sm:text-sm',
+  devicePrice:
+    'inline-flex flex-wrap justify-center gap-x-2 rounded-full bg-dark-700/35 px-2.5 py-1 text-xs text-dark-300',
 };

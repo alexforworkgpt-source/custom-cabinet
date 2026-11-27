@@ -25,7 +25,9 @@ const cases = [
 
 for (const theme of ['light', 'dark']) {
   for (const scenario of cases) {
-    test(`renewal device guidance ${scenario.name} ${theme} @critical-flow`, async ({ page }) => {
+    test(`renewal stays focused on periods ${scenario.name} ${theme} @critical-flow`, async ({
+      page,
+    }) => {
       const { apiRequests } = await prepareAuthenticatedPage(page, {
         language: 'ru',
         responses: {
@@ -58,14 +60,8 @@ for (const theme of ['light', 'dark']) {
         Date.now = () => Date.parse('2026-10-20T00:00:00Z');
       }, theme);
       await page.goto('/subscriptions/42/renew');
-      const info = page.locator('[data-renewal-info]');
-      const guidance = info.getByRole('note');
-      await expect(guidance).toBeVisible();
-      await expect(guidance).toHaveText(scenario.hint);
-      await expect(guidance.locator('svg')).toHaveCount(1);
-      await expect(info.getByText('Продление с текущими параметрами', { exact: true })).toHaveCount(
-        0,
-      );
+      await expect(page.locator('[data-renewal-info]')).toHaveCount(0);
+      await expect(page.getByText(scenario.hint, { exact: true })).toHaveCount(0);
       await page.getByRole('button', { name: /^30 дней/ }).click();
       await expect(page.locator('[data-renewal-summary]').getByRole('note')).toBeVisible();
       expect(

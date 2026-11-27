@@ -138,7 +138,7 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 describe('quick top-up feedback', () => {
-  it('shows an accessible pending state immediately, sends one request, and recovers after failure', async () => {
+  it('shows an accessible pending state before the request settles, sends one request, and recovers after failure', async () => {
     const request = deferred<never>();
     mocks.createTopUp.mockReturnValue(request.promise);
     const submit = await renderTopUp();
@@ -146,7 +146,7 @@ describe('quick top-up feedback', () => {
     fireEvent.click(submit);
     fireEvent.click(submit);
 
-    const pending = screen.getByRole('button', { name: 'Processing…' });
+    const pending = await screen.findByRole('button', { name: 'Processing…' });
     expect((pending as HTMLButtonElement).disabled).toBe(true);
     expect(pending.getAttribute('aria-busy')).toBe('true');
     await waitFor(() => expect(mocks.createTopUp).toHaveBeenCalledTimes(1));

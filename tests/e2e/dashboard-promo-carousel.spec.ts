@@ -50,6 +50,7 @@ const promoResponses = {
 test('shows personalized promo actions above the fortune wheel in priority order', async ({
   page,
 }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   const { apiRequests, unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
     featureFlags: {
       referralEnabled: true,
@@ -65,25 +66,9 @@ test('shows personalized promo actions above the fortune wheel in priority order
   const wheel = page.getByRole('link', { name: /Try your luck/ });
   await expect(carousel.getByRole('heading', { name: 'Link Telegram' })).toBeVisible();
   await expect(carousel.getByRole('button', { name: 'Show slide 5 of 5' })).toBeVisible();
-  const artMotion = await carousel.locator('[data-dashboard-promo-art]').evaluate((element) => {
-    const style = getComputedStyle(element);
-    return {
-      name: style.animationName,
-      duration: style.animationDuration,
-      iterationCount: style.animationIterationCount,
-      timingFunction: style.animationTimingFunction,
-    };
-  });
-  expect(artMotion).toEqual({
-    name: 'float',
-    duration: '3s',
-    iterationCount: 'infinite',
-    timingFunction: 'ease-in-out',
-  });
-  await expect(carousel.locator('[data-dashboard-promo-detail-art]')).toHaveCSS(
-    'animation-name',
-    'none',
-  );
+  const artwork = carousel.locator('[data-dashboard-promo-art]');
+  await expect(artwork).toHaveCSS('background-image', /banner-objects/);
+  await expect(artwork).toHaveCSS('animation-name', 'none');
   const [carouselBox, wheelBox] = await Promise.all([carousel.boundingBox(), wheel.boundingBox()]);
   if (!carouselBox || !wheelBox)
     throw new Error('Promo carousel and fortune wheel must be visible');
@@ -109,6 +94,7 @@ test('shows personalized promo actions above the fortune wheel in priority order
 });
 
 test('prioritizes email setup when Telegram is already linked', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await prepareAuthenticatedPage(page, {
     user: {
       ...browserTestUser,
@@ -127,6 +113,7 @@ test('prioritizes email setup when Telegram is already linked', async ({ page })
 });
 
 test('does not recommend linking email when Google authorization is linked', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await prepareAuthenticatedPage(page, {
     user: {
       ...browserTestUser,
@@ -155,6 +142,7 @@ test('does not recommend linking email when Google authorization is linked', asy
 });
 
 test('does not recommend linking email when Yandex authorization is linked', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await prepareAuthenticatedPage(page, {
     user: {
       ...browserTestUser,

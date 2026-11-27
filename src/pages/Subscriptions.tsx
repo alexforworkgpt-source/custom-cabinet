@@ -14,6 +14,7 @@ import SubscriptionListCard from '../components/subscription/SubscriptionListCar
 import TrialOfferCard from '../components/dashboard/TrialOfferCard';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
+import { fadeIn } from '@/components/motion/transitions';
 import { WebBackButton } from '@/components/WebBackButton';
 
 function EmptyState({ onBuy }: { onBuy: () => void }) {
@@ -126,9 +127,9 @@ export default function Subscriptions() {
   return (
     <PageEntrance className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
-        <WebBackButton to="/" />
-        <h1 className="truncate text-xl font-bold" style={{ color: g.text }}>
+      <div className="flex items-end justify-between gap-3">
+        <WebBackButton to="/" inPageHeading />
+        <h1 className="truncate text-2xl font-bold sm:text-3xl" style={{ color: g.text }}>
           {t('subscriptions.title', 'Мои подписки')}
         </h1>
         {/* «+ Купить ещё» — только если уже есть платная активная подписка */}
@@ -185,7 +186,7 @@ export default function Subscriptions() {
 
       {/* Empty state: показываем триал, если доступен; иначе — обычный empty */}
       {hasNoSubscriptions && !trialLoading && trialInfo?.is_available && (
-        <PageEntranceItem className="space-y-4">
+        <PageEntranceItem variants={fadeIn} className="space-y-4">
           <TrialOfferCard
             trialInfo={trialInfo}
             balanceKopeks={balanceData?.balance_kopeks ?? 0}
@@ -207,14 +208,17 @@ export default function Subscriptions() {
         </PageEntranceItem>
       )}
       {hasNoSubscriptions && !trialLoading && !trialInfo?.is_available && (
-        <PageEntranceItem>
+        <PageEntranceItem variants={fadeIn}>
           <EmptyState onBuy={() => navigate('/subscription/purchase')} />
         </PageEntranceItem>
       )}
 
       {/* Subscription grid */}
       {subscriptions.length > 0 && (
-        <PageEntranceItem className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:[&>*:last-child:nth-child(odd)]:col-span-2">
+        <PageEntranceItem
+          variants={fadeIn}
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:[&>*:last-child:nth-child(odd)]:col-span-2"
+        >
           {subscriptions.map((sub) => (
             <SubscriptionListCard
               key={sub.id}

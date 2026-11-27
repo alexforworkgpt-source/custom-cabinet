@@ -49,10 +49,19 @@ const activeSubscriptionResponses = {
   },
 };
 
-test('keeps white content on filled actions for the operator accent', async ({ page }) => {
+test('keeps the Dashboard and Support actions white on a bright operator accent', async ({
+  page,
+}) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
     responses: {
       ...activeSubscriptionResponses,
+      '/api/cabinet/info/support-config': {
+        tickets_enabled: true,
+        support_type: 'tickets',
+        support_url: null,
+        support_username: null,
+      },
+      '/api/cabinet/tickets': { items: [], total: 0, page: 1, per_page: 20 },
       '/api/cabinet/branding/colors': {
         accent: '#0EA5E9',
         darkBackground: '#000000',
@@ -77,15 +86,29 @@ test('keeps white content on filled actions for the operator accent', async ({ p
   const connectIcon = connectDevice.locator('svg').first();
 
   await expect(connectDevice).toBeVisible();
+  const manage = page.getByRole('button', { name: 'Manage subscription' });
+  await expect(manage).toHaveCSS('background-color', 'rgb(10, 116, 163)');
+  await expect(manage).toHaveCSS('color', 'rgb(255, 255, 255)');
   await expect(connectTitle).toHaveCSS('color', 'rgb(255, 255, 255)');
   await expect(connectIcon).toHaveCSS('color', 'rgb(255, 255, 255)');
   expect(
     await connectDevice.evaluate((element) => getComputedStyle(element).backgroundImage),
-  ).toContain('rgba(14, 165, 233, 0.95)');
+  ).toContain('rgb(10, 116, 163)');
   expect([...unexpectedApiRequests]).toEqual([]);
+
+  await page.goto('/support');
+  const newTicket = page.getByRole('button', { name: 'New Ticket', exact: true });
+  await expect(newTicket).toHaveCSS('color', 'rgb(255, 255, 255)');
+  await expect(newTicket).toHaveCSS('background-color', 'rgb(10, 116, 163)');
+  await expect(newTicket.getByText('New Ticket', { exact: true })).toHaveCSS(
+    'color',
+    'rgb(255, 255, 255)',
+  );
 });
 
-test('shows the traffic refresh countdown before restoring the action', async ({ page }) => {
+test('loads traffic automatically even when the refresh response is rate limited', async ({
+  page,
+}) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
     responses: {
       ...activeSubscriptionResponses,
@@ -103,14 +126,10 @@ test('shows the traffic refresh countdown before restoring the action', async ({
     }
   });
   await page.goto('/');
-  const refreshButton = page.locator('[data-traffic-refresh]');
-
-  await expect(refreshButton).toContainText(/^[123]s$/);
-  await expect(refreshButton).toHaveText('Refresh', { timeout: 5000 });
-  await expect(refreshButton).toBeEnabled();
-  await refreshButton.click();
-  await expect(refreshButton).toHaveText('3s');
-  expect(refreshRequests).toBe(2);
+  const traffic = page.getByRole('progressbar', { name: /Traffic/ });
+  await expect(traffic).toHaveAttribute('aria-valuenow', '99');
+  await expect(page.getByRole('button', { name: 'Refresh' })).toHaveCount(0);
+  expect(refreshRequests).toBe(1);
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
@@ -180,54 +199,37 @@ test('uses restrained accent states for key secondary actions', async ({ page })
     expect(connectPresentation.backgroundImage).toContain('conic-gradient');
     const accentRgb = await page.evaluate(() => {
       const probe = document.createElement('span');
-      probe.className = 'bg-accent-500';
+      probe.style.backgroundColor = 'rgb(var(--color-accent-with-white-text))';
       document.body.appendChild(probe);
       const color = getComputedStyle(probe).backgroundColor;
       probe.remove();
       return color;
     });
-    const translucentAccent = accentRgb.replace(/^rgb\((.+)\)$/, 'rgba($1, 0.95)');
     expect(connectPresentation.backgroundImage).toContain(
-      `linear-gradient(${translucentAccent}, ${translucentAccent})`,
+      `linear-gradient(${accentRgb}, ${accentRgb})`,
     );
 
-    const onAccentColor = await page.evaluate(() => {
-      const probe = document.createElement('span');
-      probe.className = 'text-on-accent';
-      document.body.appendChild(probe);
-      const color = getComputedStyle(probe).color;
-      probe.remove();
-      return color;
-    });
+    const onAccentColor = 'rgb(255, 255, 255)';
     await expect(connectDevice.locator('.text-sm.font-semibold')).toHaveCSS('color', onAccentColor);
 
-    const refreshButton = page.locator('[data-traffic-refresh]');
     const trafficPercentage = page.locator('[data-traffic-percentage]');
     const trafficCard = page.getByRole('region', { name: 'Subscription active', exact: true });
     await expect(trafficPercentage).toHaveText('99%');
     expect(
       await trafficCard.evaluate((element) => element.scrollWidth <= element.clientWidth),
     ).toBe(true);
-    const [refreshBox, percentageBox, cardBox] = await Promise.all([
-      refreshButton.boundingBox(),
+    const [percentageBox, cardBox] = await Promise.all([
       trafficPercentage.boundingBox(),
       trafficCard.boundingBox(),
     ]);
-    if (!refreshBox || !percentageBox || !cardBox) {
-      throw new Error('Traffic refresh and percentage must have measurable layout boxes');
-    }
-    expect(refreshBox.width).toBeGreaterThanOrEqual(44);
-    expect(refreshBox.height).toBeGreaterThanOrEqual(44);
-    for (const box of [refreshBox, percentageBox]) {
-      expect(box.x).toBeGreaterThanOrEqual(cardBox.x);
-      expect(box.x + box.width).toBeLessThanOrEqual(cardBox.x + cardBox.width);
-    }
-    expect(refreshBox.y + refreshBox.height).toBeLessThanOrEqual(percentageBox.y);
+    if (!percentageBox || !cardBox) throw new Error('Traffic percentage must be visible');
+    expect(percentageBox.x).toBeGreaterThanOrEqual(cardBox.x);
+    expect(percentageBox.x + percentageBox.width).toBeLessThanOrEqual(cardBox.x + cardBox.width);
 
     const manageSubscription = page.getByRole('button', { name: 'Manage subscription' });
     await expect(manageSubscription).toHaveCSS('border-top-width', '1px');
-    await expect(manageSubscription).toHaveClass(/bg-champagne-50\/5/);
-    await expect(manageSubscription).toHaveClass(/text-champagne-50/);
+    await expect(manageSubscription).toHaveCSS('background-color', accentRgb);
+    await expect(manageSubscription).toHaveCSS('color', onAccentColor);
     await expect(manageSubscription.locator('svg')).toHaveCount(1);
 
     const copyLink = page.getByRole('button', { name: 'Copy link' });
@@ -260,3 +262,39 @@ test('uses restrained accent states for key secondary actions', async ({ page })
 
   expect([...unexpectedApiRequests]).toEqual([]);
 });
+
+for (const trial of [false, true]) {
+  test(`expired ${trial ? 'trial' : 'paid subscription'} uses the active Dashboard button animation`, async ({
+    page,
+  }) => {
+    const expired = {
+      ...subscription,
+      status: 'expired',
+      is_trial: trial,
+      is_expired: true,
+      is_active: false,
+      days_left: 0,
+      subscription_url: null,
+    };
+    await prepareAuthenticatedPage(page, {
+      language: 'ru',
+      responses: {
+        ...activeSubscriptionResponses,
+        '/api/cabinet/subscription': { has_subscription: true, subscription: expired },
+        '/api/cabinet/subscriptions': { subscriptions: [expired], multi_tariff_enabled: false },
+      },
+    });
+    await page.goto('/');
+    const banner = page.getByRole('region', {
+      name: trial ? 'Пробный период истёк' : 'Подписка истекла',
+      exact: true,
+    });
+    const action = banner.getByRole('button', {
+      name: trial ? 'Управление подпиской' : 'Продлить',
+      exact: true,
+    });
+    await expect(action).toBeVisible();
+    // The spring writes transform each frame. A CSS transition on transform delays those updates.
+    await expect(action).toHaveCSS('transition-property', 'box-shadow');
+  });
+}

@@ -14,7 +14,7 @@ import type { SbpRecurringInfo, SubscriptionListItem } from '../types';
 import { Card } from '@/components/data-display/Card';
 import { Button } from '@/components/primitives/Button';
 import { BackIcon } from '@/components/icons';
-import { staggerItem } from '@/components/motion/transitions';
+import { fadeIn } from '@/components/motion/transitions';
 import { PageEntrance } from '@/components/motion/PageEntrance';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
@@ -172,21 +172,21 @@ export default function SavedCards() {
     // stay stuck at their initial variant (opacity 0) after a hard refresh
     <PageEntrance key={isLoading ? 'loading' : 'ready'} className="space-y-6">
       {/* Header */}
-      <motion.div variants={staggerItem} className="flex items-center gap-3">
+      <div className="flex items-end gap-3">
         <button
           onClick={() => navigate('/balance')}
-          className="flex h-10 w-10 items-center justify-center rounded-linear border border-dark-700/30 bg-dark-800/50 text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-dark-100"
+          className="-mb-2 flex h-10 w-10 shrink-0 items-center self-start sm:-mb-1 justify-center rounded-linear border border-dark-700/30 bg-dark-800/50 text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-dark-100"
         >
           <BackIcon className="h-5 w-5" />
         </button>
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
           {t('balance.savedCards.pageTitle')}
         </h1>
-      </motion.div>
+      </div>
 
       {/* Loading state */}
       {isLoading && (
-        <motion.div variants={staggerItem}>
+        <motion.div variants={fadeIn}>
           <Card size="sm">
             <SkeletonGroup className="space-y-3">
               {[1, 2].map((i) => (
@@ -211,7 +211,7 @@ export default function SavedCards() {
 
       {/* Error state */}
       {isError && (
-        <motion.div variants={staggerItem}>
+        <motion.div variants={fadeIn}>
           <Card size="lg">
             <div className="py-12 text-center">
               <div className="text-error-400">{t('balance.savedCards.loadError')}</div>
@@ -222,7 +222,7 @@ export default function SavedCards() {
 
       {/* Cards List */}
       {!isLoading && !isError && savedCards && savedCards.length > 0 ? (
-        <motion.div variants={staggerItem}>
+        <motion.div variants={fadeIn}>
           <Card size="sm">
             <div className="space-y-3">
               {savedCards.map((card) => (
@@ -260,7 +260,7 @@ export default function SavedCards() {
         </motion.div>
       ) : !isLoading && !isError && savedCards ? (
         /* Empty state - only show when data loaded and empty */
-        <motion.div variants={staggerItem}>
+        <motion.div variants={fadeIn}>
           <Card size="lg">
             <div className="py-12 text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-linear-lg bg-dark-800">
@@ -277,7 +277,7 @@ export default function SavedCards() {
           when at least one non-trial subscription has an active binding;
           hidden entirely when the feature is off or nothing is bound. */}
       {sbpBindings.length > 0 && (
-        <motion.div variants={staggerItem}>
+        <motion.div variants={fadeIn}>
           <Card size="sm">
             <h2 className="mb-3 text-sm font-semibold text-dark-100">
               {t('balance.savedCards.sbpSection')}

@@ -1,0 +1,193 @@
+.subscription-hero--management {
+  --hero-padding: 0px;
+  --hero-tile-surface: #142238;
+  --hero-tile-border: #344c68;
+  --hero-tile-text: #f1f7ff;
+  --hero-tile-muted: #b5c8df;
+  --hero-icon: #9fd5ff;
+  --hero-icon-surface: #2a4767;
+  grid-template-rows: auto minmax(98px, auto) auto;
+  gap: 0 4px;
+  padding: 18px 0 0;
+  border: 0;
+  border-radius: 17px 17px 6px 6px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.light .subscription-hero--management {
+  --hero-tile-surface: #f7fbff;
+  --hero-tile-border: #d3e4f4;
+  --hero-tile-text: #10263d;
+  --hero-tile-muted: #425b75;
+  --hero-icon: #125daa;
+  --hero-icon-surface: #e0efff;
+}
+
+.subscription-hero--management .subscription-hero-horizon {
+  grid-area: 1 / 1 / 3 / -1;
+  position: relative;
+  margin-block: -18px -14px;
+  background: #10213b;
+}
+
+.subscription-hero--management .subscription-hero-horizon::before {
+  inset-block-start: clamp(-112px, -11vw, -44px);
+  width: min(100%, 780px);
+}
+
+.subscription-hero--management .subscription-hero-horizon::after {
+  background:
+    linear-gradient(90deg, #101c30, #101e32bd 24%, transparent 72%),
+    radial-gradient(ellipse at 96% 27%, #2d86e758, transparent 46%);
+}
+
+.subscription-hero--management .subscription-hero-portrait {
+  --figure-width: clamp(238px, 72vw, 385px);
+  inset-block: -18px -14px;
+  inset-inline: -13px 0;
+  border-start-end-radius: 17px;
+}
+
+.subscription-hero--management .subscription-hero-portrait img {
+  inset-block-start: 1px;
+  inset-inline-start: calc(var(--figure-width) * -0.01);
+}
+
+.subscription-hero--management .subscription-hero-portrait::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 9px;
+  inset-inline-end: 4%;
+  width: clamp(38px, 15vw, 65px);
+  aspect-ratio: 1.3;
+  rotate: 15deg;
+  background: #82d0ffbb;
+  filter: drop-shadow(0 0 8px #77bcff);
+  clip-path: polygon(
+    evenodd,
+    5% 19%,
+    28% 41%,
+    50% 0%,
+    73% 41%,
+    96% 19%,
+    82% 86%,
+    18% 86%,
+    5% 19%,
+    11% 29%,
+    21% 78%,
+    78% 78%,
+    89% 30%,
+    72% 50%,
+    50% 13%,
+    29% 50%,
+    11% 29%
+  );
+}
+
+.subscription-hero--management .subscription-hero-badges {
+  margin-inline: 14px -10px;
+  padding-block-end: 4px;
+}
+
+.subscription-hero--management .subscription-hero-term {
+  align-self: center;
+  margin-inline: 14px -29px;
+  padding-block: 0 7px;
+  color: #d0e1f6;
+}
+
+.subscription-hero--management .subscription-hero-date {
+  display: block;
+  color: #f7fbff;
+  font-size: clamp(16px, 4.9vw, 23px);
+  font-weight: 700;
+  line-height: 1.25;
+  text-wrap: pretty;
+}
+
+.subscription-hero--management .subscription-hero-details {
+  background: transparent;
+}
+
+.subscription-hero--management .subscription-hero-metric,
+.subscription-hero--management .subscription-hero-usage {
+  border-color: var(--hero-tile-border);
+  color: var(--hero-tile-muted);
+  background: var(--hero-tile-surface);
+}
+
+.subscription-hero--management .subscription-hero-metric {
+  min-height: 59px;
+  border-radius: 12px;
+  box-shadow: 0 2px 5px #0f254018;
+}
+
+.subscription-hero--management .subscription-hero-metric dd {
+  color: var(--hero-tile-text);
+}
+
+.subscription-hero--management .subscription-hero-icon {
+  border-color: transparent;
+  color: var(--hero-icon);
+  background: var(--hero-icon-surface);
+}
+
+.subscription-hero--management .subscription-hero-managed dt {
+  color: rgb(var(--color-dark-400));
+}
+
+.subscription-hero--management .subscription-hero-managed dd {
+  color: rgb(var(--color-dark-50));
+}
+
+:is(.subscription-hero--management-expired, .subscription-hero--management-expired-trial)
+  [data-subscription-status] {
+  border-color: #ff839966;
+  background: #cf456733;
+  color: #ffacba;
+}
+
+.subscription-hero--management-disabled [data-subscription-status] {
+  border-color: #8fb8ee55;
+  background: #22354e;
+  color: #d4e4f7;
+}
+
+.subscription-hero--management-inactive .subscription-hero-portrait {
+  mask-image: linear-gradient(#000 calc(100% - 24px), transparent);
+}
+
+@media (min-width: 640px) {
+  .subscription-hero--management {
+    grid-template-rows: auto minmax(121px, auto) auto;
+  }
+
+  .subscription-hero--management .subscription-hero-portrait img {
+    inset-inline-start: max(-10px, calc(100% - var(--figure-width) * 0.8));
+  }
+}
+
+@media (min-width: 480px) {
+  .subscription-hero--management-inactive {
+    grid-template-rows: auto minmax(clamp(98px, 50vw - 144px, 176px), auto) auto;
+  }
+
+  .subscription-hero--management-inactive .subscription-hero-portrait img {
+    inset-block-start: -5px;
+  }
+}
+
+@media (max-width: 359px) {
+  .subscription-hero--management-limited .subscription-hero-badges {
+    margin-inline-end: -25px;
+  }
+
+  .subscription-hero--management-expired .subscription-hero-portrait img {
+    inset-inline-start: 7px;
+  }
+
+  .subscription-hero--management .subscription-hero-term {
+    margin-inline-end: -4px;
+  }
+}

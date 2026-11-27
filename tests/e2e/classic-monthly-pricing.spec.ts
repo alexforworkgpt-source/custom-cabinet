@@ -2,6 +2,50 @@ import { expect, test } from '@playwright/test';
 import { prepareAuthenticatedPage } from './cabinetTestHarness';
 import { classicPricingDiscount, classicPurchaseOptions } from './classicPurchasePricingFixture';
 
+test('classic period cards reveal prices only after the initial discount is known', async ({
+  page,
+}) => {
+  await prepareAuthenticatedPage(page, {
+    language: 'ru',
+    responses: {
+      '/api/cabinet/subscription/purchase-options': classicPurchaseOptions,
+      '/api/cabinet/subscription/purchase-preview': {
+        total_price_kopeks: 8_415,
+        total_price_label: '84.15 ₽',
+        breakdown: [],
+        balance_kopeks: 125_000,
+        balance_label: '1 250 ₽',
+        missing_amount_kopeks: 0,
+        can_purchase: true,
+      },
+    },
+  });
+  let finishDiscount!: () => void;
+  const discountPending = new Promise<void>((resolve) => {
+    finishDiscount = resolve;
+  });
+  await page.route('**/api/cabinet/promo/active-discount', async (route) => {
+    await discountPending;
+    await route.fulfill({ json: classicPricingDiscount });
+  });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/subscription/purchase', { waitUntil: 'domcontentloaded' });
+  const wizard = page.locator('[data-purchase-layout="classic"]');
+  const period = wizard.getByRole('button', { name: /30 дней/ });
+  let loadingBox: Awaited<ReturnType<typeof period.boundingBox>>;
+  try {
+    await expect(period).toBeVisible();
+    await expect(period).toHaveAttribute('aria-pressed', 'true');
+    expect(await period.innerText()).toBe('30 дней');
+    loadingBox = await period.boundingBox();
+  } finally {
+    finishDiscount();
+  }
+  await expect(period.getByText('84.15 ₽', { exact: true })).toBeVisible();
+  await expect(period.getByText('84 ₽/мес', { exact: true })).toBeVisible();
+  expect(await period.boundingBox()).toEqual(loadingBox);
+});
+
 for (const theme of ['light', 'dark'] as const) {
   for (const language of ['ru', 'en', 'fa']) {
     test(`Classic monthly pricing without outer panel in ${theme} ${language}`, async ({

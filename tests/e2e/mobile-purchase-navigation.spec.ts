@@ -27,7 +27,7 @@ const tariff = {
 };
 
 for (const count of [0, 1, 2])
-  test(`catalogue navigation is independent of ${count} existing subscriptions and hides during checkout`, async ({
+  test(`purchase navigation is independent of ${count} existing subscriptions and stays during checkout`, async ({
     page,
   }) => {
     const subscriptions = Array.from({ length: count }, (_, index) => ({
@@ -63,8 +63,7 @@ for (const count of [0, 1, 2])
     }
     await page.getByRole('button', { name: 'Purchase', exact: true }).click();
     await expect(page.getByRole('button', { name: /Back/ })).toBeVisible();
-    if ((page.viewportSize()?.width ?? 1280) < 1024) await expect(navigation).toHaveCount(0);
-    else await expect(navigation).toBeVisible();
+    await expect(navigation).toBeVisible();
     await page.getByRole('button', { name: /Back/ }).click();
     await expect(page.getByText('Local catalogue', { exact: true })).toBeVisible();
     await expect(navigation).toBeVisible();
@@ -79,7 +78,7 @@ for (const count of [0, 1, 2])
     expect([...fixture.unexpectedApiRequests]).toEqual([]);
   });
 
-test('the classic purchase wizard has no mobile panel from period selection through confirmation', async ({
+test('the classic purchase wizard retains navigation from period selection through confirmation', async ({
   page,
 }) => {
   const fixture = await prepareMobileNavigation(page, {
@@ -97,10 +96,21 @@ test('the classic purchase wizard has no mobile panel from period selection thro
   await page.goto('/subscription/purchase');
   await page.getByRole('button', { name: /30 дней/ }).waitFor();
   for (let step = 0; step < 3; step++) {
-    if ((page.viewportSize()?.width ?? 1280) < 1024)
-      await expect(mainNavigation(page)).toHaveCount(0);
-    else await expect(mainNavigation(page)).toBeVisible();
+    await expect(mainNavigation(page)).toBeVisible();
     if (step < 2) await page.getByRole('button', { name: /^Next/ }).click();
+  }
+  if ((page.viewportSize()?.width ?? 1280) < 1024) {
+    const navigation = mainNavigation(page);
+    const pay = page.getByRole('button', { name: 'Pay', exact: true });
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const [paymentBox, navigationBox] = await Promise.all([
+      pay.boundingBox(),
+      navigation.boundingBox(),
+    ]);
+    if (!paymentBox || !navigationBox) throw new Error('Purchase and navigation must be visible');
+    expect(paymentBox.y + paymentBox.height).toBeLessThan(navigationBox.y);
+    await navigation.getByRole('link', { name: 'Dashboard', exact: true }).click();
+    await expect(page).toHaveURL('/');
   }
   expect(
     fixture.apiRequests.filter((request) => /^POST .*\/subscription\/purchase$/.test(request)),

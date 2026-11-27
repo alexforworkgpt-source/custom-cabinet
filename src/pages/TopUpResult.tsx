@@ -40,8 +40,8 @@ function PendingState({ amountKopeks }: { amountKopeks: number | null }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="flex flex-col items-center gap-6 text-center"
     >
       <Spinner className="h-16 w-16 border-[3px]" />
@@ -74,8 +74,8 @@ function SuccessState({
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="flex flex-col items-center gap-6 text-center"
     >
       <AnimatedCheckmark />
@@ -110,8 +110,8 @@ function FailedState({ amountKopeks }: { amountKopeks: number | null }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="flex flex-col items-center gap-6 text-center"
     >
       <AnimatedCrossmark />
@@ -141,8 +141,8 @@ function TimeoutState({ onRetry, onGoBack }: { onRetry: () => void; onGoBack: ()
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="flex flex-col items-center gap-6 text-center"
     >
       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-dark-800/50">

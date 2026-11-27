@@ -95,3 +95,81 @@ test('renders selected news metadata without nested buttons', async ({ page }) =
   expect(consoleErrors.filter((message) => message.includes('cannot be a descendant'))).toEqual([]);
   expect([...unexpectedApiRequests]).toEqual([]);
 });
+
+test('opens Admin at the top with mobile bottom navigation and Profile gutters', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 640 });
+  await prepareAuthenticatedPage(page, {
+    responses: {
+      ...adminAccessResponses,
+      '/api/cabinet/auth/me/permissions': {
+        permissions: ['*:*'],
+        roles: ['audit_admin'],
+        role_level: 100,
+      },
+      '/api/cabinet/admin/stats/system-info': {},
+      '/api/cabinet/admin/stats/dashboard': { subscriptions: {} },
+    },
+  });
+  await page.goto('/profile');
+
+  const profileHeading = page.getByRole('heading', { name: 'Profile', level: 1 });
+  const profileBox = await profileHeading.boundingBox();
+  if (!profileBox) throw new Error('Expected the Profile content to be visible');
+
+  const adminLink = page.getByRole('main').getByRole('link', { name: 'Admin', exact: true });
+  await adminLink.scrollIntoViewIfNeeded();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await adminLink.click();
+
+  await expect(page).toHaveURL('/admin');
+  const heading = page.getByRole('heading', { name: 'Admin Panel' });
+  await expect(heading).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(heading).toBeInViewport();
+
+  const topMenu = page.getByRole('banner');
+  await expect(topMenu).toBeHidden();
+  const bottomMenu = page.getByRole('navigation');
+  const profileLink = bottomMenu.getByRole('link', { name: 'Profile', exact: true });
+  await expect(profileLink).toBeVisible();
+  await expect(profileLink).toHaveAttribute('aria-current', 'page');
+  await expect(bottomMenu.getByRole('link')).toHaveCount(4);
+
+  for (const name of ['Analytics', 'Users', 'Tariffs & Sales', 'Marketing', 'System', 'Security']) {
+    const group = page.getByRole('heading', { name, level: 2, exact: true });
+    await expect(group).toBeVisible();
+    const card = await group.evaluate((element) => {
+      const card = element.parentElement?.parentElement;
+      if (!card) throw new Error('Expected a card for the group heading');
+      const { left, width } = card.getBoundingClientRect();
+      const badge = element.previousElementSibling;
+      const icon = badge?.querySelector('svg');
+      if (!icon) throw new Error('Expected an icon for the group heading');
+      return {
+        left,
+        width,
+        iconColor: getComputedStyle(icon).color,
+        iconWidth: icon.getBoundingClientRect().width,
+        badgeText: badge?.textContent,
+      };
+    });
+    expect(card.left, name).toBeCloseTo(profileBox.x, 0);
+    expect(card.width, name).toBeCloseTo(profileBox.width, 0);
+    expect(card.iconWidth, name).toBeCloseTo(19.2, 1);
+    expect(card.iconColor, name).toBe('rgb(255, 255, 255)');
+    expect(card.badgeText, name).toBe('');
+  }
+
+  await profileLink.click();
+  await expect(page).toHaveURL('/profile');
+  await adminLink.scrollIntoViewIfNeeded();
+  await adminLink.click();
+  await expect(page).toHaveURL('/admin');
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(
+    topMenu.getByRole('navigation').getByRole('link', { name: 'Profile' }),
+  ).toBeVisible();
+});

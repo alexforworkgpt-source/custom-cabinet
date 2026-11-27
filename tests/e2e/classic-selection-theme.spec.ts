@@ -93,8 +93,11 @@ for (const theme of ['light', 'dark'] as const) {
 
     const month = wizard.getByRole('button', { name: /^30 дней/ });
     const quarter = wizard.getByRole('button', { name: /^90 дней/ });
+    const periodBorderWidth = theme === 'light' ? '2px' : '1px';
+    await expect(quarter).toHaveCSS('border-top-width', periodBorderWidth);
     await verifySelection(month, quarter);
     await quarter.click();
+    await expect(month).toHaveCSS('border-top-width', periodBorderWidth);
     await verifySelection(quarter, month);
     await month.focus();
     await page.keyboard.press('Enter');

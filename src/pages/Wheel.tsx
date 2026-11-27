@@ -16,7 +16,7 @@ import { useNotify } from '@/platform/hooks/useNotify';
 import { Card } from '@/components/data-display/Card/Card';
 import { Button } from '@/components/primitives/Button/Button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { staggerContainer, staggerItem } from '@/components/motion/transitions';
+import { fadeIn, staggerContainer, staggerItem } from '@/components/motion/transitions';
 import { PiCaretDown } from 'react-icons/pi';
 import { StarIcon, CalendarIcon, HistoryIcon, CloseIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -473,16 +473,16 @@ export default function Wheel() {
   };
 
   const header = (
-    <div className="flex items-center gap-3">
-      <WebBackButton to="/profile" />
-      <h1 className="min-w-0 text-2xl font-bold text-dark-50">{t('wheel.title')}</h1>
+    <div className="flex items-end gap-3">
+      <WebBackButton to="/profile" inPageHeading />
+      <h1 className="min-w-0 text-2xl font-bold text-dark-50 sm:text-3xl">{t('wheel.title')}</h1>
     </div>
   );
 
   if (isLoading) {
     return (
-      <PageEntrance className="space-y-4">
-        <PageEntranceItem>{header}</PageEntranceItem>
+      <PageEntrance className="space-y-6">
+        <PageEntranceItem variants={fadeIn}>{header}</PageEntranceItem>
         <PageSkeleton titleWidth="w-40" className="space-y-6 pb-8">
           <Skeleton className="h-4 w-56" />
           <Skeleton variant="card" className="h-80" />
@@ -493,8 +493,8 @@ export default function Wheel() {
 
   if (error || !config) {
     return (
-      <PageEntrance className="space-y-4">
-        <PageEntranceItem>{header}</PageEntranceItem>
+      <PageEntrance className="space-y-6">
+        <PageEntranceItem variants={fadeIn}>{header}</PageEntranceItem>
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-error-500/10">
             <span className="text-4xl">😔</span>
@@ -507,8 +507,8 @@ export default function Wheel() {
 
   if (!config.is_enabled) {
     return (
-      <PageEntrance className="space-y-4">
-        <PageEntranceItem>{header}</PageEntranceItem>
+      <PageEntrance className="space-y-6">
+        <PageEntranceItem variants={fadeIn}>{header}</PageEntranceItem>
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6">
           <div className="flex h-24 w-24 items-center justify-center rounded-full bg-dark-800">
             <span className="text-5xl">🎡</span>
@@ -543,12 +543,12 @@ export default function Wheel() {
     (paymentType === 'telegram_stars' ? !starsEnabled : !config.can_spin);
 
   return (
-    <PageEntrance className="space-y-4 pb-8 sm:space-y-6">
+    <PageEntrance className="space-y-6 pb-8">
       {/* Simple Header */}
-      <PageEntranceItem className="flex items-center justify-between gap-3 sm:block">
+      <PageEntranceItem variants={fadeIn} className="flex items-end justify-between gap-3">
         {header}
         {config.daily_limit > 0 && (
-          <p className="shrink-0 text-dark-400 sm:mt-1">
+          <p className="shrink-0 text-dark-400">
             <span className="sr-only sm:not-sr-only">{t('wheel.spinsRemaining')}: </span>
             <span className="inline-flex items-center rounded-full bg-accent-500/15 px-2 py-0.5 text-sm font-medium text-accent-400">
               {Math.max(0, config.daily_limit - config.user_spins_today)}/{config.daily_limit}
@@ -558,7 +558,7 @@ export default function Wheel() {
       </PageEntranceItem>
 
       {/* Wheel Section */}
-      <Card variants={staggerItem} size="md" className="sm:p-6">
+      <Card variants={fadeIn} size="md" className="sm:p-6">
         <div className="grid gap-4 p-0 sm:gap-6 sm:p-8 lg:grid-cols-[1fr,280px]">
           {/* Left: Wheel and Controls */}
           <div>

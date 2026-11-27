@@ -11,7 +11,6 @@ import { getInsufficientBalanceError, getSavedCartTopUpPath } from '../utils/sub
 import { isUncertainPurchaseOutcome } from '../utils/api-error';
 import { isValidRenewalSnapshot, type RenewalSnapshot } from '../utils/renewalOperation';
 import { getLocalizedApiErrorMessage } from '../utils/api-error-display';
-import { formatDateOrRaw } from '../utils/format';
 import { previewRenewalEndDate } from '../utils/renewalPreview';
 import { useHaptic } from '../platform';
 import { useAuthStore } from '../store/auth';
@@ -21,17 +20,16 @@ import { WebBackButton } from '../components/WebBackButton';
 import { Card } from '../components/data-display';
 import { Button } from '../components/primitives';
 import { SubscriptionFlowSkeleton } from '../components/subscription/SubscriptionFlowSkeleton';
-import { usePurchaseContext } from '../hooks/usePurchaseContext';
 import { RenewalOptions } from '../components/subscription/renewal/RenewalOptions';
 import { RenewalSummary } from '../components/subscription/renewal/RenewalSummary';
-import { RenewalSubscriptionInfo } from '../components/subscription/renewal/RenewalSubscriptionInfo';
-import { PurchaseContextBanners } from '../components/subscription/purchase/PurchaseContextBanners';
-import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
+import { motion } from 'framer-motion';
+import { PageEntrance } from '@/components/motion/PageEntrance';
+import { fadeIn } from '@/components/motion/transitions';
 
 export default function RenewSubscription() {
   const { subscriptionId } = useParams<{ subscriptionId: string }>();
   const subId = subscriptionId ? Number(subscriptionId) : undefined;
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { formatWithCurrency } = useCurrency();
   const targetContract = hasTargetBotContract();
   const usesRenewalOperation = hasRenewalOperationContract();
@@ -71,14 +69,7 @@ export default function RenewSubscription() {
   const ready = queries.every((query) => query.isSuccess && !query.isFetching);
   const isClassic = purchaseQuery.data?.sales_mode === 'classic';
   const balanceKopeks = purchaseQuery.data?.balance_kopeks;
-  const purchaseContext = usePurchaseContext({
-    subscription,
-    purchaseOptions: purchaseQuery.data,
-    tariffs: purchaseQuery.data?.sales_mode === 'tariffs' ? (purchaseQuery.data.tariffs ?? []) : [],
-    showPromoGroup: true,
-    enabled: queries.every((query) => query.isSuccess) && !needsTariff(subscription),
-  });
-  const loading = queries.some((query) => query.isLoading) || purchaseContext.isLoading;
+  const loading = queries.some((query) => query.isLoading);
   const { selectedPeriod, selectPeriod, clearSelection, selectionReset } = useRenewalSelection(
     userId,
     subId,
@@ -216,11 +207,6 @@ export default function RenewSubscription() {
       ? 'subscription.paymentOptionsLoadError'
       : 'subscription.renewOptionsLoadError';
   const missingAmount = error?.match(/^insufficient:(\d+)$/)?.[1];
-  const endDate = formatDateOrRaw(subscription?.end_date, i18n?.language ?? 'ru', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
   const projectedEndDate =
     subscription && selectedOption && !subscription.is_trial && !subscription.is_daily
       ? previewRenewalEndDate(subscription.end_date, selectedOption.period_days)
@@ -228,14 +214,16 @@ export default function RenewSubscription() {
 
   return (
     <PageEntrance className="space-y-4">
-      <div className="flex items-center gap-3">
-        <WebBackButton to={`/subscriptions/${subId}`} />
+      <div className="flex items-end gap-3 pb-2">
+        <WebBackButton to={`/subscriptions/${subId}`} inPageHeading />
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-dark-100">{t('subscription.extend')}</h1>
+          <h1 className="text-xl font-bold leading-8 text-dark-100 min-[360px]:text-2xl sm:text-3xl">
+            {t('subscription.extend')}
+          </h1>
         </div>
       </div>
       {dailyResume && subscription ? (
-        <PageEntranceItem>
+        <motion.div variants={fadeIn}>
           <Card className="space-y-3">
             <p className="text-sm text-dark-400">{t('subscription.dailyRenewalExplanation')}</p>
             <p>
@@ -254,26 +242,9 @@ export default function RenewSubscription() {
               </Link>
             )}
           </Card>
-        </PageEntranceItem>
+        </motion.div>
       ) : loading && !failedQuery ? (
-        <SubscriptionFlowSkeleton
-          mode="renewal"
-          context={purchaseContext}
-          count={optionsQuery.data?.length}
-          conditions={
-            subscription && purchaseQuery.isSuccess ? (
-              <RenewalSubscriptionInfo
-                subscription={subscription}
-                endDate={endDate}
-                maxDeviceLimit={
-                  purchaseQuery.data.sales_mode === 'classic'
-                    ? purchaseQuery.data.devices?.max
-                    : undefined
-                }
-              />
-            ) : undefined
-          }
-        />
+        <SubscriptionFlowSkeleton mode="renewal" count={optionsQuery.data?.length} />
       ) : failedQuery ? (
         <Card>
           <div role="alert" className="space-y-3 text-sm text-error-400">
@@ -301,24 +272,12 @@ export default function RenewSubscription() {
         </Card>
       ) : (
         <>
-          <PurchaseContextBanners context={purchaseContext} />
           {targetContract && !isClassic && canOpenTariffSwitch(subscription) && (
             <Link className="btn-secondary" to={tariffSelectionPath(subId) + '&mode=switch'}>
               {t('subscription.switchTariff.title')}
             </Link>
           )}
-          <PageEntranceItem>
-            <RenewalSubscriptionInfo
-              subscription={subscription}
-              endDate={endDate}
-              maxDeviceLimit={
-                purchaseQuery.data.sales_mode === 'classic'
-                  ? purchaseQuery.data.devices?.max
-                  : undefined
-              }
-            />
-          </PageEntranceItem>
-          <PageEntranceItem>
+          <motion.div variants={fadeIn}>
             <RenewalSummary
               projectedEndDate={projectedEndDate}
               option={selectedOption}
@@ -359,7 +318,7 @@ export default function RenewSubscription() {
                 </button>
               )}
             </RenewalSummary>
-          </PageEntranceItem>
+          </motion.div>
         </>
       )}
     </PageEntrance>

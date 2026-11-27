@@ -1,100 +1,16 @@
-import { useEffect, useRef, useState, type ComponentType } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { motion } from 'framer-motion';
 import { staggerItem } from '@/components/motion/transitions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePlatform } from '@/platform';
-import {
-  ArrowRightIcon,
-  DevicesIcon,
-  GiftIcon,
-  MailIcon,
-  PauseIcon,
-  PlayIcon,
-  ShieldIcon,
-  SubscriptionIcon,
-  TariffsIcon,
-  TelegramIcon,
-  UsersIcon,
-  WalletIcon,
-} from '@/components/icons';
-import type { DashboardPromoSlide, DashboardPromoSlideId } from './dashboardPromoSlides';
+import { ArrowRightIcon, PauseIcon, PlayIcon } from '@/components/icons';
+import type { DashboardPromoSlide } from './dashboardPromoSlides';
+import './DashboardPromoCarousel.css';
 
 const AUTO_ADVANCE_MS = 6000;
 const SWIPE_THRESHOLD_PX = 40;
-
-interface IconProps {
-  className?: string;
-}
-
-interface SlidePresentation {
-  Icon: ComponentType<IconProps>;
-  DetailIcon: ComponentType<IconProps>;
-  gradient: string;
-  glow: string;
-  iconSurface: string;
-  accentText: string;
-}
-
-const PRESENTATION: Record<DashboardPromoSlideId, SlidePresentation> = {
-  telegram: {
-    Icon: TelegramIcon,
-    DetailIcon: ShieldIcon,
-    gradient: 'from-accent-500/20 via-dark-900/95 to-dark-900',
-    glow: 'bg-accent-500/30',
-    iconSurface: 'border-accent-300/30 bg-accent-500/20 text-accent-300',
-    accentText: 'text-accent-300',
-  },
-  email: {
-    Icon: MailIcon,
-    DetailIcon: ShieldIcon,
-    gradient: 'from-success-500/20 via-dark-900/95 to-dark-900',
-    glow: 'bg-success-500/25',
-    iconSurface: 'border-success-300/30 bg-success-500/20 text-success-300',
-    accentText: 'text-success-300',
-  },
-  connection: {
-    Icon: DevicesIcon,
-    DetailIcon: SubscriptionIcon,
-    gradient: 'from-accent-600/20 via-dark-900/95 to-dark-900',
-    glow: 'bg-accent-400/25',
-    iconSurface: 'border-accent-300/30 bg-accent-500/20 text-accent-300',
-    accentText: 'text-accent-300',
-  },
-  tariff: {
-    Icon: TariffsIcon,
-    DetailIcon: ShieldIcon,
-    gradient: 'from-warning-500/20 via-dark-900/95 to-dark-900',
-    glow: 'bg-warning-500/25',
-    iconSurface: 'border-warning-300/30 bg-warning-500/20 text-warning-300',
-    accentText: 'text-warning-300',
-  },
-  channel: {
-    Icon: TelegramIcon,
-    DetailIcon: GiftIcon,
-    gradient: 'from-accent-500/20 via-dark-900/95 to-dark-900',
-    glow: 'bg-accent-400/25',
-    iconSurface: 'border-accent-300/30 bg-accent-500/20 text-accent-300',
-    accentText: 'text-accent-300',
-  },
-  gift: {
-    Icon: GiftIcon,
-    DetailIcon: SubscriptionIcon,
-    gradient: 'from-warning-500/20 via-dark-900/95 to-dark-900',
-    glow: 'bg-warning-400/25',
-    iconSurface: 'border-warning-300/30 bg-warning-500/20 text-warning-300',
-    accentText: 'text-warning-300',
-  },
-  earnings: {
-    Icon: WalletIcon,
-    DetailIcon: UsersIcon,
-    gradient: 'from-success-500/20 via-dark-900/95 to-dark-900',
-    glow: 'bg-success-400/25',
-    iconSurface: 'border-success-300/30 bg-success-500/20 text-success-300',
-    accentText: 'text-success-300',
-  },
-};
 
 interface DashboardPromoCarouselProps {
   slides: DashboardPromoSlide[];
@@ -160,8 +76,6 @@ export default function DashboardPromoCarousel({
   }
 
   const activeSlide = slides[activeIndex] ?? slides[0];
-  const presentation = PRESENTATION[activeSlide.id];
-  const { Icon, DetailIcon } = presentation;
   const showPrevious = () =>
     setActiveIndex((current) => (current - 1 + slides.length) % slides.length);
   const showNext = () => setActiveIndex((current) => (current + 1) % slides.length);
@@ -201,50 +115,31 @@ export default function DashboardPromoCarousel({
             event.preventDefault();
             openTelegramLink(activeSlide.href);
           }}
-          className={`group absolute inset-0 flex animate-fade-in overflow-hidden bg-gradient-to-r ${presentation.gradient} px-5 pb-10 pt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-400 sm:px-6 sm:pb-11 sm:pt-5`}
+          className="dashboard-promo-slide group absolute inset-0 flex overflow-hidden px-5 pb-10 pt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-400 motion-safe:animate-fade-in sm:px-6 sm:pb-11 sm:pt-5"
           aria-label={t(`dashboardPromo.slides.${activeSlide.id}.linkLabel`)}
           data-dashboard-promo-slide={activeSlide.id}
         >
-          <div className="relative z-10 max-w-[68%] sm:max-w-[72%]">
-            <p
-              className={`mb-1 text-[10px] font-bold uppercase tracking-[0.16em] ${presentation.accentText}`}
-            >
+          <div className="relative z-10 max-w-[64%]">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--promo-primary)]">
               {t(`dashboardPromo.slides.${activeSlide.id}.eyebrow`)}
             </p>
-            <h2 className="font-display text-base font-semibold leading-tight text-dark-50 sm:text-xl">
+            <h2 className="font-display text-base font-semibold leading-tight text-[var(--promo-title)] sm:text-xl">
               {t(`dashboardPromo.slides.${activeSlide.id}.title`)}
             </h2>
-            <p className="mt-1 line-clamp-1 text-xs leading-relaxed text-dark-300 sm:line-clamp-2 sm:text-sm">
+            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--promo-secondary)] sm:text-sm">
               {t(`dashboardPromo.slides.${activeSlide.id}.description`)}
             </p>
-            <span
-              className={`mt-2 hidden items-center gap-1 text-xs font-semibold sm:inline-flex ${presentation.accentText}`}
-            >
+            <span className="mt-2 hidden items-center gap-1 text-xs font-semibold text-[var(--promo-primary)] sm:inline-flex">
               {t(`dashboardPromo.slides.${activeSlide.id}.action`)}
-              <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              <ArrowRightIcon className="h-3.5 w-3.5 motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5 rtl:rotate-180" />
             </span>
           </div>
 
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-[42%] overflow-hidden">
-            <div
-              className={`absolute right-[-24px] top-1/2 h-28 w-28 -translate-y-1/2 rounded-full blur-2xl sm:h-36 sm:w-36 ${presentation.glow}`}
-            />
-            <div
-              className="absolute inset-0 animate-float motion-reduce:animate-none"
-              data-dashboard-promo-art
-            >
-              <div
-                className={`absolute right-5 top-1/2 flex h-16 w-16 -translate-y-1/2 rotate-6 items-center justify-center rounded-2xl border shadow-card transition-transform duration-300 group-hover:rotate-3 group-hover:scale-105 sm:right-8 sm:h-20 sm:w-20 ${presentation.iconSurface}`}
-              >
-                <Icon className="h-9 w-9 sm:h-11 sm:w-11" />
-              </div>
-            </div>
-            <div
-              className="absolute right-3 top-5 flex h-8 w-8 -rotate-6 items-center justify-center rounded-xl border border-dark-500/40 bg-dark-800/90 text-dark-200 shadow-soft sm:right-5 sm:top-6 sm:h-9 sm:w-9"
-              data-dashboard-promo-detail-art
-            >
-              <DetailIcon className="h-4 w-4" />
-            </div>
+          <div
+            className="pointer-events-none absolute inset-y-0 end-0 grid w-[42%] place-items-center overflow-hidden pe-1 pb-1.5"
+            aria-hidden="true"
+          >
+            <span className="dashboard-promo-artwork" data-dashboard-promo-art />
           </div>
         </Link>
 

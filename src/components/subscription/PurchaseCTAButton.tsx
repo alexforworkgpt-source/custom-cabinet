@@ -123,6 +123,22 @@ export default function PurchaseCTAButton({
   // geometry: no guessed mode, financial link or API permission is exposed.
   const ambiguousClassic = subscription && !subscription.tariff_id && !isTrial && !requiresTariff;
   const unknownSalesMode = loading && !conditionsKnown && ambiguousClassic;
+  const geometryHints = ambiguousClassic
+    ? [
+        t('subscription.classicRenewHint'),
+        t(
+          isExpired
+            ? isMultiTariff
+              ? 'subscription.cta.renewHint'
+              : 'subscription.cta.expiredHint'
+            : 'subscription.cta.activeHint',
+        ),
+      ]
+    : [];
+  // The tariff list can arrive after a stopped plan and its purchase options.
+  if (isExpired && !requiresTariff && (isDaily || subscription?.status === 'disabled')) {
+    geometryHints.push(t('subscription.cta.renewHint'), t('subscription.cta.expiredHint'));
+  }
   const content = (
     <PurchaseCTAPresentation
       measuring={loading && !preserveFocus}
@@ -134,20 +150,7 @@ export default function PurchaseCTAButton({
       geometryTitles={
         ambiguousClassic ? [t('subscription.extend'), t('subscription.getSubscription')] : []
       }
-      geometryHints={
-        ambiguousClassic
-          ? [
-              t('subscription.classicRenewHint'),
-              t(
-                isExpired
-                  ? isMultiTariff
-                    ? 'subscription.cta.renewHint'
-                    : 'subscription.cta.expiredHint'
-                  : 'subscription.cta.activeHint',
-              ),
-            ]
-          : []
-      }
+      geometryHints={geometryHints}
     />
   );
 

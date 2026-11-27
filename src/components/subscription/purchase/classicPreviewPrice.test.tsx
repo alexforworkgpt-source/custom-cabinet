@@ -163,7 +163,7 @@ describe('Classic final server preview', () => {
     expect(screen.getByText('Итого').closest('[aria-busy]')?.getAttribute('aria-busy')).toBe(
       'true',
     );
-    fireEvent.click(screen.getByRole('button', { name: 'common.next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Далее · 9.90 ₽' }));
     expect(screen.getByRole('button', { name: 'subscription.pay' }).hasAttribute('disabled')).toBe(
       true,
     );
@@ -282,8 +282,9 @@ describe('Classic final server preview', () => {
         }),
     );
     fireEvent.click(screen.getByRole('button', { name: /2 месяца/ }));
-    expect(screen.queryByRole('button', { name: 'Далее · 9.90 ₽' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'common.next' }));
+    const next = screen.getByRole('button', { name: 'Далее · 9.90 ₽' });
+    expect(next.getAttribute('aria-busy')).toBe('true');
+    fireEvent.click(next);
     expect(screen.getByRole('button', { name: 'subscription.pay' }).hasAttribute('disabled')).toBe(
       true,
     );

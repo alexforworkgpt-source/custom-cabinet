@@ -16,6 +16,8 @@ import { sheetInsets } from './sheetInsets';
 import {
   backdrop,
   backdropTransition,
+  fadeIn,
+  fadeInTransition,
   sheetSlideUp,
   sheetTransition,
 } from '../../motion/transitions';
@@ -106,6 +108,7 @@ export interface SheetContentProps
   enableDragToClose?: boolean;
   closeThreshold?: number;
   fullHeight?: boolean;
+  stationary?: boolean;
 }
 
 export const SheetContent = forwardRef<HTMLDivElement, SheetContentProps>(
@@ -118,6 +121,7 @@ export const SheetContent = forwardRef<HTMLDivElement, SheetContentProps>(
       enableDragToClose = true,
       closeThreshold = 0.3,
       fullHeight = false,
+      stationary = false,
       style,
       ...props
     },
@@ -174,11 +178,11 @@ export const SheetContent = forwardRef<HTMLDivElement, SheetContentProps>(
                 {...props}
               >
                 <motion.div
-                  variants={sheetSlideUp}
+                  variants={stationary ? fadeIn : sheetSlideUp}
                   initial="initial"
                   animate="animate"
                   exit="exit"
-                  transition={sheetTransition}
+                  transition={stationary ? fadeInTransition : sheetTransition}
                   drag={enableDragToClose ? 'y' : false}
                   dragControls={dragControls}
                   dragConstraints={{ top: 0, bottom: 0 }}

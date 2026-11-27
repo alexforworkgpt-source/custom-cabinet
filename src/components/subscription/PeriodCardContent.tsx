@@ -14,6 +14,7 @@ interface Props {
   highlighted?: boolean;
   compactHighlight?: boolean;
   loading?: boolean;
+  priceLoading?: boolean;
 }
 
 /** Presentation only: callers retain pricing and selection behavior. */
@@ -28,6 +29,7 @@ export function PeriodCardContent({
   highlighted,
   compactHighlight = false,
   loading = false,
+  priceLoading = loading,
 }: Props) {
   const { t } = useTranslation();
   const priceCaption =
@@ -59,15 +61,15 @@ export function PeriodCardContent({
       {highlighted && !compactHighlight && <BestValueBadge className="mt-1 self-start" />}
       <span className="mt-auto block pt-2">
         <span className="block break-words text-xl font-semibold leading-7 text-accent-400 sm:text-2xl sm:leading-8">
-          {loading ? <Skeleton className="h-7 w-24 sm:h-8" /> : price}
+          {priceLoading ? <Skeleton className="h-7 w-24 max-w-full sm:h-8" /> : price}
         </span>
         <span className="block min-h-4 text-xs leading-4 text-dark-500 line-through">
-          {loading ? <Skeleton className="h-4 w-16" /> : originalPrice}
+          {priceLoading ? <Skeleton className="h-4 w-16" /> : originalPrice}
         </span>
         <div
           className={`min-h-4 text-xs leading-4 ${monthlyPrice != null || periodDays === 30 ? 'text-success-400' : 'text-dark-400'}`}
         >
-          {loading ? <Skeleton className="h-4 w-20" /> : priceCaption}
+          {priceLoading ? <Skeleton className="h-4 w-20" /> : priceCaption}
         </div>
       </span>
     </>

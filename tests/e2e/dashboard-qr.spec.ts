@@ -89,6 +89,7 @@ test('opens the selected subscription QR next to Copy link and returns to Dashbo
   const qr = page.getByRole('button', { name: 'Open QR code', exact: true });
   await expect(copy).toBeVisible();
   await expect(qr).toBeVisible();
+  await expect(page.getByRole('button', { name: /Connection address:/ })).toHaveCount(0);
   await waitForRestingGeometry(qr);
   const [copyBox, qrBox] = await copy.or(qr).evaluateAll((elements) =>
     elements.map((element) => {

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import DOMPurify from 'dompurify';
 import type {
   AppConfig,
@@ -76,6 +76,7 @@ function isHappApp(app: RemnawaveAppClient | null): boolean {
 }
 
 interface Props {
+  searchParams: URLSearchParams;
   mirrorSelector?: React.ReactNode;
   appConfig: AppConfig;
   onOpenDeepLink: (url: string) => void;
@@ -87,6 +88,7 @@ interface Props {
 }
 
 export default function InstallationGuide({
+  searchParams,
   appConfig,
   onOpenDeepLink,
   isTelegramWebApp,
@@ -101,7 +103,7 @@ export default function InstallationGuide({
   const navigate = useNavigate();
   const stepHeadingRef = useRef<HTMLHeadingElement>(null);
   const previousStepRef = useRef<ConnectionStep | null>(null);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
   const requestedStep = searchParams.get('step');
   const requestedPlatform = searchParams.get('platform');
   const requestedApp = searchParams.get('app');
@@ -128,7 +130,6 @@ export default function InstallationGuide({
     appConfig.platforms?.[activePlatformKey ?? '']?.apps?.find(
       (app) => app.name === selectedAppName,
     ) ?? null;
-  const setSelectedApp = (app: RemnawaveAppClient | null) => setSelectedAppName(app?.name ?? null);
 
   const setFlowStep = useCallback(
     (nextStep: ConnectionStep, platform?: string, app?: string, replace = false) => {
@@ -216,7 +217,7 @@ export default function InstallationGuide({
       data.apps.find((item) => item.featured) ||
       data.apps[0];
     if (app) {
-      setSelectedApp(app);
+      setSelectedAppName(app.name);
       setActivePlatformKey(platform);
     }
   }, [appConfig.platforms, availablePlatforms, searchParams]);
@@ -380,7 +381,7 @@ export default function InstallationGuide({
   const selectPlatform = (platform: string) => {
     const data = appConfig.platforms[platform] as RemnawavePlatformData | undefined;
     setActivePlatformKey(platform);
-    setSelectedApp(data?.apps.find((item) => item.featured) || data?.apps[0] || null);
+    setSelectedAppName((data?.apps.find((item) => item.featured) || data?.apps[0])?.name ?? null);
     setFlowStep('platform', platform, undefined, true);
     requestAnimationFrame(() => stepHeadingRef.current?.focus({ preventScroll: true }));
   };
@@ -415,15 +416,15 @@ export default function InstallationGuide({
 
   return (
     <div className={step === 'application' ? 'space-y-2 pb-2' : 'space-y-4 pb-2'}>
-      <p className="sr-only" aria-live="polite">
-        {t('subscription.connection.step', { current: stepIndex + 1, total: 4 })}
-      </p>
       <div className="flex items-center gap-3">
+        <p className="sr-only" aria-live="polite">
+          {t('subscription.connection.step', { current: stepIndex + 1, total: 4 })}
+        </p>
         {(!isTelegramWebApp || step !== 'platform') && (
           <button
             onClick={goBack}
             aria-label={t('common.back', 'Back')}
-            className="flex h-11 w-11 items-center justify-center rounded-xl border border-dark-700 bg-dark-800 transition-colors hover:border-dark-600"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-dark-700 bg-dark-800 transition-colors hover:border-dark-600"
           >
             <BackIcon className="h-6 w-6" />
           </button>
@@ -473,123 +474,119 @@ export default function InstallationGuide({
         ))}
       </div>
 
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={step}
-          data-connection-step={step}
-          initial={reducedMotion ? false : { opacity: 0, x: 18 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={reducedMotion ? undefined : { opacity: 0, x: -12 }}
-          transition={transition}
-        >
-          {step === 'platform' && currentPlatformKey && (
-            <PlatformStep
-              appConfig={appConfig}
-              availablePlatforms={availablePlatforms}
-              currentPlatformKey={currentPlatformKey}
-              activePlatformName={activePlatformName}
-              activePlatformIcon={activePlatformIcon}
-              isAutoDetected={!requestedPlatform && currentPlatformKey === detectedPlatform}
-              getPlatformDisplayName={getPlatformDisplayName}
-              getSvgHtml={getSvgHtml}
-              onSelect={selectPlatform}
-              onContinue={() => setFlowStep('application', currentPlatformKey)}
-            />
-          )}
+      <motion.div
+        key={step}
+        data-connection-step={step}
+        initial={reducedMotion || step === 'platform' ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={transition}
+      >
+        {step === 'platform' && currentPlatformKey && (
+          <PlatformStep
+            appConfig={appConfig}
+            availablePlatforms={availablePlatforms}
+            currentPlatformKey={currentPlatformKey}
+            activePlatformName={activePlatformName}
+            activePlatformIcon={activePlatformIcon}
+            isAutoDetected={!requestedPlatform && currentPlatformKey === detectedPlatform}
+            getPlatformDisplayName={getPlatformDisplayName}
+            getSvgHtml={getSvgHtml}
+            onSelect={selectPlatform}
+            onContinue={() => setFlowStep('application', currentPlatformKey)}
+          />
+        )}
 
-          {step === 'application' && selectedApp && (
-            <ApplicationStep
-              selectedApp={selectedApp}
-              availableApps={currentPlatformApps}
-              installBlocks={installBlocks}
-              isRecommended={Boolean(selectedApp.featured && requestedApp !== selectedApp.name)}
-              onSelectApp={(app) => {
-                setSelectedApp(app);
-                setFlowStep('application', currentPlatformKey, app.name, true);
-                requestAnimationFrame(() => stepHeadingRef.current?.focus({ preventScroll: true }));
-              }}
-              onContinue={() => setFlowStep('add', currentPlatformKey, selectedApp.name)}
-              getSvgHtml={getSvgHtml}
-              renderBlocks={(blocks) =>
-                renderConfiguredBlocks(blocks, {
-                  section: 'install',
-                  onExternalOpen: () => setFlowStep('add', currentPlatformKey, selectedApp.name),
-                })
-              }
-            />
-          )}
+        {step === 'application' && selectedApp && (
+          <ApplicationStep
+            selectedApp={selectedApp}
+            availableApps={currentPlatformApps}
+            installBlocks={installBlocks}
+            isRecommended={Boolean(selectedApp.featured && requestedApp !== selectedApp.name)}
+            onSelectApp={(app) => {
+              setSelectedAppName(app.name);
+              setFlowStep('application', currentPlatformKey, app.name, true);
+              requestAnimationFrame(() => stepHeadingRef.current?.focus({ preventScroll: true }));
+            }}
+            onContinue={() => setFlowStep('add', currentPlatformKey, selectedApp.name)}
+            getSvgHtml={getSvgHtml}
+            renderBlocks={(blocks) =>
+              renderConfiguredBlocks(blocks, {
+                section: 'install',
+                onExternalOpen: () => setFlowStep('add', currentPlatformKey, selectedApp.name),
+              })
+            }
+          />
+        )}
 
-          {step === 'add' && selectedApp && (
-            <div className="space-y-4">
-              {renderBlocks.length === 0 && (
-                <p className="text-sm text-dark-400">
-                  {t('subscription.connection.addDescription', {
-                    defaultValue: 'Open {{app}} and add your subscription.',
-                    app: selectedApp.name,
-                  })}
-                </p>
-              )}
-              {appConfig.baseSettings?.isShowTutorialButton &&
-                appConfig.baseSettings.tutorialUrl && (
-                  <a
-                    href={appConfig.baseSettings.tutorialUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-secondary w-full justify-center"
-                  >
-                    <BookOpenIcon className="h-5 w-5" />
-                    {getBaseTranslation('tutorial', 'subscription.connection.tutorial')}
-                  </a>
-                )}
-              {renderConfiguredBlocks(renderBlocks, {
-                section: 'add',
-                onSubscriptionOpen: () =>
-                  setFlowStep('success', currentPlatformKey, selectedApp.name),
-              })}
-              <button
-                type="button"
+        {step === 'add' && selectedApp && (
+          <div className="space-y-4">
+            {renderBlocks.length === 0 && (
+              <p className="text-sm text-dark-400">
+                {t('subscription.connection.addDescription', {
+                  defaultValue: 'Open {{app}} and add your subscription.',
+                  app: selectedApp.name,
+                })}
+              </p>
+            )}
+            {appConfig.baseSettings?.isShowTutorialButton && appConfig.baseSettings.tutorialUrl && (
+              <a
+                href={appConfig.baseSettings.tutorialUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="btn-secondary w-full justify-center"
-                onClick={() => setFlowStep('success', currentPlatformKey, selectedApp.name)}
               >
-                {t('common.next')}
-              </button>
-            </div>
-          )}
+                <BookOpenIcon className="h-5 w-5" />
+                {getBaseTranslation('tutorial', 'subscription.connection.tutorial')}
+              </a>
+            )}
+            {renderConfiguredBlocks(renderBlocks, {
+              section: 'add',
+              onSubscriptionOpen: () =>
+                setFlowStep('success', currentPlatformKey, selectedApp.name),
+            })}
+            <button
+              type="button"
+              className="btn-secondary w-full justify-center"
+              onClick={() => setFlowStep('success', currentPlatformKey, selectedApp.name)}
+            >
+              {t('common.next')}
+            </button>
+          </div>
+        )}
 
-          {step === 'success' && selectedApp && (
-            <div className="flex min-h-48 flex-col items-center justify-center text-center sm:min-h-64">
-              <motion.div
-                initial={reducedMotion ? false : { opacity: 0, scale: 0.72 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={transition}
-                className="flex h-16 w-16 items-center justify-center rounded-full border border-success-400/40 bg-success-400/10 text-success-400 sm:h-20 sm:w-20"
-              >
-                <CheckIcon className="h-8 w-8 sm:h-10 sm:w-10" />
-              </motion.div>
-              {completionBlocks.length === 0 && (
-                <p className="mt-4 max-w-sm text-sm leading-relaxed text-dark-400">
-                  {t('subscription.connection.successDescription', {
-                    defaultValue: '{{app}} is ready to use.',
-                    app: selectedApp.name,
-                  })}
-                </p>
-              )}
-              {completionBlocks.length > 0 && (
-                <div className="mt-4 w-full text-start">
-                  {renderConfiguredBlocks(completionBlocks)}
-                </div>
-              )}
-              <button
-                type="button"
-                className="btn-primary mt-5 w-full justify-center sm:mt-7 sm:w-auto sm:px-10"
-                onClick={onFinish}
-              >
-                {t('subscription.connection.finish', 'Finish')}
-              </button>
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
+        {step === 'success' && selectedApp && (
+          <div className="flex min-h-48 flex-col items-center justify-center text-center sm:min-h-64">
+            <motion.div
+              initial={reducedMotion ? false : { opacity: 0, scale: 0.72 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={transition}
+              className="flex h-16 w-16 items-center justify-center rounded-full border border-success-400/40 bg-success-400/10 text-success-400 sm:h-20 sm:w-20"
+            >
+              <CheckIcon className="h-8 w-8 sm:h-10 sm:w-10" />
+            </motion.div>
+            {completionBlocks.length === 0 && (
+              <p className="mt-4 max-w-sm text-sm leading-relaxed text-dark-400">
+                {t('subscription.connection.successDescription', {
+                  defaultValue: '{{app}} is ready to use.',
+                  app: selectedApp.name,
+                })}
+              </p>
+            )}
+            {completionBlocks.length > 0 && (
+              <div className="mt-4 w-full text-start">
+                {renderConfiguredBlocks(completionBlocks)}
+              </div>
+            )}
+            <button
+              type="button"
+              className="btn-primary mt-5 w-full justify-center sm:mt-7 sm:w-auto sm:px-10"
+              onClick={onFinish}
+            >
+              {t('subscription.connection.finish', 'Finish')}
+            </button>
+          </div>
+        )}
+      </motion.div>
     </div>
   );
 }

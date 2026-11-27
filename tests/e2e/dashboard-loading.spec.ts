@@ -452,13 +452,15 @@ test('shows the wheel once offer placement is known and holds the carousel space
   expect(Math.abs(afterCarousel - beforeCarousel)).toBeLessThanOrEqual(4);
 });
 
-test('does not apply a late traffic error from A to the refresh action on B', async ({ page }) => {
+test('keeps the selected traffic values when a previous subscription refresh fails', async ({
+  page,
+}) => {
   const lateTraffic = deferred();
   let startedA = () => {};
   const requestA = new Promise<void>((resolve) => {
     startedA = resolve;
   });
-  const other = { ...subscription, id: 8, tariff_name: 'Other plan' };
+  const other = { ...subscription, id: 8, tariff_name: 'Other plan', traffic_used_percent: 37 };
   await prepareAuthenticatedPage(page, {
     responses: {
       '/api/cabinet/subscriptions': {
@@ -494,17 +496,14 @@ test('does not apply a late traffic error from A to the refresh action on B', as
   await requestA;
   await page.getByRole('combobox', { name: 'Subscriptions' }).selectOption('8');
   await expect(page.getByText('Other plan', { exact: true }).last()).toBeVisible();
-  const refresh = page.locator('[data-traffic-refresh]');
-  await expect(refresh).toContainText(/^(10|[1-9])s$/);
-  const before = Number((await refresh.textContent())?.replace('s', ''));
+  const usage = page.getByRole('progressbar');
+  await expect(usage).toHaveAttribute('aria-valuenow', '37');
   const errorResponse = page.waitForResponse(
     (response) => new URL(response.url()).pathname === '/api/cabinet/subscription/refresh-traffic',
   );
   lateTraffic.release();
-  await errorResponse;
-  await page.waitForTimeout(300);
-  const after = Number((await refresh.textContent())?.replace('s', ''));
-  expect(after).toBeLessThanOrEqual(before);
+  expect((await errorResponse).status()).toBe(429);
+  await expect(usage).toHaveAttribute('aria-valuenow', '37');
 });
 
 for (const theme of ['dark', 'light'] as const) {
@@ -527,7 +526,7 @@ for (const theme of ['dark', 'light'] as const) {
       await balance.promise;
       await route.fallback();
     });
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     const loading = page.getByRole('status', { name: 'Loading' });
     await expect(loading.first()).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(

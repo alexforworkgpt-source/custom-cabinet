@@ -57,29 +57,22 @@ test('places instructions below New Ticket and returns from an article to Suppor
   page,
 }) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, { responses });
-  await page.goto('/support');
-  const instructions = page.getByRole('link', { name: 'Open instructions', exact: true });
+  await page.goto('/support', { waitUntil: 'domcontentloaded' });
+  const instructions = page.getByRole('link', { name: 'Instructions and setup', exact: true });
   const newTicket = page.getByRole('button', { name: 'New Ticket', exact: true });
   await expect(instructions).toHaveAttribute('href', '/instructions');
-  // Wait for stable layout after the entrance animation without opening the form.
-  await newTicket.click({ trial: true });
-  const instructionsBox = await page
-    .getByRole('region', { name: 'Instructions and setup', exact: true })
-    .boundingBox();
+  await expect(newTicket).toBeEnabled();
+  const instructionsBox = await instructions.boundingBox();
   const newTicketBox = await newTicket.boundingBox();
   if (!instructionsBox || !newTicketBox) throw new Error('Both support actions must be visible');
   expect(newTicketBox.y + newTicketBox.height).toBeLessThanOrEqual(instructionsBox.y);
   const headingBox = await page.getByRole('heading', { name: 'Support', level: 1 }).boundingBox();
   if (!headingBox) throw new Error('The support heading must be visible');
-  if ((page.viewportSize()?.width ?? 0) >= 640) {
-    expect(newTicketBox.x).toBeGreaterThanOrEqual(headingBox.x + headingBox.width);
-    expect(
-      Math.abs(newTicketBox.y + newTicketBox.height / 2 - (headingBox.y + headingBox.height / 2)),
-    ).toBeLessThanOrEqual(1);
-  } else {
-    expect(newTicketBox.y).toBeGreaterThanOrEqual(headingBox.y + headingBox.height);
-    expect(Math.abs(newTicketBox.width - instructionsBox.width)).toBeLessThanOrEqual(1);
-  }
+  expect(newTicketBox.y).toBeGreaterThanOrEqual(headingBox.y + headingBox.height);
+  const banner = page.getByRole('heading', { name: 'Need help?', exact: true }).locator('..');
+  const bannerWidth = await banner.evaluate((element: HTMLElement) => element.offsetWidth);
+  const buttonWidth = await newTicket.evaluate((element: HTMLElement) => element.offsetWidth);
+  expect(buttonWidth).toBe(bannerWidth);
 
   await instructions.click();
   await expect(page).toHaveURL('/instructions');
@@ -105,9 +98,9 @@ test('places instructions below New Ticket and returns from an article to Suppor
 
 test('centers the instructions icon beside its copy', async ({ page }) => {
   await prepareAuthenticatedPage(page, { responses });
-  await page.goto('/support');
+  await page.goto('/support', { waitUntil: 'domcontentloaded' });
 
-  const instructions = page.getByRole('region', {
+  const instructions = page.getByRole('link', {
     name: 'Instructions and setup',
     exact: true,
   });
@@ -116,7 +109,9 @@ test('centers the instructions icon beside its copy', async ({ page }) => {
   await expect
     .poll(async () => {
       const iconBox = await instructions.locator('svg').first().boundingBox();
-      const copyBox = await instructions.locator('h2').locator('..').boundingBox();
+      const copyBox = await instructions
+        .getByText('Instructions and setup', { exact: true })
+        .boundingBox();
       if (!iconBox || !copyBox) return Number.POSITIVE_INFINITY;
 
       return Math.abs(iconBox.y + iconBox.height / 2 - (copyBox.y + copyBox.height / 2));
@@ -141,8 +136,8 @@ for (const mode of [
         },
       },
     });
-    await page.goto('/support');
-    const instructions = page.getByRole('link', { name: 'Open instructions', exact: true });
+    await page.goto('/support', { waitUntil: 'domcontentloaded' });
+    const instructions = page.getByRole('link', { name: 'Instructions and setup', exact: true });
     const contact = page.getByRole('button', { name: mode.contact, exact: true });
     await expect(instructions).toBeVisible();
     await expect(contact).toBeVisible();
@@ -161,13 +156,15 @@ for (const mode of [
 
 test('does not place an instructions exit beside an in-progress ticket draft', async ({ page }) => {
   await prepareAuthenticatedPage(page, { responses });
-  await page.goto('/support');
+  await page.goto('/support', { waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: 'New Ticket', exact: true }).click();
   await page.getByRole('textbox', { name: 'Subject', exact: true }).fill('Connection question');
   await page
     .getByRole('textbox', { name: 'Message', exact: true })
     .fill('I still need help with setup.');
-  await expect(page.getByRole('link', { name: 'Open instructions', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Instructions and setup', exact: true })).toHaveCount(
+    0,
+  );
   await expect(page.getByRole('textbox', { name: 'Subject', exact: true })).toHaveValue(
     'Connection question',
   );
@@ -188,8 +185,8 @@ test('does not add a Support return to a direct instructions visit', async ({ pa
 
 test('keeps the Support return after selecting an instruction scenario', async ({ page }) => {
   await prepareAuthenticatedPage(page, { responses });
-  await page.goto('/support');
-  await page.getByRole('link', { name: 'Open instructions', exact: true }).click();
+  await page.goto('/support', { waitUntil: 'domcontentloaded' });
+  await page.getByRole('link', { name: 'Instructions and setup', exact: true }).click();
   await page
     .getByRole('link')
     .filter({
@@ -270,8 +267,8 @@ for (const colorScheme of ['dark', 'light'] as const) {
   }, testInfo) => {
     await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
     await prepareAuthenticatedPage(page, { responses, language: 'ru' });
-    await page.goto('/support');
-    const instructions = page.getByRole('link', { name: 'Открыть инструкции', exact: true });
+    await page.goto('/support', { waitUntil: 'domcontentloaded' });
+    const instructions = page.getByRole('link', { name: 'Инструкции и настройка', exact: true });
     await expect(instructions).toBeVisible();
     await expect
       .poll(() =>
@@ -293,10 +290,7 @@ for (const colorScheme of ['dark', 'light'] as const) {
     ).toBe(false);
     await page.screenshot({ path: testInfo.outputPath(`support-instructions-${colorScheme}.png`) });
 
-    const icon = page
-      .getByRole('region', { name: 'Инструкции и настройка', exact: true })
-      .locator('span[aria-hidden="true"]')
-      .first();
+    const icon = instructions.locator('span[aria-hidden="true"]').first();
     await expect(icon).toHaveCSS('width', '40px');
     await expect(icon).toHaveCSS('height', '40px');
     const iconStyle = await icon.evaluate((element) => {

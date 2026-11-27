@@ -43,7 +43,7 @@ test('retries balance renewal with the same operation and confirmed term @critic
 });
 
 for (const status of ['active', 'expired']) {
-  test(`Dashboard waits for the sales mode before ${status} classic renewal @critical-flow`, async ({
+  test(`management waits for the sales mode before ${status} classic renewal @critical-flow`, async ({
     page,
   }) => {
     const current = {
@@ -70,7 +70,17 @@ for (const status of ['active', 'expired']) {
       await route.fulfill({ json: responses['/api/cabinet/subscription/purchase-options'] });
     });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: /Управление подпиской/ }).click();
+    const manage = page.getByRole('button', { name: /Управление подпиской/ });
+    if (status === 'expired') {
+      await expect(page.getByRole('button', { name: 'Продлить', exact: true })).toBeVisible();
+      await expect(manage).toHaveCount(0);
+      await page
+        .getByRole('navigation')
+        .getByRole('link', { name: 'Подписка', exact: true })
+        .click();
+    } else {
+      await manage.click();
+    }
     await expect(page.locator('[data-subscription-management-loading]')).toBeVisible();
     await expect(
       page.getByRole('link', { name: /Продлить подписку|Оформить подписку/ }),
@@ -146,13 +156,7 @@ test('classic management renews with the selected period before top-up @critical
   await expect(renew).toHaveAttribute('href', '/subscriptions/42/renew');
   await renew.click();
   await expect(page).toHaveURL('/subscriptions/42/renew');
-  const currentTerms = page.locator('[data-renewal-info]');
-  await expect(currentTerms.getByText('Трафик', { exact: true }).locator('..')).toContainText(
-    '100 ГБ',
-  );
-  await expect(currentTerms.getByText('Устройства', { exact: true }).locator('..')).toContainText(
-    '3 устройства',
-  );
+  await expect(page.locator('[data-renewal-info]')).toHaveCount(0);
   await page.getByRole('button', { name: /^90 дней/ }).click();
   const topUp = page.getByRole('button', { name: 'Пополнить баланс', exact: true });
   await expect(topUp).toHaveCount(1);

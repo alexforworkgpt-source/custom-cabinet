@@ -6,19 +6,22 @@ import { cn } from '@/lib/utils';
 
 // Same compact typography, icon sizes and badge geometry as the Dashboard header.
 const badge =
-  'inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-lg border px-2 py-1 text-xs uppercase';
+  'inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-lg border px-2 py-1 text-xs leading-4';
 const trialBadge = 'border-warning-500/30 bg-warning-500/15 text-warning-400';
 
 function statusPresentation(subscription: Subscription) {
-  if (subscription.is_daily_paused)
-    return { label: 'subscription.pause.paused', color: trialBadge, Icon: PauseIcon };
-  if (subscription.status === 'disabled')
-    return {
-      label: 'subscription.pause.suspended',
-      color: 'border-dark-700/50 bg-dark-800/50 text-dark-400',
-      Icon: PauseIcon,
-    };
-  if (subscription.is_expired || subscription.status === 'expired')
+  const expired = subscription.is_expired || subscription.status === 'expired';
+  if (!subscription.is_daily || !expired) {
+    if (subscription.is_daily_paused)
+      return { label: 'subscription.pause.paused', color: trialBadge, Icon: PauseIcon };
+    if (subscription.status === 'disabled')
+      return {
+        label: 'subscription.pause.suspended',
+        color: 'border-dark-700/50 bg-dark-800/50 text-dark-400',
+        Icon: PauseIcon,
+      };
+  }
+  if (expired)
     return {
       label: 'subscription.expired',
       color: 'border-error-500/30 bg-error-500/15 text-error-400',
@@ -41,10 +44,19 @@ function statusPresentation(subscription: Subscription) {
   };
 }
 
-/** Read-only identity for the two conditions cards; no query or subscription action. */
-export function SubscriptionIdentityBadges({ subscription }: { subscription: Subscription }) {
+/** Shared identity for subscription summaries and conditions. */
+export function SubscriptionIdentityBadges({
+  subscription,
+  planAsHeading = true,
+  planId,
+}: {
+  subscription: Subscription;
+  planAsHeading?: boolean;
+  planId?: string;
+}) {
   const { t } = useTranslation();
   const status = statusPresentation(subscription);
+  const Plan = planAsHeading ? 'h2' : 'span';
   const activeTrial = subscription.is_trial && status.label === 'subscription.trialStatusShort';
 
   return (
@@ -61,7 +73,8 @@ export function SubscriptionIdentityBadges({ subscription }: { subscription: Sub
           <span className="min-w-0 break-words">{t(status.label)}</span>
         </span>
       )}
-      <h2
+      <Plan
+        id={planId}
         className={cn(
           badge,
           subscription.is_trial
@@ -80,7 +93,7 @@ export function SubscriptionIdentityBadges({ subscription }: { subscription: Sub
         <span className="min-w-0 break-words">
           {subscription.is_trial ? t('subscription.trialStatusShort') : planTitle(subscription, t)}
         </span>
-      </h2>
+      </Plan>
     </div>
   );
 }

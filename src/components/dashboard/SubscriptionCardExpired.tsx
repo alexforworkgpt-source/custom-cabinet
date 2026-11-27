@@ -1,32 +1,32 @@
 import { uiLocale } from '@/utils/uiLocale';
-import { useState, type RefObject } from 'react';
+import { useState, type ReactNode, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate, useLocation } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import type { Subscription } from '../../types';
 import { subscriptionApi } from '../../api/subscription';
-import { useTheme } from '../../hooks/useTheme';
-import { useCurrency } from '../../hooks/useCurrency';
 import { useHapticFeedback } from '../../platform/hooks/useHaptic';
-import { getGlassColors } from '../../utils/glassTheme';
-import { getInsufficientBalanceError } from '../../utils/subscriptionHelpers';
-import { needsTariff, tariffSelectionPath } from '../../utils/legacySubscription';
 import {
-  ClockIcon,
-  ExclamationIcon,
-  PlusIcon,
-  SettingsIcon,
-  TariffsIcon,
-} from '@/components/icons';
+  getInsufficientBalanceError,
+  dashboardScenarioHasManagement,
+  dashboardSubscriptionScenario,
+  dashboardSubscriptionScenarioTitle,
+} from '../../utils/subscriptionHelpers';
+import { needsTariff, tariffSelectionPath } from '../../utils/legacySubscription';
+import { PlusIcon, TariffsIcon } from '@/components/icons';
+import { SubscriptionScenarioHero } from '../subscription/SubscriptionHero';
 import { SubscriptionConnectFooter } from '../subscription/SubscriptionConnectFooter';
 import { connectFooterState } from '../subscription/connectFooterState';
-import { SubscriptionTechGrid } from './SubscriptionTechGrid';
+import {
+  SubscriptionHeroButton,
+  SubscriptionHeroLink,
+  SubscriptionManageAction,
+} from './SubscriptionActiveActions';
 
 interface SubscriptionCardExpiredProps {
   subscription: Subscription;
   balanceKopeks?: number | null;
-  balanceRubles?: number | null;
   isTrafficTopupOpen: boolean;
   trafficTopupTriggerRef: RefObject<HTMLButtonElement | null>;
   onBuyTraffic: () => void;
@@ -44,7 +44,6 @@ interface SubscriptionCardExpiredProps {
 export default function SubscriptionCardExpired({
   subscription,
   balanceKopeks = null,
-  balanceRubles = null,
   isTrafficTopupOpen,
   trafficTopupTriggerRef,
   onBuyTraffic,
@@ -59,12 +58,9 @@ export default function SubscriptionCardExpired({
   className,
 }: SubscriptionCardExpiredProps) {
   const { t } = useTranslation();
-  const { isDark } = useTheme();
-  const g = getGlassColors(isDark);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
-  const { formatAmount, currencySymbol } = useCurrency();
   const haptic = useHapticFeedback();
 
   const [isRenewing, setIsRenewing] = useState(false);
@@ -149,243 +145,124 @@ export default function SubscriptionCardExpired({
     navigate(`/balance/top-up?${params.toString()}`);
   };
 
-  // Color scheme: amber for limited, red for expired/disabled
-  const accent = isLimited
-    ? {
-        r: 255,
-        g: 184,
-        b: 0,
-        hex: 'rgb(var(--color-urgent-400))',
-        gradient: 'linear-gradient(135deg, #FFB800, #FF8C00)',
-      }
-    : {
-        r: 255,
-        g: 59,
-        b: 92,
-        hex: 'rgb(var(--color-critical-500))',
-        gradient: 'linear-gradient(135deg, #FF3B5C, #FF6B35)',
-      };
+  const scenario = dashboardSubscriptionScenario(subscription);
+  if (!scenario) return null;
+
+  let primaryAction: ReactNode;
+  if (requiresTariff) {
+    primaryAction = (
+      <SubscriptionHeroLink
+        to={tariffSelectionPath(subscription.id)}
+        onClick={() => haptic.buttonPressHeavy()}
+      >
+        <TariffsIcon className="h-4 w-4" />
+        {t('subscription.cta.moveToTariff')}
+      </SubscriptionHeroLink>
+    );
+  } else if (isLimited) {
+    primaryAction = (
+      <SubscriptionHeroButton
+        ref={trafficTopupTriggerRef}
+        onClick={onBuyTraffic}
+        aria-expanded={isTrafficTopupOpen}
+        aria-controls="traffic-topup-panel"
+      >
+        <PlusIcon className="h-4 w-4" />
+        {t('subscription.buyTraffic')}
+      </SubscriptionHeroButton>
+    );
+  } else if (!subscription.is_trial) {
+    if (isDaily && balanceKopeks === null) {
+      primaryAction = (
+        <SubscriptionHeroButton disabled>{t('dashboard.dataUnavailable')}</SubscriptionHeroButton>
+      );
+    } else if (isDaily && !hasBalance) {
+      primaryAction = (
+        <SubscriptionHeroButton onClick={handleTopUp}>
+          <PlusIcon className="h-4 w-4" />
+          {t('dashboard.expired.topUp')}
+        </SubscriptionHeroButton>
+      );
+    } else {
+      primaryAction = (
+        <SubscriptionHeroButton onClick={handleQuickRenew} disabled={isRenewing}>
+          {isRenewing ? (
+            <span
+              className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+              aria-hidden="true"
+            />
+          ) : (
+            <TariffsIcon className="h-4 w-4 shrink-0" />
+          )}
+          {isRenewing
+            ? t('common.loading')
+            : isDisabledDaily
+              ? t('dashboard.suspended.resume')
+              : t('dashboard.expired.quickRenew')}
+        </SubscriptionHeroButton>
+      );
+    }
+  }
+
+  const manage = dashboardScenarioHasManagement(scenario) && (
+    <SubscriptionManageAction
+      accent={scenario === 'expired-trial'}
+      onManageSubscription={onManageSubscription}
+      managementOpen={managementOpen}
+    />
+  );
+  const dateLabel = isLimited
+    ? t('dashboard.expired.activeUntil')
+    : scenario === 'paused'
+      ? null
+      : t('dashboard.expired.expiredDate', { context: subscription.is_trial ? 'trial' : '' });
 
   return (
-    <div
-      className={`relative isolate overflow-hidden rounded-3xl px-5 py-5 sm:px-6 ${className ?? ''}`}
-      style={{
-        background: g.cardBg,
-        border: isDark
-          ? `1px solid rgba(${accent.r},${accent.g},${accent.b},0.12)`
-          : `1px solid rgba(${accent.r},${accent.g},${accent.b},0.2)`,
-        boxShadow: isDark
-          ? g.shadow
-          : `0 2px 16px rgba(${accent.r},${accent.g},${accent.b},0.1), 0 0 0 1px rgba(${accent.r},${accent.g},${accent.b},0.06)`,
-      }}
-    >
-      {/* Glow */}
-      <div
-        className="pointer-events-none absolute"
-        style={{
-          top: -60,
-          right: -60,
-          width: 200,
-          height: 200,
-          borderRadius: '50%',
-          background: `radial-gradient(circle, rgba(${accent.r},${accent.g},${accent.b},0.08) 0%, transparent 70%)`,
-        }}
-        aria-hidden="true"
-      />
-      <SubscriptionTechGrid className="text-dark-50" />
-
-      {/* Header */}
-      <div className="mb-4 flex items-center gap-3">
-        <div
-          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]"
-          style={{
-            background: `rgba(${accent.r},${accent.g},${accent.b},0.1)`,
-            border: `1px solid rgba(${accent.r},${accent.g},${accent.b},0.15)`,
-            color: accent.hex,
-          }}
-        >
-          {isLimited ? (
-            <ExclamationIcon className="h-[22px] w-[22px]" />
-          ) : (
-            <ClockIcon className="h-[22px] w-[22px]" />
-          )}
-        </div>
-        <h2 className="text-lg font-bold tracking-tight text-dark-50">
-          {isLimited
-            ? t('subscription.trafficLimitedTitle')
-            : isDisabledDaily
-              ? t('dashboard.suspended.title')
-              : subscription.is_trial
-                ? t('dashboard.expired.trialTitle')
-                : t('dashboard.expired.title')}
-        </h2>
-      </div>
-
-      {/* Limited description */}
-      {isLimited && (
-        <p className="mb-4 text-sm text-dark-300">{t('subscription.trafficLimitedDescription')}</p>
-      )}
-
-      {/* Expired date + Balance row */}
-      <div
-        className="mb-4 flex items-center justify-between rounded-[14px]"
-        style={{
-          background: `rgba(${accent.r},${accent.g},${accent.b},0.04)`,
-          border: `1px solid rgba(${accent.r},${accent.g},${accent.b},0.08)`,
-          padding: '12px 14px',
-        }}
-      >
-        <div className="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-center">
-          <div className="mb-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-dark-500">
-            {isLimited
-              ? t('dashboard.expired.activeUntil')
-              : t('dashboard.expired.expiredDate', {
-                  context: subscription.is_trial ? 'trial' : '',
-                })}
-          </div>
-          <div className="mt-0.5 whitespace-nowrap text-base font-bold tracking-tight text-dark-400 sm:ml-3 sm:mt-0">
-            {formattedDate}
-          </div>
-        </div>
-        <div className="ml-3 flex shrink-0 items-center gap-1.5">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-dark-500">
-            {t('dashboard.expired.balance')}
-          </span>
-          <span
-            className={`text-sm font-semibold ${hasBalance ? 'text-success-400' : 'text-dark-500'}`}
-          >
-            {balanceRubles === null
-              ? t('dashboard.dataUnavailable')
-              : `${formatAmount(balanceRubles)} ${currencySymbol}`}
-          </span>
-        </div>
-      </div>
-
-      {/* Renew error */}
-      {renewError && (
-        <div
-          className="mb-4 rounded-xl border border-error-500/30 bg-error-500/10 p-3 text-center text-sm text-error-400"
-          role="alert"
-        >
-          {renewError}
-        </div>
-      )}
-
-      {/* Action buttons */}
-      <div className="flex gap-2.5">
-        {requiresTariff ? (
-          <Link
-            to={tariffSelectionPath(subscription.id)}
-            onClick={() => haptic.buttonPressHeavy()}
-            className="flex flex-1 items-center justify-center gap-2 rounded-[14px] py-3.5 text-[15px] font-semibold tracking-tight text-white transition-all duration-300"
-            style={{
-              background: accent.gradient,
-              boxShadow: `0 4px 20px rgba(${accent.r},${accent.g},${accent.b},0.2)`,
-            }}
-          >
-            <TariffsIcon className="h-4 w-4" />
-            {t('subscription.cta.moveToTariff')}
-          </Link>
-        ) : isLimited ? (
-          <button
-            type="button"
-            ref={trafficTopupTriggerRef}
-            onClick={onBuyTraffic}
-            aria-expanded={isTrafficTopupOpen}
-            aria-controls="traffic-topup-panel"
-            className="flex flex-1 items-center justify-center gap-2 rounded-[14px] py-3.5 text-[15px] font-semibold tracking-tight text-white transition-all duration-300"
-            style={{
-              background: accent.gradient,
-              boxShadow: `0 4px 20px rgba(${accent.r},${accent.g},${accent.b},0.2)`,
-            }}
-          >
-            <PlusIcon className="h-4 w-4" />
-            {t('subscription.buyTraffic')}
-          </button>
-        ) : !subscription.is_trial ? (
-          !isDaily ? (
-            <button
-              type="button"
-              onClick={handleQuickRenew}
-              className="flex flex-1 items-center justify-center gap-2 rounded-[14px] py-3.5 text-[15px] font-semibold tracking-tight text-white transition-all duration-300"
-              style={{
-                background: accent.gradient,
-                boxShadow: `0 4px 20px rgba(${accent.r},${accent.g},${accent.b},0.2)`,
-              }}
-            >
-              <TariffsIcon className="h-4 w-4" />
-              {t('dashboard.expired.quickRenew')}
-            </button>
-          ) : balanceKopeks === null ? (
-            <button
-              type="button"
-              disabled
-              className="flex flex-1 cursor-not-allowed items-center justify-center rounded-[14px] bg-dark-700 py-3.5 text-[15px] font-semibold text-dark-400"
-            >
-              {t('dashboard.dataUnavailable')}
-            </button>
-          ) : hasBalance ? (
-            <button
-              type="button"
-              onClick={handleQuickRenew}
-              disabled={isRenewing}
-              className="flex flex-1 items-center justify-center gap-2 rounded-[14px] py-3.5 text-[15px] font-semibold tracking-tight text-white transition-all duration-300 disabled:opacity-50"
-              style={{
-                background: accent.gradient,
-                boxShadow: `0 4px 20px rgba(${accent.r},${accent.g},${accent.b},0.2)`,
-              }}
-            >
-              {isRenewing ? (
-                <span
-                  className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
-                  aria-hidden="true"
-                />
-              ) : (
-                <TariffsIcon className="h-4 w-4" />
-              )}
-              {isRenewing
-                ? t('common.loading')
-                : isDisabledDaily
-                  ? t('dashboard.suspended.resume')
-                  : t('dashboard.expired.quickRenew')}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleTopUp}
-              className="flex flex-1 items-center justify-center gap-2 rounded-[14px] py-3.5 text-[15px] font-semibold tracking-tight text-white transition-all duration-300"
-              style={{
-                background: accent.gradient,
-                boxShadow: `0 4px 20px rgba(${accent.r},${accent.g},${accent.b},0.2)`,
-              }}
-            >
-              <PlusIcon className="h-4 w-4" />
-              {t('dashboard.expired.topUp')}
-            </button>
+    <div className="space-y-3">
+      <SubscriptionScenarioHero
+        scenario={scenario}
+        className={className}
+        title={t(dashboardSubscriptionScenarioTitle[scenario])}
+        summary={
+          scenario !== 'disabled' && (
+            <p className="flex flex-wrap items-baseline gap-x-1.5 text-xs">
+              {dateLabel && <span>{dateLabel}</span>}
+              <time dateTime={subscription.end_date} className="font-semibold text-champagne-50">
+                {dateLabel ? formattedDate : t('dashboard.validUntil', { date: formattedDate })}
+              </time>
+            </p>
           )
-        ) : null}
-      </div>
+        }
+        action={
+          <>
+            {isLimited && (
+              <p className="subscription-hero-scenario-note">
+                {t('subscription.trafficLimitedDescription')}
+              </p>
+            )}
+            {renewError && (
+              <div
+                className="rounded-xl border border-error-500/30 bg-error-500/10 p-3 text-sm text-error-400"
+                role="alert"
+              >
+                {renewError}
+              </div>
+            )}
+            {primaryAction}
+            {manage}
+          </>
+        }
+      />
       {isLimited && (
         <SubscriptionConnectFooter
           state={connectState}
           variant="prominent"
-          className="mt-3"
           managementOpen={devicesOpen}
           onConnect={onConnectDevice}
           onManage={onManageDevices}
           onRetry={onRetryDevices}
         />
       )}
-      <button
-        type="button"
-        aria-haspopup="dialog"
-        aria-expanded={managementOpen}
-        onClick={onManageSubscription}
-        className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-[14px] border border-dark-700/60 bg-dark-900/80 px-4 py-3 text-center text-sm font-semibold text-dark-200 transition-colors hover:border-dark-600/80 hover:bg-dark-800/80"
-      >
-        <SettingsIcon className="h-4 w-4 shrink-0 text-accent-400" />
-        {t('dashboard.manageSubscription')}
-      </button>
     </div>
   );
 }

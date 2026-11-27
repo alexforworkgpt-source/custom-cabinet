@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useDesktopViewport } from '@/hooks/useDesktopViewport';
+import { useEffect } from 'react';
 import { useLocation, Link, matchPath } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -6,11 +7,11 @@ import { motion } from 'framer-motion';
 
 import { useAuthStore } from '@/store/auth';
 import { useHaptic } from '@/platform';
-import { useTelegramSDK } from '@/hooks/useTelegramSDK';
 import { useHeaderHeight } from '@/hooks/useHeaderHeight';
 import { useTheme } from '@/hooks/useTheme';
 import { useBranding } from '@/hooks/useBranding';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import { sharesDashboardScroll } from '@/utils/userCabinetRouteState';
 import { resetVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import { themeColorsApi } from '@/api/themeColors';
 import { useAvatarPreload } from '@/hooks/useUserAvatar';
@@ -42,7 +43,6 @@ import {
   type MobileNavItem,
 } from './mobileNavRoutes';
 import { useSubscriptionNavigation } from '@/hooks/useSubscriptionNavigation';
-import { AppHeader } from './AppHeader';
 import { LogoutButton } from '@/components/LogoutButton';
 import { useBackgroundConsumer } from '@/components/backgrounds/BackgroundHost';
 import { usePageMobileNavigationMode } from './MobileNavigation';
@@ -57,8 +57,6 @@ export function AppShell({ children }: AppShellProps) {
   const user = useAuthStore((state) => state.user);
   const isAdmin = useAuthStore((state) => state.isAdmin);
   const logout = useAuthStore((state) => state.logout);
-  const { isFullscreen, safeAreaInset, contentSafeAreaInset, platform, isMobile } =
-    useTelegramSDK();
   const { mobileCss: headerHeight } = useHeaderHeight();
   const haptic = useHaptic();
   const { toggleTheme, isDark } = useTheme();
@@ -80,20 +78,7 @@ export function AppShell({ children }: AppShellProps) {
   const canToggleTheme = enabledThemes?.dark && enabledThemes?.light;
   const supportUnreadCount = useSupportUnreadCount(!isAdminRoute);
 
-  // Only apply fullscreen UI adjustments on mobile Telegram (iOS/Android)
-  const isMobileFullscreen = isFullscreen && isMobile;
-
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isDesktopViewport, setIsDesktopViewport] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
-  );
-
-  useEffect(() => {
-    const media = window.matchMedia('(min-width: 1024px)');
-    const handleChange = (event: MediaQueryListEvent) => setIsDesktopViewport(event.matches);
-    media.addEventListener('change', handleChange);
-    return () => media.removeEventListener('change', handleChange);
-  }, []);
+  const isDesktopViewport = useDesktopViewport();
 
   // A focused field can unmount without blur during navigation.
   // biome-ignore lint/correctness/useExhaustiveDependencies(location.pathname): The route is intentionally the reset trigger.
@@ -101,13 +86,15 @@ export function AppShell({ children }: AppShellProps) {
     resetVirtualKeyboard();
   }, [location.pathname]);
 
-  const subscriptionNav = useSubscriptionNavigation(!isAdminRoute);
+  const showAdminMobileNav = !isDesktopViewport && Boolean(matchPath('/admin', location.pathname));
+  const subscriptionNav = useSubscriptionNavigation(!isAdminRoute || showAdminMobileNav);
   const navItems = mobileNavItems(subscriptionNav);
   const pageNavigation = usePageMobileNavigationMode();
+  const reserveMobileNavSpace = sharesDashboardScroll(location.pathname);
   const showMobileNav =
     pageNavigation !== 'action' &&
     (location.pathname.replace(/\/$/, '') === '/subscription/purchase'
-      ? pageNavigation === 'catalogue'
+      ? pageNavigation === 'section'
       : isMobileNavScreen(location.pathname, navItems));
 
   // Desktop navigation — labels always visible (no hover-reveal gimmick)
@@ -197,7 +184,10 @@ export function AppShell({ children }: AppShellProps) {
   // headerHeight comes from useHeaderHeight() — accounts for TG safe area in fullscreen
 
   return (
-    <div className="min-h-viewport" data-mobile-nav={showMobileNav ? 'on' : 'off'}>
+    <div
+      className="min-h-viewport"
+      data-mobile-nav={showMobileNav ? 'on' : reserveMobileNavSpace ? 'reserved' : 'off'}
+    >
       {/* Global components */}
       <WebSocketNotifications />
       <CampaignBonusNotifier />
@@ -298,28 +288,11 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </header>
 
-      {/* Mobile Header */}
-      {isAdminRoute && !isDesktopViewport && (
-        <AppHeader
-          mobileMenuOpen={mobileMenuOpen}
-          setMobileMenuOpen={setMobileMenuOpen}
-          onCommandPaletteOpen={() => {}}
-          headerHeight={headerHeight}
-          isFullscreen={isMobileFullscreen}
-          safeAreaInset={safeAreaInset}
-          contentSafeAreaInset={contentSafeAreaInset}
-          telegramPlatform={platform}
-        />
-      )}
-
       {/* Desktop spacer */}
       <div className="hidden h-14 lg:block" />
 
       {/* Mobile spacer */}
-      <div
-        className="lg:hidden"
-        style={{ height: isAdminRoute ? headerHeight : `max(0px, calc(${headerHeight} - 64px))` }}
-      />
+      <div className="lg:hidden" style={{ height: `max(0px, calc(${headerHeight} - 64px))` }} />
 
       {/* Main content */}
       <main className="mx-auto max-w-6xl py-6 pb-[calc(var(--mobile-nav-clearance)+3rem)] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] lg:px-6 lg:pb-8">
@@ -328,11 +301,7 @@ export function AppShell({ children }: AppShellProps) {
 
       {/* Mobile Bottom Navigation */}
       {showMobileNav && (
-        <MobileBottomNav
-          items={navItems}
-          isMenuOpen={mobileMenuOpen}
-          supportUnreadCount={supportUnreadCount}
-        />
+        <MobileBottomNav items={navItems} supportUnreadCount={supportUnreadCount} />
       )}
     </div>
   );

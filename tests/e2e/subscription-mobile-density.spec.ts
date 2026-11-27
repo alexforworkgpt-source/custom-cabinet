@@ -53,7 +53,7 @@ async function prepare(page: Page, language = 'ru', theme = 'dark') {
 }
 
 async function ready(page: Page) {
-  await page.goto('/subscriptions/42');
+  await page.goto('/subscriptions/42', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-subscription-autopay]')).toBeVisible();
   await expect(page.locator('a[href="/subscriptions/42/renew"]')).toBeVisible();
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
@@ -142,6 +142,9 @@ test('mobile density stops exactly at sm and preserves the painted section gap @
 
 test('open add-on forms retain controls, close targets and desktop density', async ({ page }) => {
   const { apiRequests } = await prepare(page);
+  await page.route('**/api/cabinet/balance', (route) =>
+    route.fulfill({ json: { balance_kopeks: 125_000, balance_rubles: 1250 } }),
+  );
   await ready(page);
   const mobile = (page.viewportSize()?.width ?? 1280) < 640;
   const options = page.locator('#subscription-additional-options-panel');
@@ -156,6 +159,9 @@ test('open add-on forms retain controls, close targets and desktop density', asy
       expect((await close.boundingBox())?.width).toBe(44);
     }
     if (label !== 'Докупить трафик') {
+      await expect(
+        panel.getByText(/Расширьте лимит устройств|Вы можете уменьшить количество устройств/),
+      ).toHaveCount(0);
       const increment = options.getByRole('button', {
         name: 'Увеличить кол-во устройств',
         exact: true,
@@ -163,6 +169,11 @@ test('open add-on forms retain controls, close targets and desktop density', asy
       await expect(increment).toBeVisible();
       expect((await increment.boundingBox())?.height).toBe(48);
       expect((await increment.boundingBox())?.width).toBe(48);
+      await expect(panel.getByText(/Текущий лимит: .* → Новый лимит:/)).toBeVisible();
+      if (label === 'Докупить устройства') {
+        await expect(panel.getByRole('button', { name: 'Купить за 99 ₽' })).toBeVisible();
+      }
+      expect((await panel.boundingBox())?.height).toBeLessThanOrEqual(300);
     } else {
       const choice = options.getByRole('button', { name: /20 ГБ/ });
       await expect(choice).toBeVisible();
@@ -185,9 +196,9 @@ test('open add-on forms retain controls, close targets and desktop density', asy
 test('operator colors and enlarged mobile text retain every action @critical-flow', async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 320, height: 900 });
   await prepare(page, 'ru', 'operator');
   await ready(page);
-  await page.setViewportSize({ width: 320, height: 900 });
   await page.addStyleTag({ content: 'html { font-size: 200%; }' });
   const options = page.locator('#subscription-additional-options-panel > div > button');
   await expect(options).toHaveCount(4);
@@ -195,7 +206,18 @@ test('operator colors and enlarged mobile text retain every action @critical-flo
     await expect(row).toBeVisible();
     expect((await row.boundingBox())?.height).toBeGreaterThanOrEqual(64);
   }
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const deviceLabel = page.locator('.subscription-hero--management dt').getByText('Устройства', {
+    exact: true,
+  });
+  await expect(deviceLabel).toBeVisible();
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  });
+  expect(await deviceLabel.evaluate((label) => label.scrollWidth)).toBeLessThanOrEqual(
+    await deviceLabel.evaluate((label) => label.clientWidth),
+  );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
 
 test('Dashboard traffic form shares only the approved open-form density', async ({ page }) => {

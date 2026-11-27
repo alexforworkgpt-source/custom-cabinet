@@ -17,7 +17,7 @@ for (const status of ['limited', 'pending', 'disabled'] as const) {
         '/api/cabinet/subscription/purchase-options': classicPurchaseOptions,
       },
     });
-    await page.goto('/subscriptions/42');
+    await page.goto('/subscriptions/42', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('note')).toHaveText(
       'Продление недоступно в текущем состоянии подписки.',
     );
@@ -42,7 +42,7 @@ test('trial conversion keeps the selected subscription for both status and purch
     tariff_id: 8,
     tariff_name: 'Пробный тариф',
   };
-  const requestedIds: (string | null)[] = [];
+  const requests: { path: string; id: string | null }[] = [];
   const { apiRequests } = await prepareAuthenticatedPage(page, {
     language: 'ru',
     responses: {
@@ -53,7 +53,7 @@ test('trial conversion keeps the selected subscription for both status and purch
   await page.route(/\/api\/cabinet\/subscription(?:\/purchase-options)?(?:\?|$)/, async (route) => {
     const url = new URL(route.request().url());
     const id = url.searchParams.get('subscription_id');
-    requestedIds.push(id);
+    requests.push({ path: url.pathname, id });
     await route.fulfill({
       json: url.pathname.endsWith('/purchase-options')
         ? { sales_mode: 'tariffs', tariffs: [], balance_kopeks: 20_000 }
@@ -65,12 +65,19 @@ test('trial conversion keeps the selected subscription for both status and purch
   const purchase = page.locator('main a[href="/subscription/purchase?subscriptionId=43"]');
   await expect(purchase).toBeVisible();
   await expect(page.locator('[data-subscription-overview]')).toContainText('Пробный');
-  requestedIds.length = 0;
+  requests.length = 0;
   await purchase.click();
   await expect(page).toHaveURL('/subscription/purchase?subscriptionId=43');
   await expect(page.getByText('Доступных опций нет', { exact: true })).toBeVisible();
-  expect(requestedIds.length).toBeGreaterThanOrEqual(2);
-  expect(requestedIds.every((id) => id === '43')).toBe(true);
+  await expect
+    .poll(() => requests.map(({ path }) => path))
+    .toEqual(
+      expect.arrayContaining([
+        '/api/cabinet/subscription',
+        '/api/cabinet/subscription/purchase-options',
+      ]),
+    );
+  expect(requests.every(({ id }) => id === '43')).toBe(true);
   expect(apiRequests.some((request) => /^POST .*\/purchase/.test(request))).toBe(false);
 });
 
@@ -134,7 +141,7 @@ test('device funding return permits a smaller quantity under fresh limits and ch
   await increment.click();
   await increment.click();
   await increment.click();
-  await expect(page.getByText('400 ₽', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Купить за 400 ₽', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Пополнить', exact: true }).click();
   await expect(page).toHaveURL(
     `/balance/top-up?amount=400&returnTo=${encodeURIComponent(returnTo)}`,
@@ -144,13 +151,13 @@ test('device funding return permits a smaller quantity under fresh limits and ch
   await expect(
     page.getByText('Можно добавить максимум 2 устройства', { exact: true }),
   ).toBeVisible();
-  const buy = page.getByRole('button', { name: 'Купить', exact: true });
+  const buy = page.getByRole('button', { name: /^Купить(?: за .+)?$/ });
   await expect(buy).toBeDisabled();
   expect(purchases).toEqual([]);
   const decrement = page.getByRole('button', { name: 'Уменьшить кол-во устройств', exact: true });
   await decrement.click();
   await decrement.click();
-  await expect(page.getByText('200 ₽', { exact: true })).toBeVisible();
+  await expect(buy).toHaveText('Купить за 200 ₽');
   await expect(buy).toBeEnabled();
   expect(purchases).toEqual([]);
   await buy.click();

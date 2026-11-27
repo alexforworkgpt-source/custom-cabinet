@@ -3,7 +3,7 @@ import { prepareAuthenticatedPage } from './cabinetTestHarness';
 import { responses, subscription as currentSubscription } from './classicRenewalFixture';
 import { classicPurchaseOptions } from './classicPurchasePricingFixture';
 
-test('management page shows compact subscription conditions above its existing controls', async ({
+test('management shows the full end date and traffic above its existing controls', async ({
   page,
 }) => {
   const { apiRequests } = await prepareAuthenticatedPage(page, {
@@ -14,6 +14,8 @@ test('management page shows compact subscription conditions above its existing c
         has_subscription: true,
         subscription: {
           ...currentSubscription,
+          traffic_used_gb: 25,
+          traffic_used_percent: 25,
           servers: [{ uuid: 'nl', name: '🇳🇱', country_code: 'NL' }],
         },
       },
@@ -25,10 +27,14 @@ test('management page shows compact subscription conditions above its existing c
   const overview = page.locator('[data-subscription-overview]');
   await expect(overview.getByRole('heading', { name: 'Текущий тариф', exact: true })).toBeVisible();
   await expect(overview.getByText('Активна', { exact: true })).toBeVisible();
-  await expect(overview).toContainText('100 ГБ');
+  const usage = overview.getByRole('progressbar', { name: /Трафик/ });
+  await expect(usage).toHaveAttribute('aria-valuenow', '25');
+  await expect(overview.getByText('25%', { exact: true })).toBeVisible();
+  await expect(overview.getByText('25,0 ГБ / 100,0 ГБ', { exact: true })).toBeVisible();
   await expect(overview).toContainText('3 устройства');
   await expect(overview).toContainText('🇳🇱');
   await expect(overview.locator('time')).toHaveAttribute('dateTime', currentSubscription.end_date);
+  await expect(overview.locator('time')).toHaveText(/до 30 октября 2026/);
   await expect(overview.getByRole('note')).toHaveCount(0);
   const renew = page.getByRole('link', { name: /Продлить подписку/ });
   await expect(renew).toBeVisible();
@@ -245,7 +251,7 @@ test('device funding returns to the same subscription and waits for a fresh manu
     await route.fulfill({ json: { success: true, new_device_limit: 2, price_kopeks: 16166 } });
   });
   await page.goto(returnTo);
-  const buy = page.getByRole('button', { name: 'Купить', exact: true });
+  const buy = page.getByRole('button', { name: 'Купить за 161.66 ₽', exact: true });
   await expect(buy).toBeEnabled();
   expect(purchases).toBe(0);
   await buy.click();

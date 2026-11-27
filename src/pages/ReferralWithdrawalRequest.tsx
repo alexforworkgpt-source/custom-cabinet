@@ -49,15 +49,17 @@ export default function ReferralWithdrawalRequest() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <h1 className="text-2xl font-bold text-dark-50">{t('referral.withdrawal.requestTitle')}</h1>
-      <p className="text-sm text-dark-400">
-        {t('referral.withdrawal.requestDesc', {
-          available: balance ? formatWithCurrency(balance.available_total / 100) : '',
-        })}
-      </p>
+      <header className="space-y-2">
+        <h1 className="text-2xl font-bold text-dark-50">{t('referral.withdrawal.requestTitle')}</h1>
+        <p className="text-sm text-dark-400">
+          {t('referral.withdrawal.requestDesc', {
+            available: balance ? formatWithCurrency(balance.available_total / 100) : '',
+          })}
+        </p>
+      </header>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="bento-card space-y-4">
+        <div className="bento-card animate-none space-y-4">
           <div>
             <label htmlFor="rw-amount" className="mb-1 block text-sm font-medium text-dark-300">
               {t('referral.withdrawal.fields.amount')}

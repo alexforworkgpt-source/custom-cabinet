@@ -5,7 +5,6 @@ import { ChevronRightIcon } from '../../icons';
 import type { PurchaseOptions, Subscription } from '../../../types';
 import { deviceUnavailableText } from '../deviceReasons';
 import { useDevicePurchase } from '@/hooks/useDevicePurchase';
-import { formatDateOrRaw } from '@/utils/format';
 import { subscriptionActionStyles as styles } from './subscriptionActionStyles';
 
 // ──────────────────────────────────────────────────────────────────
@@ -40,7 +39,7 @@ export function DeviceTopupSheet({
   isDark,
   compactOnMobile = false,
 }: DeviceTopupSheetProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const {
     priceQuery,
     purchaseMutation: devicePurchaseMutation,
@@ -94,8 +93,8 @@ export function DeviceTopupSheet({
 
   return (
     <div className={styles.panel(isDark)}>
-      <div className={styles.header}>
-        <h3 className="font-medium text-dark-100">{t('subscription.buyDevices')}</h3>
+      <div className={styles.deviceHeader}>
+        <h3 className="font-semibold text-dark-100">{t('subscription.buyDevices')}</h3>
         <button
           onClick={onClose}
           disabled={checking || devicePurchaseMutation.isPending}
@@ -115,7 +114,7 @@ export function DeviceTopupSheet({
           )}
         </div>
       ) : (
-        <div className={styles.fields}>
+        <div className={styles.deviceFields}>
           {devicePriceData?.available === false && (
             <p role="status" className="text-center text-sm text-dark-400">
               {deviceUnavailableText(
@@ -125,25 +124,6 @@ export function DeviceTopupSheet({
               )}
             </p>
           )}
-          <div className="space-y-1 text-center text-sm text-dark-300">
-            <p>
-              {t('subscription.additionalOptions.currentDeviceLimit', {
-                count: currentSubscription.device_limit,
-              })}
-              {' → '}
-              {t('subscription.additionalOptions.newDeviceLimit', {
-                count: currentSubscription.device_limit + devicesToAdd,
-              })}
-            </p>
-            <p>
-              {t('subscription.expiresAt')}:{' '}
-              {formatDateOrRaw(currentSubscription.end_date, i18n?.language ?? 'ru', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </p>
-          </div>
           {/* Device counter */}
           <div className={styles.counter}>
             <button
@@ -154,10 +134,10 @@ export function DeviceTopupSheet({
             >
               -
             </button>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-dark-100">{devicesToAdd}</div>
+            <div className={styles.counterValue}>
+              <div className={styles.counterNumber}>{devicesToAdd}</div>
               <div className="text-sm text-dark-500">
-                {t('subscription.additionalOptions.devicesUnit')}
+                {t('subscription.additionalOptions.devicesUnit', { count: devicesToAdd })}
               </div>
             </div>
             <button
@@ -179,62 +159,60 @@ export function DeviceTopupSheet({
             </button>
           </div>
 
-          {devicePriceData?.max_device_limit && (
-            <div className="text-center text-sm text-dark-400">
-              {t('subscription.additionalOptions.currentDeviceLimit', {
-                count: devicePriceData.current_device_limit || subscription.device_limit,
-              })}{' '}
-              /{' '}
-              {t('subscription.additionalOptions.maxDevices', {
-                count: devicePriceData.max_device_limit,
-              })}
-            </div>
-          )}
+          <p className={styles.deviceLimit}>
+            {t('subscription.additionalOptions.currentDeviceLimit', {
+              count: currentSubscription.device_limit,
+            })}
+            {' → '}
+            {t('subscription.additionalOptions.newDeviceLimit', {
+              count: currentSubscription.device_limit + devicesToAdd,
+            })}
+            {devicePriceData?.max_device_limit
+              ? ` (${t('subscription.additionalOptions.maxDevices', {
+                  count: devicePriceData.max_device_limit,
+                })})`
+              : null}
+          </p>
 
           {/* Price info */}
-          {devicePriceData?.available && devicePriceData.price_per_device_label && (
-            <div className="text-center">
-              <div className="mb-2 text-sm text-dark-400">
-                {devicePriceData.discount_percent &&
-                devicePriceData.discount_percent > 0 &&
-                devicePriceData.original_price_per_device_kopeks ? (
-                  <span>
-                    <span className="text-dark-500 line-through">
-                      {formatPrice(devicePriceData.original_price_per_device_kopeks)}
+          {devicePriceData?.available &&
+            (devicePriceData.total_price_kopeks === 0 ||
+              devicePriceData.price_per_device_label) && (
+              <div className="text-center">
+                <div className={styles.devicePrice}>
+                  {devicePriceData.total_price_kopeks === 0 ? (
+                    <span className="font-medium text-success-400">
+                      {t('subscription.switchTariff.free')}
                     </span>
-                    <span className="mx-1">{devicePriceData.price_per_device_label}</span>
-                  </span>
-                ) : (
-                  devicePriceData.price_per_device_label
-                )}
-                /{t('subscription.perDevice').replace('/ ', '')} (
-                {t('subscription.days', { count: devicePriceData.days_left })})
-              </div>
-              {devicePriceData.discount_percent && devicePriceData.discount_percent > 0 && (
-                <div className="mb-2">
-                  <span className="inline-block rounded-full bg-success-500/20 px-2.5 py-0.5 text-sm font-medium text-success-400">
-                    -{devicePriceData.discount_percent}%
-                  </span>
-                </div>
-              )}
-              {devicePriceData.total_price_kopeks === 0 ? (
-                <div className="text-2xl font-bold text-success-400">
-                  {t('subscription.switchTariff.free')}
-                </div>
-              ) : (
-                <div className="text-2xl font-bold text-accent-400">
-                  {devicePriceData.discount_percent &&
-                    devicePriceData.discount_percent > 0 &&
-                    devicePriceData.base_total_price_kopeks && (
-                      <span className="mr-2 text-lg text-dark-500 line-through">
-                        {formatPrice(devicePriceData.base_total_price_kopeks)}
+                  ) : (
+                    <>
+                      {devicePriceData.discount_percent &&
+                      devicePriceData.discount_percent > 0 &&
+                      devicePriceData.original_price_per_device_kopeks ? (
+                        <span>
+                          <span className="text-dark-500 line-through">
+                            {formatPrice(devicePriceData.original_price_per_device_kopeks)}
+                          </span>
+                          <span className="mx-1">{devicePriceData.price_per_device_label}</span>
+                        </span>
+                      ) : (
+                        devicePriceData.price_per_device_label
+                      )}
+                      <span>
+                        {t('subscription.perDevice')}
+                        {devicePriceData.days_left !== undefined &&
+                          ` (${t('subscription.days', { count: devicePriceData.days_left })})`}
                       </span>
-                    )}
-                  {devicePriceData.total_price_label}
+                    </>
+                  )}
+                  {Boolean(devicePriceData.discount_percent) && (
+                    <span className="font-medium text-success-400">
+                      -{devicePriceData.discount_percent}%
+                    </span>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
 
           {/* Insufficient balance */}
           {devicePriceData?.available &&
@@ -266,12 +244,18 @@ export function DeviceTopupSheet({
                 devicePriceData.total_price_kopeks > balance
               )
             }
-            className="btn-primary w-full py-3"
+            className="btn-primary min-h-11 w-full py-2"
           >
             {devicePurchaseMutation.isPending ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               </span>
+            ) : devicePriceData?.available &&
+              devicePriceData.total_price_kopeks !== 0 &&
+              devicePriceData.total_price_label ? (
+              t('subscription.additionalOptions.buyAtPrice', {
+                price: devicePriceData.total_price_label,
+              })
             ) : (
               t('subscription.additionalOptions.buy')
             )}

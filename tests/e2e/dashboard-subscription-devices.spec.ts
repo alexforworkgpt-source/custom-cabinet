@@ -94,7 +94,34 @@ for (const scenario of [
   });
 }
 
-test('opens Connection for a free slot and restores focus to the selected subscription action', async ({
+test('opening and closing Balance preserves Dashboard scroll and focus', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await prepareAuthenticatedPage(page, { responses: commonResponses });
+  await page.goto('/?sub=7', { waitUntil: 'domcontentloaded' });
+  const trigger = page
+    .locator('main')
+    .getByRole('link', { name: /Balance/ })
+    .first();
+  await trigger.scrollIntoViewIfNeeded();
+  await trigger.evaluate((element) => {
+    window.scrollTo({ top: window.scrollY + element.getBoundingClientRect().top - 150 });
+  });
+  const scrollPosition = () => page.evaluate(() => window.scrollY);
+  const before = await scrollPosition();
+  expect(before).toBeGreaterThan(0);
+
+  await trigger.click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.locator('[data-balance-summary]')).toBeVisible();
+  expect(await scrollPosition()).toBe(before);
+
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  expect(await scrollPosition()).toBe(before);
+});
+
+test('opens Connection for a free slot and preserves Dashboard scroll and focus on close', async ({
   page,
 }) => {
   const { unexpectedApiRequests } = await prepareAuthenticatedPage(page, {
@@ -118,18 +145,48 @@ test('opens Connection for a free slot and restores focus to the selected subscr
     },
   });
 
-  await page.goto('/?sub=7');
-  const connect = page.getByRole('button', { name: /Set Up VPN/ });
-  await connect.click();
+  let releaseConfig!: () => void;
+  const configPending = new Promise<void>((resolve) => {
+    releaseConfig = resolve;
+  });
+  await page.route('**/api/cabinet/subscription/app-config*', async (route) => {
+    await configPending;
+    await route.fallback();
+  });
 
-  await expect(page).toHaveURL('/connection?sub=7');
-  await expect(
-    page.getByRole('dialog').getByRole('heading', { name: 'Connect VPN' }),
-  ).toBeVisible();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/?sub=7', { waitUntil: 'domcontentloaded' });
+  const connect = page.getByRole('button', { name: /Set Up VPN/ });
+  await connect.scrollIntoViewIfNeeded();
+  await connect.evaluate((button) => {
+    window.scrollTo({ top: window.scrollY + button.getBoundingClientRect().top - 150 });
+  });
+  const scrollPosition = () => page.evaluate(() => window.scrollY);
+  const initialScroll = await scrollPosition();
+  expect(initialScroll).toBeGreaterThan(0);
+
+  const dialog = page.getByRole('dialog');
+  try {
+    await connect.click();
+    await expect(page).toHaveURL('/connection?sub=7');
+    await expect(dialog).toBeVisible();
+    expect(await scrollPosition()).toBe(initialScroll);
+  } finally {
+    releaseConfig();
+  }
+  await expect(dialog.locator('[data-connection-step]')).toBeVisible();
+  expect(await scrollPosition()).toBe(initialScroll);
 
   await page.keyboard.press('Escape');
   await expect(page).toHaveURL('/?sub=7');
   await expect(connect).toBeFocused();
+  expect(await scrollPosition()).toBe(initialScroll);
+
+  await connect.click();
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page).toHaveURL('/?sub=7');
+  await expect(connect).toBeFocused();
+  expect(await scrollPosition()).toBe(initialScroll);
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 

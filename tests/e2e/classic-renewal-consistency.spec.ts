@@ -9,7 +9,7 @@ const periods = [14, 30, 60, 90, 180, 360].map((days, index) => ({
   original_price_kopeks: [null, null, 19800, 29700, 59400, 118800][index],
 }));
 
-test('renewal groups current terms and presents the exact shortfall with confirmation guidance @critical-flow', async ({
+test('renewal starts with periods and presents the exact shortfall with confirmation guidance @critical-flow', async ({
   page,
 }) => {
   const { apiRequests } = await prepareAuthenticatedPage(page, {
@@ -43,13 +43,7 @@ test('renewal groups current terms and presents the exact shortfall with confirm
     Date.now = () => Date.parse('2026-10-20T00:00:00Z');
   });
   await page.goto('/subscriptions/42/renew');
-  const info = page.locator('[data-renewal-info]');
-  await expect(info.getByText('Текущая подписка действует', { exact: true })).toBeVisible();
-  await expect(info.getByText('Трафик', { exact: true }).locator('..')).toContainText('Безлимит');
-  await expect(info.getByText('Устройства', { exact: true }).locator('..')).toContainText(
-    '2 устройства',
-  );
-  await expect(info).toContainText('Нидерланды · Германия');
+  await expect(page.locator('[data-renewal-info]')).toHaveCount(0);
   await expect(page.getByText('Дольше — выгоднее', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: /^360 дней/ }).click();
   const summary = page.locator('[data-renewal-summary]');
@@ -120,9 +114,8 @@ for (const language of ['ru', 'en', 'fa', 'zh']) {
       await page.goto('/subscriptions/42/renew', { waitUntil: 'domcontentloaded' });
       const option = page.getByRole('button', { name: /^30 / });
       await expect(option).toBeVisible();
-      await expect(page.getByText(/Базовый юзер/)).toBeVisible();
-      await expect(page.locator('[data-renewal-info] svg')).toHaveCount(6);
-      await expect(page.locator('[data-renewal-info]')).toContainText('Нидерланды');
+      await expect(page.getByText(/Базовый юзер/)).toHaveCount(0);
+      await expect(page.locator('[data-renewal-info]')).toHaveCount(0);
       const outerPanel = page.locator('[data-renewal-panel]');
       await expect(outerPanel.locator('[data-renewal-clearance]')).toHaveCount(0);
       expect(await outerPanel.evaluate((element) => getComputedStyle(element).borderTopWidth)).toBe(
@@ -136,15 +129,7 @@ for (const language of ['ru', 'en', 'fa', 'zh']) {
         await expect(
           page.getByRole('heading', { name: 'Продлить подписку', exact: true }),
         ).toBeVisible();
-        const info = page.locator('[data-renewal-info]');
-        await expect(info.getByText('Трафик', { exact: true }).locator('..')).not.toContainText(
-          'Устройства',
-        );
-        await expect(info.getByText('Устройства', { exact: true }).locator('..')).toContainText(
-          '1 устройство',
-        );
         await expect(page.getByRole('button', { name: /^90 / })).toContainText('267.30');
-        await expect(page.locator('[data-renewal-info]')).toContainText('Безлимит');
       }
       await expect(option).toHaveAttribute('aria-pressed', 'false');
       const action = page.locator('[data-renewal-summary] button');

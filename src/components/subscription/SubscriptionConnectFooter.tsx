@@ -5,10 +5,13 @@ import { Button } from '@/components/primitives/Button';
 import { cn } from '@/lib/utils';
 import { HoverBorderGradient } from '../ui/hover-border-gradient';
 import type { ConnectFooterState } from './connectFooterState';
+import setupPortrait from '@/assets/cabinet-robot/home-setup.webp';
+import './SubscriptionConnectFooter.css';
 
 interface SubscriptionConnectFooterProps {
   state: ConnectFooterState;
   variant?: 'compact' | 'prominent';
+  illustrated?: boolean;
   borderColor?: string;
   mutedColor?: string;
   className?: string;
@@ -21,6 +24,7 @@ interface SubscriptionConnectFooterProps {
 export function SubscriptionConnectFooter({
   state,
   variant = 'compact',
+  illustrated = false,
   borderColor,
   mutedColor,
   className,
@@ -112,6 +116,7 @@ export function SubscriptionConnectFooter({
   }
 
   const full = state.kind === 'full';
+  const showIllustration = illustrated && !full;
   const highlight = state.kind === 'connect' && state.highlight;
   const counter =
     state.kind === 'connect' && state.unlimited
@@ -134,20 +139,38 @@ export function SubscriptionConnectFooter({
         aria-expanded={full ? managementOpen : undefined}
         className={cn(
           'connect-device-gradient-button flex min-h-[60px] w-full items-center justify-start gap-3 rounded-[14px] p-3 text-left transition-shadow duration-300',
+          showIllustration && 'connect-device-illustrated isolate overflow-hidden',
           className,
         )}
         data-onboarding="connect-devices"
         style={{ fontFamily: 'inherit' }}
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-on-accent/15 text-on-accent">
+        {showIllustration && (
+          <img className="connect-device-portrait" src={setupPortrait} alt="" draggable={false} />
+        )}
+        <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-on-accent/15 text-on-accent">
           {full ? <WarningIcon className="h-4 w-4" /> : <KeyIcon className="h-4 w-4" />}
         </span>
-        <span className="min-w-0 flex-1">
+        <span className="relative min-w-0 flex-1">
           <span className="block text-sm font-semibold tracking-tight text-on-accent">{label}</span>
-          <span className="mt-0.5 block text-[11px] text-on-accent/65">{detail}</span>
+          <span
+            className={cn(
+              'mt-0.5 block text-[11px]',
+              showIllustration ? 'text-on-accent' : 'text-on-accent/65',
+            )}
+          >
+            {detail}
+          </span>
         </span>
-        <span className="shrink-0 font-mono text-xs tabular-nums text-on-accent/70">{counter}</span>
-        <ChevronRightIcon className="h-4 w-4 shrink-0 text-on-accent/60 rtl:rotate-180" />
+        <span
+          className={cn(
+            'shrink-0 font-mono text-xs tabular-nums text-on-accent/70',
+            showIllustration && 'opacity-0',
+          )}
+        >
+          {counter}
+        </span>
+        <ChevronRightIcon className="relative h-4 w-4 shrink-0 text-on-accent/60 rtl:rotate-180" />
       </HoverBorderGradient>
     );
   }

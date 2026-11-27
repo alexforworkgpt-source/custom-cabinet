@@ -180,7 +180,7 @@ function SystemDocumentContent({ data, isLoading }: SystemDocumentContentProps) 
   }
 
   return (
-    <div className="bento-card prose prose-invert max-w-none">
+    <div className="bento-card animate-none prose prose-invert max-w-none">
       <div
         className="overflow-x-auto"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: formatContent sanitizes legal content with a strict DOMPurify allowlist.
@@ -483,7 +483,7 @@ export default function Info() {
     }
 
     return (
-      <div className="bento-card prose prose-invert max-w-none">
+      <div className="bento-card animate-none prose prose-invert max-w-none">
         <div
           className="overflow-x-auto"
           // biome-ignore lint/security/noDangerouslySetInnerHtml: infoPageHtml is produced by the strict DOMPurify rich-content sanitizer.
@@ -529,7 +529,7 @@ export default function Info() {
       return (
         <div className="space-y-2">
           {faqPages.map((faq: FaqPage) => (
-            <div key={faq.id} className="bento-card overflow-hidden p-0">
+            <div key={faq.id} className="bento-card animate-none overflow-hidden p-0">
               <button
                 onClick={() => toggleFaq(faq.id)}
                 className="flex min-h-[52px] w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-dark-800/50"
@@ -623,7 +623,7 @@ export default function Info() {
       return (
         <div className="space-y-6">
           {/* Progress Card */}
-          <div className="bento-card p-5">
+          <div className="bento-card animate-none p-5">
             <h3 className="mb-4 text-lg font-semibold text-dark-50">{t('info.yourProgress')}</h3>
 
             <div className="mb-4 grid grid-cols-2 gap-4">
@@ -680,7 +680,7 @@ export default function Info() {
             {loyaltyData.tiers.map((tier) => (
               <div
                 key={tier.id}
-                className={`bento-card p-4 transition-all ${
+                className={`bento-card animate-none p-4 transition-all ${
                   tier.is_current
                     ? 'bg-accent-500/5 ring-2 ring-accent-500/50'
                     : tier.is_achieved

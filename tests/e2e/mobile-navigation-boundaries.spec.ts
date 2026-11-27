@@ -7,7 +7,6 @@ import {
 import { responses } from './classicRenewalFixture';
 
 for (const path of [
-  '/subscriptions/42/renew',
   '/referral/partner/apply',
   '/referral/withdrawal/request',
   '/balance',
@@ -48,6 +47,21 @@ for (const path of [
       await expect(mainNavigation(page)).toHaveCount(0);
     expect([...fixture.unexpectedApiRequests]).toEqual([]);
   });
+
+test('renewal shows the mobile panel with Subscription selected', async ({ page }) => {
+  await prepareMobileNavigation(page, responses);
+  await page.goto('/subscriptions/42/renew');
+  await expect(page.locator('[data-renewal-panel]')).toBeVisible();
+  const navigation = mainNavigation(page);
+  if ((page.viewportSize()?.width ?? 1280) < 1024) {
+    await expect(navigation).toBeVisible();
+    await expect(
+      navigation.getByRole('link', { name: 'Subscription', exact: true }),
+    ).toHaveAttribute('aria-current', 'page');
+    await navigation.getByRole('link', { name: 'Dashboard', exact: true }).click();
+    await expect(page).toHaveURL('/');
+  }
+});
 
 test('focusing a text field hides the mobile panel and cancelling restores it without losing navigation', async ({
   page,

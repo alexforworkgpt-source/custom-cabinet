@@ -8,7 +8,7 @@ import { HubLink } from '@/components/profile/HubLink';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
-import { staggerItem } from '@/components/motion/transitions';
+import { fadeIn } from '@/components/motion/transitions';
 
 export interface InfoSection {
   id: string;
@@ -56,19 +56,19 @@ export function InfoNavigation({
 
   return (
     <PageEntrance className="flex flex-col gap-6">
-      <PageEntranceItem className="flex items-center gap-3 md:hidden">
+      <PageEntranceItem variants={fadeIn} className="flex items-end gap-3 md:hidden">
         {showMobileContent ? (
           <Button
             variant="ghost"
             size="icon-lg"
             onClick={onBack}
             aria-label={t('common.back')}
-            className="shrink-0"
+            className="-mb-3 shrink-0 self-start sm:-mb-2"
           >
             <BackIcon className="h-5 w-5 rtl:rotate-180" />
           </Button>
         ) : (
-          <WebBackButton to="/profile" />
+          <WebBackButton to="/profile" inPageHeading />
         )}
         <h1
           ref={headingRef}
@@ -79,11 +79,7 @@ export function InfoNavigation({
         </h1>
       </PageEntranceItem>
 
-      <Card
-        variants={staggerItem}
-        size="md"
-        className={cn('md:hidden', showMobileContent && 'hidden')}
-      >
+      <Card variants={fadeIn} size="md" className={cn('md:hidden', showMobileContent && 'hidden')}>
         <nav
           aria-label={t('info.title')}
           className="divide-y divide-dark-700 [&>a]:rounded-none [&>a:first-child]:rounded-t-xl [&>a:last-child]:rounded-b-xl"
@@ -105,23 +101,23 @@ export function InfoNavigation({
         </nav>
       </Card>
 
-      <PageEntranceItem className="hidden items-center gap-3 md:flex">
+      <PageEntranceItem variants={fadeIn} className="hidden items-end gap-3 md:flex">
         {hasSourcePage ? (
           <Button
             variant="ghost"
             size="icon-lg"
             onClick={onBack}
             aria-label={t('common.back')}
-            className="shrink-0"
+            className="-mb-3 shrink-0 self-start sm:-mb-2"
           >
             <BackIcon className="h-5 w-5 rtl:rotate-180" />
           </Button>
         ) : (
-          <WebBackButton to="/profile" />
+          <WebBackButton to="/profile" inPageHeading />
         )}
         <h1 className="min-w-0 text-2xl font-bold text-dark-50 sm:text-3xl">{t('info.title')}</h1>
       </PageEntranceItem>
-      <motion.div variants={staggerItem} className="hidden flex-wrap gap-2 pb-1 md:flex">
+      <motion.div variants={fadeIn} className="hidden flex-wrap gap-2 pb-1 md:flex">
         {sections.map((section) => (
           <button
             key={section.id}

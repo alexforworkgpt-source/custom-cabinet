@@ -22,11 +22,11 @@ import {
   getClassicPurchaseSteps,
 } from '../components/subscription/purchase/classicPurchaseSteps';
 import { ClassicPurchaseWizard } from '../components/subscription/purchase/ClassicPurchaseWizard';
-import { PurchaseContextBanners } from '../components/subscription/purchase/PurchaseContextBanners';
 import { ExclamationIcon } from '@/components/icons';
 import { SubscriptionFlowSkeleton } from '../components/subscription/SubscriptionFlowSkeleton';
-import { usePurchaseContext } from '../hooks/usePurchaseContext';
-import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
+import { motion } from 'framer-motion';
+import { PageEntrance } from '@/components/motion/PageEntrance';
+import { fadeIn } from '@/components/motion/transitions';
 import { hasBot53Contract, hasTargetBotContract } from '../config/upstreamBotContract';
 import { resolvePayHotTarget } from '@/utils/payhotRecurring';
 import { canSetupCisPayTariff, resolveCisPayTarget } from '@/utils/cispayRecurring';
@@ -163,28 +163,11 @@ export default function SubscriptionPurchase() {
     subscriptionId !== undefined &&
     subscription?.id === subscriptionId &&
     canConfigureExpiredClassic(subscription);
-  const purchaseContext = usePurchaseContext({
-    subscription,
-    purchaseOptions,
-    tariffs,
-    showPromoGroup: !isTariffsMode || !showPurchaseForm,
-    enabled:
-      !invalidId &&
-      !initiallyLoading &&
-      !subscriptionError &&
-      !optionsError &&
-      (!classicOptions || !multiSubQuery.isError) &&
-      (!paidClassic || configureClassic),
-  });
-  usePageMobileNavigation(
-    !invalidId && isTariffsMode && !optionsError && !showPurchaseForm && switchTariffId === null
-      ? 'catalogue'
-      : 'action',
-  );
+  usePageMobileNavigation(!invalidId && switchTariffId === null ? 'section' : 'action');
   const pageHeader = (
-    <div className="flex items-center gap-3">
-      {subscriptionId && <WebBackButton to={`/subscriptions/${subscriptionId}`} />}
-      <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
+    <div className="flex items-end gap-3">
+      {subscriptionId && <WebBackButton to={`/subscriptions/${subscriptionId}`} inPageHeading />}
+      <h1 className="text-xl font-bold leading-8 text-dark-50 min-[360px]:text-2xl sm:text-3xl">
         {scopedSwitch
           ? t('subscription.switchTariff.title')
           : needsTariff(subscription)
@@ -266,13 +249,12 @@ export default function SubscriptionPurchase() {
   if (invalidId) return <Navigate to="/subscriptions" replace />;
   const classicListError = Boolean(classicOptions && multiSubQuery.isError);
   const loadError = subscriptionError || classicListError || optionsError;
-  if (!loadError && (initiallyLoading || purchaseContext.isLoading)) {
+  if (!loadError && initiallyLoading) {
     return (
       <PageEntrance className="space-y-6">
         {pageHeader}
         <SubscriptionFlowSkeleton
           mode={purchaseOptions ? (isTariffsMode ? 'tariffs' : 'classic') : 'unknown'}
-          context={purchaseContext}
           count={isTariffsMode ? catalogueTariffs.length : classicOptions?.periods.length}
           conditions={catalogueNotices}
           stepHeader={
@@ -332,11 +314,9 @@ export default function SubscriptionPurchase() {
       {/* Header */}
       {pageHeader}
 
-      {purchaseOptions && <PurchaseContextBanners context={purchaseContext} />}
-
       {/* Tariffs Section */}
       {isTariffsMode && tariffs.length > 0 && (
-        <PageEntranceItem>
+        <motion.div variants={fadeIn}>
           <section data-purchase-layout="tariffs">
             {catalogueNotices}
 
@@ -437,19 +417,19 @@ export default function SubscriptionPurchase() {
               )
             )}
           </section>
-        </PageEntranceItem>
+        </motion.div>
       )}
 
       {/* Purchase/Extend Section - Classic Mode */}
       {classicOptions && classicOptions.periods.length > 0 && (
-        <PageEntranceItem>
+        <motion.div variants={fadeIn}>
           <ClassicPurchaseWizard
             classicOptions={classicOptions}
             subscription={subscription}
             subscriptionId={subscriptionId}
             allowExpiredConfiguration={configureClassic}
           />
-        </PageEntranceItem>
+        </motion.div>
       )}
 
       {/* No options available fallback */}
@@ -457,7 +437,8 @@ export default function SubscriptionPurchase() {
         !optionsLoading &&
         !(isTariffsMode && tariffs.length > 0) &&
         !(classicOptions && classicOptions.periods.length > 0) && (
-          <PageEntranceItem
+          <motion.div
+            variants={fadeIn}
             className="rounded-3xl p-6 text-center"
             style={{
               background: g.cardBg,
@@ -473,7 +454,7 @@ export default function SubscriptionPurchase() {
             >
               {t('common.retry')}
             </button>
-          </PageEntranceItem>
+          </motion.div>
         )}
     </PageEntrance>
   );

@@ -145,7 +145,7 @@ export function TariffPickerGrid({
             return (
               <div
                 key={tariff.id}
-                className={`bento-card-hover flex min-w-0 flex-col !p-3 text-start transition-all sm:!p-4 ${
+                className={`bento-card-hover animate-none flex min-w-0 flex-col !p-3 text-start transition-all sm:!p-4 ${
                   isCurrentTariff
                     ? 'bento-card-glow border-accent-500'
                     : tariff.is_highlighted

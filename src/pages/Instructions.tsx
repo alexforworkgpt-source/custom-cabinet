@@ -11,7 +11,7 @@ import {
   DevicesIcon,
   ShieldIcon,
 } from '@/components/icons';
-import { staggerContainer, staggerItem } from '@/components/motion/transitions';
+import { fadeIn, staggerContainer } from '@/components/motion/transitions';
 import { PageEntrance } from '@/components/motion/PageEntrance';
 import {
   instructionCategories,
@@ -33,10 +33,10 @@ export default function Instructions() {
 
   return (
     <PageEntrance className="w-full space-y-6">
-      <motion.header variants={staggerItem} className="max-w-2xl space-y-2">
+      <motion.header variants={fadeIn} className="max-w-2xl space-y-2">
         <InstructionSupportReturn fromSupport={fromSupport} />
-        <div className="flex items-center gap-3">
-          {!fromSupport && <WebBackButton to="/profile" />}
+        <div className="flex items-end gap-3">
+          {!fromSupport && <WebBackButton to="/profile" inPageHeading />}
           <h1 className="min-w-0 text-2xl font-bold text-dark-50 sm:text-3xl">
             {t('instructions.title')}
           </h1>
@@ -59,7 +59,7 @@ export default function Instructions() {
           return (
             <motion.section
               key={category}
-              variants={staggerItem}
+              variants={fadeIn}
               aria-labelledby={`instruction-category-${category}`}
             >
               <Card size="md" className="h-full">

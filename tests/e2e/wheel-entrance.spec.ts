@@ -4,6 +4,7 @@ import { prepareQrWheel, wheelGraphic, wheelTargets } from './qrWheelFixture';
 import {
   clearEntrances,
   expectEntrance,
+  expectFadeEntrance,
   expectNoEntranceErrors,
   expectStationary,
   recordEntrances,
@@ -47,14 +48,14 @@ test('Wheel header enters while loading and complete ready sections enter after 
     await page.goto('/wheel');
     await page.getByRole('heading', { name: 'Fortune Wheel', exact: true }).waitFor();
     await expect(page.locator(wheelGraphic)).toHaveCount(0);
-    await expectEntrance(page, 'header');
+    await expectFadeEntrance(page, 'header');
     await waitForRestingGeometry(page.locator('main h1'));
     await clearEntrances(page);
   } finally {
     release();
   }
   await expect(page.locator(wheelGraphic)).toBeVisible();
-  await expectEntrance(page, 'wheel');
+  await expectFadeEntrance(page, 'wheel');
   await expectEntrance(page, 'history');
   await page.waitForTimeout(900);
   await expectStationary(page, ['header']);
@@ -81,7 +82,7 @@ test('Wheel header enters while loading and complete ready sections enter after 
   await clearEntrances(page);
   await page.goBack();
   await expect(page).toHaveURL('/wheel');
-  await expectEntrance(page, 'wheel');
+  await expectFadeEntrance(page, 'wheel');
   expect(
     fixture.apiRequests.filter(
       (request) => request.startsWith('POST ') && request.includes('/wheel/'),

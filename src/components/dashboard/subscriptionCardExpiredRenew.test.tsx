@@ -100,7 +100,6 @@ async function renderCard(sub: Subscription, balanceKopeks: number) {
                 <Card
                   subscription={sub}
                   balanceKopeks={balanceKopeks}
-                  balanceRubles={balanceKopeks / 100}
                   isTrafficTopupOpen={false}
                   trafficTopupTriggerRef={{ current: null }}
                   onBuyTraffic={() => {}}

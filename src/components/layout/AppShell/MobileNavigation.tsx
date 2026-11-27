@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { useLocation } from 'react-router';
 
-type PageNavigationMode = 'catalogue' | 'section' | 'action';
+type PageNavigationMode = 'section' | 'action';
 interface MobileNavigationState {
   page: { key: string; mode: PageNavigationMode } | null;
   publish: (locationKey: string, mode: PageNavigationMode | null) => void;

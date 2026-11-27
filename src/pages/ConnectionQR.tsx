@@ -14,6 +14,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useBranding } from '../hooks/useBranding';
 import { AdminBackButton } from '@/components/admin';
 import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
+import { fadeIn } from '@/components/motion/transitions';
 
 interface ConnectionQRState {
   url?: string;
@@ -150,12 +151,12 @@ export default function ConnectionQR() {
 
   return (
     <PageEntrance>
-      <PageEntranceItem className="mb-6 flex items-center gap-3">
+      <PageEntranceItem variants={fadeIn} className="mb-6 flex items-end gap-3">
         <AdminBackButton to={connectionPath} replace />
         <h1 className="text-2xl font-bold text-dark-100">{t('subscription.connection.qrTitle')}</h1>
       </PageEntranceItem>
 
-      <PageEntranceItem className="flex flex-col items-center">
+      <PageEntranceItem variants={fadeIn} className="flex flex-col items-center">
         <div className="flex w-full max-w-sm flex-col items-center px-2 sm:px-6">
           {appName && (
             <p className="mb-3 text-sm font-medium uppercase tracking-wider text-dark-400">

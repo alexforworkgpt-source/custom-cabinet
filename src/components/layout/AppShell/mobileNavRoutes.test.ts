@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isMobileNavScreen, mobileNavItems } from './mobileNavRoutes';
+import { isMobileNavItemActive, isMobileNavScreen, mobileNavItems } from './mobileNavRoutes';
 
 describe('mobileNavItems', () => {
   it('сохраняет четыре пункта Custom Cabinet', () => {
@@ -27,14 +27,22 @@ describe('isMobileNavScreen', () => {
     }
   });
 
-  it('скрывает панель на вложенных и административных экранах', () => {
-    for (const path of [
-      '/subscriptions/12/renew',
-      '/balance/top-up',
-      '/support/new',
-      '/admin',
-      '/admin/users/12',
-    ]) {
+  it('показывает панель на странице продления подписки', () => {
+    expect(isMobileNavScreen('/subscriptions/12/renew', items)).toBe(true);
+    expect(isMobileNavScreen('/subscriptions/12/renew/', items)).toBe(true);
+  });
+
+  it('показывает нижнюю панель с активным профилем на главной админки', () => {
+    for (const path of ['/admin', '/admin/']) {
+      expect(isMobileNavScreen(path, items), path).toBe(true);
+      expect(
+        items.filter((item) => isMobileNavItemActive(path, item)).map(({ key }) => key),
+      ).toEqual(['profile']);
+    }
+  });
+
+  it('скрывает панель на вложенных экранах', () => {
+    for (const path of ['/balance/top-up', '/support/new', '/admin/users/12']) {
       expect(isMobileNavScreen(path, items), path).toBe(false);
     }
   });

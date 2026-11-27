@@ -739,6 +739,97 @@ test('manages Devices from subscription management and returns to it @critical-f
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
+for (const motion of ['no-preference', 'reduce'] as const) {
+  test(`VPN stays still with delayed settings and preserves the closing step (${motion})`, async ({
+    page,
+  }) => {
+    const config = connectionResponses['/api/cabinet/subscription/app-config'];
+    await prepareAuthenticatedPage(page, {
+      responses: {
+        ...activeResponses,
+        ...connectionResponses,
+        '/api/cabinet/subscription/app-config': {
+          ...config,
+          platforms: { windows: config.platforms.windows },
+        },
+      },
+    });
+    await page.emulateMedia({ reducedMotion: motion });
+    let releaseConfig!: () => void;
+    const configPending = new Promise<void>((resolve) => {
+      releaseConfig = resolve;
+    });
+    await page.route('**/api/cabinet/subscription/app-config*', async (route) => {
+      await configPending;
+      await route.fallback();
+    });
+
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    const trigger = page.getByRole('button', { name: /Set Up VPN/ });
+    await trigger.scrollIntoViewIfNeeded();
+    const dashboardScroll = await page.evaluate(() => window.scrollY);
+    const dialog = page.getByRole('dialog');
+    let skeletonTitle = null;
+    try {
+      await trigger.click();
+      const loading = dialog.getByRole('status', { name: 'Loading...' }).first();
+      await expect(loading).toBeVisible();
+      skeletonTitle = await loading
+        .locator('div:first-child > :nth-child(2)')
+        .first()
+        .boundingBox();
+    } finally {
+      releaseConfig();
+    }
+
+    const title = dialog.getByRole('heading', { name: 'Set up Windows' });
+    await expect(title).toBeVisible();
+    const titleBox = await title.boundingBox();
+    if (!skeletonTitle || !titleBox)
+      throw new Error('The loading and ready headings must be visible');
+    expect.soft(skeletonTitle.x).toBeCloseTo(titleBox.x, 0);
+    expect.soft(skeletonTitle.y).toBeCloseTo(titleBox.y, 0);
+
+    const capture = await page.evaluateHandle(() => {
+      const trace = { running: true, closing: false, offset: 0, flashedPlatform: false };
+      const frame = () => {
+        if (!trace.running) return;
+        const step = document.querySelector<HTMLElement>('[role="dialog"] [data-connection-step]');
+        if (step) {
+          const transform = getComputedStyle(step).transform;
+          const offset = transform === 'none' ? 0 : new DOMMatrix(transform).m41;
+          trace.offset = Math.max(trace.offset, Math.abs(offset));
+          if (trace.closing && step.dataset.connectionStep === 'platform')
+            trace.flashedPlatform = true;
+        }
+        requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+      return trace;
+    });
+    await dialog.getByRole('button', { name: 'Continue with Windows' }).click();
+    await expect(dialog.getByRole('link', { name: 'Download Test App' })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Next', exact: true }).click();
+    await expect(dialog.getByRole('button', { name: 'Add to Test App' })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
+    await expect(dialog.getByRole('link', { name: 'Download Test App' })).toBeVisible();
+    await capture.evaluate((trace) => {
+      trace.closing = true;
+    });
+    await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+    const trace = await capture.evaluate((trace) => {
+      trace.running = false;
+      return trace;
+    });
+    await capture.dispose();
+    expect.soft(trace.offset).toBeLessThanOrEqual(0.5);
+    expect.soft(trace.flashedPlatform).toBe(false);
+    expect(await page.evaluate(() => window.scrollY)).toBe(dashboardScroll);
+  });
+}
+
 test('runs the Connection wizard with Back, reload fallback, and legacy entry @critical-flow', async ({
   page,
 }, testInfo) => {
@@ -2134,7 +2225,7 @@ test('keeps tariff sales mode free of a redundant outer card @critical-flow', as
   await expect(purchaseLayout).toBeVisible();
   await expect(purchaseLayout).not.toHaveAttribute('style');
   await expect(purchaseLayout).not.toHaveClass(/rounded-3xl/);
-  await expect(page.getByText('Your group: Base user')).toBeVisible();
+  await expect(page.getByText('Your group: Base user')).toHaveCount(0);
 
   const tariffCard = page
     .getByText('Base tariff plan')
@@ -2144,7 +2235,7 @@ test('keeps tariff sales mode free of a redundant outer card @critical-flow', as
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 
-test('shows purchase context banners for classic env tariffs @critical-flow', async ({ page }) => {
+test('starts at period selection for classic trial purchases @critical-flow', async ({ page }) => {
   const trialSubscription = {
     ...activeSubscription,
     status: 'trial',
@@ -2231,8 +2322,9 @@ test('shows purchase context banners for classic env tariffs @critical-flow', as
 
   await page.goto('/subscription/purchase');
   await expect(page.locator('[data-purchase-layout="classic"]')).toBeVisible();
-  await expect(page.getByText('Choose a plan to continue')).toBeVisible();
-  await expect(page.getByText('Your group: Base user')).toBeVisible();
+  await expect(page.getByText('Choose a plan to continue')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^30 days/ })).toBeVisible();
+  await expect(page.getByText('Your group: Base user')).toHaveCount(0);
   expect([...unexpectedApiRequests]).toEqual([]);
 });
 

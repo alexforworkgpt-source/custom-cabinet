@@ -9,7 +9,7 @@ import { brandingApi, type TelegramWidgetConfig, type EmailAuthEnabled } from '.
 import { useToast } from '../components/Toast';
 import { Card } from '@/components/data-display/Card';
 import { Button } from '@/components/primitives/Button';
-import { staggerItem } from '@/components/motion/transitions';
+import { fadeIn } from '@/components/motion/transitions';
 import { PageEntrance } from '@/components/motion/PageEntrance';
 import ProviderIcon from '../components/ProviderIcon';
 import { getErrorDetail, saveLinkOAuthState } from '../utils/oauth';
@@ -653,26 +653,26 @@ export default function ConnectedAccounts() {
     // otherwise stay stuck at their initial variant (opacity 0) after a hard refresh
     <PageEntrance key={isLoading ? 'loading' : 'ready'} className="space-y-6">
       {/* Page title */}
-      <motion.div variants={staggerItem} className="flex items-center gap-3">
-        <WebBackButton to="/profile" />
+      <div className="flex items-start gap-3">
+        <WebBackButton to="/profile" inPageHeading />
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
             {t('profile.accounts.title')}
           </h1>
           <p className="mt-1 text-dark-400">{t('profile.accounts.subtitle')}</p>
         </div>
-      </motion.div>
+      </div>
 
       {/* Loading state */}
       {isLoading && (
-        <motion.div variants={staggerItem}>
+        <motion.div variants={fadeIn}>
           <LoadingSkeleton />
         </motion.div>
       )}
 
       {/* Error state */}
       {isError && (
-        <motion.div variants={staggerItem}>
+        <motion.div variants={fadeIn}>
           <Card size="lg">
             <p className="text-center text-dark-400">{t('common.error')}</p>
           </Card>
@@ -681,7 +681,7 @@ export default function ConnectedAccounts() {
 
       {/* Provider cards */}
       {data?.providers.map((provider) => (
-        <motion.div key={provider.provider} variants={staggerItem}>
+        <motion.div key={provider.provider} variants={fadeIn}>
           <Card size="md">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">

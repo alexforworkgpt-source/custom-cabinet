@@ -18,8 +18,11 @@ export function PageEntrance(props: EntranceProps) {
 }
 
 /** Keep loaded sections mounted while their data refreshes; skeletons stay separate. */
-export const PageEntranceItem = forwardRef<HTMLDivElement, EntranceProps>((props, ref) => (
-  <motion.div {...props} ref={ref} variants={staggerItem} />
+export const PageEntranceItem = forwardRef<
+  HTMLDivElement,
+  EntranceProps & Pick<HTMLMotionProps<'div'>, 'variants'>
+>(({ variants = staggerItem, ...props }, ref) => (
+  <motion.div {...props} ref={ref} variants={variants} />
 ));
 
 PageEntranceItem.displayName = 'PageEntranceItem';

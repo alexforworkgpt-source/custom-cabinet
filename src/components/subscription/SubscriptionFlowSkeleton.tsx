@@ -1,50 +1,24 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { PurchaseContext } from '../../hooks/usePurchaseContext';
 import { Card } from '../data-display';
 import { Skeleton, SkeletonGroup } from '../ui/skeleton';
 import { PeriodOptionsSkeleton } from './PeriodOptionsSkeleton';
-import { PurchaseContextBanners } from './purchase/PurchaseContextBanners';
 import { RenewalPeriodHeading } from './renewal/RenewalOptions';
 
 interface Props {
   mode: 'renewal' | 'classic' | 'tariffs' | 'unknown';
-  context: PurchaseContext;
   count?: number;
   conditions?: ReactNode;
   stepHeader?: ReactNode;
 }
 
 /** Real headers stay outside this body. Unknown catalogue sizes remain placeholders. */
-export function SubscriptionFlowSkeleton({ mode, context, count, conditions, stepHeader }: Props) {
+export function SubscriptionFlowSkeleton({ mode, count, conditions, stepHeader }: Props) {
   const { t } = useTranslation();
-  const showContext = context.isLoading || context.promoGroupName || context.showTrialUpgrade;
-  const previewContext =
-    context.isLoading && !context.promoGroupName
-      ? { ...context, promoGroupName: t('common.loading') }
-      : context;
   return (
     <SkeletonGroup className={mode === 'renewal' ? 'space-y-4' : 'flex flex-col gap-6'}>
-      {showContext && (
-        <div className="relative" data-sales-context-loading>
-          <div className="invisible" aria-hidden="true">
-            <PurchaseContextBanners context={previewContext} measuring />
-          </div>
-          <Skeleton variant="card" className="absolute inset-0 h-full" />
-        </div>
-      )}
       {mode === 'renewal' ? (
         <>
-          {conditions ? (
-            <div className="relative" data-renewal-conditions-loading>
-              <div className="invisible" aria-hidden="true">
-                {conditions}
-              </div>
-              <Skeleton variant="card" className="absolute inset-0 h-full" />
-            </div>
-          ) : (
-            <Skeleton variant="card" className="h-64" />
-          )}
           <div className="space-y-3">
             <RenewalPeriodHeading showHint={(count ?? 0) > 1} />
             <PeriodOptionsSkeleton count={count ?? 1} compact />

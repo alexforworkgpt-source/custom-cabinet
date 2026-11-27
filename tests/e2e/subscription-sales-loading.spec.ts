@@ -73,7 +73,7 @@ async function prepareSales(
 
 function contentFor(page: Page, mode: string) {
   return mode === 'renewal'
-    ? page.locator('[data-renewal-info]')
+    ? page.getByRole('button', { name: /^30 дней/ })
     : mode === 'classic'
       ? page.getByRole('button', { name: /^30 дней/ })
       : page.getByText('Тариф для проверки', { exact: true });
@@ -83,7 +83,7 @@ const pathFor = (mode: string) =>
 
 for (const mode of ['renewal', 'classic', 'tariff']) {
   for (const theme of ['light', 'dark']) {
-    test(`sales loading waits for group context before revealing ${mode} content ${theme}`, async ({
+    test(`sales shows choices while group context is slow for ${mode} content ${theme}`, async ({
       page,
     }) => {
       const promo = deferred();
@@ -96,10 +96,12 @@ for (const mode of ['renewal', 'classic', 'tariff']) {
       const title = page.getByRole('heading', { level: 1 });
       await expect(title).toBeVisible();
       const content = contentFor(page, mode);
-      await expect(content).not.toBeVisible();
-      promo.release();
-      await expect(page.getByText('Ваша группа: Базовый юзер', { exact: true })).toBeVisible();
       await expect(content).toBeVisible();
+      await expect(page.getByText('Ваша группа: Базовый юзер', { exact: true })).toHaveCount(0);
+      await expect(
+        page.locator('[data-sales-context-loading], [data-renewal-conditions-loading]'),
+      ).toHaveCount(0);
+      promo.release();
       expect(
         apiRequests.filter((request) =>
           /^POST .*subscription\/(purchase(?:-tariff)?|renew)(?:\?|$)/.test(request),
@@ -110,70 +112,41 @@ for (const mode of ['renewal', 'classic', 'tariff']) {
       );
     });
 
-    test(`cold ${mode} keeps its header and uses the known-mode skeleton ${theme}`, async ({
+    test(`cold ${mode} keeps its header and omits retired banners while loading ${theme}`, async ({
       page,
     }, info) => {
       const options = deferred();
-      const promo = deferred();
       await prepareSales(page, mode, theme);
       await page.route('**/api/cabinet/subscription/purchase-options**', async (route) => {
         await options.promise;
-        await route.fallback();
-      });
-      await page.route('**/api/cabinet/promo/group-discounts', async (route) => {
-        await promo.promise;
         await route.fallback();
       });
       await page.goto(pathFor(mode), { waitUntil: 'domcontentloaded' });
       const title = page.getByRole('heading', { level: 1 });
       await expect(title).toBeVisible();
       await page.evaluate(() => document.fonts.ready.then(() => undefined));
-      const header = await title.boundingBox();
-      await expect(page.locator('main [aria-busy="true"]')).toBeVisible();
-      options.release();
-      const template = page.locator(
-        mode === 'tariff' ? '[data-tariff-options-loading]' : '[data-period-options-loading]',
-      );
-      await expect(template).toBeVisible();
-      await expect(page.locator('[data-sales-context-loading]')).toBeVisible();
-      const before = await template.locator(':scope > div').first().boundingBox();
+      const before = await title.boundingBox();
+      await expect(page.locator('main [aria-busy="true"]').first()).toBeVisible();
+      await expect(
+        page.locator('[data-sales-context-loading], [data-renewal-conditions-loading]'),
+      ).toHaveCount(0);
       const capture = ['mobile-320', 'desktop-1280'].includes(info.project.name);
       if (capture)
         await page.screenshot({
           path: info.outputPath(`${mode}-${theme}-skeleton.png`),
           fullPage: true,
         });
-      promo.release();
+      options.release();
       await expect(contentFor(page, mode)).toBeVisible();
-      const currentHeader = await title.boundingBox();
-      if (!header || !currentHeader) throw new Error('The page header must remain visible');
-      expect(Math.abs(header.y - currentHeader.y)).toBeLessThanOrEqual(1);
-      expect(Math.abs(header.height - currentHeader.height)).toBeLessThanOrEqual(1);
-      const after =
-        mode === 'tariff'
-          ? await page
-              .locator('[data-purchase-layout="tariffs"] .bento-card-hover')
-              .first()
-              .boundingBox()
-          : await page.getByRole('button', { name: /^14 дней/ }).boundingBox();
-      if (!before || !after) throw new Error('The first option must have a reserved position');
-      expect(Math.abs(before.y - after.y)).toBeLessThanOrEqual(4);
-      expect(Math.abs(before.height - after.height)).toBeLessThanOrEqual(4);
+      const after = await title.boundingBox();
+      if (!before || !after) throw new Error('The page header must remain visible');
+      expect(Math.abs(before.y - after.y)).toBeLessThanOrEqual(1);
+      expect(Math.abs(before.height - after.height)).toBeLessThanOrEqual(1);
       if (capture)
         await page.screenshot({
           path: info.outputPath(`${mode}-${theme}-ready.png`),
           fullPage: true,
         });
-    });
-
-    test(`optional group errors do not hold ${mode} behind an endless skeleton ${theme}`, async ({
-      page,
-    }) => {
-      await prepareSales(page, mode, theme, { '/api/cabinet/promo/group-discounts': 503 });
-      await page.goto(pathFor(mode));
-      await expect(contentFor(page, mode)).toBeVisible();
-      await expect(page.locator('main [aria-busy="true"]')).toHaveCount(0);
-      await expect(page.getByText('Ваша группа: Базовый юзер', { exact: true })).toHaveCount(0);
     });
 
     test(`critical options errors end ${mode} loading and allow retry ${theme}`, async ({
@@ -203,50 +176,40 @@ for (const mode of ['renewal', 'classic', 'tariff']) {
 
 test('renewal goes from a neutral period placeholder to a known empty choice', async ({ page }) => {
   const options = deferred();
-  const promo = deferred();
   await prepareSales(page, 'renewal', 'light');
   await page.route('**/api/cabinet/subscription/renewal-options**', async (route) => {
     await options.promise;
     await route.fulfill({ json: [] });
   });
-  await page.route('**/api/cabinet/promo/group-discounts', async (route) => {
-    await promo.promise;
-    await route.fallback();
-  });
-
   await page.goto(pathFor('renewal'), { waitUntil: 'domcontentloaded' });
   const periods = page.locator('[data-period-options-loading]');
   await expect(periods.locator(':scope > div')).toHaveCount(1);
   options.release();
-  await expect(page.locator('[data-sales-context-loading]')).toBeVisible();
-  await expect(periods.locator(':scope > div')).toHaveCount(0);
-  promo.release();
   await expect(periods).toHaveCount(0);
 });
 
-test('classic loading uses the configured period count and a noninteractive first step', async ({
+test('classic loading uses the configured period count while the subscription list is pending', async ({
   page,
 }) => {
-  const promo = deferred();
+  const list = deferred();
   await prepareSales(page, 'classic', 'light');
   await page.route('**/api/cabinet/subscription/purchase-options', (route) =>
     route.fulfill({
       json: { ...classicPurchaseOptions, periods: classicPurchaseOptions.periods.slice(0, 2) },
     }),
   );
-  await page.route('**/api/cabinet/promo/group-discounts', async (route) => {
-    await promo.promise;
+  await page.route('**/api/cabinet/subscriptions', async (route) => {
+    await list.promise;
     await route.fallback();
   });
 
   await page.goto(pathFor('classic'), { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-sales-context-loading]')).toBeVisible();
   const loading = page.locator('main [role="status"][aria-busy="true"]').first();
   await expect(loading.locator('[data-period-options-loading] > div')).toHaveCount(2);
   await expect(loading.locator('[data-classic-step-indicator] > span')).toHaveCount(3);
   await expect(loading.locator('a, button, input, [tabindex]')).toHaveCount(0);
 
-  promo.release();
+  list.release();
   await expect(page.getByText('Шаг 1 из 3', { exact: true })).toBeVisible();
 });
 
@@ -254,25 +217,16 @@ test('catalogue displays no invented tariff cards when the result is unknown or 
   page,
 }) => {
   const options = deferred();
-  const promo = deferred();
   await prepareSales(page, 'tariff', 'dark');
   await page.route('**/api/cabinet/subscription/purchase-options**', async (route) => {
     await options.promise;
     await route.fulfill({ json: { sales_mode: 'tariffs', tariffs: [], balance_kopeks: 0 } });
   });
-  await page.route('**/api/cabinet/promo/group-discounts', async (route) => {
-    await promo.promise;
-    await route.fallback();
-  });
-
   await page.goto(pathFor('tariff'), { waitUntil: 'domcontentloaded' });
   await expect(page.locator('main [role="status"][aria-busy="true"]').first()).toBeVisible();
   const tariffCards = page.locator('[data-tariff-options-loading] > div');
   await expect(tariffCards).toHaveCount(0);
   options.release();
-  await expect(page.locator('[data-sales-context-loading]')).toBeVisible();
-  await expect(tariffCards).toHaveCount(0);
-  promo.release();
   await expect(page.getByText('Доступных опций нет', { exact: true })).toBeVisible();
 });
 

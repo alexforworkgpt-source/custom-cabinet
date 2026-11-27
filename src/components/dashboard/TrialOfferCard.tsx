@@ -10,7 +10,7 @@ import { getGlassColors } from '../../utils/glassTheme';
 import { GiftIcon } from '@/components/icons';
 import { SubscriptionTechGrid } from './SubscriptionTechGrid';
 
-interface TrialOfferCardProps {
+export interface TrialOfferCardProps {
   trialInfo: TrialInfo;
   balanceKopeks: number | null;
   balanceRubles: number | null;
@@ -31,6 +31,21 @@ export default function TrialOfferCard({
   const g = getGlassColors(isDark);
   const isFree = !trialInfo.requires_payment;
   const canAfford = balanceKopeks !== null && balanceKopeks >= trialInfo.price_kopeks;
+
+  const stats = [
+    { value: String(trialInfo.duration_days), label: t('subscription.trial.days') },
+    {
+      value: trialInfo.traffic_limit_gb === 0 ? '∞' : String(trialInfo.traffic_limit_gb),
+      label: t('common.units.gb'),
+    },
+    {
+      value: trialInfo.device_limit === 0 ? '∞' : String(trialInfo.device_limit),
+      label: t('subscription.trial.devices'),
+    },
+  ];
+  const activate = () => {
+    if (!activateTrialMutation.isPending) activateTrialMutation.mutate();
+  };
 
   return (
     <motion.div
@@ -148,17 +163,7 @@ export default function TrialOfferCard({
 
       {/* Trial stats */}
       <div className="mb-7 flex justify-center gap-8">
-        {[
-          { value: String(trialInfo.duration_days), label: t('subscription.trial.days') },
-          {
-            value: trialInfo.traffic_limit_gb === 0 ? '∞' : String(trialInfo.traffic_limit_gb),
-            label: t('common.units.gb'),
-          },
-          {
-            value: trialInfo.device_limit === 0 ? '∞' : String(trialInfo.device_limit),
-            label: t('subscription.trial.devices'),
-          },
-        ].map((stat, i) => (
+        {stats.map((stat, i) => (
           <div key={i} className="text-center">
             <div className="text-4xl font-extrabold leading-none tracking-tight text-dark-50">
               {stat.value}
@@ -211,7 +216,7 @@ export default function TrialOfferCard({
           </button>
         ) : canAfford ? (
           <button
-            onClick={() => !activateTrialMutation.isPending && activateTrialMutation.mutate()}
+            onClick={activate}
             disabled={activateTrialMutation.isPending}
             className="w-full rounded-[14px] py-4 text-base font-bold tracking-tight transition-all duration-300 disabled:opacity-50"
             style={{
@@ -239,7 +244,7 @@ export default function TrialOfferCard({
         )
       ) : (
         <button
-          onClick={() => !activateTrialMutation.isPending && activateTrialMutation.mutate()}
+          onClick={activate}
           disabled={activateTrialMutation.isPending}
           className="w-full rounded-[14px] py-4 text-base font-bold tracking-tight transition-all duration-300 disabled:opacity-50"
           style={
