@@ -2,8 +2,8 @@
   "schema_version": 1,
   "cabinet": {
     "tag": "cabinet-v2026.11.27",
-    "sha": "fc19bed152326fbba776b060ee159e82eb08a511",
-    "tree_sha": "b006d6162b4d13e75210015da01ee827e294afe5"
+    "sha": "729a0d86fad2da65712d19640aa7ee900f404e71",
+    "tree_sha": "7a4f20e43e0bfc99714fc3a07ccf9e11999e62b5"
   },
   "upstream": {
     "repository": "https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git",
@@ -14,14 +14,15 @@
     "repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
     "sha": "64beb370e6d69b23d3b651f91033f3b72e9e1f56",
     "backend_contract": "1",
-    "compatibility_evidence": "https://github.com/alexforworkgpt-source/custom-cabinet/blob/fc19bed152326fbba776b060ee159e82eb08a511/COMPATIBILITY.md"
+    "compatibility_evidence": "https://github.com/alexforworkgpt-source/custom-cabinet/blob/729a0d86fad2da65712d19640aa7ee900f404e71/COMPATIBILITY.md"
   },
   "changes": [
     "Redesign Dashboard and subscription states, including welcome and active trial, traffic and device metrics, connection cards, and pending placeholders.",
     "Keep VPN setup and its overlay layout stable through loading, step navigation, and dismissal. Preserve Dashboard scroll and offer a backup link only when configured.",
     "Improve classic purchase and renewal period selection, mobile navigation, button contrast, and compact device limit controls.",
     "Align the Profile, Balance, Support, and other Cabinet screens with the shared layout.",
-    "Open Admin at the top from Profile. Add mobile bottom navigation on the Admin home and enlarge its content with white group icons."
+    "Open Admin at the top from Profile. Add mobile bottom navigation on the Admin home and enlarge its content with white group icons.",
+    "Keep subscription metric labels within their columns when users enlarge text on narrow screens."
   ],
   "limitations": [
     {
