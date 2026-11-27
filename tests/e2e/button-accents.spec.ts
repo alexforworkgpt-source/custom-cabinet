@@ -199,7 +199,7 @@ test('uses restrained accent states for key secondary actions', async ({ page })
     expect(connectPresentation.backgroundImage).toContain('conic-gradient');
     const accentRgb = await page.evaluate(() => {
       const probe = document.createElement('span');
-      probe.className = 'bg-accent-500';
+      probe.style.backgroundColor = 'rgb(var(--color-accent-with-white-text))';
       document.body.appendChild(probe);
       const color = getComputedStyle(probe).backgroundColor;
       probe.remove();
@@ -209,14 +209,7 @@ test('uses restrained accent states for key secondary actions', async ({ page })
       `linear-gradient(${accentRgb}, ${accentRgb})`,
     );
 
-    const onAccentColor = await page.evaluate(() => {
-      const probe = document.createElement('span');
-      probe.style.color = 'rgb(var(--color-on-accent-readable))';
-      document.body.appendChild(probe);
-      const color = getComputedStyle(probe).color;
-      probe.remove();
-      return color;
-    });
+    const onAccentColor = 'rgb(255, 255, 255)';
     await expect(connectDevice.locator('.text-sm.font-semibold')).toHaveCSS('color', onAccentColor);
 
     const trafficPercentage = page.locator('[data-traffic-percentage]');
