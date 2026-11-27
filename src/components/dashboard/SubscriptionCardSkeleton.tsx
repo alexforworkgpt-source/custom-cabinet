@@ -9,6 +9,7 @@ import { hasUnknownManagedTraffic } from '@/utils/trafficAccounting';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { SubscriptionLinkSkeleton } from './SubscriptionLinkSkeleton';
 import ManagedTrafficSummary from '../subscription/ManagedTrafficSummary';
 import { connectFooterState } from '../subscription/connectFooterState';
 
@@ -91,8 +92,9 @@ export default function SubscriptionCardSkeleton({
     );
   }
 
-  const showTrafficProgress =
-    !subscription || (subscription.traffic_limit_gb > 0 && !hasUnknownManagedTraffic(subscription));
+  const showTrafficProgress = Boolean(
+    subscription && subscription.traffic_limit_gb > 0 && !hasUnknownManagedTraffic(subscription),
+  );
   return (
     <SkeletonGroup className="space-y-3">
       <section className="subscription-hero subscription-hero-loading">
@@ -107,7 +109,7 @@ export default function SubscriptionCardSkeleton({
           <Skeleton className="h-4 w-24 rounded" />
         </div>
         <div className="subscription-hero-details" aria-hidden="true">
-          <Skeleton className="h-[58px] rounded-[13px]" />
+          <Skeleton className="subscription-hero-metrics-loading h-[58px] w-auto rounded-[13px]" />
           {showTrafficProgress && <Skeleton className="h-[46px] rounded-[11px]" />}
           {subscription?.traffic_accounting_mode === 'managed' && (
             <div className="relative">
@@ -136,13 +138,7 @@ export default function SubscriptionCardSkeleton({
         (!subscription ||
           subscription.subscription_url ||
           ('subscription_crypto_link' in subscription &&
-            subscription.subscription_crypto_link)) && (
-          <div className="flex min-h-11 gap-2" aria-hidden="true">
-            <Skeleton className="min-w-0 flex-1 rounded-[14px]" />
-            <Skeleton className="w-11 shrink-0 rounded-[14px]" />
-            <Skeleton className="w-11 shrink-0 rounded-[14px]" />
-          </div>
-        )}
+            subscription.subscription_crypto_link)) && <SubscriptionLinkSkeleton />}
     </SkeletonGroup>
   );
 }

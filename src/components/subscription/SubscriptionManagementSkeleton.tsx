@@ -1,117 +1,17 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { useState, type ReactNode } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { Subscription } from '../../types';
 import { subscriptionActionStyles as actionStyles } from './sheets/subscriptionActionStyles';
 import { Skeleton, SkeletonSurface } from '../ui/skeleton';
 import { SubscriptionPurchaseSkeleton } from './SubscriptionPurchaseSkeleton';
-import { SubscriptionOverviewCard } from './SubscriptionOverviewCard';
+import {
+  inactiveSubscriptionOverviewState,
+  SubscriptionOverviewCard,
+} from './SubscriptionOverviewCard';
 
 import { PageEntrance } from '../motion/PageEntrance';
-import { fadeIn } from '../motion/transitions';
-import { cn } from '@/lib/utils';
-
-type ManagementStage = 'pending' | 'known' | 'ready';
-
-function ManagementLoadingHeight({
-  stage,
-  smooth,
-  overview,
-  children,
-}: {
-  stage: ManagementStage;
-  smooth: boolean;
-  overview?: boolean;
-  children: ReactNode;
-}) {
-  const skeleton = overview && stage !== 'ready';
-  const shell = useRef<HTMLDivElement>(null);
-  const content = useRef<HTMLDivElement>(null);
-  const painted = useRef<{ stage: ManagementStage; height: number } | null>(null);
-
-  useLayoutEffect(() => {
-    const frame = shell.current;
-    const inner = content.current;
-    if (!frame || !inner) return;
-
-    const previous = painted.current;
-    const height = inner.getBoundingClientRect().height;
-    painted.current = { stage, height };
-    const resize = new ResizeObserver(() => {
-      painted.current = { stage, height: inner.getBoundingClientRect().height };
-    });
-    resize.observe(inner);
-
-    if (
-      !previous ||
-      !smooth ||
-      previous.stage === 'ready' ||
-      previous.stage === stage ||
-      Math.abs(previous.height - height) < 1
-    ) {
-      return () => resize.disconnect();
-    }
-
-    frame.style.height = `${previous.height}px`;
-    frame.style.overflow = 'clip';
-    const clear = () => {
-      frame.style.removeProperty('height');
-      frame.style.removeProperty('overflow');
-    };
-    let elapsed = 0;
-    let lastFrame = performance.now();
-    let animating = true;
-    const draw = (now: number) => {
-      // A stalled frame should pause the resize instead of skipping to its end.
-      elapsed += Math.max(0, Math.min(now - lastFrame, 1000 / 60));
-      lastFrame = now;
-      const progress = Math.min(elapsed / 260, 1);
-      if (progress === 1) {
-        animating = false;
-        clear();
-        return;
-      }
-      const eased = progress * progress * (3 - 2 * progress);
-      frame.style.height = `${previous.height + (height - previous.height) * eased}px`;
-      animation = requestAnimationFrame(draw);
-    };
-    let animation = requestAnimationFrame(draw);
-
-    return () => {
-      resize.disconnect();
-      cancelAnimationFrame(animation);
-      if (animating) {
-        painted.current = { stage, height: frame.getBoundingClientRect().height };
-      }
-      clear();
-    };
-  }, [stage, smooth]);
-
-  return (
-    <div
-      ref={shell}
-      className="relative has-[>div:empty]:hidden"
-      data-subscription-overview-skeleton={skeleton ? stage : undefined}
-    >
-      <div
-        ref={content}
-        className={cn('flow-root', skeleton && 'invisible')}
-        aria-hidden={skeleton || undefined}
-      >
-        {stage === 'ready' && children ? (
-          <motion.div className="space-y-4" variants={fadeIn}>
-            {children}
-          </motion.div>
-        ) : (
-          children
-        )}
-      </div>
-      {skeleton && (
-        <Skeleton variant="card" animate={false} className="absolute inset-0 h-full w-full" />
-      )}
-    </div>
-  );
-}
+import { SubscriptionLoadingHeight } from './SubscriptionLoadingHeight';
 
 export function SubscriptionManagementLayout({
   loading,
@@ -129,7 +29,10 @@ export function SubscriptionManagementLayout({
   const { t } = useTranslation();
   const reducedMotion = useReducedMotion();
   const [startedCold] = useState(() => Boolean(loading && !loading.subscription));
-  const keepInitial = startedCold && reducedMotion && smoothLoading;
+  const keepInitial =
+    startedCold &&
+    reducedMotion &&
+    Boolean(loading && inactiveSubscriptionOverviewState(loading.subscription));
   const known = loading && !keepInitial ? loading.subscription : null;
   const stage = !loading ? 'ready' : known ? 'known' : 'pending';
   const smooth = smoothLoading && !reducedMotion;
@@ -143,24 +46,44 @@ export function SubscriptionManagementLayout({
       aria-label={loading ? t('common.loading') : undefined}
     >
       <div className="space-y-4">
-        <ManagementLoadingHeight stage={stage} smooth={smooth} overview>
+        <SubscriptionLoadingHeight stage={stage} smooth={smooth} overview>
           {loading ? (
             known ? (
               <SubscriptionOverviewCard subscription={known} measuring />
             ) : (
-              <div className="h-[300px] sm:h-[320px]" />
+              <div className="space-y-4" data-subscription-overview-placeholder>
+                <Skeleton
+                  variant="card"
+                  animate={false}
+                  className="h-[239px] rounded-3xl sm:h-[228px]"
+                />
+                <Skeleton variant="card" animate={false} className="h-[41.5px] rounded-2xl" />
+              </div>
             )
           ) : (
             overview
           )}
-        </ManagementLoadingHeight>
-        <ManagementLoadingHeight stage={stage} smooth={smooth}>
+        </SubscriptionLoadingHeight>
+        <SubscriptionLoadingHeight stage={stage} smooth={smooth}>
           {loading && !known ? <SubscriptionPurchaseSkeleton announce={false} /> : purchase}
-        </ManagementLoadingHeight>
+        </SubscriptionLoadingHeight>
       </div>
       {loading && (
         <div data-subscription-devices-placeholder>
-          <Skeleton variant="card" animate={false} className="h-16 sm:h-20" />
+          <Skeleton variant="card" animate={false} className="h-16 sm:h-[78px]" />
+        </div>
+      )}
+      {loading && !known && (
+        <div
+          className="rounded-3xl border border-dark-700/60 p-3"
+          data-subscription-additional-options-placeholder
+        >
+          <Skeleton animate={false} className="h-5 w-44" />
+          <div className="mt-2 space-y-2 sm:mt-3 sm:space-y-3">
+            <Skeleton variant="card" animate={false} className="h-16 rounded-xl sm:h-[82px]" />
+            <Skeleton variant="card" animate={false} className="h-16 rounded-xl sm:h-[82px]" />
+            <Skeleton variant="card" animate={false} className="h-16 rounded-xl" />
+          </div>
         </div>
       )}
       {(!loading || !keepInitial) && children}

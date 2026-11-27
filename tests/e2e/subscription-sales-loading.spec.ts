@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { prepareAuthenticatedPage } from './cabinetTestHarness';
-import { responses } from './classicRenewalFixture';
+import { responses, subscription } from './classicRenewalFixture';
 import { classicPurchaseOptions } from './classicPurchasePricingFixture';
 
 function deferred() {
@@ -250,3 +250,176 @@ test('classic device step stays open and ends price loading when the quote fails
   await expect(layout.locator('[role="status"][aria-busy="true"]')).toHaveCount(0);
   await expect(page.getByText('Шаг 2 из 3', { exact: true })).toBeVisible();
 });
+
+test('renewal keeps the initial skeleton geometry while options arrive before payment data', async ({
+  page,
+}) => {
+  const renewal = deferred();
+  const purchase = deferred();
+  const optionsArrived = deferred();
+  await prepareSales(page, 'renewal', 'light');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const target = { ...subscription, id: 2136, traffic_limit_gb: 0 };
+  await page.route('**/api/cabinet/subscriptions', (route) =>
+    route.fulfill({ json: { subscriptions: [target], multi_tariff_enabled: false } }),
+  );
+  await page.route(/\/api\/cabinet\/subscription(?:\?|$)/, (route) =>
+    route.fulfill({ json: { has_subscription: true, subscription: target } }),
+  );
+  await page.route('**/api/cabinet/subscription/renewal-options**', async (route) => {
+    await renewal.promise;
+    await route.fallback();
+  });
+  await page.route('**/api/cabinet/subscription/purchase-options**', async (route) => {
+    await purchase.promise;
+    await route.fallback();
+  });
+  page.on('response', (response) => {
+    if (new URL(response.url()).pathname.endsWith('/renewal-options')) optionsArrived.release();
+  });
+  try {
+    await page.goto('/subscriptions/2136/renew', { waitUntil: 'domcontentloaded' });
+    const periods = page.locator('[data-period-options-loading]');
+    await expect(periods).toBeVisible();
+    await page.evaluate(() => document.fonts.ready.then(() => undefined));
+    const before = await periods.boundingBox();
+    renewal.release();
+    await optionsArrived.promise;
+    await page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
+    const partial = await periods.boundingBox();
+    expect(partial?.y).toBe(before?.y);
+    expect(partial?.height).toBe(before?.height);
+    await periods.evaluate((skeleton) => {
+      const shell = skeleton.closest('.flow-root')?.parentElement;
+      const title = document.querySelector('main h1');
+      if (!shell || !title) throw new Error('Renewal body and title must be present');
+      const heights: number[] = [];
+      const titles: number[] = [];
+      Object.assign(shell, { heights, titles });
+      let readyFrames = 0;
+      const sample = () => {
+        heights.push(shell.getBoundingClientRect().height);
+        titles.push(title.getBoundingClientRect().y);
+        if (shell.querySelector('[data-renewal-panel]')) readyFrames++;
+        if (readyFrames < 40 && heights.length < 240) requestAnimationFrame(sample);
+        else shell.dataset.probeComplete = 'true';
+      };
+      sample();
+    });
+    purchase.release();
+    await expect(contentFor(page, 'renewal')).toBeVisible();
+    const completedProbe = page.locator('[data-probe-complete]');
+    await expect(completedProbe).toBeAttached();
+    const { heights, titles } = await completedProbe.evaluate(
+      (element: HTMLElement & { heights: number[]; titles: number[] }) => ({
+        heights: element.heights,
+        titles: element.titles,
+      }),
+    );
+    const maxFrameChange = Math.max(
+      ...heights.slice(1).map((height, index) => Math.abs(height - heights[index])),
+    );
+    expect(heights.at(-1)).toBeGreaterThan(heights[0]);
+    expect(maxFrameChange).toBeLessThan(35);
+    expect(Math.max(...titles) - Math.min(...titles)).toBeLessThanOrEqual(1);
+    console.log('Renewal frame heights:', heights[0], heights.at(-1), maxFrameChange);
+  } finally {
+    renewal.release();
+    purchase.release();
+  }
+});
+
+for (const mode of ['classic', 'tariff']) {
+  test(`purchase resizes smoothly as ${mode} options load`, async ({ page }) => {
+    const options = deferred();
+    const list = deferred();
+    const classic = mode === 'classic';
+    await prepareSales(page, mode, 'light');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.route('**/api/cabinet/subscriptions', async (route) => {
+      await list.promise;
+      await route.fallback();
+    });
+    await page.route('**/api/cabinet/subscription/purchase-options', async (route) => {
+      await options.promise;
+      if (classic) return route.fallback();
+      const tariffs = [7, 8, 9].map((id) => ({
+        id,
+        name: String(id),
+        description: 'Тариф для проверки',
+        traffic_limit_label: 'Безлимит',
+        device_limit: 3,
+        servers: [],
+        is_available: true,
+        periods: classicPurchaseOptions.periods.map((period) => ({
+          ...period,
+          days: period.period_days,
+        })),
+      }));
+      await route.fulfill({ json: { sales_mode: 'tariffs', tariffs, balance_kopeks: 0 } });
+    });
+
+    try {
+      await page.goto(pathFor(mode), { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('main [role="status"][aria-busy="true"]').first()).toBeVisible();
+      await page.evaluate(() => document.fonts.ready.then(() => undefined));
+      const title = page.getByRole('heading', { level: 1 });
+      await title.evaluate((heading) => {
+        const layout = heading.parentElement?.parentElement;
+        if (!layout) throw new Error('Expected the purchase page');
+        const heights: number[] = [];
+        const titles: number[] = [];
+        Object.assign(layout, { heights, titles });
+        let readySince: number | undefined;
+        const sample = (now: number) => {
+          const body = layout.children[1];
+          if (body) {
+            heights.push(body.getBoundingClientRect().height);
+            titles.push(heading.getBoundingClientRect().y);
+          }
+          if (body?.querySelector('[data-purchase-layout]')) readySince ??= now;
+          if (readySince !== undefined && now - readySince >= 800) {
+            layout.dataset.purchaseProbeComplete = 'true';
+          } else requestAnimationFrame(sample);
+        };
+        sample(performance.now());
+      });
+
+      options.release();
+      if (classic) {
+        await expect(page.locator('[data-period-options-loading] > div')).toHaveCount(6);
+        await expect
+          .poll(() =>
+            title.evaluate(
+              (heading) =>
+                heading.parentElement?.parentElement?.children[1]?.getBoundingClientRect().height ??
+                0,
+            ),
+          )
+          .toBeGreaterThan(300);
+      }
+      list.release();
+      await expect(contentFor(page, mode).first()).toBeVisible();
+      const probe = page.locator('[data-purchase-probe-complete]');
+      await expect(probe).toBeAttached();
+      const { heights, titles } = await probe.evaluate(
+        (element: HTMLElement & { heights: number[]; titles: number[] }) => ({
+          heights: element.heights,
+          titles: element.titles,
+        }),
+      );
+      const maxFrameChange = Math.max(
+        ...heights.slice(1).map((height, index) => Math.abs(height - heights[index])),
+      );
+      expect((heights.at(-1) ?? 0) - heights[0]).toBeGreaterThan(100);
+      expect(Math.max(...titles) - Math.min(...titles)).toBeLessThanOrEqual(1);
+      console.log('Purchase frame heights:', mode, heights[0], heights.at(-1), maxFrameChange);
+      expect(maxFrameChange).toBeLessThan(35);
+    } finally {
+      options.release();
+      list.release();
+    }
+  });
+}

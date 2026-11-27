@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useReducedMotion } from 'framer-motion';
 import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
+import { fadeIn } from '@/components/motion/transitions';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 import { subscriptionApi } from '../api/subscription';
@@ -334,7 +335,10 @@ export default function Subscription({
     purchaseOptionsQuery,
     isMultiTariff,
   );
-  const smoothLoading = Boolean(inactiveSubscriptionOverviewState(subscription));
+  const activeUnlimited = Boolean(
+    subscription?.is_active && !subscription.is_trial && subscription.traffic_limit_gb === 0,
+  );
+  const smoothLoading = activeUnlimited || Boolean(inactiveSubscriptionOverviewState(subscription));
   const hasKnownActions = embedded && actions.snapshot !== null;
   const managementLoading =
     (!embedded || !actions.offline) &&
@@ -947,7 +951,7 @@ export default function Subscription({
         ))}
 
       {subscription && (
-        <PageEntranceItem>
+        <PageEntranceItem variants={embedded && activeUnlimited ? fadeIn : undefined}>
           <Link
             to={`/subscriptions/${subscription.id}?overlay=devices`}
             state={{ ...location.state, cabinetOverlayParent: true }}
@@ -1634,6 +1638,7 @@ export default function Subscription({
       {/* Available secondary actions are always visible; individual forms remain explicit. */}
       {subscription && showAdditionalOptions && (
         <PageEntranceItem
+          variants={embedded && activeUnlimited ? fadeIn : undefined}
           ref={additionalOptionsSectionRef}
           className="relative scroll-mt-20 overflow-hidden rounded-3xl"
           style={{

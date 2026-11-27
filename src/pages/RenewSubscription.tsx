@@ -19,12 +19,19 @@ import InsufficientBalancePrompt from '../components/InsufficientBalancePrompt';
 import { WebBackButton } from '../components/WebBackButton';
 import { Card } from '../components/data-display';
 import { Button } from '../components/primitives';
+import { SubscriptionLoadingHeight } from '../components/subscription/SubscriptionLoadingHeight';
 import { SubscriptionFlowSkeleton } from '../components/subscription/SubscriptionFlowSkeleton';
 import { RenewalOptions } from '../components/subscription/renewal/RenewalOptions';
 import { RenewalSummary } from '../components/subscription/renewal/RenewalSummary';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { PageEntrance } from '@/components/motion/PageEntrance';
 import { fadeIn } from '@/components/motion/transitions';
+
+function RenewalLoadingSkeleton({ count }: { count?: number }) {
+  // Partial responses must not rebuild the placeholder while another query is pending.
+  const [initialPeriodCount] = useState(count);
+  return <SubscriptionFlowSkeleton mode="renewal" count={initialPeriodCount} />;
+}
 
 export default function RenewSubscription() {
   const { subscriptionId } = useParams<{ subscriptionId: string }>();
@@ -70,6 +77,7 @@ export default function RenewSubscription() {
   const isClassic = purchaseQuery.data?.sales_mode === 'classic';
   const balanceKopeks = purchaseQuery.data?.balance_kopeks;
   const loading = queries.some((query) => query.isLoading);
+  const reducedMotion = useReducedMotion();
   const { selectedPeriod, selectPeriod, clearSelection, selectionReset } = useRenewalSelection(
     userId,
     subId,
@@ -222,105 +230,110 @@ export default function RenewSubscription() {
           </h1>
         </div>
       </div>
-      {dailyResume && subscription ? (
-        <motion.div variants={fadeIn}>
-          <Card className="space-y-3">
-            <p className="text-sm text-dark-400">{t('subscription.dailyRenewalExplanation')}</p>
-            <p>
-              {t('subscription.dailyRenewalPrice', {
-                price: formatWithCurrency((subscription.daily_price_kopeks ?? 0) / 100),
-              })}
-            </p>
-            <DailyPausePanel
-              key={subscription.id}
-              subscription={subscription}
-              subscriptionId={subscription.id}
-            />
-            {canOpenTariffSwitch(subscription) && (
+      <SubscriptionLoadingHeight
+        stage={loading && !failedQuery && !dailyResume ? 'pending' : 'ready'}
+        smooth={!reducedMotion}
+      >
+        {dailyResume && subscription ? (
+          <motion.div variants={fadeIn}>
+            <Card className="space-y-3">
+              <p className="text-sm text-dark-400">{t('subscription.dailyRenewalExplanation')}</p>
+              <p>
+                {t('subscription.dailyRenewalPrice', {
+                  price: formatWithCurrency((subscription.daily_price_kopeks ?? 0) / 100),
+                })}
+              </p>
+              <DailyPausePanel
+                key={subscription.id}
+                subscription={subscription}
+                subscriptionId={subscription.id}
+              />
+              {canOpenTariffSwitch(subscription) && (
+                <Link className="btn-secondary" to={tariffSelectionPath(subId) + '&mode=switch'}>
+                  {t('subscription.switchTariff.title')}
+                </Link>
+              )}
+            </Card>
+          </motion.div>
+        ) : loading && !failedQuery ? (
+          <RenewalLoadingSkeleton key={subId} count={optionsQuery.data?.length} />
+        ) : failedQuery ? (
+          <Card>
+            <div role="alert" className="space-y-3 text-sm text-error-400">
+              <p>{t(loadErrorKey)}</p>
+              <Button
+                variant="secondary"
+                size="lg"
+                disabled={failedQuery.isFetching}
+                onClick={() => failedQuery.refetch()}
+              >
+                {t('common.retry')}
+              </Button>
+            </div>
+          </Card>
+        ) : !subscription ? (
+          <Card>
+            <p className="text-sm text-dark-400">{t('subscription.noSubscription')}</p>
+          </Card>
+        ) : balanceKopeks === undefined || !purchaseQuery.data?.sales_mode ? (
+          <Card>
+            <p role="alert">{t('subscription.paymentOptionsLoadError')}</p>
+            <Button size="lg" onClick={() => purchaseQuery.refetch()}>
+              {t('common.retry')}
+            </Button>
+          </Card>
+        ) : (
+          <>
+            {targetContract && !isClassic && canOpenTariffSwitch(subscription) && (
               <Link className="btn-secondary" to={tariffSelectionPath(subId) + '&mode=switch'}>
                 {t('subscription.switchTariff.title')}
               </Link>
             )}
-          </Card>
-        </motion.div>
-      ) : loading && !failedQuery ? (
-        <SubscriptionFlowSkeleton mode="renewal" count={optionsQuery.data?.length} />
-      ) : failedQuery ? (
-        <Card>
-          <div role="alert" className="space-y-3 text-sm text-error-400">
-            <p>{t(loadErrorKey)}</p>
-            <Button
-              variant="secondary"
-              size="lg"
-              disabled={failedQuery.isFetching}
-              onClick={() => failedQuery.refetch()}
-            >
-              {t('common.retry')}
-            </Button>
-          </div>
-        </Card>
-      ) : !subscription ? (
-        <Card>
-          <p className="text-sm text-dark-400">{t('subscription.noSubscription')}</p>
-        </Card>
-      ) : balanceKopeks === undefined || !purchaseQuery.data?.sales_mode ? (
-        <Card>
-          <p role="alert">{t('subscription.paymentOptionsLoadError')}</p>
-          <Button size="lg" onClick={() => purchaseQuery.refetch()}>
-            {t('common.retry')}
-          </Button>
-        </Card>
-      ) : (
-        <>
-          {targetContract && !isClassic && canOpenTariffSwitch(subscription) && (
-            <Link className="btn-secondary" to={tariffSelectionPath(subId) + '&mode=switch'}>
-              {t('subscription.switchTariff.title')}
-            </Link>
-          )}
-          <motion.div variants={fadeIn}>
-            <RenewalSummary
-              projectedEndDate={projectedEndDate}
-              option={selectedOption}
-              balanceKopeks={balanceKopeks}
-              isClassic={isClassic}
-              disabled={
-                !ready || Boolean(retryConfirmation) || (usesRenewalOperation && !validTarget)
-              }
-              pending={renewMutation.isPending}
-              onSubmit={handleRenew}
-            >
-              {selectionReset && (
-                <p role="status" className="text-sm text-dark-400">
-                  {t('subscription.renewSelectionReset')}
-                </p>
-              )}
-              <RenewalOptions
-                options={optionsQuery.data ?? []}
-                selectedPeriod={selectedPeriod}
-                disabled={!ready || renewMutation.isPending || Boolean(retryConfirmation)}
-                onSelect={(period) => {
-                  selectPeriod(period);
-                  setError(null);
-                  impact('light');
-                }}
-              />
-              {missingAmount && !isClassic && !retryConfirmation && (
-                <InsufficientBalancePrompt missingAmountKopeks={Number(missingAmount)} compact />
-              )}
-              {error && (!missingAmount || retryConfirmation) && (
-                <p role="alert" className="rounded-xl bg-error-400/10 p-3 text-sm text-error-400">
-                  {error}
-                </p>
-              )}
-              {retryConfirmation && (
-                <button type="button" className="btn-secondary" onClick={retryRenewal}>
-                  {t('common.retry')}
-                </button>
-              )}
-            </RenewalSummary>
-          </motion.div>
-        </>
-      )}
+            <motion.div variants={fadeIn}>
+              <RenewalSummary
+                projectedEndDate={projectedEndDate}
+                option={selectedOption}
+                balanceKopeks={balanceKopeks}
+                isClassic={isClassic}
+                disabled={
+                  !ready || Boolean(retryConfirmation) || (usesRenewalOperation && !validTarget)
+                }
+                pending={renewMutation.isPending}
+                onSubmit={handleRenew}
+              >
+                {selectionReset && (
+                  <p role="status" className="text-sm text-dark-400">
+                    {t('subscription.renewSelectionReset')}
+                  </p>
+                )}
+                <RenewalOptions
+                  options={optionsQuery.data ?? []}
+                  selectedPeriod={selectedPeriod}
+                  disabled={!ready || renewMutation.isPending || Boolean(retryConfirmation)}
+                  onSelect={(period) => {
+                    selectPeriod(period);
+                    setError(null);
+                    impact('light');
+                  }}
+                />
+                {missingAmount && !isClassic && !retryConfirmation && (
+                  <InsufficientBalancePrompt missingAmountKopeks={Number(missingAmount)} compact />
+                )}
+                {error && (!missingAmount || retryConfirmation) && (
+                  <p role="alert" className="rounded-xl bg-error-400/10 p-3 text-sm text-error-400">
+                    {error}
+                  </p>
+                )}
+                {retryConfirmation && (
+                  <button type="button" className="btn-secondary" onClick={retryRenewal}>
+                    {t('common.retry')}
+                  </button>
+                )}
+              </RenewalSummary>
+            </motion.div>
+          </>
+        )}
+      </SubscriptionLoadingHeight>
     </PageEntrance>
   );
 }

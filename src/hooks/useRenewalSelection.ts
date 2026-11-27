@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import type { RenewalOption, Subscription } from '../types';
 import { pickBestValue } from '../utils/bestValue';
 import {
@@ -26,7 +26,7 @@ export function useRenewalSelection(
   const selectedPeriod =
     choice.identity === identity && choice.signature === signature ? choice.period : null;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!ready || !subId || !options || !signature) return;
     const saved = userId ? readRenewalSelection(userId, subId) : null;
     const current = choice.identity === identity ? choice : null;

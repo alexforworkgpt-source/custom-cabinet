@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate, useSearchParams } from 'react-router';
@@ -24,7 +24,11 @@ import {
 import { ClassicPurchaseWizard } from '../components/subscription/purchase/ClassicPurchaseWizard';
 import { ExclamationIcon } from '@/components/icons';
 import { SubscriptionFlowSkeleton } from '../components/subscription/SubscriptionFlowSkeleton';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
+import {
+  SubscriptionLoadingHeight,
+  type SubscriptionLoadingStage,
+} from '../components/subscription/SubscriptionLoadingHeight';
 import { PageEntrance } from '@/components/motion/PageEntrance';
 import { fadeIn } from '@/components/motion/transitions';
 import { hasBot53Contract, hasTargetBotContract } from '../config/upstreamBotContract';
@@ -35,6 +39,7 @@ import { usePageMobileNavigation } from '@/components/layout/AppShell/MobileNavi
 
 export default function SubscriptionPurchase() {
   const { t } = useTranslation();
+  const reducedMotion = useReducedMotion();
   const accountId = useAuthStore((state) => state.user?.id);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -246,60 +251,66 @@ export default function SubscriptionPurchase() {
       </>
     ) : null;
 
+  // Keep the same body container mounted as API responses arrive.
+  const renderPage = (stage: SubscriptionLoadingStage, body: ReactNode) => (
+    <PageEntrance className="space-y-6">
+      {pageHeader}
+      <SubscriptionLoadingHeight stage={stage} smooth={!reducedMotion}>
+        {body}
+      </SubscriptionLoadingHeight>
+    </PageEntrance>
+  );
+
   if (invalidId) return <Navigate to="/subscriptions" replace />;
   const classicListError = Boolean(classicOptions && multiSubQuery.isError);
   const loadError = subscriptionError || classicListError || optionsError;
   if (!loadError && initiallyLoading) {
-    return (
-      <PageEntrance className="space-y-6">
-        {pageHeader}
-        <SubscriptionFlowSkeleton
-          mode={purchaseOptions ? (isTariffsMode ? 'tariffs' : 'classic') : 'unknown'}
-          count={isTariffsMode ? catalogueTariffs.length : classicOptions?.periods.length}
-          conditions={catalogueNotices}
-          stepHeader={
-            classicOptions && classicOptions.periods.length > 0 ? (
-              <ClassicPurchaseStepHeader
-                steps={getClassicPurchaseSteps(
-                  getClassicDefaultPeriod(classicOptions),
-                  subscription?.is_trial,
-                )}
-                index={0}
-                loading
-              />
-            ) : undefined
-          }
-        />
-      </PageEntrance>
+    return renderPage(
+      purchaseOptions ? 'known' : 'pending',
+      <SubscriptionFlowSkeleton
+        mode={purchaseOptions ? (isTariffsMode ? 'tariffs' : 'classic') : 'unknown'}
+        count={isTariffsMode ? catalogueTariffs.length : classicOptions?.periods.length}
+        conditions={catalogueNotices}
+        stepHeader={
+          classicOptions && classicOptions.periods.length > 0 ? (
+            <ClassicPurchaseStepHeader
+              steps={getClassicPurchaseSteps(
+                getClassicDefaultPeriod(classicOptions),
+                subscription?.is_trial,
+              )}
+              index={0}
+              loading
+            />
+          ) : undefined
+        }
+      />,
     );
   }
 
   if (loadError || (!purchaseOptions && !optionsLoading)) {
-    return (
-      <PageEntrance className="space-y-6">
-        {pageHeader}
-        <div
-          className="rounded-3xl p-6 text-center"
-          style={{
-            background: g.cardBg,
-            border: `1px solid ${g.cardBorder}`,
+    return renderPage(
+      'ready',
+      <div
+        className="rounded-3xl p-6 text-center"
+        style={{
+          background: g.cardBg,
+          border: `1px solid ${g.cardBorder}`,
+        }}
+      >
+        <p className="mb-4 text-dark-300">
+          {t('subscription.loadError', 'Не удалось загрузить варианты подписки')}
+        </p>
+        <button
+          onClick={() => {
+            if (subscriptionError) void refetchSubscription();
+            else if (classicListError) void multiSubQuery.refetch();
+            else void refetchOptions();
           }}
+          className="rounded-xl bg-accent-500 px-6 py-2 text-sm font-medium text-on-accent transition-colors hover:bg-accent-600"
         >
-          <p className="mb-4 text-dark-300">
-            {t('subscription.loadError', 'Не удалось загрузить варианты подписки')}
-          </p>
-          <button
-            onClick={() => {
-              if (subscriptionError) void refetchSubscription();
-              else if (classicListError) void multiSubQuery.refetch();
-              else void refetchOptions();
-            }}
-            className="rounded-xl bg-accent-500 px-6 py-2 text-sm font-medium text-on-accent transition-colors hover:bg-accent-600"
-          >
-            {t('common.retry')}
-          </button>
-        </div>
-      </PageEntrance>
+          {t('common.retry')}
+        </button>
+      </div>,
     );
   }
 
@@ -309,11 +320,9 @@ export default function SubscriptionPurchase() {
   if (paidClassic && !configureClassic)
     return <Navigate to={`/subscriptions/${paidClassic.id}`} replace />;
 
-  return (
-    <PageEntrance className="space-y-6">
-      {/* Header */}
-      {pageHeader}
-
+  return renderPage(
+    'ready',
+    <>
       {/* Tariffs Section */}
       {isTariffsMode && tariffs.length > 0 && (
         <motion.div variants={fadeIn}>
@@ -456,6 +465,6 @@ export default function SubscriptionPurchase() {
             </button>
           </motion.div>
         )}
-    </PageEntrance>
+    </>,
   );
 }

@@ -5,7 +5,7 @@ import { forwardRef } from 'react';
 import { buttonHover, buttonTap, springTransition } from '@/components/motion/transitions';
 import { CheckIcon, CopyIcon, QrCodeIcon, SettingsIcon, TariffsIcon } from '@/components/icons';
 import { Button, type ButtonProps } from '@/components/primitives/Button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { SubscriptionLinkSkeleton } from './SubscriptionLinkSkeleton';
 import { useTheme } from '@/hooks/useTheme';
 import { getGlassColors } from '@/utils/glassTheme';
 import type { Subscription } from '@/types';
@@ -78,11 +78,7 @@ export function SubscriptionActiveActions({
       />
 
       {connectionLinkLoading && !connectionUrl && (
-        <div className="flex min-h-11 gap-2" role="status" aria-label={t('common.loading')}>
-          <Skeleton className="min-w-0 flex-1 rounded-[14px]" />
-          <Skeleton className="w-11 shrink-0 rounded-[14px]" />
-          <Skeleton className="w-11 shrink-0 rounded-[14px]" />
-        </div>
+        <SubscriptionLinkSkeleton loadingLabel={t('common.loading')} />
       )}
 
       {connectionUrl && (
