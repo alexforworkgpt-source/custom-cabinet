@@ -526,7 +526,7 @@ for (const theme of ['dark', 'light'] as const) {
       await balance.promise;
       await route.fallback();
     });
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     const loading = page.getByRole('status', { name: 'Loading' });
     await expect(loading.first()).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(
