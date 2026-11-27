@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 import { prepareAuthenticatedPage } from './cabinetTestHarness';
 
 function deferred() {
@@ -155,11 +155,26 @@ for (const trafficLimit of [100, 0]) {
     await expect(page.getByRole('button', { name: 'Copy Link' })).toHaveCount(0);
     await expect(balanceCard).toHaveCount(0);
 
+    const readLinkParts = (row: Locator) =>
+      row.locator(':scope > *').evaluateAll((parts) =>
+        parts.map((part) => {
+          const { x, width, height } = part.getBoundingClientRect();
+          return { x, width, height };
+        }),
+      );
+
     devices.release();
-    await expect(page.getByRole('button', { name: /Set Up VPN/ })).toBeVisible();
+    const vpn = page.getByRole('button', { name: /Set Up VPN/ });
+    await expect(vpn).toBeVisible();
     await expect(balanceCard).toHaveCount(0);
+    const pendingLink = vpn.locator('xpath=following-sibling::*[1]');
+    const pendingParts = await readLinkParts(pendingLink);
     link.release();
-    await expect(page.getByRole('button', { name: 'Copy Link' })).toBeVisible();
+    const copyLink = page.getByRole('button', { name: 'Copy Link' });
+    await expect(copyLink).toBeVisible();
+    const readyParts = await readLinkParts(copyLink.locator('..'));
+    expect(readyParts).toHaveLength(3);
+    expect(pendingParts).toEqual(readyParts);
     await expect(balanceCard).toBeVisible();
   });
 }
@@ -353,7 +368,7 @@ test('reserves the full-device action height on a narrow screen', async ({ page 
   const deviceSlot = page.locator('[data-onboarding="connect-devices"]');
   const before = await deviceSlot.boundingBox();
   devices.release();
-  await expect(page.getByRole('button', { name: /My Devices/ })).toContainText('3 / 3');
+  await expect(page.getByRole('button', { name: /Set Up VPN/ })).toContainText('3 / 3');
   const after = await deviceSlot.boundingBox();
   if (!before || !after) throw new Error('The device slot must stay visible while loading');
   expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(4);

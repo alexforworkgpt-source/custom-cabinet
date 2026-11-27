@@ -28,7 +28,14 @@ export function SubscriptionFlowSkeleton({ mode, count, conditions, stepHeader }
               </Card>
             )}
           </div>
-          <Skeleton variant="card" className="h-44" />
+          <Card className="space-y-4 bg-dark-800/40 shadow-none">
+            <Skeleton className="h-6 w-2/5" />
+            <div className="space-y-3 border-t border-dark-700/65 pt-4">
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-5 w-2/3" />
+            </div>
+            <Skeleton className="h-12" />
+          </Card>
         </>
       ) : mode === 'classic' && count !== 0 ? (
         <div className="space-y-6">

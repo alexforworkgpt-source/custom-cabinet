@@ -43,6 +43,90 @@ async function prepareManagement(
   return result;
 }
 
+test('cold active unlimited layout reserves the overview, devices and add-ons at 375 px', async ({
+  page,
+}) => {
+  test.skip(page.viewportSize()?.width !== 375, 'Reference mobile layout');
+  const details = deferred();
+  const options = deferred();
+  const unlimited = {
+    ...subscription,
+    traffic_limit_gb: 0,
+    device_limit: 1,
+    servers: ['NL', 'DE', 'FI'].map((country_code) => ({
+      uuid: country_code,
+      name: country_code,
+      country_code,
+    })),
+  };
+  await prepareAuthenticatedPage(page, {
+    language: 'ru',
+    responses: {
+      ...responses,
+      '/api/cabinet/subscription': { has_subscription: true, subscription: unlimited },
+      '/api/cabinet/subscriptions': { subscriptions: [unlimited], multi_tariff_enabled: false },
+    },
+  });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  for (const [path, gate] of [
+    ['/api/cabinet/subscription', details],
+    ['/api/cabinet/subscription/purchase-options', options],
+  ] as const) {
+    await page.route(
+      (url) => url.pathname === path,
+      async (route) => {
+        await gate.promise;
+        await route.fallback();
+      },
+    );
+  }
+
+  try {
+    await page.goto('/subscriptions/42', { waitUntil: 'domcontentloaded' });
+    const initialOverview = page.locator('[data-subscription-overview-skeleton="pending"]');
+    const initialRenew = page.locator('[data-subscription-purchase-loading]');
+    const initialDevices = page.locator('[data-subscription-devices-placeholder]');
+    const initialAddons = page.locator('[data-subscription-additional-options-placeholder]');
+    await expect(initialAddons).toBeVisible();
+    const initialOverviewParts = initialOverview.locator(
+      '[data-subscription-overview-placeholder] > span',
+    );
+    const initialAddonRows = initialAddons.locator(':scope > div > span');
+    await expect(initialOverviewParts).toHaveCount(2);
+    await expect(initialOverviewParts.last()).toBeVisible();
+    await expect(initialAddonRows).toHaveCount(3);
+    for (const row of await initialAddonRows.all()) {
+      await expect(row).toBeVisible();
+      await expect(row).toHaveCSS('height', '64px');
+    }
+    const initialServers = await initialOverviewParts.last().boundingBox();
+    await page.evaluate(() => document.fonts.ready.then(() => undefined));
+    const initial = await Promise.all(
+      [initialOverview, initialRenew, initialDevices, initialAddons].map((node) =>
+        node.boundingBox(),
+      ),
+    );
+    expect(initial.every(Boolean)).toBe(true);
+    details.release();
+    options.release();
+    const overview = page.locator('[data-subscription-overview]');
+    const renew = page.getByRole('link', { name: /Продлить подписку/ });
+    const devices = page.getByRole('link', { name: /Мои устройства/ });
+    const addons = page.locator('#subscription-additional-options-panel').locator('..');
+    await expect(addons).toBeVisible();
+    const loaded = await Promise.all(
+      [overview, renew.locator('.hover-border-gradient'), devices, addons].map((node) =>
+        node.boundingBox(),
+      ),
+    );
+    expect(loaded).toEqual(initial);
+    expect(await overview.locator('.subscription-hero + dl').boundingBox()).toEqual(initialServers);
+  } finally {
+    details.release();
+    options.release();
+  }
+});
+
 function expectStable(before: { y: number } | null, after: { y: number } | null) {
   if (!before || !after) throw new Error('Both loading and ready controls must be present');
   expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(4);

@@ -58,7 +58,9 @@ it.each(['create', 'reply'])('preserves mixed image and video types on %s', asyn
     </QueryClientProvider>,
   );
   if (mode === 'create') {
-    fireEvent.click(await screen.findByRole('button', { name: 'support.newTicket' }));
+    const newTicket = await screen.findByRole('button', { name: 'support.newTicket' });
+    await waitFor(() => expect(newTicket).toHaveProperty('disabled', false));
+    fireEvent.click(newTicket);
     fireEvent.change(screen.getByLabelText('support.subject'), {
       target: { value: 'Media check' },
     });

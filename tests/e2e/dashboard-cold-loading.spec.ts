@@ -73,12 +73,24 @@ for (const plan of [
       .locator('xpath=ancestor::*[@role="status"][1]');
 
     let initialCard: { height: number; y: number } | null = null;
+    let initialMetrics: { x: number; width: number } | null = null;
     try {
       await page.goto('/', { waitUntil: 'domcontentloaded' });
       await expect(loading).toBeVisible();
       await page.evaluate(() => document.fonts.ready.then(() => undefined));
       const initial = await loading.boundingBox();
       const section = loading.locator('section');
+      initialMetrics = await section.locator('.subscription-hero-metrics-loading').boundingBox();
+      const linkRow = loading.locator(':scope > div').last();
+      const linkParts = linkRow.locator(':scope > span');
+      await expect(linkParts).toHaveCount(3);
+      for (const part of await linkParts.all()) {
+        await expect(part).toHaveCSS('height', '44px');
+      }
+      await expect(linkRow).toHaveCSS('column-gap', '8px');
+      await expect(section.locator('.subscription-hero-details > [class~="h-[46px]"]')).toHaveCount(
+        0,
+      );
       initialCard = (await section.count()) ? await section.boundingBox() : initial;
       const initialBalance = (await balance.count()) ? await balance.boundingBox() : null;
       list.release();
@@ -116,6 +128,12 @@ for (const plan of [
       name: plan.trial ? 'Trial subscription' : 'Subscription active',
     });
     await expect(summary).toBeVisible();
+    const metrics = await summary.locator('.subscription-hero-metrics').boundingBox();
+    if (!initialMetrics || !metrics) throw new Error('Expected loading and ready metrics');
+    expect(Math.abs(initialMetrics.x - metrics.x)).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(initialMetrics.x + initialMetrics.width - metrics.x - metrics.width),
+    ).toBeLessThanOrEqual(1);
     await expect(summary.getByRole('progressbar')).toHaveCount(plan.trafficLimit ? 1 : 0);
   });
 }
@@ -258,7 +276,7 @@ for (const plan of [
           const frames = await heights;
           const from = frames[0];
           const to = frames.at(-1) ?? 0;
-          expect(from - to).toBeGreaterThan(100);
+          expect(from - to).toBeGreaterThan(1);
           expect(
             new Set(frames.filter((height) => height < from - 1 && height > to + 1)).size,
           ).toBeGreaterThanOrEqual(3);

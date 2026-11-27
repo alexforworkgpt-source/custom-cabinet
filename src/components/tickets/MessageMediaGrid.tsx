@@ -104,7 +104,7 @@ export function MessageMediaGrid({
   return (
     <div className="mt-3 space-y-2">
       {photoItems.length > 0 && (
-        <div className={`grid gap-1 ${gridClass}`}>
+        <div className={`grid w-full max-w-44 gap-1 sm:max-w-none ${gridClass}`}>
           {visiblePhotos.map((item, visIdx) => {
             // visIdx is always the correct index into photoItems (visible prefix)
             const originalIdx = visIdx;

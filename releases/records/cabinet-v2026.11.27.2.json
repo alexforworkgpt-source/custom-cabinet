@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "cabinet": {
+    "tag": "cabinet-v2026.11.27.2",
+    "sha": "b5063386fd73ce2187a3e27726f2ddb400d5e133",
+    "tree_sha": "cf1e91ad17acd447844c6cc02d1bb349b9c1b407"
+  },
+  "upstream": {
+    "repository": "https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git",
+    "tag": "v1.79.0",
+    "sha": "821c7b71823573a756de00418acb25118ede1c9c"
+  },
+  "bot": {
+    "repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "sha": "64beb370e6d69b23d3b651f91033f3b72e9e1f56",
+    "backend_contract": "1",
+    "compatibility_evidence": "https://github.com/alexforworkgpt-source/custom-cabinet/blob/b5063386fd73ce2187a3e27726f2ddb400d5e133/COMPATIBILITY.md"
+  },
+  "changes": [
+    "Keep Dashboard traffic and device tiles aligned with the subscription action and preserve connection link dimensions through loading.",
+    "Keep the Set Up VPN label when the device limit is full and open device management for that state.",
+    "Keep the first active unlimited subscription skeleton aligned with the loaded overview, servers, renewal, devices, and additional options.",
+    "Smooth loading transitions for renewal, the classic purchase flow, and the tariff catalogue.",
+    "Reveal the Support contact and ticket list without abrupt layout changes, and show the disabled New Ticket action while availability is loading.",
+    "Use compact mobile ticket photo previews while retaining the full-screen viewer."
+  ],
+  "limitations": [
+    {
+      "id": "classic-auto-purchase",
+      "status": "OPEN",
+      "summary": "Classic purchase still requires manual confirmation after balance top-up."
+    },
+    {
+      "id": "physical-telegram-device",
+      "status": "BLOCKED",
+      "summary": "Physical Telegram Mini App and native client coverage is unverified for this release."
+    },
+    {
+      "id": "live-provider-coverage",
+      "status": "BLOCKED",
+      "summary": "External panel app configuration and merchant sandbox checkout/recurring flows were not part of the verified browser scope."
+    },
+    {
+      "id": "unused-legacy-email-wrapper",
+      "status": "OPEN",
+      "summary": "The unused createEmail wrapper is unchanged; current UI uses the supported combined endpoint."
+    },
+    {
+      "id": "daily-tariff-list-loading",
+      "status": "OPEN",
+      "summary": "A delayed subscriptions list can temporarily expose a renewal action for an active daily tariff. Reproduced on the previous stable and this candidate."
+    }
+  ],
+  "frontend_policy": {
+    "bscheker": "excluded",
+    "simple_mode": "excluded"
+  },
+  "owner_approved": true
+}

@@ -3,7 +3,7 @@ import '@/styles/cabinetPageHero.css';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ticketsApi } from '../api/tickets';
 import { MessageMediaGrid } from '../components/tickets/MessageMediaGrid';
 import { SupportInstructionsCard } from '../components/tickets/SupportInstructionsCard';
@@ -17,13 +17,13 @@ import type { SupportConfig, TicketDetail } from '../types';
 import { Card } from '@/components/data-display/Card';
 import { Button } from '@/components/primitives/Button';
 import { PageEntrance, PageEntranceItem } from '@/components/motion/PageEntrance';
-import { fadeIn, staggerItem } from '@/components/motion/transitions';
+import { fadeIn } from '@/components/motion/transitions';
+import { SubscriptionLoadingHeight } from '../components/subscription/SubscriptionLoadingHeight';
 import { ChatIcon, CloseIcon, ImageIcon, PlusIcon, SendIcon } from '@/components/icons';
 import { usePlatform } from '@/platform';
 import { linkifyText } from '../utils/linkify';
 import { resolveSupportContact } from '../utils/supportContact';
 import { useSearchParams } from 'react-router';
-import { SkeletonSurface } from '@/components/ui/skeleton';
 import { TicketListSkeleton, TicketMessagesSkeleton } from '../components/tickets/SupportLoading';
 
 const log = logger.createLogger('Support');
@@ -52,6 +52,7 @@ export default function Support() {
   log.debug('Component loaded');
 
   const { t } = useTranslation();
+  const reducedMotion = useReducedMotion();
   const isAdmin = useAuthStore((state) => state.isAdmin);
   const queryClient = useQueryClient();
   const { openTelegramLink, openLink } = usePlatform();
@@ -364,8 +365,8 @@ export default function Support() {
 
   const newTicketButton = (
     <Button
-      className="support-hero-action min-h-11 w-full border-2 border-dark-900"
-      disabled={configLoading}
+      className="support-hero-action min-h-11 w-full border-2 border-dark-900 disabled:opacity-100"
+      disabled={supportConfig?.tickets_enabled !== true}
       onClick={() => {
         setShowCreateForm(true);
         setSelectedTicket(null);
@@ -378,94 +379,103 @@ export default function Support() {
     </Button>
   );
 
+  const ticketsLoading = configLoading || isLoading;
+
   return (
-    <PageEntrance className="space-y-6">
-      <motion.div variants={fadeIn} className="flex flex-col gap-4">
+    <PageEntrance>
+      <motion.div variants={fadeIn} className="mb-6 flex flex-col gap-4">
         <h1 className="mb-2 text-2xl font-bold text-dark-50 sm:text-3xl">{t('support.title')}</h1>
         <div>
           <div className="cabinet-page-hero cabinet-page-hero--support">
             <h2 className="text-base font-semibold sm:text-xl">{t('support.bannerTitle')}</h2>
             <p className="text-xs leading-snug sm:text-sm">{t('support.selectTicket')}</p>
           </div>
-          <div className="relative -mt-4">
-            {configLoading ? <SkeletonSurface>{newTicketButton}</SkeletonSurface> : newTicketButton}
-          </div>
+          <div className="relative -mt-4">{newTicketButton}</div>
         </div>
         {!showCreateForm && !selectedTicket && <SupportInstructionsCard />}
       </motion.div>
 
-      {/* Contact support card for "both" mode — self-animated: mounts after the
-          config query resolves, when the parent stagger orchestration has already
-          finished and would leave it stuck at opacity 0 */}
-      {supportConfig?.support_type === 'both' &&
-        supportConfig.support_username &&
-        resolveSupportContact(supportConfig) && (
-          <motion.div variants={staggerItem} initial="initial" animate="animate">
-            <Card size="sm" className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-dark-800">
-                  <ChatIcon className="h-5 w-5 text-dark-400" />
+      <SubscriptionLoadingHeight
+        stage={configLoading ? 'pending' : 'ready'}
+        smooth={!reducedMotion}
+      >
+        {supportConfig?.support_type === 'both' &&
+          supportConfig.support_username &&
+          resolveSupportContact(supportConfig) && (
+            <div className="pb-6">
+              <Card size="sm" className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-dark-800">
+                    <ChatIcon className="h-5 w-5 text-dark-400" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-dark-100">
+                      {t('support.contactUs')}
+                    </div>
+                    <div className="text-xs text-dark-400">{supportConfig.support_username}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-dark-100">{t('support.contactUs')}</div>
-                  <div className="text-xs text-dark-400">{supportConfig.support_username}</div>
-                </div>
-              </div>
-              <Button
-                variant="secondary"
-                className="shrink-0 whitespace-nowrap"
-                onClick={() => openSupportContact(supportConfig)}
-              >
-                {t('support.writeButton', 'Написать')}
-              </Button>
-            </Card>
-          </motion.div>
-        )}
+                <Button
+                  variant="secondary"
+                  className="shrink-0 whitespace-nowrap"
+                  onClick={() => openSupportContact(supportConfig)}
+                >
+                  {t('support.writeButton', 'Написать')}
+                </Button>
+              </Card>
+            </div>
+          )}
+      </SubscriptionLoadingHeight>
 
       <PageEntranceItem className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Tickets List */}
         <Card size="sm" className="lg:col-span-1">
           <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('support.yourTickets')}</h2>
 
-          {configLoading || isLoading ? (
-            <TicketListSkeleton />
-          ) : tickets?.items && tickets.items.length > 0 ? (
-            <div className="min-h-[200px] space-y-2">
-              {tickets.items.map((ticket) => (
-                <button
-                  key={ticket.id}
-                  onClick={() => {
-                    setSelectedTicket(ticket as unknown as TicketDetail);
-                    setShowCreateForm(false);
-                    setFormError(null);
-                    clearReplyAttachments();
-                  }}
-                  className={`w-full rounded-bento border p-4 text-left transition-all ${
-                    selectedTicket?.id === ticket.id
-                      ? 'border-accent-500 bg-accent-500/10'
-                      : 'border-dark-700/50 bg-dark-800/30 hover:border-dark-600'
-                  }`}
-                >
-                  <div className="mb-2 flex items-start justify-between gap-2">
-                    <div className="truncate font-medium text-dark-100">{ticket.title}</div>
-                    <span className={`${getStatusBadge(ticket.status)} flex-shrink-0`}>
-                      {getStatusLabel(ticket.status)}
-                    </span>
-                  </div>
-                  <div className="text-xs text-dark-500">
-                    {new Date(ticket.updated_at).toLocaleDateString(uiLocale())}
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="py-12 text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800">
-                <ChatIcon className="h-8 w-8 text-dark-500" />
+          <SubscriptionLoadingHeight
+            stage={ticketsLoading ? 'pending' : 'ready'}
+            smooth={!reducedMotion}
+          >
+            {ticketsLoading ? (
+              <TicketListSkeleton />
+            ) : tickets?.items && tickets.items.length > 0 ? (
+              <div className="min-h-[200px] space-y-2">
+                {tickets.items.map((ticket) => (
+                  <button
+                    key={ticket.id}
+                    onClick={() => {
+                      setSelectedTicket(ticket as unknown as TicketDetail);
+                      setShowCreateForm(false);
+                      setFormError(null);
+                      clearReplyAttachments();
+                    }}
+                    className={`w-full rounded-bento border p-4 text-left transition-all ${
+                      selectedTicket?.id === ticket.id
+                        ? 'border-accent-500 bg-accent-500/10'
+                        : 'border-dark-700/50 bg-dark-800/30 hover:border-dark-600'
+                    }`}
+                  >
+                    <div className="mb-2 flex items-start justify-between gap-2">
+                      <div className="truncate font-medium text-dark-100">{ticket.title}</div>
+                      <span className={`${getStatusBadge(ticket.status)} flex-shrink-0`}>
+                        {getStatusLabel(ticket.status)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-dark-500">
+                      {new Date(ticket.updated_at).toLocaleDateString(uiLocale())}
+                    </div>
+                  </button>
+                ))}
               </div>
-              <div className="text-dark-400">{t('support.noTickets')}</div>
-            </div>
-          )}
+            ) : (
+              <div className="py-12 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800">
+                  <ChatIcon className="h-8 w-8 text-dark-500" />
+                </div>
+                <div className="text-dark-400">{t('support.noTickets')}</div>
+              </div>
+            )}
+          </SubscriptionLoadingHeight>
         </Card>
 
         {/* Ticket Detail / Create Form */}

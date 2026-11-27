@@ -49,7 +49,7 @@ const commonResponses = {
 
 for (const scenario of [
   { name: 'a free device slot', connectedDevices: 0, deviceAction: 'Set Up VPN' },
-  { name: 'a full device limit', connectedDevices: 3, deviceAction: 'My Devices' },
+  { name: 'a full device limit', connectedDevices: 3, deviceAction: 'Set Up VPN' },
 ]) {
   test(`keeps Buy Traffic and shows ${scenario.deviceAction} for limited subscription with ${scenario.name}`, async ({
     page,
@@ -243,7 +243,7 @@ test('opens device management for a full limit and keeps delete, add-slots, Back
   });
 
   await page.goto('/?sub=7');
-  const manageDevices = page.getByRole('button', { name: /My Devices/ });
+  const manageDevices = page.getByRole('button', { name: /Set Up VPN/ });
   await expect(page.locator('button button')).toHaveCount(0);
   await manageDevices.click();
 

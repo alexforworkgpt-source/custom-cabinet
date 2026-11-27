@@ -33,6 +33,22 @@ test('matches the Dashboard traffic value to the device value', async ({ page })
   await expect(usage).toHaveCSS('color', color);
 });
 
+test('aligns the Dashboard traffic and device group with Manage subscription', async ({ page }) => {
+  await prepareAuthenticatedPage(page, { responses });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  const hero = page.getByRole('region', { name: 'Subscription active' });
+  const group = hero.locator('.subscription-hero-metrics');
+  const button = hero.getByRole('button', { name: 'Manage subscription' });
+  await expect(group).toBeVisible();
+  await expect(button).toBeVisible();
+  const groupBounds = await group.boundingBox();
+  const buttonBounds = await button.boundingBox();
+  if (!groupBounds || !buttonBounds) throw new Error('Expected the Dashboard group and button');
+  expect(groupBounds.x).toBeCloseTo(buttonBounds.x, 0);
+  expect(groupBounds.x + groupBounds.width).toBeCloseTo(buttonBounds.x + buttonBounds.width, 0);
+});
+
 test('groups Dashboard traffic and devices with an inset divider and a single-line count', async ({
   page,
 }) => {
@@ -59,12 +75,6 @@ test('groups Dashboard traffic and devices with an inset divider and a single-li
       return range.getClientRects().length;
     }),
   ).toBe(1);
-  const action = await hero.getByRole('button', { name: 'Управление подпиской' }).boundingBox();
-  const group = await metrics.boundingBox();
-  if (!action || !group) throw new Error('Expected visible subscription action and metrics');
-  expect(group.x).toBeCloseTo(action.x, 0);
-  expect(group.width).toBeCloseTo(action.width, 0);
-
   const divider = await metrics
     .locator('.subscription-hero-metric')
     .last()
