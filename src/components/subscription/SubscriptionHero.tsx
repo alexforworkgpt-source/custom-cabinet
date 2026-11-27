@@ -52,7 +52,7 @@ function SubscriptionHeroMetric({
       <span className="subscription-hero-icon" aria-hidden="true">
         {icon}
       </span>
-      <dt className="min-w-0 break-words text-xs leading-[14px]">{label}</dt>
+      <dt className="min-w-0 break-words text-xs leading-[1.2]">{label}</dt>
       <dd className="min-w-0 break-words text-[clamp(12px,3.65vw,14px)] font-bold leading-4 text-champagne-50">
         {value}
       </dd>

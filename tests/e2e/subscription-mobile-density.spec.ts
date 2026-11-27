@@ -214,9 +214,17 @@ test('operator colors and enlarged mobile text retain every action @critical-flo
     await document.fonts.ready;
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   });
-  expect(await deviceLabel.evaluate((label) => label.scrollWidth)).toBeLessThanOrEqual(
-    await deviceLabel.evaluate((label) => label.clientWidth),
-  );
+  const labelLayout = await deviceLabel.evaluate((label) => {
+    const style = getComputedStyle(label);
+    return {
+      width: label.clientWidth,
+      scrollWidth: label.scrollWidth,
+      fontSize: Number.parseFloat(style.fontSize),
+      lineHeight: Number.parseFloat(style.lineHeight),
+    };
+  });
+  expect(labelLayout.scrollWidth).toBeLessThanOrEqual(labelLayout.width);
+  expect(labelLayout.lineHeight).toBeGreaterThanOrEqual(labelLayout.fontSize);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
 
